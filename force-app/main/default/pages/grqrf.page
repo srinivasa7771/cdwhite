@@ -1,0 +1,254 @@
+<apex:page sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<script type="text/javascript">
+var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={};
+var lf='',af='',adf='',err='',aif,adif,cif; 
+function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}",err),!1):!0}
+function hsSnc(nSTA){return false;}
+function hErr(nSTA){
+     var amtFld = document.getElementsByClassName('pay_mtd')[0]; 
+     var pay_mtd = amtFld.options[amtFld.selectedIndex].value;
+     var amt = 0;
+    if(pay_mtd == 'Customer Deposit')
+        amt = ({!Acc.adb__c} - {!Acc.adrfi__c}) ;
+    else if(pay_mtd == 'Bank Guarantee')  
+        amt =  ({!Acc.bgb__c} - {!Acc.bgrfi__c}); 
+    if(parseFloat(cs['xtpa__c'].value)<=0||isNaN(parseFloat(cs['xtpa__c'].value))){
+        fldErr('xtpa__c','Expected a number greater than 0',!0);
+        err = 'Refund Amount should be a number greater than 0';
+        return true;
+    }
+    else if(parseFloat(cs['xtpa__c'].value) > amt){
+         fldErr('xtpa__c','Amount should be less then available balance',!0);
+        err = 'Refund Amount should be less then available balance';
+        return true;
+     }
+    var licenceStatus = '';
+    var empCount = 0;
+     if(pay_mtd == 'Bank Guarantee') {
+         // licenceStatus = {!Acc.lcsta__c}; 
+         
+         //  alert({!Acc.vctemp__c});
+         licenceStatus = '{!JSENCODE(Acc.lcsta__c)}';
+         empCount = {!Acc.vctemp__c};
+         if(licenceStatus != null && (licenceStatus != 'License Cancelled' && licenceStatus != 'License Under Cancellation')) {
+              if((empCount > 50 && parseFloat(cs['xtpa__c'].value) > (amt - 125000) ) || (empCount < 50 && parseFloat(cs['xtpa__c'].value) > (amt - (empCount*2500))) ){
+                fldErr('xtpa__c','Amount should be less then eligible BG Amount',!0);
+                err = 'Refund Amount should be less then eligible BG Amount';
+                return true;
+            }
+         }    
+         
+              
+      }
+       
+    return false;}
+   
+function hRq(nSTA){fldErr('rmob__c',null,!0);fldErr('xvtyp__c',null,!0);fldErr('xtpa__c',null,!0);fldErr('xceml__c',null,!0);fldErr('xcln__c',null,!0); cs['ias__c'].value='rf'; var brq=false;brq = fldReq('rmob__c',cs)||brq;brq = fldReq('xvtyp__c',cs)||brq;brq = fldReq('xtpa__c',cs)||brq;brq = fldReq('xceml__c',cs)||brq;brq = fldReq('xcln__c',cs)||brq;return brq;}
+     
+function ifrm(){}
+function calAmt(){
+        var amtFld = document.getElementsByClassName('pay_mtd')[0]; 
+        var pay_mtd = amtFld.options[amtFld.selectedIndex].value;
+        if(pay_mtd == 'Customer Deposit'){
+            document.getElementById("amt_rem").innerHTML = 'Remaining Balance : '+({!Acc.adb__c}-{!Acc.adrfi__c});
+        }
+        else if(pay_mtd == 'Bank Guarantee'){
+            document.getElementById("amt_rem").innerHTML = 'Remaining Balance : '+({!Acc.bgb__c}-{!Acc.bgrfi__c});
+        }
+            else{
+                document.getElementById("amt_rem").innerHTML = '';
+            }
+          
+    }    
+    
+function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+</script>
+<apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+<c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!pt}" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="{!pDsc}" STA="{!rq.STA__c}"/>
+<chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" rendered="{!AND(NOT(pgHide),OR(md.isEdit,md.isView))}" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:form >
+    <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+    <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+    <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();" >  
+       <apex:param name="nextPage" value="spg"/>
+    </apex:actionFunction>    
+    <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+    <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>    
+    <apex:pageBlock mode="{!IF(md.isView,'detail','edit')}" id="pbMain" tabStyle="g_Req__c" title="{!pt}" >
+        <apex:pageBlockButtons location="top"> 
+     <apex:variable var="rp_da" value="{!IF(true,false,false)}" />
+<apex:variable var="addInfo" value=""/>   
+<apex:repeat value="{!rq.Items__r}" var="i">
+<apex:variable var="rp_da" value="{!IF(AND(i.itm__r.cd__c='rp',i.sta__r.cd__c='dcc'),true,rp_da)}" />
+</apex:repeat>
+<apex:variable var="addInfo" value="{!IF(rp_da,addInfo+'<li>After completion of Medical  and EIDA  handover Original passport,Tecom ID card at AXS counter.<a href=/apex/grqei?id='+rq.id+'>Click to apply</a></li>',addInfo)}"/>
+  
+           <c:qrbtns isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" addInfo="{!addInfo}"/>
+        </apex:pageBlockButtons>
+         <apex:pageBlockButtons location="bottom">
+             <c:qrbtns showInfo="false" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}"/>
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="msg" escape="false"/>
+        <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}">
+            <apex:pageBlockSection columns="2" collapsible="false"  title="Details">
+                   <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Package Applied For:" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xvtyp__cRI">
+                                <div class="requiredBlock"></div>
+                            <apex:selectList id="xvtyp__c" size="1" multiselect="false" value="{!rq.xvtyp__c}"  styleClass="pay_mtd" > 
+                            <apex:selectOption itemLabel="" itemValue=""></apex:selectOption>
+                            <apex:selectOption itemLabel="Customer Deposit" itemValue="Customer Deposit"></apex:selectOption>
+                            <apex:selectOption itemLabel="Bank Guarantee" itemValue="Bank Guarantee"></apex:selectOption>
+                            <apex:selectOption itemLabel="Exit Guarantee Deposit" itemValue="Exit Guarantee Deposit"></apex:selectOption>
+                             <apex:actionSupport event="onchange" onsubmit="calAmt();"  reRender="f"/>     
+                           </apex:selectList><span id="amt_rem" style="color:#f00;margin-left:10px;"></span>
+                            <script type="text/javascript">cs['xvtyp__c']=getC('{!$Component.xvtyp__c}');</script>    
+                             
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xvtyp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputText value="{!rq.xvtyp__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem> 
+               
+            
+                 <apex:pageBlockSectionItem helpText="Mobile phone number for the person who follow-up on this request. Starts 050 or 052 or 055 or 056 (e.g. 050 xxxxxx)">
+                    <apex:outputLabel value="Mobile No" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="rmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="rmob__c" value="{!rq.rmob__c}" onchange=" vMob('rmob__c',cs,true);"/>
+                                <script type="text/javascript">
+                                cif='{!$Component.rmob__c}_lkid';
+                                cs['rmob__c']=getC('{!$Component.rmob__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="rmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.rmob__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+               <apex:pageBlockSectionItem id="f" >
+                    <apex:outputLabel value="Payment Type:" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xtr2__cRI">
+                                <div class="requiredBlock"></div>
+                            <apex:selectList id="xtr2__c" size="1" multiselect="false" value="{!rq.xtr2__c}"> 
+                            <apex:selectOption itemLabel="" itemValue=""></apex:selectOption>
+                             
+                            <apex:selectOption itemLabel="Customer Deposit" itemValue="Customer Deposit" rendered="{!IF(rq.xvtyp__c != 'Customer Deposit',true,false)}"></apex:selectOption>
+                          
+                             <apex:selectOption itemLabel="Cash" itemValue="Cash"></apex:selectOption>
+                            <apex:selectOption itemLabel="Cheque" itemValue="Cheque"></apex:selectOption>
+                            <apex:selectOption itemLabel="Credit / Debit Card" itemValue="Credit / Debit Card"></apex:selectOption>
+                            </apex:selectList>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xtr2__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputText value="{!rq.xtr2__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>  
+               <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Amount" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xtpa__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xtpa__c" value="{!rq.xtpa__c}" />
+                                <script type="text/javascript">cs['xtpa__c']=getC('{!$Component.xtpa__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xtpa__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xtpa__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xceml__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xceml__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xceml__c" value="{!rq.xceml__c}" onchange="vEml('xceml__c',cs,false)"/>
+                                <script type="text/javascript">cs['xceml__c']=getC('{!$Component.xceml__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xceml__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xceml__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Name of Authorized Signatory" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcln__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcln__c" value="{!rq.xcln__c}" />
+                                <script type="text/javascript">cs['xcln__c']=getC('{!$Component.xcln__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcln__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcln__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem> 
+                <apex:pageBlockSectionItem helpText="Any additional information you would like to inform our team about">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.nt__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="nt__cRI">
+                                <div class=""></div>
+                                <apex:inputField id="nt__c" value="{!rq.nt__c}" style="width:90%"/>
+                                <script type="text/javascript">cs['nt__c']=getC('{!$Component.nt__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="nt__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.nt__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                               
+            </apex:pageBlockSection>
+            
+            
+         <c:grms id="Milestones" ispu="{!ispu}" R="{!rq}" rendered="{!md.isView}"/>   
+        </apex:outputPanel>
+         <apex:inputHidden value="{!rq.ias__c}"  id="ias__c"/>
+            <script type="text/javascript">            
+            cs['ias__c']=getC('{!$Component.ias__c}');
+            </script>  
+        <script type="text/javascript">ifrm();</script>
+    </apex:pageBlock>
+    <c:qrlstr id="pbRelated" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!rq}" pg="{!pg}"/>
+</apex:form>  
+</apex:page>

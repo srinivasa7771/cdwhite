@@ -1,0 +1,129 @@
+<apex:component allowDML="true" id="EIDDetail"> <!--controller="ApplicantDetailController"-->
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <script>
+    function eidCheck(elem,event){
+        $(elem).parent().find('.frmErrMsg').remove();
+        $(elem).attr('maxlength',18);
+        if(event.keyCode == 8)
+            return;
+        let v = $(elem).val();
+        let l = $(elem).val().length;
+        if(l==3 || l==8 || l==16 ){
+            $(elem).val(v+'-');
+        }
+    }
+    function checkEid(elem){
+        if(!validateEmiratesId($(elem).val())){
+            addValError(elem,'Invalid Emirates id!');
+        }else{
+            removeValError($(elem));
+        }
+    }
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    function addTLoaders(e){
+        showTLoader(e);
+        $('.loader_rerender').show();
+    }
+    
+    function showTLoader(e){
+        if($(e).is('select'))
+            showTempLoader_select(e);
+        else
+            showTempLoader_input(e);
+    }
+    function showTempLoader_select(e){
+        $(e).parent().find('.select2-selection--single').addClass('tempLoader_input');
+        setTimeout(function(){
+            $('*').addClass('loadingProgress');
+        },400);
+    }
+    </script>
+    <div class="base-collapse">
+        <a href="#" class="collapse-toggle collapsed" data-toggle="collapse" data-target="#emirate_id" aria-expanded="true">
+            <div class="collapse-title">Emirates ID details</div>
+        </a>
+        <div id="emirate_id" class="collapse show" style="">
+            <div class="collapse-content">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>ID Available</Label>
+                            <apex:inputField ignoreEditPermissionForRendering="true" onchange="updateReq(this);addTLoaders(this);" styleClass="requiredFld form-control input-select2-flat"
+                                             value="{!req.xeidav__c}" style="background-color: #f5f5f5;" id="xeidav__c"/>
+                            <script type="text/javascript">
+                            function updateReq(thisElement){
+                                console.log('updateReq:::::');
+                                
+                                //$('#preloader').fadeIn();
+                                saveReqDraft3();
+                                eidChangeHandler(cs['xeidav__c']);
+                            }
+                            cs['xeidav__c']=document.getElementById('{!$Component.xeidav__c}');
+                            </script>
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>ID number </Label>
+                            <apex:inputField ignoreEditPermissionForRendering="true" onkeydown="eidCheck(this,event)" onchange="checkEid(this)" styleClass="addRqrd form-control numOnly" value="{!req.xceidid__c}" id="xceidid__c"/>
+                            <script type="text/javascript">
+                            cs['xceidid__c']=document.getElementById('{!$Component.xceidid__c}');
+                            </script>
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Expiry date</Label>
+                            <div class="input-datepicker-group input-group">
+                                <apex:inputHidden id="xceidedt" value="{!req.xceidedt__c}" />
+                                <input type="text" class="addRqrd form-control input-datepicker" id="xceidedt__c"
+                                       data-toggle="datetimepicker" data-target="#xceidedt__c" value="{!req.xceidedt__c}"
+                                       onchange="assignfldVal(this.value,'xceidedt');checkValidDate(this)"/>
+                                <script type="text/javascript">
+                                cs['xceidedt__c']=document.getElementById('xceidedt__c');
+                                dformat('{!req.xceidedt__c}','xceidedt__c');
+                                cs['xceidedt']=getC('{!$Component.xceidedt}');
+                                </script>
+                                <div class="input-group-append">
+                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xceidedt__c">
+                                        <i class="icon-date"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <!-- .col -->
+                </div>
+                <!-- .row -->
+                <div class="pb-4"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function eidChangeHandler(thisElement){
+        console.log('eidChangeHandler::::');
+        if(!$(thisElement).is(':visible'))
+            return;
+        var val = $(thisElement).val();
+        console.log('val:::'+val);
+        
+        if(val == 'Yes'){
+            console.log('Yes::::');
+            $('.addRqrd').addClass('requiredFld').removeAttr("disabled");
+        }
+        else{
+            console.log('No::::');
+            cs['xceidedt'].value='';
+            $('.addRqrd').val('').removeClass('requiredFld').attr('disabled','disabled');
+            removeValError('.addRqrd');
+        }
+    }
+     $(document).ready(function() {
+        eidChangeHandler(cs['xeidav__c']);
+     });
+    </script>
+</apex:component>

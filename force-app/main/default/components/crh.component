@@ -1,0 +1,479 @@
+<apex:component >
+<apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+<apex:attribute name="R" description="Request" type="g_Req__c" required="true"/>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css"></link>
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+ 
+  <script>
+  $(function() {
+    $( "#tabs" ).tabs();
+      if(ispu){
+        
+        $('#tabs > ul li:has(a[href="#tabs-3"])').hide();
+         $('#tabs > ul li:has(a[href="#tabs-1"])').hide();
+          $($("#tabs").find("li")[0]).hide();
+          $("#tabs").tabs('refresh');
+      
+        $("#tabs").tabs('option', 'active', 1);
+          
+          $('#tabs div:eq(2)').show();
+$('#tabs ul li:eq(2)').addClass('active');
+    }else{
+     
+        $("#tabs").tabs('option', 'active', 0);
+          
+       
+        }
+  });
+  </script>
+  <div id="tabs">
+  <ul>
+          <li><a href="#tabs-1" class="tertiaryPalette" style="color:white"><h2>Timeline</h2></a></li>   
+    <li><a href="#tabs-2" class="tertiaryPalette" style="color:white"><h2>Status History</h2></a></li> 
+    <li><a href="#tabs-3" class="tertiaryPalette" style="color:white"><h2>Courier</h2></a></li>   
+ 
+   
+    
+         
+  </ul>
+  <div id="tabs-1" style="display:''">   
+
+    <style type='text/css'>
+    
+            /* Tooltip container */
+            .tooltip {
+                position: relative;
+                display: inline-block;
+                
+            }
+
+            /* Tooltip text */
+            .tooltip .tooltiptext {
+                
+                visibility: hidden;
+                width: 120px;
+                background-color: black;
+                color: #fff;
+                text-align: center;
+                padding: 5px 0;
+                border-radius: 6px;
+             
+                /* Position the tooltip text - see examples below! */
+                position: absolute;
+                z-index: 1;
+            }
+
+            /* Show the tooltip text when you mouse over the tooltip container */
+            .tooltip:hover .tooltiptext {
+                visibility: visible;
+            }
+    
+    </style>
+
+  
+    <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['timeline']}]}"></script>
+    <apex:variable var="c" value="{!0}" />
+    <apex:variable var="prev" value="" />
+    <apex:repeat value="{!R.Status_History__r}" var="m">
+          <apex:variable var="c" value="{!IF(AND(prev<>m.itm__r.itm__c,OR(AND(ispu,m.kstp__c),NOT(ispu))),c+1,c)}"/>
+          <apex:variable var="prev" value="{!IF(OR(AND(ispu,m.kstp__c),NOT(ispu)),m.itm__r.itm__c,prev)}" />       
+    </apex:repeat>
+    <apex:outputPanel layout="none" rendered="{!c>0}">
+        <script type="text/javascript">
+         var durationKey = [];
+         var totalduration=0.0; 
+        google.setOnLoadCallback(drawChart);
+        function drawChart() {
+            var chart=null;
+            chart = new google.visualization.Timeline(document.getElementById('divMilestone'));
+            var dataTable = new google.visualization.DataTable();
+            dataTable.addColumn({type:'string',id:'Item'});
+            dataTable.addColumn({type:'string',id:'Milestone'});
+            dataTable.addColumn({type:'date',id:'Start'});
+            dataTable.addColumn({type:'date',id:'End'});
+            // dataTable.addColumn({type: 'string', role: 'tooltip'});
+            var dFrom;var dTo; var arrColors=[]; var dur;var duration=0;
+            
+            <apex:repeat value="{!R.Status_History__r}" var="m">
+             
+              <apex:outputPanel layout="none" rendered="{!OR(AND(ispu,m.kstp__c),NOT(ispu))}">
+             
+                dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.acts__c}"/></apex:outputText>'));
+                dTo = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.actE__c}"/></apex:outputText>'));
+                dFrom.setHours(dFrom.getHours()+4);
+                dTo.setHours(dTo.getHours()+4);
+                dTo.setSeconds(dTo.getSeconds());
+            
+                dur ='{!m.Duration__c}';
+                duration = dur.toString();
+                //totalduration =totalduration+parseFloat(dur).toFixed(2);
+                var itemName = '{!IF(ispu,m.itm__r.itm__r.lbl__c,m.itm__r.itm__r.Name)}';
+                var key ='{!m.itm__r.itm__r.Name}'+'{!m.Activity__c}'; 
+            //alert('iterate key'+key);
+                durationKey[key]=duration;
+            //var itmName='{!m.itm__r.itm__r.EXP__c}'+' '+'{!m.itm__r.itm__r.Name}';
+                 dataTable.addRows([['{!IF(ispu,m.itm__r.itm__r.lbl__c,if(m.itm__r.exp__c,'Express','')&' '&m.itm__r.itm__r.Name)}','{!m.Activity__c}',dFrom,dTo]]);
+
+ arrColors.push("{!IF(ispu,'#00b300',IF(AND(!ispu,m.Within_SLA__c='SLA'),'#00b300','#dc3912'))}");        
+              </apex:outputPanel>
+              
+              
+            </apex:repeat>
+            
+        
+              
+            
+            dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!R.CreatedDate}"/></apex:outputText>'));
+            dFrom.setHours(dFrom.getHours()+4);
+            dFrom= new Date(dFrom.getTime()-24*60*60*1000); 
+            dTo=dFrom;
+            dataTable.addRows([['Request','',dFrom,dTo]]);
+            arrColors.push("#fffff9");
+            
+            dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!R.CreatedDate}"/></apex:outputText>'));
+            dTo = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!IF(OR(R.STA__c='Completed',R.STA__c='Rejected',R.STA__c='Cancelled'),R.LastModifiedDate,NOW())}"/></apex:outputText>'));
+            dFrom.setHours(dFrom.getHours()+4);
+            dTo.setHours(dTo.getHours()+4);
+            dataTable.addRows([['Request','{!R.STA__c}',dFrom,dTo]]);
+            arrColors.push("{!IF(R.STA__c='Completed','#00b300',IF(OR(R.STA__c='Rejected',R.STA__c='Cancelled'),'#dc3912','#00b300'))}");
+            
+            dFrom = dTo;
+            dFrom.setHours(dFrom.getHours()+4);
+            dFrom= new Date(dFrom.getTime()+24*60*60*1000); 
+            dTo=dFrom;
+            dataTable.addRows([['Request','',dFrom,dTo]]);
+            arrColors.push("#fffff9");
+          
+            
+            
+            var options = {avoidOverlappingGridLines:false,
+            timeline:{rowLabelStyle: {fontSize:10,color:'#2c3539'},barLabelStyle: {fontSize:10,color:'#2C3539'},},        
+            height:{!(c+3)*34.16+20},
+            width: 850,
+            backgroundColor:'#fffff9',colors:arrColors};
+            
+            
+            chart.draw(dataTable,options);      
+            
+            function setTooltipContent(dataTable,row) {
+                //alert(totalduration);
+                if (row != undefined) {
+                    var durationche;
+                    if(dataTable.getValue(row, 0) !='Request'){
+                        var Key =dataTable.getValue(row, 0)+dataTable.getValue(row, 1);
+                        //alert('tool tip key'+Key);
+                        durationche=durationKey[Key];
+                        
+                    }
+                    
+                    if(durationche !=undefined)
+                    var DurationSplit = durationche.split(".");
+                    var businessDur;
+                    var StartDate   = new Date(dataTable.getValue(row, 2));
+                    StartDate       = StartDate.toDateString(); 
+                    
+                    var EndDate     = new Date(dataTable.getValue(row, 3));
+                    EndDate         = EndDate.toDateString();
+                    
+                   
+                     if(durationche != undefined)
+                     { 
+                      hr    = DurationSplit[0];
+                      min   = DurationSplit[1];
+                     
+                      if(min !=00 && hr !=00)
+                        businessDur = hr+ ' hrs :'+min.toString().substring(0, 2)+' min';
+                     else if(hr!=00 && min==00)
+                        businessDur = hr+' hrs';
+                     else businessDur = min.toString().substring(0, 2)+' min';   
+                         
+                    }
+                    if(durationche==undefined && dataTable.getValue(row, 0) =='Request' )
+                    businessDur ="0.00"; 
+                    // alert(totalduration);
+                        var content = '<div class="tooltiptext" ><div> <h1> Start date : </h1>'+StartDate+'</div><div> <h1> Completion date :</h1>'+EndDate+'</div><div> <h1> Duration :</h1>'+businessDur+'</div></div>'; //generate tooltip content
+                        var tooltip = document.getElementsByClassName("google-visualization-tooltip")[0];
+                        tooltip.innerHTML = content;
+                }
+            }
+            //future implmentation  
+           google.visualization.events.addListener(chart, 'onmouseover', function(e) {
+               // setTooltipContent(dataTable,e.row);
+            });
+            
+            var elems = document.getElementById('divMilestone').getElementsByTagName('text');
+            for(var i=0;i<elems.length;i++){elems[i].style.fontSize='x-small';}   
+           
+            
+        }
+        </script>   
+    </apex:outputPanel> 
+    <apex:pageBlockSection collapsible="true" columns="1" rendered="{!c>0}">
+        <apex:pageBlockSectionItem rendered="{!c>0}">
+            <apex:outputLabel value="" />
+                <div id="divMilestone"></div>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>   
+
+  </div>
+
+  <div id="tabs-2">
+  <style type='text/css'>
+  .bold-green-font {
+    font-weight: bold;
+    color: green;
+  }
+
+  .row-font {
+    font-weight: normal; font-family: "Times New Roman", Georgia, Serif; background-color:#83b7e8;
+  }
+  
+  .large-font {
+    font-size: 11px;
+  }
+  
+  .small-font {
+    font-size: 11px;
+  }
+
+  .underline-blue-font {
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .gold-border {
+    border: 3px solid gold;
+  }
+
+  .beige-background {
+    background-color: beige;
+  }
+  .google-visualization-table-td {
+    text-align: left !important;
+  }
+
+</style>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["table"]});
+      google.setOnLoadCallback(drawTable);
+
+      function drawTable() {
+        var cssClass = {
+            'headerRow': 'pbSubheader brandTertiaryBgr tertiaryPalette',
+            'tableRow': 'data2Col  last requiredBlock small-font',
+            'oddTableRow': 'beige-background data2Col  last small-font',
+            'selectedTableRow': 'orange-background large-font',
+            'hoverTableRow': '',
+            'headerCell': '',
+            'tableCell': '',
+            'rowNumberCell': 'underline-blue-font'};
+        var data = new google.visualization.DataTable();
+        var dFrom;var dTo;var dBy; var dur; var dura; var sta; var awb;var DurationSplit;var hr; var min;var name;var id;var kstp; var tsta;  
+          //data.addColumn('string', 'Id');
+        data.addColumn('string', 'Name');
+          
+        data.addColumn('string','Status');
+        data.addColumn('datetime', 'Completion Date');
+           if(!ispu){
+        data.addColumn('string', 'Task');
+        data.addColumn('string', 'Task Duration');
+       data.addColumn('string', 'User')};
+        
+        <apex:repeat value="{!R.Status_History__r}" var="m">   
+          dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.acts__c}"/></apex:outputText>'));                                     
+          dTo = new Date('{!m.actE__c}');
+          dFrom.setHours(dFrom.getHours());
+          dTo.setHours(dTo.getHours());
+          dura='{!m.Duration__c}';
+          name='{!if( m.itm__r.exp__c,m.itm__r.itm__r.Name&' * ',m.itm__r.itm__r.Name)}';
+          id='{!m.id}';
+          DurationSplit = dura.split(".");
+          kstp='{!m.kstp__c}';
+        
+          
+          if(dura != '')
+          { 
+              hr    = DurationSplit[0];
+              min   = DurationSplit[1];
+              
+              if(min !=00 && hr !=00)
+                dur = hr+ ' hrs :'+min.toString().substring(0, 2)+' min';
+              else if(hr!=00 && min==00)
+                  dur = hr+' hrs';
+              else dur = min.toString().substring(0, 2)+' min';    
+                 
+          }
+          else {
+            dur='0:00 min';
+          } 
+         
+          if(ispu && '{!m.kstp__c}'=='true'){
+              data.addRows([['{!m.itm__r.itm__r.lbl__c}','{!m.To__c}',dTo]]); 
+              
+          }
+              
+         
+           if('{!m.kstp__c}'=='true' && !ispu){  
+               tsta='<b>'+'{!m.To__c}'+'</b>';
+               }else{
+                    tsta='{!m.To__c}';
+                }
+          if(!ispu){
+           
+                  data.addRows([
+                  ['<a href="/apex/rqih?id={!m.itm__r.id}" target="_blank">'+name+'</a>',tsta,dTo,'{!m.Activity__c}',dur,'<apex:outputText >{!m.CreatedBy.Name}</apex:outputText>']         
+                  ]);        
+          }
+         
+          </apex:repeat>
+            
+        if(ispu){
+            data.sort([{column: 2, desc:false}, {column: 0}]);
+         }
+         else{
+            data.sort([{column: 2, desc:false}, {column: 0}]);
+         }
+          
+        var table = new google.visualization.Table(document.getElementById('table_div'));  
+        var options;
+        if(ispu){ 
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 375,width: 880};                      
+        }
+        else{
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 375,width: 880};                      
+        }
+          
+        table.draw(data,options);
+           
+                    
+      }
+    </script>
+     
+     <apex:pageBlockSection collapsible="true" columns="1">     
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="" />
+                <div id="table_div"></div>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>     
+  </div>
+
+ <div id="tabs-3">
+    <style type='text/css'>
+  .bold-green-font {
+    font-weight: bold;
+    color: green;
+  }
+
+  .row-font {
+    font-weight: normal; font-family: "Times New Roman", Georgia, Serif; background-color:#83b7e8;
+  }
+  
+  .large-font {
+    font-size: 11px;
+  }
+  
+  .small-font {
+    font-size: 11px;
+  }
+
+  .underline-blue-font {
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .gold-border {
+    border: 3px solid gold;
+  }
+
+  .beige-background {
+    background-color: beige;
+  }
+  .google-visualization-table-td {
+    text-align: left !important;height:10px!important;
+  }
+
+</style>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["table"]});
+      google.setOnLoadCallback(drawTable);
+
+      function drawTable() {
+        var cssClass = {
+            'headerRow': 'pbSubheader brandTertiaryBgr tertiaryPalette',
+            'tableRow': 'data2Col  last requiredBlock small-font',
+            'oddTableRow': 'beige-background data2Col  last small-font',
+            'selectedTableRow': 'orange-background large-font',
+            'hoverTableRow': '',
+            'headerCell': '',
+            'tableCell': '',
+            'rowNumberCell': 'underline-blue-font'};
+        var data = new google.visualization.DataTable();
+        var dTo;var dura; var awb;var itemName;var createdByname; var dur;var DurationSplit;
+        data.addColumn('string', 'Name');
+        data.addColumn('string', 'AWB#');
+        data.addColumn('string', 'Booking Type');
+         if(!ispu){  
+        data.addColumn('string', 'Status');        
+           }
+        data.addColumn('datetime', 'Completion Date'); 
+         data.addColumn('string', 'Task'); 
+        data.addColumn('string', 'Task Duration');
+        if(!ispu){data.addColumn('string', 'User')};
+        
+          //alert('{!R.Courier_Histories__r}');
+        <apex:repeat value="{!R.Courier_Histories__r}" var="m">   
+          dTo               = new Date('{!m.End_Date__c}');
+          dTo.setHours(dTo.getHours());
+          dura              ='{!m.Duration__c}';
+          CourierStatus     ='{!m.Activity__c}';
+          awb               ='{!m.AWB_No__c}';
+          itemName          ='{!m.Item_Name__c}';
+           
+          createdByname     ='{!m.CreatedBy.name}'
+          
+          DurationSplit = dura.split(".");
+          
+          if(dura != '')
+          { 
+              hr    = DurationSplit[0];
+              min   = DurationSplit[1];
+              if(min !=00 && hr !=00)
+                dur = hr+ ' hrs :'+min.toString().substring(0, 2)+' min';
+              else if(hr!=00 && min==00)
+                  dur = hr+' hrs';
+              else dur = min.toString().substring(0, 2)+' min';   
+          }
+          else {
+            dur='0 hrs:00 min';
+          }          
+          
+          if(ispu)  data.addRows([[itemName,awb,CourierStatus,dTo,dur]]); 
+          else      data.addRows([[itemName,awb,'{!m.tp__c}','{!m.To_Courier_Status__c}',dTo,CourierStatus,dur,createdByname]]);   
+          
+          
+        </apex:repeat>
+        
+         
+
+        var table = new google.visualization.Table(document.getElementById('table_Courier_div'));  
+        var options;
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 300,width: 890};                      
+        table.draw(data,options);   
+        
+        
+        
+      }
+    
+    </script>
+     
+     <apex:pageBlockSection collapsible="true" columns="1">     
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="" />
+                <div id="table_Courier_div"></div>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>     
+  </div>  
+</div>
+
+</apex:component>

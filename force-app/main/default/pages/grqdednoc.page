@@ -1,0 +1,869 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="false" standardStylesheets="false" title="{!srv.lbl__c}" >
+    <html>
+        
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        
+        <script type="text/javascript">
+        var cs = {};
+        var capNotChecked =false ;
+        $(document).ready(function(){
+            //Hide fields
+            setTimeout(function(){
+                createDedActOption();
+            },1000);
+            var Lictype =cs['xltp__c'].value;
+            if(Lictype == ''){
+                let flds = [cs['xcfn__c'],cs['xcna__c'],cs['xdedln__c'],cs['xzn']];
+                flds.forEach(function(i){
+                    $(i).parent().parent().hide();
+                });
+            }
+            //show docs based on licencse type
+            //showDocList(cs['xltp__c']);
+            //show  docs  based on amendment category
+            if(cs['xltp__c'].value == 'Amendment' || cs['xltp__c'].value == 'Renewal With Amendment'){
+                console.log('Amendment');
+                showAmendCatDocList(cs['xcamc']);
+                addDocDwndLink(cs['xltp__c'].value);
+            }else{
+                showDocList(cs['xltp__c']);
+            }
+            //show description and fields
+            shwDescription(cs['xltp__c'].value);
+            
+            //create activities list
+            $('#hpr').val(cs["xuvdet__c"].value.split(';'));
+            //try{$('#hpr').select2();}catch(e){}
+            
+            
+            
+            //Close the page loader
+            setTimeout(function(){
+                hideGLoader();
+                if('{!ispu}'!='true' && '{!isgu}'!='true')
+                    $(cs["xltp"]).trigger('change');
+            },400);
+            //Date validation
+            $(".formatDt").keyup(function(){
+                this.value=this.value.replace(/^(\d\d)(\d)$/g,'$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g,'$1/$2').replace(/[^\d\/]/g,'');
+            });
+            
+        });
+        
+        //Update docs list based on the License type selected
+        function updateDocs(listOfDocs){
+            console.log('updateDocs::::::');
+            var docs= listOfDocs.split(';');
+            for(let i = 0; i < docs.length; i++){ 
+                $("#docListUL").append("<li>"+docs[i]+"</li>");
+            }
+        }
+        //show docs based on the License type selected
+        function showDocList(thiselem){
+            console.log('showDocList::::::');
+            $('#docListUL').empty();
+            var a= $(thiselem).val();
+            console.log('a::::'+a);
+            if(a != ''){
+                console.log('License type exist:::::');
+                $('#docListUL').parent().parent().show();
+            }
+            if(a=="New Company"){
+                var docList='DED initial approval certificate;DED initial trade name reservation certificate;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else if(a=="Relocation from Dubai Main Land" ){
+                var docList='DED license copy;Lease contract or Ejari certificate';    
+                updateDocs(docList);
+            }else if( a=="New Branch"){
+                var docList='DED initial approval certificate;DED initial trade name reservation certificate;Lease contract or Ejari certificate'; 
+                updateDocs(docList);
+            }else if(a=="Renewal" || a=="Amendment" ||a=="Renewal With Amendment"){
+                var docList='DED license copy;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else if(a=="Shift Location"|| a=="Cancellation"){
+                var docList='DED license copy;Request letter';
+                updateDocs(docList);
+            }else{
+                var docList='DED initial approval certificate (for new registration only);DED initial trade name reservation certificate (if applicable);DED license copy (if applicable);Duly signed DED application form (if applicable);Lease contract or Ejari certificate (if applicable);Request letter (if applicable)';
+                updateDocs(docList);
+            }
+            /*if(a=="New Company" || a=="Relocation from Dubai Main Land" || a=="New Branch"){
+                var docList='DED initial approval certificate;DED initial trade name reservation certificate;Duly signed DED application form;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else if(a=="Renewal" || a=="Amendment" ||a=="Renewal With Amendment"){
+                var docList='DED license copy;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else if(a=="Shift Location"|| a=="Cancellation"){
+                var docList='DED license copy;Request letter';
+                updateDocs(docList);
+            }else{
+                var docList='DED initial approval certificate (for new registration only);DED initial trade name reservation certificate (if applicable);DED license copy (if applicable);Duly signed DED application form (if applicable);Lease contract or Ejari certificate (if applicable);Request letter (if applicable)';
+                updateDocs(docList);
+            }*/
+            addDocDwndLink(a);
+        }
+        function  showAmendCatDocList(thiselem){
+            console.log('showAmendCatDocList::::::');
+            $('#docListUL').empty();
+            var a= $(thiselem).val();
+            console.log('a::::'+a);
+            if(a=="Change of Company Name"){
+                var docList='DED initial trade name reservation certificate;DED license copy;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else if(a=="Location Change"){
+                var docList='DED license copy;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }else{
+                var docList='DED license copy;Lease contract or Ejari certificate';
+                updateDocs(docList);
+            }
+        }
+        function addDocDwndLink(licType){
+            console.log('addDocDwndLink::::::'); 
+            console.log('licType:::::'+licType);
+            if(licType == 'Amendment' ||licType == 'Renewal With Amendment'){
+                $('#docDownload').remove();
+                $('#docListUL').after('<span id="docDownload" style="color: #3e528a !important">DED application form<a href="https://axsqa-axs.cs72.force.com/servlet/servlet.FileDownload?file=0155D000000NfyA"><i class="icon-download"></i></a></span>');
+            }/*else if(licType == 'Renewal'){
+                $('#docDownload').remove();
+               $('#docListUL').after('<span id="docDownload" style="color: #3e528a !important">DED application form<a href="https://axsqa-axs.cs72.force.com/servlet/servlet.FileDownload?file=0155D000000NfyA"><i class="icon-download"></i></a></span>');  
+            }*/else{
+                $('#docDownload').remove();
+            }
+        }
+        function addInfo(thiselem){
+            var elem = $(thiselem);
+            var msg = 'Moving from freezone to mainland';
+            var infoElem = '<div class="input-info"><i class="fa fa-exclamation-circle text-warning"></i>&nbsp;' + msg+ '</div>'
+            if($(thiselem).val() =="Shift Location"){
+                elem.parent().parent().append(infoElem);
+            }else{
+                elem.parent().parent().find('.input-info').remove();
+            }
+        }
+        function showErrMsg(elem,elemType,errType){
+            if(errType == true){
+                elem.removeClass('is-invalid');
+                if(dateFieldTypes.includes(elemType))
+                    elem.parent().parent().find('.frmErrMsg').remove();
+                else
+                    elem.parent().find('.frmErrMsg').remove();
+                
+                elem.parents('.form-group').find('.frmErrMsg').remove();
+                elem.removeClass('is-invalid');
+                elem.next().find('.select2-selection').removeClass('is-invalid');
+                return;
+            }
+            var errElem = '<div class="frmErrMsg">'+formErrMsgs1[elemType][errType]+'</div>';
+            elem.parents('.form-group').find('.frmErrMsg').remove();
+            elem.parents('.form-group').append(errElem);
+            elem.addClass('is-invalid');
+            //elem.next().find('.select2-selection, .select2-selection--single, .select2-selection--multiple').addClass('is-invalid')
+            return false;
+        }
+        
+        function setToRQFld(id,el){
+            if(cs[id]!=undefined)
+                cs[id].value=$(el).val();
+        }
+        //Onchange activities
+        function activitiesOnchange(){
+            console.log('activitiesOnchange:::');
+            var activities = '';
+            activities = ($('#hpr').val())?$('#hpr').val().join(';'):'';
+            cs['xuvdet__c'].value = activities;
+            var val=cs["xuvdet__c"].value.split(';'); 
+            var act='';
+            val.forEach(function(i){ 
+                act += i.split(':')[0]+' ';
+            });
+            cs['hpr__c'].value =act;
+            console.log('act:::'+act);
+        }
+        
+        var correctCaptcha = function(response) {
+            console.log('correctCaptcha::::');
+            console.log('response::::'+response);
+            if (response.length == 0) {
+                $('#recaptcha-error').show();
+                $('#recaptcha-error').focus();
+                //capNotChecked= true;
+            }else if(response.length > 0){
+                capNotChecked= true;
+            }else {
+                $('#recaptcha-error').hide();
+                capNotChecked = false;
+            }
+            
+            return capNotChecked;
+        };
+        
+        //Validation  for UAE Mobile Number
+        function isUAEMobNum(elem){
+            console.log('isUAEMobNum:::::');
+            var mob = $(elem).val();
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            var regex = /^((50|52|54|55|56|58)[0-9]{7})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                $(elem).parent().find('.frmErrMsg').remove();
+                $(elem).parent().parent().find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+                $(elem).parent().parent().append(errElem);
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        //  Method for assignfldVal(dateField)
+        function assignfldVal(val,fldId){cs[fldId].value=val;}
+        // shwTradeName     
+        function shwTradeName(a,md) {
+            if(a=="Change of Company Name"){
+                $(cs['cmpname']).hide();$(cs['apname']).show();
+                $(cs['cmpnamear']).hide(); $(cs['apnamear']).show();
+            }else{
+                $(cs['cmpname']).show(); $(cs['apname']).hide(); 
+                $(cs['cmpnamear']).show(); $(cs['apnamear']).hide();    
+            }
+        }
+        //shwDescription
+        function shwDescription(a) {
+            console.log('shwDescription:::::');
+            console.log('a:::'+a);
+            if(a != ''){
+                let flds = [cs['xcfn__c'],cs['xcna__c'],cs['xdedln__c'],cs['xzn']];
+                flds.forEach(function(i){
+                    $(i).parent().parent().show();
+                });
+            }
+            if(a=="New Company" || a=="New Branch"){
+                $(cs['cmpname']).hide(); $(cs['lcnum']).hide();
+                $(cs['apname']).show(); $(cs['apnum']).show();
+                
+                $(cs['cmpnamear']).hide(); $(cs['apnamear']).show();
+                $(cs['xdedc__c']).show();
+            }else{
+                $(cs['cmpname']).show();$(cs['lcnum']).show();
+                $(cs['apname']).hide();$(cs['apnum']).hide();
+                
+                $(cs['cmpnamear']).show();$(cs['apnamear']).hide();
+                $(cs['xdedc__c']).hide();
+            }
+            
+            if(a=="New Branch"){   
+                $('#iad').show();$('#aed').show();$('#pltn').show();$('#pltname').show();
+            }else{
+                $('#iad').hide();$('#aed').hide();$('#pltn').hide();$('#pltname').hide();
+            }
+            if(a=="Amendment" || a=='Renewal With Amendment'){
+                $('#amdcat').show();
+            }else{
+                $('#amdcat').hide();
+            }
+            
+            
+            cs['xltp__c'].value = a;
+            
+            cs['xadh__c'].value = (a=="New Company" || a=="Relocation from Dubai Main Land" || a=="New Branch")?"den;lc;":(a=="Renewal")?"der;lc;":(a=="Shift Location")?"des;lc;":(a=="Cancellation")?"dec;":(a=="Amendment")?"dea;lc;":(a=="Renewal With Amendment")?"der;dea;lc;":'';
+            
+            if(a!="Cancellation" && a!="Shift Location"){
+                cs['xadh__c'].value +="inf;kf;";
+            }
+            console.log('xadh__c:::'+cs['xadh__c'].value);
+        }
+        //Validate  update request and redirect to next page
+        function validateData(){
+            console.log('validateData:::');
+            
+            var elem = '';
+            var validated  = true;
+            //console.log('capNotChecked:::::'+capNotChecked);
+            //uncomment for captcha:::
+            if($('.g-recaptcha').length>0 && capNotChecked == false ){
+                alert("Please verify you're not a Robot!");
+                validated=false;
+            }
+            // $('.requiredFld').each(function(){
+            $('.requiredFld, .applMob').each(function(){
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                var v = $(this).val();
+                //console.log('id:::::'+$(this).attr("id"));
+                //console.log('v:::::'+v);
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            console.log('validated1::::'+validated);
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            console.log('validated1::::'+validated);
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated2::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            console.log('validated3::::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                next();
+            }
+        } 
+        function showDraftAlert2(){
+            var rqNum = '{!JSENCODE(req.Name)}';
+            $('#modal_alert_global').remove(); 
+            var cBlock = '<div class="modal fade modal-base" id="modal_alert_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body text-center pt-5 pb-5"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <div class="mb-3 fs-24" style="text-align:center;">Your Request has been saved!</div><div class="mb-3 fs-24">SR # <b>'+rqNum+'</b></div> <div class="col-xl-4"></div> <button class="col-xl-4 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" id="gDash">CLOSE</button> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_alert_global').modal('show');
+            $('#gDash').on('click',function(){
+                window.opener.location.reload(false);
+                window.close();
+            });
+        }
+        </script>
+        <style>
+            .select2-dropdown .select2-results > .select2-results__options {
+            min-height: 0px !important;
+            }
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="btnid,errmsg,saveRq,msg"
+                                     oncomplete="$('#preloader').fadeOut();hideTempLoader_input();loadData_jt();"
+                                     onbeforedomupdate="javascript: toggle_inputs();">
+                    <apex:param name="nextPage"  value="lrqup" assignTo="{!nxtPgUrl}"/>
+                </apex:actionFunction>
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2();" />
+                <!--<apex:actionFunction name="populateDedActs" action="{!populateDedACtJson}" oncomplete="createDedActOption();alert();" />-->
+                <apex:outputPanel >
+                    <c:guheader heading="{!srv.lbl__c}" uid="{!srv.uid__c}"  />
+                </apex:outputPanel>
+                <body class="base">
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                        </div>
+                        <div class="container">
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:srvdefcmp srv="{!srv}"/>
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    <div class="base-main-content">
+                                        <!--<c:grqbrdcrumbs req="{!req}" applicant="active" addon="" payment=""/>-->
+                                        <div class="steps steps-mobile">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        <b><apex:pageMessages id="msg"/></b>
+                                        
+                                        
+                                        <div>
+                                            <h4 class="mb-3 base-main-title">License details</h4>
+                                            <form class="form-style" id="app_details_form" action="">
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-12">
+                                                        <div class="form-group">
+                                                            <label>License type</label>
+                                                            <apex:inputHidden id="xltp__c" value="{!req.xltp__c}"/>
+                                                            
+                                                            <script type="text/javascript">
+                                                            cs['xltp__c']=getC('{!$Component.xltp__c}');
+                                                            
+                                                            </script>
+                                                            <div>
+                                                                <apex:selectList value="{!req.xltp__c}" id="xltp" multiselect="false" 
+                                                                                 styleClass="forDraft requiredFld form-control input-select2-flat"
+                                                                                 size="1" onchange="addInfo(this);checkEmptSel(this);shwDescription(this.value);showDocList(this);">
+                                                                    <apex:selectOption itemLabel="--None--"  itemvalue="" id="none"  />
+                                                                    <apex:selectOption itemLabel="New company"  itemvalue="New Company" id="new"  />
+                                                                    <apex:selectOption itemLabel="Relocation from Dubai mainland"  itemvalue="Relocation from Dubai Main Land" id="RelocationfromDubaiMainLand"  />
+                                                                    <apex:selectOption itemLabel="New branch"  itemvalue="New Branch" id="NewBranch"  />
+                                                                    <apex:selectOption itemLabel="Renewal"  itemvalue="Renewal" id="Renewal"  />
+                                                                    <apex:selectOption itemLabel="Renewal with amendment"  itemvalue="Renewal With Amendment" id="RenewalWithAmendment"  />
+                                                                    <apex:selectOption itemLabel="Amendment"  itemvalue="Amendment" id="Amendment"  />
+                                                                    <apex:selectOption itemLabel="Shift location"  itemvalue="Shift Location" id="ShiftLocation"  />
+                                                                    <apex:selectOption itemLabel="Cancellation"  itemvalue="Cancellation" id="cancellation"  />
+                                                                </apex:selectList> 
+                                                            </div>
+                                                            <apex:InputHidden id="xadh__c"  value="{!req.xadh__c}"/>
+                                                            <script type="text/javascript">
+                                                            cs['xadh__c']=getC('{!$Component.xadh__c}');
+                                                            
+                                                            cs['xltp']=getC('{!$Component.xltp}');
+                                                            cs['xltp__c']=getC('{!$Component.xltp__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-12" id="amdcat" style="display:none;">
+                                                        <div class="form-group">
+                                                            <label>Amendment category</label>
+                                                            <apex:InputHidden id="xcamc__c" value="{!req.xcamc__c}"/>
+                                                            <script type="text/javascript">
+                                                            cs['xcamc__c']=getC('{!$Component.xcamc__c}');
+                                                            </script>
+                                                            <div>
+                                                                
+                                                                
+                                                                <apex:selectList size="1" id="xcamc" value="{!req.xcamc__c}" 
+                                                                                 styleclass="requiredFld form-control input-select2-flat"
+                                                                                 onchange="shwTradeName(this.value);checkEmptSel(this);showAmendCatDocList(this)" >
+                                                                    <apex:selectOption itemLabel="--None--"  itemvalue="" id="none1"  />
+                                                                    <apex:selectOption itemLabel="Change of company name"  itemvalue="Change of Company Name"/>
+                                                                    <apex:selectOption itemLabel="Address change"  itemvalue="Address Change"/>
+                                                                    <apex:selectOption itemLabel="Change of activity"  itemvalue="Change of Activity"/>
+                                                                    <apex:selectOption itemLabel="Location Change"  itemvalue="Location Change"/>
+                                                                </apex:selectList>
+                                                            </div>
+                                                            <!--<apex:InputHidden  id="xcamc__c" value="{!req.xcamc__c}"/>-->
+                                                            <script type="text/javascript">
+                                                            cs['xcamc']=getC('{!$Component.xcamc}');
+                                                            cs['xcamc__c']=getC('{!$Component.xcamc}');
+                                                            
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <Label value="Approved Trade Name (English)" id="apname">Approved trade name (English)</Label>
+                                                            <Label value="Company Name (English)" id="cmpname" style="display:none;" >Company name (English)</Label>
+                                                            <script type="text/javascript">
+                                                            cs['apname']=document.getElementById("apname");
+                                                            cs['cmpname']=document.getElementById("cmpname");
+                                                            </script>
+                                                            <div class="requiredInput" id="xcfn__cRI">
+                                                                <div class="requiredBlock"></div>
+                                                                <apex:inputField id="xcfn__c" value="{!req.xcfn__c}"
+                                                                                 styleClass="requiredFld form-control" />
+                                                                <script type="text/javascript">
+                                                                cif='{!$Component.xcfn__c}_lkid';
+                                                                cs['xcfn__c']=getC('{!$Component.xcfn__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <apex:outputPanel >
+                                                                <apex:outputLabel value="Approved trade name (Arabic)"  id="apnamear"/>
+                                                                <apex:outputLabel value="Company name (Arabic)"  id="cmpnamear" style="display:none;"/>
+                                                                <script type="text/javascript">
+                                                                cs['apnamear']=getC('{!$Component.apnamear}');
+                                                                cs['cmpnamear']=getC('{!$Component.cmpnamear}');
+                                                                </script>
+                                                            </apex:outputPanel>
+                                                            <div class="requiredInput" id="xcna__cRI">
+                                                                <div class="requiredBlock"></div>
+                                                                <apex:inputField id="xcna__c" value="{!req.xcna__c}"
+                                                                                 styleClass="requiredFld form-control" />
+                                                                <script type="text/javascript">
+                                                                cs['xcna__c']=getC('{!$Component.xcna__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <apex:outputLabel value="Initial approval number " id="apnum" />&nbsp;
+                                                            <apex:outputLabel value="License number" id="lcnum" style="display:none"/>
+                                                            <script type="text/javascript">
+                                                            cs['apnum']=getC('{!$Component.apnum}');
+                                                            cs['lcnum']=getC('{!$Component.lcnum}');
+                                                            </script>
+                                                            <div class="requiredInput" id="xdedln__cRI">
+                                                                <div class="requiredBlock"></div>
+                                                                <apex:inputField id="xdedln__c" value="{!req.xdedln__c}"
+                                                                                 styleClass="requiredFld numOnly requiredFld form-control"/>
+                                                                <script type="text/javascript">
+                                                                cs['xdedln__c']=getC('{!$Component.xdedln__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- only for new branch -->
+                                                    <div class="col-lg-6" id="iad" style="display:none;" >
+                                                        <div class="form-group">
+                                                            <Label>Initial approval date</Label>
+                                                            <!-- New Date picker-->
+                                                            <div class="input-datepicker-group input-group">
+                                                                <apex:inputHidden id="xcpid" value="{!req.xcpid__c}" />
+                                                                <input type="text" class="requiredFld form-control input-datepicker" id="xcpid__c"
+                                                                       data-toggle="datetimepicker" data-target="#xcpid__c" value="{!req.xcpid__c}"
+                                                                       onchange = "assignfldVal(this.value,'xcpid'); checkDate(this,'pid')"
+                                                                       maxlength = "10" onkeydown="return false"/>
+                                                                <script type="text/javascript">
+                                                                cs['xcpid__c']=document.getElementById('xcpid__c');
+                                                                dformat('{!JSENCODE(req.xcpid__c)}','xcpid__c');
+                                                                cs['xcpid']=getC('{!$Component.xcpid}');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcpid__c">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-lg-6" id="aed" style="display:none;">
+                                                        <div class="form-group">
+                                                            <Label>Approval expiry date</Label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <apex:inputHidden id="xcped" value="{!req.xcped__c}" />
+                                                                <input type="text" class="requiredFld form-control input-datepicker formatDt" id="xcped__c"
+                                                                       data-toggle="datetimepicker" data-target="#xcped__c" value="{!req.xcped__c}"
+                                                                       onchange = "assignfldVal(this.value,'xcped');checkDate(this,'fid')" 
+                                                                       maxlength ="10" onkeydown="return false"/>
+                                                                <div class="input-group-append">
+                                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped__c">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                            cs['xcped__c']=document.getElementById('xcped__c');
+                                                            dformat('{!JSENCODE(req.xcped__c)}','xcped__c');
+                                                            cs['xcped']=getC('{!$Component.xcped}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-lg-6" id="pltn" style="display:none;" >
+                                                        <div class="form-group">
+                                                            <Label>Parent license trade number</Label>
+                                                            <div class="requiredBlock"></div>
+                                                            <apex:inputField id="xcsp__c" value="{!req.xcsp__c}"
+                                                                             styleClass="requiredFld form-control"/>
+                                                            <script type="text/javascript">
+                                                            cs['xcsp__c']=getC('{!$Component.xcsp__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-lg-6" id="pltname" style="display:none;">
+                                                        <div class="form-group">
+                                                            <Label>Parent license trade name</Label>
+                                                            <apex:inputField id="xcsfn__c" value="{!req.xcsfn__c}" 
+                                                                             styleClass="requiredFld form-control alphaChar"/>
+                                                            <script type="text/javascript">
+                                                            cs['xcsfn__c']=getC('{!$Component.xcsfn__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <Label>Site</Label>
+                                                            <apex:inputHidden value="{!req.xzn__c}" id="xzn__c" />
+                                                            <script type="text/javascript">
+                                                            cs['xzn__c']=getC('{!$Component.xzn__c}');
+                                                            </script>
+                                                            <div>
+                                                                <apex:selectList id="xzn" value="{!req.xzn__c}" size="1"
+                                                                                 styleClass="requiredFld forDraft form-control input-select2-flat" onchange="checkEmptSel(this)">
+                                                                    <apex:selectOption itemLabel="--None--" itemvalue=""/>
+                                                                    <apex:selectOption itemLabel="Site-A Arenco Tower" itemvalue="Site-A Arenco Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-A Business Central Towers WB" itemvalue="Site-A Business Central Towers WB"/>
+                                                                    <apex:selectOption itemLabel="Site-A Concord Tower" itemvalue="Site-A Concord Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-A Media One Tower" itemvalue="Site-A Media One Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-B SIDRA Tower" itemvalue="Site-B SIDRA Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C A l Shaiba Tower -The Gate" itemvalue="Site-C Al Shaiba Tower -The Gate"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Ameri Building" itemvalue="Site- CAl Ameri Building"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Hawai Residence" itemvalue="Site-C Al Hawai Residence"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Mashael Building" itemvalue="Site-CAl Mashael Building"/>
+                                                                    <apex:selectOption itemLabel="Site-C AL Noor Tower 1" itemvalue="Site-C AL Noor Tower 1"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Shafar Tower" itemvalue="Site-C Al Shafar Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Shafar Tower 1" itemvalue="Site-C Al Shafar Tower 1"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Shafar Tower 2" itemvalue="Site-C Al Shafar Tower 2"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Sheba Tower (The Gate)" itemvalue="Site-C Al Sheba Tower (The Gate)"/>
+                                                                    <apex:selectOption itemLabel="Site-C Al Yassat Tower" itemvalue="Site-CA l Yassat Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C API Residency" itemvalue="Site-C API Residency"/>
+                                                                    <apex:selectOption itemLabel="Site-C ART 12" itemvalue="Site-C ART 12"/>
+                                                                    <apex:selectOption itemLabel="Site-C ART 8" itemvalue="Site-C ART 8"/>
+                                                                    <apex:selectOption itemLabel="Site-C Auris Suites" itemvalue="Site-C Auris Suites"/>
+                                                                    <apex:selectOption itemLabel="Site-C Byblos Hotel" itemvalue="Site-C Byblos Hotel"/>
+                                                                    <apex:selectOption itemLabel="Site-C Cayan" itemvalue="Site-C Cayan"/>
+                                                                    <apex:selectOption itemLabel="Site-C Cayan " itemvalue="Site-C Cayan "/>
+                                                                    <apex:selectOption itemLabel="Site-C Comfort Inn Hotel" itemvalue="Site-C Comfort Inn Hotel"/>
+                                                                    <apex:selectOption itemLabel="Site-C Executive Heights" itemvalue="Site-C Executive Heights"/>
+                                                                    <apex:selectOption itemLabel="Site-C Grand Millennium Hotel" itemvalue="Site-C Grand Millennium Hotel"/>
+                                                                    <apex:selectOption itemLabel="Site-C Grosvenor Tower" itemvalue="Site-C Grosvenor Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Home to Home Hotel" itemvalue="Site-C Home to Home Hotel"/>
+                                                                    <apex:selectOption itemLabel="Site-C Icon Tower" itemvalue="Site-C Icon Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C i-Rise Office Tower" itemvalue="Site-C i-Rise Office Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Layia Oak Hotel" itemvalue="Site-C Layia Oak Hotel"/>
+                                                                    <apex:selectOption itemLabel="Site-C Liwa Tower" itemvalue="Site-C Liwa Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Mazoon House/Boutique 7" itemvalue="Site-C Mazoon House/Boutique 7"/>
+                                                                    <apex:selectOption itemLabel="Site-C Media Rotana" itemvalue="Site-C Media Rotana"/>
+                                                                    <apex:selectOption itemLabel="Site-C Metro Apartments" itemvalue="Site-C Metro Apartments"/>
+                                                                    <apex:selectOption itemLabel="Site-C Minc Tower" itemvalue="Site-C Minc Tower"/>
+                                                                     <apex:selectOption itemLabel="Site-C Nimir Building " itemvalue="Site-C Nimir Building "/>
+                                                                    <apex:selectOption itemLabel="Site-C Oaisis Residence" itemvalue="Site-C Oaisis Residence"/>
+                                                                    <apex:selectOption itemLabel="Site-C Pacific Building - Vista" itemvalue="Site-C Pacific Building - Vista"/>
+                                                                    <apex:selectOption itemLabel="Site-C Promoseven Tower" itemvalue="Site-C Promoseven Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Rose 6 Building" itemvalue="Site-C Rose 6 Building"/>
+                                                                    <apex:selectOption itemLabel="Site-C Saraya Building" itemvalue="Site-C Saraya Building"/>
+                                                                    <apex:selectOption itemLabel="Site-C Shk. Noora Building " itemvalue="Site-C Shk. Noora Building "/>
+                                                                    <apex:selectOption itemLabel="Site-C Smart Heights" itemvalue="Site-C Smart Heights"/>
+                                                                    <apex:selectOption itemLabel="Site-C Tameem House" itemvalue="Site-CTameem House"/>
+                                                                    <apex:selectOption itemLabel="Site-C The One Tower" itemvalue="Site-C The One Tower"/>
+                                                                    <apex:selectOption itemLabel="Site-C Thuraya Telecom." itemvalue="Site-C Thuraya Telecom."/>
+                                                                    <apex:selectOption itemLabel="Site-C Tower 7" itemvalue="Site-C Tower 7"/>
+                                                                    <apex:selectOption itemLabel="Site-C Two Towers" itemvalue="Site-C Two Towers"/>
+                                                                    <apex:selectOption itemLabel="Site-C Warsan Building" itemvalue="Site-C Warsan Building"/>
+                                                                    <apex:selectOption itemLabel="Site-D Landmark Tower" itemvalue="Site-D Landmark Tower"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 01" itemvalue="D3-Building 01"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 02" itemvalue="D3-Building 02"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 03" itemvalue="D3-Building 03"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 04" itemvalue="D3-Building 04"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 05" itemvalue="D3-Building 05"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 06" itemvalue="D3-Building 06"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 07" itemvalue="D3-Building 07"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 08" itemvalue="D3-Building 08"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 09" itemvalue="D3-Building 09"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 10" itemvalue="D3-Building 10"/>
+                                                                    <apex:selectOption itemLabel="D3-Building 11" itemvalue="D3-Building 11"/>
+                                                                    <apex:selectOption itemLabel="DPC-Makateb 1 - Plot No. MB.016" itemvalue="DPC-Makateb 1 - Plot No. MB.016"/>
+                                                                </apex:selectList>                                                                            
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                            cs['xzn']=getC('{!$Component.xzn}');
+                                                            cs['xzn__c']=getC('{!$Component.xzn}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <h4 class="mb-3 base-main-title">Business Activities</h4>
+                                        <div data-switch="true" data-json='{!JSENCODE(dedActsJson)}' style="display:none;"></div>
+                                        
+                                        <div id="hpr__cRI">
+                                            <div class="row" >
+                                                <div class="form-group form-style col-lg-12"> 
+                                                    <label>Select activities relevant to your business (select multiple)</label>
+                                                    <select id="hpr" data-placeholder="Input the activity name (Min 3 chars)" class="requiredFld form-control input-select2-flat dum"
+                                                            multiple="multiple" onchange="activitiesOnchange();checkEmptSel(this)" >
+                                                        <!--<apex:repeat value="{!dedActivities}" var="a">
+<option id="{!a.Id}" value="{!a.Name}:{!a.id}">{!a.Name}</option>
+</apex:repeat>-->
+                                                    </select>
+                                                    <apex:inputHidden id="hpr__c" value="{!req.hpr__c}"  />
+                                                    <apex:inputHidden id="xuvdet__c" value="{!req.xuvdet__c}"   />
+                                                    <script type="text/javascript">
+                                                    cs['hpr__c']=document.getElementById('{!$Component.hpr__c}');
+                                                    cs['xuvdet__c']=document.getElementById('{!$Component.xuvdet__c}');
+                                                    //creating select option for Activities
+                                                    function createDedActOption(){
+                                                        console.log('createDEdActOption::::::');
+                                                        var activities = $("[data-json]").data("json");
+                                                        var opts='';
+                                                        for(var j = 0; j < activities.length; j++){
+                                                            var c = activities[j];
+                                                            var opt = '<option id="'+c.Id+'" value="'+c.Name+':'+c.Id+'">'+c.Name+'</option>';
+                                                            opts += opt;
+                                                        }
+                                                        $('#hpr').find('option').remove();
+                                                        $('#hpr').append(opts);
+                                                        $("#hpr").select2({
+                                                            language: {
+                                                                inputTooShort: function (args) {
+                                                                    return "Min 3 chars required to search.";
+                                                                },
+                                                                noResults: function () {
+                                                                    return "Not Found.";
+                                                                },
+                                                                searching: function () {
+                                                                    return "Searching...";
+                                                                }
+                                                            },
+                                                            minimumInputLength: 3
+                                                            
+                                                        });
+                                                    }
+                                                    
+                                                    
+                                                    </script>
+                                                </div>
+                                                
+                                            </div>
+                                            
+                                        </div>
+                                        <h4 class="mb-3 base-main-title">Contact Information</h4>
+                                        
+                                        <div class="row row-lg">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <Label>Name</Label>
+                                                    <apex:inputField id="xchn__c" value="{!req.xchn__c}"
+                                                                     styleClass="requiredFld form-control"/>
+                                                    <script type="text/javascript">
+                                                    console.log('Name::::'+getC('{!$Component.xchn__c}'));
+                                                    cs['xchn__c']=document.getElementById('{!$Component.xchn__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Mobile</label>
+                                                    <div class="d-flex">
+                                                        <div style="flex-basis: 150px;width: 150px;">
+                                                            <div class="form-control">
+                                                                +971
+                                                            </div>
+                                                        </div>
+                                                        <apex:inputField type="text"  value="{!req.xcmob__c}" id="xcmob__c"
+                                                                         styleClass="applMob form-control ml-3 numOnly"
+                                                                         onchange="isUAEMobNum(this)"/>
+                                                        <script type="text/javascript">
+                                                        cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <Label>Email</Label>
+                                                    <apex:inputField value="{!req.xceml__c}" styleClass="requiredFld form-control"
+                                                                     onkeyup="checkEmail(this)" id="xceml__c"/>
+                                                    <script type="text/javascript">
+                                                    cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <Label>Notes (optional)</Label>
+                                                    <apex:inputField id="xadtx4__c" value="{!req.xadtx4__c}" 
+                                                                     styleClass="form-control " style="line-height: 7.5px;"/>
+                                                    <script type="text/javascript">
+                                                    cs['xadtx4__c']=getC('{!$Component.xadtx4__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <apex:outputPanel styleClass="row" rendered="{!ISBLANK(req.id)}">
+                                            <div class="col-lg-6">
+                                                <div class="g-recaptcha" data-sitekey="{!sitekey}" style="transform:scale(0.90);" data-callback="correctCaptcha" ></div>
+                                                <script src='https://www.google.com/recaptcha/api.js'>
+                                                </script>
+                                            </div>
+                                        </apex:outputPanel>
+                                        
+                                        
+                                        
+                                        <!-- .base-main-content -->
+                                        <apex:outputPanel id="btnid">
+                                            <div class="base-main-footer">
+                                                <apex:outputPanel styleClass="base-nav" rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                                                    <a href="#" onClick="boSave()"
+                                                       class="btn btn-primary base-nav-next">
+                                                        SAVE
+                                                    </a>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel styleClass="base-nav" rendered="{!OR(ispu,isgu)}">
+                                                    <a href="#" onClick="validateData()"
+                                                       class="btn btn-primary base-nav-next">
+                                                        NEXT
+                                                    </a>                                                
+                                                </apex:outputPanel>
+                                            </div>
+                                            <!-- .base-main-footer -->
+                                        </apex:outputPanel> 
+                                    </div>
+                                    <!-- .base-main -->
+                                </div>
+                                <!-- .base-layout -->
+                            </div>
+                            <!-- .container -->
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        <!-- Modal -->
+                    </div>
+                </body>
+                
+            </apex:pageBlock>
+        </apex:form>
+        <!--        <c:guFooter />-->
+    </html>    
+    <script>
+    function checkEmptSel(e){
+        //debugger;
+        var v = $(e).val();
+        console.log(740+' --- '+v);
+        if(v!=''&&v!='--None--'&&v!='Select')
+            removeValError($(e));
+    }
+    
+    function checkValidDate(elem,event){
+        console.log('checkValidDate:::::');
+        
+    }
+    
+    </script>
+</apex:page>

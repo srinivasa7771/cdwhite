@@ -1,0 +1,1493 @@
+<apex:component >
+    <apex:attribute name="cv" description="Component view" type="String"  />
+    <apex:attribute name="accPrk" description="Account park short" type="String"  />
+    <apex:attribute name="isFrl" description="is freelancer" type="String"  />
+    <script>
+    
+    var isFl = '{!isFrl}';
+    try{if(serviceId!=null&&serviceId!=undefined){console.log(serviceId)}else{var serviceId='';}}catch(e){var serviceId='';}
+     function getAge(dateString) {  
+    var today = new Date(); 
+    var birthDate = new Date(dateString);   
+    var age = today.getFullYear() - birthDate.getFullYear();    
+    var m = today.getMonth() - birthDate.getMonth();    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {  
+        age--;  
+    }   
+    return age; 
+}
+    function checkDate1(elem, type) {
+        var uid = cs["uid"].value;
+        checkDate(elem, type, uid,$('#genderid').val());
+    }
+    function validAlphaNumeric(e){  /**Ex: <input type="text" onkeyup="validAlphaNumeric(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    function validAlphaOnly(e){ /**Ex: <input type="text" onkeyup="validAlphaOnly(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^a-zA-Z ]*$/, ''));
+    }
+    function onfileUpload() {
+        $('#modal_upload_passport').modal('show');
+    }
+    
+    function ocrHandleBrowseClick() {
+        
+        document.getElementById('files').value = '';
+        $('#image-area div').show();
+        $('#image-area img').hide();
+        $('#saveAtt').addClass('disabled');
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    
+    function ocrCheckFile(e) {
+        $('#saveAtt').removeClass('disabled');
+        if (e != undefined || $(e).length > 0) showPrview(e);
+    }
+    //, false);
+    function showPrview(elem) {
+        if (elem.files && elem.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image-area div').hide();
+                $('#image-area img').show().attr('src', e.target.result);
+            }
+            reader.readAsDataURL(elem.files[0]);
+        }
+        $('#uploadDel').unbind().on('click', function() {
+            if (document.getElementById('files').value == '') {
+                $('#uploadToolsValidation').modal("show");
+                return;
+            }
+            document.getElementById('files').value = '';
+            $('#image-area div').show();
+            $('#image-area img').hide();
+            $('#saveAtt').addClass('disabled');
+        });
+    }
+    var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+    var onArrVisa=["Andorra", "Australia", "Austria", "Belgium", "Brunei", "Bulgaria", "Canada", "Croatia", "Cyprus,", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Holland", "Hong Kong", "Hungary", "Iceland", "Ireland", "Italy", "Japan", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Malaysia", "Monaco", "Netherlands", "New Zealand", "Norway", "Paraguay", "Poland", "Portugal", "Romania", "San Marino", "Singapore", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Vatican City","Ukraine"];
+    var newCountrVals = [{'United Kingdom of Great Britain and Northern Ireland':'United Kingdom'},{'Papua New Guinea':'Papua New Guinea'},{'United States of America':'United States'},{'Syrian Arab Republic':'Syria'}];//,{'Iran':'Iran'},{'Iran':'Iran'}
+    function natCheck(e){
+        $('#modal_confirm_information').find('input,select').removeAttr('disabled');
+        $('#modal_confirm_information_mem').find('input,select').removeAttr('disabled');
+        $('.noData').hide();
+        var country=$(e).find("option:selected").text();
+        if(isFl!='true'&&GCC_Nations.includes(country) && serviceId != '068' &&  serviceId!='uma' && serviceId != '123' && serviceId != '149' && serviceId != '087' && serviceId != '088'){
+            if(serviceId=='518')
+                $('.rqrdMsg').html('Applicant is a GCC national, please apply for Non-Sponsored ID card').css('color', 'red').fadeOut().fadeIn();
+            else 
+                $('.rqrdMsg').html('GCC nationals are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+        }
+        else{
+            $('.rqrdMsg').html('All fields are mandatory').css('color', '#000');
+        }
+        $('.fnLbl').text('Given name');
+        $('.optLn1').show();
+        $('#optionallnm1').parent().parent().hide();
+        if(cs["firstNameCountries"]&&cs["firstNameCountries"].value.split(';').includes(country)){
+            $('.fnLbl').text('Full name');
+            $('.optLn1').hide();
+        }
+        if(country=='India' || country=='Pakistan'|| country=='Uzbekistan'){
+            $('#optionallnm1').parent().parent().show();
+            if(country=='Pakistan'){
+                $('#optionalfnm1').parent().parent().show();
+            }
+        }
+    }
+    function attachmentSaveEIDA() {
+        //alert($('#eidaid').val());
+        //cs["xcnc__ocr"].value= $('[fldName="country"]').find("option:selected").text(); 
+        createJSON();
+    }
+    
+    function attachmentSave1() {
+        
+        //$('.attBox').eq(0).find('.loader_img').show();
+        if(cs["firstNameCountries"].value.split(';').includes($('#nat option:selected').text())){
+            if(!$('#fnameid').val().includes(' '))
+                cs["xcln__c"].value = $('#fnameid').val().split(' ')[0];
+            else{
+                cs["xcfn__c"].value = $('#fnameid').val().split(' ')[0];
+                cs["xcln__c"].value = $('#fnameid').val().replace(cs["xcfn__c"].value,'').trim();
+            }
+        }
+        else{
+            cs["xcfn__c"].value = $('#fnameid').val();
+            cs["xcln__c"].value = $('#lnameid').val();
+        }
+        if($('#optionallnm1').is(':checked')){
+            cs["xcln__c"].value = $('#fnameid').val();
+            cs["xcfn__c"].value = '';
+        }
+        var cVl = $('[fldName="country"]').find("option:selected").text();
+        newCountrVals.forEach(function(v,i){
+            if(cVl==Object.keys(v).toString()){
+                cVl = Object.values(v).toString();
+            }
+        });
+        cs["xcnc__c"].value = cVl;
+        cs["xcpic__c"].value = cVl;
+        cs["xcp__c"].value = $('#passportid').val();
+        cs["pid__c"].value = $('#datepicker2').val();
+        cs["ped__c"].value = $('#datepicker3').val();
+        cs["bd__c"].value = $('#datepicker4').val();
+        cs["xcpip__c"].value = $('#poiid').val();
+        cs["xcbp__c"].value = $('#pobid').val();
+        
+        if ($('#genderid').val() == 'M'){
+            cs["xcslt__c"].value = 'Mr.';
+            cs["Gender__c"].value = 'Male';
+        }
+        else{
+            cs["xcslt__c"].value = 'Ms.';
+            cs["Gender__c"].value = 'Female';
+        }
+        var invalData = false;
+        $('.requiredFld').each(function() {
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if (!v ||v == '--None' ) {//|| v.lenght < 1
+                if ($(this).is('select')) {
+                    showErrMsg($(this).next().find('.select2-selection'), 'rqrd', 'invalid');
+                } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                    showErrMsg($(this), 'rqrdDate', 'invalid');
+                } else
+                    showErrMsg($(this), 'rqrd', 'invalid');
+                invalData = true;
+                $('.rqrdMsg').html('All fields are mandatory').css('color', 'red').fadeOut().fadeIn();
+            } else
+                showErrMsg($(this), 'rqrd', true);
+        });
+        for(var x=0;x<$('.modal-body .input-datepicker').length;x++){
+            var i = $('.modal-body .input-datepicker')[x]; 
+            var vl = $(i).val();
+            if($(this).is(':visible')){
+                if (vl.length != 10 || vl.match(/\//g) == null) {
+                    showErrMsg($(i), 'dob', 'invalid');
+                    invalData = true;
+                } else if (vl.match(/\//g) != null) {
+                    if (vl.match(/\//g).length != 2) {
+                        showErrMsg($(i), 'dob', 'invalid');
+                        invalData = true;
+                    }
+                }
+            }
+        }
+        var uid = cs["uid"].value;
+        checkAllDates('dateCheck', uid,$('#genderid').val());
+        checkdobPid($('[validationname="dob"]'), $('[validationname="pid"]'));
+        if ($('.frmErrMsg').length > 0 && $('.frmErrMsg').is(':visible')) {
+            invalData = true;
+        }
+        if (invalData) {
+            invalData = false;
+            return;
+        }
+        var isGCCnational = false;
+        var isAllowedOA = true;
+        var country = $('[fldName="country"]').find("option:selected").text();
+        if (isFl!='true'&&GCC_Nations.includes(country))
+            isGCCnational = true;
+        if (!onArrVisa.includes(country))
+            isAllowedOA = false;
+        if((serviceId=='058'||serviceId=='074')&&onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants can get the on arrival visa').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        if (isGCCnational && serviceId != '068' && serviceId != '123' && serviceId != '149'  && serviceId != '087' && serviceId != '088') {
+            if(serviceId=='518')
+                $('.rqrdMsg').html('Applicant is a GCC national, please apply for Non-Sponsored ID card').css('color', 'red').fadeOut().fadeIn();
+            else 
+                $('.rqrdMsg').html('GCC nationals are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        if(serviceId=='181'&&!onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        /*if (isAllowedOA==false && MEorOA.includes('extend visa')) {
+            $('.rqrdMsg').html(country+' nationality applicants are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }*/
+        if ($('#genderid').val() == 'M' && (serviceId == '512' || serviceId == '117')) {
+            $('.rqrdMsg').html('Applicant should be Female to apply for Spouse Visa Transfer').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        
+        /* var adh= cs['xadh__c'].value;    
+        var n = adh.indexOf("ic;"); 
+        var date1 = $('#datepicker4').val();    
+        var date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];    
+        if('{!cv}'=='NewVisa' && n=='-1' && getAge(date)<50){   
+            $('.rqrdMsg').html('GDRFA temporarily stopped issuing new employment visa (entry visas) BELOW 50 Yrs outside the country applicant(s).').css('color', 'red').fadeOut().fadeIn();    
+            return; 
+            }*/
+        
+        //cs["xcpid__c"].value = new Date();
+        //cs["xcpid__c"].value =  formatDate($('#datepicker2').val());
+        //cs["xcped__c"].value = formatDate($('#datepicker3').val());
+        //cs["xcbd__c"].value = formatDate($('#datepicker4').val());
+        $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+        $('#modal_confirm_information').modal('hide');
+        
+        saveRequest();
+    }
+    
+    function ocrSaveAttachment(elem) {
+        if ($(elem).hasClass('disabled')) return;
+        $('#image-area div').show();
+        $('#image-area img').hide();
+        $('.attVals').each(function() {
+            var val = $(this).val();
+            if ($('#files').val() == val) alert('File already uploaded!');
+        });
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            ocrHandleFileSelect();
+            //document.getElementById('files').addEventListener('change', ocrHandleFileSelect, false);
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    
+    function enableAllatt() {
+        $('.attBox').eq(0).find('.loader_img').hide();
+        $('.disabled-box').removeClass('disabled-box');
+        $('*').removeClass('loadingProgress');
+    }
+    </script>
+    
+    <div class="modal fade modal-base" id="modal_EIDA_confirm_information" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached EIDA copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label class="d-block">Title</label>
+                                    <div class="from-group reqRadio">
+                                        <apex:outputPanel style="display:inline-block" styleClass="mb-4">
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Mr" value="Mr." onchange="SalOnChange('Mr.')"/>
+                                                <span> Mr. </span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Mrs" value="Mrs." onchange="SalOnChange('Mrs.')"/>
+                                                <span> Mrs. </span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Ms" value="Ms." onchange="SalOnChange('Ms.')"/>
+                                                <span> Ms. </span>
+                                            </label>
+                                            <div class="option-error frmErrMsg" id="titleErr" style="display:none">Please select an option!</div>
+                                            
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>ID Number</label>
+                                        <input type="text" fldName="ID_Number" id="eidaid" class="requiredFldPop numOnly form-control forEdit" value=""  onkeydown="updateEidaFormat(this,event)" onchange="vEida(this)"/>
+                                        <script type="text/javascript">
+                                        cs['xid__ocr']=document.getElementById('eidaid');
+                                        </script>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>Nationality</label>
+                                        <select class="form-control requiredFldPop input-select2-flat forEdit" onchange="natCheck(this)" extFld='type' id="nat2"  extFld1='Country Code' fldName="country2">
+                                            <script type="text/javascript">
+                                            cs['xcnc__ocr']=getC('nat2'); var nationalityOptions2= '';
+                                            for(var x=0;x<nationality_arr.length;x++){
+                                                var j = nationality_arr[x];  
+                                                var opt1 = '<option value="'+j.countryName+'">'+j.countryName+'</option>'; nationalityOptions2 += opt1;
+                                            }
+                                            $('[fldName="country2"]').append(nationalityOptions2);
+                                            </script>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div>
+                                        <label>Name</label>
+                                        <input type="text" fldname="Name" id="nameid" class=" requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xcfn__ocr']=document.getElementById('nameid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div>
+                                        <label>Email</label>
+                                        <input type="text" onkeyup="checkEmail(this);" fldname="emailid" id="emailid" class="requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xceml__ocr']=document.getElementById('emailid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Mobile number</label>
+                                    <div class="d-flex">
+                                        <div style="flex-basis: 110px;width: 110px;">
+                                            <input type="text" disabled="true" class="form-control" value="+971" />
+                                        </div>
+                                        <input type="text" onchange="isUAEMobNum(this);" onkeyup="validDigits(this);" fldname="mobileid" id="mobileid" class="applMob form-control ml-3 forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xcmob__ocr']=document.getElementById('mobileid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addEIDABtn" style="color: white !important;" onclick="attachmentSaveEIDA();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                            
+                            <!-- .col -->
+                            
+                        </div>
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Modal for vehicle registration starts -->
+    <div class="modal fade modal-base" id="modal_RC_confirm_information" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                
+                                <!--<div class="form-group">
+<label class="d-block">Vehicle type</label>
+<div class="from-group reqRadio">
+<input type="text" onchange="setToRQFld('xvn__c',this)" fldName="VehType_RC" id="xvn__c" class="requiredFldPop form-control" value="" />
+<script type="text/javascript">
+//cs['xvn__c'].value=document.getElementById('xvn__c').value;
+</script>
+</div>
+</div>-->
+                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>Plate number</label>
+                                        <input type="text" fldName="pltNum_RC" onkeyup="validAlphaNumeric(this);" onchange="setToRQFld1(this);" id="xpveh__c" id1="xsvn__c" class="requiredFldPop form-control forEdit" value=""/>
+                                        <script type="text/javascript">
+                                        //cs['xvnum__c']=document.getElementById('xvnum__c');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Registration expiry date</label>
+                                    <div class="input-datepicker-group input-group">
+                                        <input type="text" onchange="checkDate(this,'fid');" class="vRegDate dateCheck requiredFldPop form-control input-datepicker forEdit" id="RegDate_RC"
+                                               data-toggle="datetimepicker" fldName="RegDate_RC" validationname="fid" data-target="#RegDate_RC" />
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#RegDate_RC">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div>
+                                        <label>Place of registration</label>
+                                        <!--<input type="text" onchange="setToRQFld1(this)" id="xppor__c" id1="xspor__c" fldname="por_RC" class="requiredFldPop form-control" value="" />-->
+                                        <select id="xppor__c" onchange="setToRQFld1(this)" id1="xspor__c" fldname="por_RC" class="requiredFldPop form-control input-select2-flat">
+                                            <option value=''>--None--</option>
+                                        </select>
+                                    </div>
+                                    <script>
+                                    var porNations='';
+                                    var por = ["Abu Dhabi", "Ajman", "Bahrain", "Dubai", "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                    for(var x=0;x<por.length;x++){
+                                        var j = por[x];
+                                        var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                        porNations += opt1;
+                                    }
+                                    $('#xppor__c').append(porNations);
+                                    setTimeout(function(){$('#xppor__c').select2();},2000);
+                                    
+                                    
+                                    </script>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addVRCBtn" style="color: white !important;" onclick="attachmentSaveVRC();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade modal-base" id="modal_RC_confirm_information_back" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label class="d-block">Vehicle type</label>
+                                    <div class="from-group">
+                                        <input type="text" onchange="setToRQFld('xvn__c',this)" fldName="VehType_RC" id="xvn__c" class="requiredFldPop form-control" value="" />
+                                        <script type="text/javascript">
+                                        //cs['xvn__c'].value=document.getElementById('xvn__c').value;
+                                        </script>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="d-block">Vehicle model</label>
+                                    <div class="from-group reqRadio">
+                                        <input type="text" fldName="VehModel_RC" id="vModel" class="requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        //cs['xvn__c'].value=document.getElementById('xvn__c').value;
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addVRCBtn" style="color: white !important;" onclick="attachmentSaveVRC();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade modal-base" id="modal_confirm_information" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Review and confirm information</h2>
+                    <p>
+                        We have captured below information from uploaded documents, please review, correct and confirm to proceed.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        <span class='gccNational' style="color:red; display:none">Applicant should not be GCC national, please apply for Non-Sponsored ID card</span>
+                    </p>
+                    <p class='noData' style="display:none">
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span>We couldn't get the data from the attachment. Please select <b>Nationality</b> to proceed!</span>
+                    </p>
+                    <p style="display:none;">
+                        <label class="custom-checkbox custom-checkbox-sm mr-4" >
+                            <input type="checkbox" class="focus" id="optionallnm1" name="optionalLN" onchange="lastNameOpt1(this)"/>
+                            <span>Please select if applicant’s surname is not mentioned in the passport.</span>
+                        </label>
+                    </p>
+                    <div class="form-style row row-lg">
+                        
+                        <div class="form-group col-md-6 inEditOnly">
+                            <div class="col-md-12 form-group">
+                                <label>Attached Passport copy</label>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6 inEditOnly psprtPrv">
+                            <img src="" id="" style="width:20%;" />
+                            <a class="btn btn-outline-primary btn-outline-primary-2" onclick="deleteItem('dsadsd');" style="padding: 0.3rem;"><i class="icon-delete"></i></a>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Nationality</label>
+                                <select onchange="natCheck(this)" class="requiredFld form-control input-select2-flat forEdit" extFld='type'
+                                        id="nat"    extFld1='Country Code' fldName="country">
+                                    <!--<option value="">Select</option>-->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 optLn1">
+                            <div class="form-group">
+                                <label>Surname</label>
+                                <input type="text" maxlength="80" onkeyup="validAlphaOnly(this)" fldName="Surname" id="lnameid" class="requiredFld form-control forEdit" value="" />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label><elem class="fnLbl">Given name</elem></label>
+                                <input type="text" maxlength="40" onkeyup="validAlphaOnly(this)" fldname="Given_Name" id="fnameid" class="requiredFld form-control forEdit" value="" />
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <div>
+                                    <select class="requiredFld form-control input-select2-flat forEdit" fldName="MR_Gender" id="genderid">
+                                        <!--<option value="">Select</option>-->
+                                        <option value="M">Male</option>
+                                        <option value="F">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label>Date of birth</label>
+                                <!--<input min="1990-01-01" max="2030-12-31" type="date"  onchange="checkDate(this,'dob')" 
+class="form-control input-datepicker forEdit" validationName="dob" fldName="Date of Birth2" />
+-->
+                                <div class="input-datepicker-group input-group">
+                                    <input type="text" onchange="checkDate1(this,'dob')" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="dob" fldName="Date_of_Birth" id="datepicker4"
+                                           data-toggle="datetimepicker" validationname="dob" data-target="#datepicker4" />
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        <!-- .row -->
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Passport Place of Issue</label>
+                                <input type="text" fldname="Place_of_Issue"  maxlength="200" id="poiid" class="requiredFld form-control forEdit" value="" />
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Passport number</label>
+                                <input type="text" maxlength="15" onkeyup="validAlphaNumeric(this)" fldName="Passport_No" id="passportid" class="requiredFld form-control forEdit" value="" />
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label>Passport Issue Date</label>
+                                <!--  <input min="1990-01-01" max="2030-12-31" type="date" 
+class="form-control input-datepicker forEdit" validationName="pid" fldName="Date of Issue2" />-->
+                                <div class="input-datepicker-group input-group">
+                                    <input onchange="checkDate(this,'pid')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="pid" fldName="Date_of_Issue2" id="datepicker2" 
+                                           validationname="pid" data-toggle="datetimepicker" data-target="#datepicker2" />
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label>Passport Expiry Date</label>
+                                <!--  <input min="1990-01-01" max="2030-12-31" type="date" 
+class="form-control input-datepicker forEdit" validationName="ped" fldName="Date of Expiry2" />
+-->
+                                <div class="input-datepicker-group input-group">
+                                    <input onchange="checkDate(this,'ped')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="ped" 
+                                           validationname="ped" fldName="Date_of_Expiry2" id="datepicker3"
+                                           data-toggle="datetimepicker" data-target="#datepicker3" />
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        
+                        <!-- .row -->
+                        
+                        
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Place Of Birth</label>
+                                <input type="text" maxlength="40" fldName="Place_of_Birth" id="pobid" class="requiredFld form-control forEdit" value="" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row row-lg">
+                        <div class="col-lg-6"></div>
+                        <div class="col-lg-6">
+                            <div class="form-group text-right">
+                                <label>&nbsp;</label><br />
+                                <a id="addMemBtn" style="color: white !important;" onclick="attachmentSave1()" class="btn btn-primary">CONFIRM</a>
+                            </div>
+                        </div>
+                        <!-- .col -->
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="uploadToolsValidation" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h1>Please upload a document to perform these operations.</h1>
+                    <p>
+                        Use <b>UPLOAD</b> or <b>SCAN</b> to upload an image!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_upload_passport" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close psclose" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    
+                    <div class="row">
+                        <div class="col-md-6 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4"><div class="docname"></div></h2>
+                                    <p>
+                                        Note: Please ensure that the image/document you are uploading is in colour and that the orientation is accurate. Blurred, faded or inaccurate images may delay or result in the rejection of your application.
+                                    </p>
+                                    <p>
+                                        Once you have scanned or uploaded your image/document, you can use the edit tools to crop or rotate. Once done, click the “SAVE FILE” button to attach the file to the application.  
+                                    </p>
+                                    <input type="file" onchange="ocrCheckFile(this)" id="files" name="files" style="display: none;"/>
+                                    <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="ocrHandleBrowseClick();">
+                                        UPLOAD
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;">
+                                        SCAN
+                                    </button><br/>
+                                    
+                                    <p class="mt-4">
+                                        Note: A plugin is needed for in order to scan your image.
+                                    </p>
+                                    
+                                </div>
+                                <div class="text-right d-none d-md-block">
+                                    <a onclick="ocrSaveAttachment(this);" id="saveAtt" style="color: #fff;" 
+                                       class="btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                    <!--<button class="btn btn-primary btn-block-sm button-process-upload" id="ocrSaveAttachment">SAVE</button>-->
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        <div class="col-md-6 order-md-1">
+                            
+                            <div class="image-area" id="image-area" style="background-color: #D8D8D8;">
+                                <div style="background-color: #D8D8D8;padding-top: 100%;"></div>
+                                <img src="" style="width:80%;display:none;" />
+                            </div>
+                            
+                            <div class="text-center text-md-left mt-3">
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-crop"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-left"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-right"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" id="uploadDel"><i
+                                                                                                                           class="icon-delete"></i></a>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        
+                    </div>
+                    <!-- .row -->
+                    <div class="text-right d-block d-md-none mt-4">
+                        <button class="btn btn-primary btn-block-sm button-process-upload">SAVE</button>
+                    </div>
+                    
+                </div>
+                <!-- .modal-body -->
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="modal fade modal-base" id="modal_process_upload" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <!--<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+<i class="icon-close"></i>
+</button>-->
+                <div class="modal-body">
+                    
+                    <div class="process-upload-wrapper">
+                        <h2 class="mb-4">Processing the image</h2>
+                        
+                        <div class="process-upload-image">
+                            <img src="/resource/assets_NUI/images/process-{!accPrk}.png" alt="" />
+                            <!--<apex:image value="{!URLFOR($Resource.assets_NUI,'images/process{!accPrk}.png')}"/>-->
+                            <i class="icon-process"></i>
+                        </div>
+                        
+                        <p>
+                            We are currently extracting information from the uploaded image/document to confirm details.
+                        </p>
+                        <p>
+                            This process may take a minute.
+                        </p>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    <!--  OCR  --->
+    <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-de7e2ef6bfefd24b79a3f68b414b87b8db5b08439cac3f1012092b2290c719cd.js"></script>
+    <script id="rendered-js">
+        
+        // Check for the File API support.
+        /* if (window.File && window.FileReader && window.FileList && window.Blob) {
+            document.getElementById('files').addEventListener('change', ocrHandleFileSelect, false);
+            //document.getElementById('saveAttachment').addEventListener('click', ocrHandleFileSelect, false);
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }*/
+        
+        var processImg = "{!URLFOR($Resource.assets_NUI,'images/process.png')}";
+    var accPrk = "{!accPrk}";
+    var passportData;
+    var currentAddingMemData={};
+    var memData_x = {};
+    var f = {};
+    var datesTobeFromatted = ["Date of Birth2","Date of Birth","Date of Expiry","Date of Issue","Date of Issue2","Date of Expiry2"];
+    var monthObj = {'JAN':'01','FEB':'02','MAR':'03','APR':'04','MAY':'05','JUN':'06','JUL':'07','AUG':'08','SEP':'09','OCT':'10','NOV':'11','DEC':'12'};
+    
+    function lastNameOpt1(e){
+        if($(e).is(':checked')==false){
+            $('.optLn1').show();
+            cs["noFnm__c"].value = false; cs["noFnm__c"].checked = false;
+            
+        }else if($(e).is(':checked')==true){
+            $('.optLn1').hide();
+            // cs["xcln__c"].value = ''; cs["xclnar__c"].value = ''; 
+            cs["noFnm__c"].value = true;cs["noFnm__c"].checked = true;
+            $('#lnameid').val($('#fnameid').val().split(' ')[$('#fnameid').val().split(' ').length-1]);
+            
+        }
+    }
+    
+    function formatDate(date){
+        var d ;
+        
+        if(date.includes(' ')){
+            date = date.toLowerCase();
+            d = date.split(' ');
+            
+            if(Object.keys(monthObj).includes((d[1].substring(0,3)).toUpperCase())){    // case-1: date format -- 01 Jan 2020
+                
+                return date.split(d[1].toLowerCase()).join(monthObj[(d[1].substring(0,3)).toUpperCase()]).split(' ').join('/');
+            }
+            else                                                        // case-2: date format -- 01 01 2020
+                return date.split(' ').join('/');
+        }
+        else if(date.includes('-'))                                     // case-3: date format -- 01-01-2020
+            return date.split('-').join('/');
+            else if(date.includes('.'))                                   // case-4: date format -- 01.01.2020
+                return date.split('.').join('/');
+                else                                                            // case-5: date format -- 01/01/2020
+                    return date;
+    }
+    var nationalityOptions= '<option value="">--None--</option>';
+    for(var x=0;x<nationality_arr.length;x++){
+        var j = nationality_arr[x];
+        var vl = j.nationality;
+        newCountrVals.forEach(function(v,i){
+            if(j.countryName==Object.keys(v).toString()){
+                vl = Object.values(v).toString();
+            }
+        });
+        var opt1 = '<option value="'+vl+'">'+j.countryName+'</option>';
+        nationalityOptions += opt1;
+    }
+    $('[fldName="country"]').append(nationalityOptions);
+    
+    function ocrHandleFileSelect(evt) {
+        
+        //var f = evt.target.files[0]; // FileList object
+        
+        f = $('#files')[0].files[0]
+        
+        var reader = new FileReader();
+        
+        // $('#table_content').empty();
+        
+        // Closure to capture the file information.
+        
+        reader.onload = function (theFile) {
+            
+            return function (e) {
+                
+                var binaryData = e.target.result;
+                
+                //Converting Binary Data to base 64
+                
+                base64String = window.btoa(binaryData);
+                
+                //showing file converted to base64
+                
+                cs["imageBase64"].value = base64String;
+                
+                if(cs["parseId"].value == 'true'){
+                    
+                    $.ajax({
+                        
+                        //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                        
+                        url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                        
+                        beforeSend: function(xhr) {
+                            
+                            //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb");
+                            
+                            xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9");
+                            
+                        },
+                        
+                        type: 'POST',
+                        
+                        dataType: 'json',
+                        
+                        crossOrigin: true,
+                        
+                        contentType: 'application/json',             
+                        
+                        processData: false,
+                        
+                        data: '{"image":'+base64String+'}',
+                        
+                        success: function (data) {
+                            
+                            var t=JSON.stringify(data);
+                            
+                            //alert(t);
+                            //custom for passport
+                            t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                            replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                            t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                            t = t.replace("ID Number", "ID_Number").replace('Name', 'Name');
+                            t=t.replace('Given Name','Given_Name').replace('MR Passport NO','Passport_No').replace('MR Gender','MR_Gender');
+                            t=t.replace('Traffic Plate #','pltNum_RC1').replace('Traffic Plate','pltNum_RC').replace('Expiry Date','RegDate_RC');
+                            t = t.replace('Model','VehModel_RC');
+                            var memberObject={};
+                            var dd='['+t+']';
+                            var ddd=JSON.parse(t);
+                            var cl = ddd['confidence_level']*10;
+                            console.log('confidence_level ---'+cl);
+                            if(Math.abs(cl)<0){//isNaN(Math.abs(cl))||Math.abs(cl)<2||ddd.errorMessage!=undefined
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    axsConfirmation('File is invalid', 'We couldn\'t capture the data from the uploaded document<br>Do you want to continue?','','openModal','modal_confirm_information','openUploadModal','');
+                                });
+                                //of the Passport
+                                /* $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    $('#modal_upload_passport').modal('show');
+                                });*/
+                                return;
+                                //$('#modal_upload_passport').modal('show')
+                            }
+                            
+                            passportData = ddd["data"];
+                            for(i in ddd["data"]){
+                                memberObject[i] = ddd["data"][i];
+                                memData_x[i] = ddd["data"][i];
+                            }
+                            
+                            var k1=[];
+                            var passportNo = '';
+                            var membrStr = '';
+                            var fullname = '';
+                            
+                            memberObject["type"] = 'ind';
+                            fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                            if(memberObject["MR Full Name"]==''||memberObject["MR Full Name"]==undefined)
+                                memberObject["fullname"] = fullname;
+                            else{
+                                var nn = memberObject["MR Full Name"].split(' ');
+                                memberObject["fullname"] = memberObject["MR Full Name"];
+                                memberObject['Surname'] = nn[0];
+                                memberObject['Given_Name'] = nn[nn.length-1];
+                                
+                            }
+                            
+                            //if(memberObject["type"]=='ind') memberObject.passportId = cs["attch_id"].value;
+                            
+                            membrStr = JSON.stringify(memberObject);
+                            
+                            //alert('str::'+membrStr);
+                            
+                            // if(addingOtherMems){
+                            
+                            if(memberObject["type"]=='ind'){
+                                
+                                $('.forEdit').each(function(){
+                                    
+                                    var f = $(this).attr('fldName');
+                                    
+                                    if(memberObject[f]!=undefined){
+                                        
+                                        if(memberObject[f].length>0){
+                                            
+                                            $(this).val(memberObject[f]);
+                                            
+                                        }
+                                        
+                                        if($(this).attr('class').includes('datepicker'))
+                                            
+                                            $(this).val(formatDate(memberObject[f]));
+                                        
+                                    }
+                                    
+                                    else if(memberObject["MR_"+f]!=undefined){
+                                        
+                                        $(this).val(memberObject["MR_"+f]);
+                                        
+                                        if($(this).attr('class').includes('datepicker'))
+                                            
+                                            $(this).val(formatDate(memberObject[f]));
+                                        
+                                    }
+                                    
+                                        else{
+                                            
+                                            $(this).val('');
+                                            
+                                        }
+                                    
+                                    if((f=='country'||f=='country2' ) && memberObject['Nationality']!=undefined){ // only for country--Nationality
+                                        
+                                        var e = $(this);
+                                        
+                                        e.find('option').each(function(){
+                                            
+                                            var t = $(this).text();
+                                            
+                                            var t1 = $(this).val();
+                                            
+                                            if(t.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim()||t1.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim())
+                                                
+                                                $(this).prop('selected',true);
+                                            
+                                        });
+                                        
+                                    }
+                                    
+                                    if($(this).attr('extFld')){ // only for country--Nationality
+                                        
+                                        var e = $(this);
+                                        
+                                        var ef = $(this).attr('extFld');
+                                        
+                                        var ef1 = $(this).attr('extFld1');
+                                        
+                                        if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                            
+                                            var vl = ddd[ef].split(' ')[1];
+                                            
+                                            e.find('option').each(function(){
+                                                
+                                                var t = $(this).text();
+                                                
+                                                var t1 = $(this).val();
+                                                
+                                                if(t.toLowerCase().trim()==vl.toLowerCase().trim()||t1.toLowerCase().trim()==vl.toLowerCase().trim())
+                                                    
+                                                    $(this).prop('selected',true);
+                                                
+                                            });
+                                            
+                                        }
+                                        
+                                        else if(ddd.data[ef1]!=undefined)
+                                            
+                                            $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                        
+                                    }
+                                    
+                                    if($(this).is('select')) $(this).trigger('change');
+                                    
+                                });
+                                
+                                
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    var curDoc = cs["docname"].value;
+                                    if(curDoc.includes('Eida Card Front Side')){
+                                        //rerenderImageB();
+                                        //cs['xcnc__ocr'] = $('[fldName="country"]').find("option:selected").text(); 
+                                        $('#modal_EIDA_confirm_information').modal('show');
+                                    }else if(curDoc.toLowerCase().includes('registration card - front')){
+                                        $('#xppor__c').val('Dubai').select2();
+                                        // $('#modal_RC_confirm_information').find('input,select').val('').trigger('change');
+                                        $('#modal_RC_confirm_information').find('.frmErrMsg').remove();
+                                        $('#modal_RC_confirm_information').find('.is-invalid').removeClass('is-invalid');
+                                        $('#modal_RC_confirm_information').modal('show');
+                                    }else if(curDoc.toLowerCase().includes('registration card - back')){
+                                        //rerenderImageB();
+                                        //cs['xcnc__ocr'] = $('[fldName="country"]').find("option:selected").text(); 
+                                        //$('#modal_RC_confirm_information_back').find('input,select').val('');
+                                        $('#modal_RC_confirm_information_back').modal('show');
+                                    }else{
+                                        $('#modal_confirm_information').find('.frmErrMsg').remove();
+                                        $('#modal_confirm_information').modal('show');
+                                    }
+                                });
+                                
+                                $('.saveEditMem').hide();
+                                
+                                $('.inEditOnly').hide(); 
+                                
+                                
+                                
+                                //cs["docname"].value="Copy of Passport"; //+'.'+f.name.split('.')[1]
+                                
+                                //attachmentSave();
+                                
+                                //alert('tst1');
+                                
+                                /*$('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+
+                            $('#modal_confirm_information').modal('show');
+
+                        });*/
+                                
+                                // $('[fldname="country"],[fldname="contryCode"]').trigger('change')
+                                
+                            }        
+                            
+                            //$('#modal_process_upload').modal('hide');
+                            
+                            
+                            
+                            $('#saveAtt').addClass('disabled');
+                            
+                            
+                            
+                            //document.getElementById('modal_upload_passport').style.display='none';
+                            
+                            $('body').removeClass('modal-open');
+                            
+                            $('.modal-backdrop').remove();
+                            
+                            
+                            
+                            //$("#base64").val(JSON.stringify(data));
+                            
+                        },
+                        
+                        error: function(){
+                            
+                            // alert("Cannot get data");
+                            
+                        }
+                        
+                    });
+                    
+                    $('#modal_upload_passport').modal('hide');
+                    $('#modal_process_upload').modal('show');
+                    
+                }
+                
+                else
+                    
+                {
+                    
+                    $('#modal_process_upload').modal('hide');
+                    
+                    $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+                    
+                    $('body').removeClass('modal-open');
+                    
+                    $('.modal-backdrop').remove();
+                    if((cs["visaTransferId"]!=undefined)&&(cs["visaTransferId"].value == 'int' && cs["docname"].value == 'Passport First Page') || ('{!cv}' == 'VisaCorrection' && cs["docname"].value == 'Passport Copy - First Page') || ('{!cv}' == 'LostPassport' && cs["docname"].value == 'New Passport Copy - first page'))
+                        saveRequest();
+                    else
+                        attachmentSave();
+                    
+                    
+                    
+                }
+                
+                $('#modal_upload_passport').modal('hide');
+                
+            };
+            
+        }(f);
+        
+        // Read in the image file as a data URL.
+        
+        reader.readAsBinaryString(f);
+        
+    }
+    
+    
+    function handleFileSelect2(evt) {
+        //var f = evt.target.files[0]; // FileList object
+        f = $('#files')[0].files[0]
+        var reader = new FileReader();
+        // $('#table_content').empty();
+        // Closure to capture the file information.
+        reader.onload = function (theFile) {
+            return function (e) {
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                //showing file converted to base64
+                
+                cs["imageBase64"].value = base64String;
+                if(cs["parseId"].value == 'true'){
+                    $.ajax({
+                        //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                        url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                        beforeSend: function(xhr) { 
+                            //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+                            xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                        },
+                        type: 'POST',
+                        dataType: 'json', 
+                        crossOrigin: true,
+                        contentType: 'application/json',              
+                        processData: false,
+                        data: '{"image":'+base64String+'}',
+                        success: function (data) { 
+                            var t=JSON.stringify(data);
+                            console.log(t);
+                            
+                            //custom for passport
+                            t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                            replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                            t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                            t=t.replace('Given Name','Given_Name').replace('MR Passport NO','Passport_No').replace('MR Gender','MR_Gender');
+                            
+                            var memberObject={};
+                            var dd='['+t+']'; 
+                            var ddd=JSON.parse(t);
+                            alert(ddd); alert(t);
+                            console.log(t);
+                            console.log( ddd.data.type);
+                            var cl = ddd['confidence_level']*10;
+                            console.log(cl);
+                            if(Math.abs(cl)<2){
+                                axsAlert('Passport is Invalid','Please do Re-Scan a clear copy of the Passport');
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    $('#modal_upload_passport').modal('show');
+                                });
+                                return;
+                                //$('#modal_upload_passport').modal('show')
+                            }
+                            passportData = ddd["data"];
+                            for(i in ddd["data"]){
+                                memberObject[i] = ddd["data"][i];
+                                memData_x[i] = ddd["data"][i];
+                            }
+                            var k1=[];
+                            var passportNo = '';
+                            var membrStr = '';
+                            var fullname = '';
+                            $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                $('#modal_confirm_information').modal('show');
+                            });
+                            memberObject["type"] = 'ind';
+                            fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                            
+                            if(memberObject["MR Full Name"]==''||memberObject["MR Full Name"]==undefined)
+                                memberObject["fullname"] = fullname;
+                            else{
+                                var nn = memberObject["MR Full Name"].split(' ');
+                                memberObject["fullname"] = memberObject["MR Full Name"];
+                                memberObject['Surname'] = nn[0];
+                                memberObject['Given_Name'] = nn[nn.length-1];                           
+                            }
+                            
+                            memberObject["fullname"] = fullname;
+                            //if(memberObject["type"]=='ind') memberObject.passportId = cs["attch_id"].value;
+                            membrStr = JSON.stringify(memberObject);
+                            //alert('str::'+membrStr);
+                            // if(addingOtherMems){
+                            if(memberObject["type"]=='ind'){
+                                $('.forEdit').each(function(){
+                                    var f = $(this).attr('fldName');
+                                    if(memberObject[f]!=undefined){
+                                        if(memberObject[f].length>0)
+                                            $(this).val(memberObject[f]);
+                                        if($(this).attr('class').includes('datepicker'))
+                                            $(this).val(formatDate(memberObject[f]));
+                                    }
+                                    else if(memberObject["MR_"+f]!=undefined){
+                                        $(this).val(memberObject["MR_"+f]);
+                                        if($(this).attr('class').includes('datepicker'))
+                                            $(this).val(formatDate(memberObject[f]));
+                                    }
+                                        else{
+                                            $(this).val('');
+                                        }
+                                    if($(this).attr('extFld')){
+                                        var e = $(this)
+                                        var ef = $(this).attr('extFld');
+                                        var ef1 = $(this).attr('extFld1');
+                                        if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                            var vl = ddd[ef].split(' ')[1];
+                                            e.find('option').each(function(){
+                                                var t = $(this).text();
+                                                if(t.toLowerCase()==vl.toLowerCase())
+                                                    $(this).prop('selected',true);
+                                            });
+                                        }
+                                        else if(ddd.data[ef1]!=undefined)
+                                            $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                    }
+                                    if($(this).is('select')) $(this).trigger('change');
+                                });
+                                $('.saveEditMem').hide();
+                                $('.inEditOnly').hide();
+                                
+                                //cs["docname"].value="Copy of Passport"; //+'.'+f.name.split('.')[1]
+                                //attachmentSave();
+                                //alert('tst1');
+                                /*$('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                            $('#modal_confirm_information').modal('show');
+                        });*/
+                                // $('[fldname="country"],[fldname="contryCode"]').trigger('change')
+                            }         
+                            //$('#modal_process_upload').modal('hide');
+                            
+                            $('#saveAtt').addClass('disabled');
+                            
+                            //document.getElementById('modal_upload_passport').style.display='none';
+                            $('body').removeClass('modal-open'); 
+                            $('.modal-backdrop').remove();
+                            
+                            //$("#base64").val(JSON.stringify(data));
+                        },
+                        error: function(){
+                            // alert("Cannot get data");
+                        }
+                    });
+                    $('#modal_upload_passport').modal('hide');
+                    $('#modal_process_upload').modal('show');
+                }
+                else
+                {
+                    $('#modal_process_upload').modal('hide');
+                    $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+                    $('body').removeClass('modal-open'); 
+                    $('.modal-backdrop').remove();
+                    if('{!cv}' == 'VisaCorrection')
+                        saveRequest();
+                    else
+                        attachmentSave();
+                    
+                }
+                $('#modal_upload_passport').modal('hide');
+            };
+        }(f);
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(f);
+    }
+    $(document).ready(function() { //alert(1);
+        // start of custom readAsBinaryString for IE
+        if (!FileReader.prototype.readAsBinaryString) {
+            FileReader.prototype.readAsBinaryString = function (fileData) {
+                var binary = "";
+                var pt = this;
+                var reader = new FileReader();      
+                reader.onload = function (e) {
+                    var bytes = new Uint8Array(reader.result);
+                    var length = bytes.byteLength;
+                    for (var i = 0; i < length; i++) {
+                        binary += String.fromCharCode(bytes[i]);
+                    }
+                    //pt.result  - readonly so assign binary
+                    pt.content = binary;
+                    $(pt).trigger('onload');
+                }
+                reader.readAsArrayBuffer(fileData);
+            }
+        }
+        
+        // end of custom readAsBinaryString for IE
+        
+        $('#members').removeClass('incomplete-section').addClass('active-section');
+        
+        
+        //  $('#table_content').empty();                   
+        var base64Str ='';
+        // alert(base64Str);
+        $.ajax({
+            // url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=all",
+            url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+            beforeSend: function(xhr) { 
+                xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                //  xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+            },
+            type: 'POST',
+            crossOrigin: true,    
+            dataType: 'json',
+            contentType: 'application/json',              
+            processData: false,
+            data: '{"image":'+base64Str+'}',
+            success: function (data) { 
+                var t=JSON.stringify(data);
+                alert(t);
+                var dd='['+t+']'; 
+                var ddd=JSON.parse(dd); alert(ddd);
+                var k1=[];
+                for (var k = 0; k < Object.keys(ddd[0].data).length; k++) {
+                    k1.push(Object.keys(ddd[0].data)[k])
+                    var kk= Object.keys(ddd[0].data)[k];
+                    if(Object.keys(ddd[0].data)[k] == 'Passport No')
+                        alert(ddd[0].data[kk]);
+                    //$('#table_content').append('<tr><td>' + Object.keys(ddd[0].data)[k] + '</td><td>'+ddd[0].data[kk] +'</td></tr>');
+                }
+                $("#base64").val(JSON.stringify(data));
+                // document.getElementById('base64').value = base64String;
+            },
+            error: function(){
+                // alert("Cannot get data");
+            }
+        });
+    });
+    
+    //# sourceURL=pen.js
+    
+    // update in axs2customjs
+    function checkAllDates(c,uid){
+        $('.'+c).each(function(){
+            if($(this).is(':visible')){
+                let v = $(this).attr('validationname');
+                checkDate($(this),v,uid);
+                //console.log($(this).val());
+            }
+        });
+    }
+    
+    function validAlphaNumeric(e){  /**Ex: <input type="text" onkeyup="validAlphaNumeric(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    
+    </script>
+</apex:component>

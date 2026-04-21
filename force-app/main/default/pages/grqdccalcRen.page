@@ -1,0 +1,1454 @@
+<apex:page sidebar="false" standardController="g_Req__c" extensions="lrCtlReq" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" >
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        
+        <script type="text/javascript">
+        
+        var loclen=0;
+        var ispu={!ispu}
+        var locArr={};
+        var amedFlag='{!amedFlag}';
+        var agreeNoAmd='{!agreeNoAmd}';
+        var doclist = '{!SUBSTITUTE(rq.xcddocs__c,"'","")}';
+        var ddaReqStatus = '{!ddaReqStatus}';
+        var index=0;index1=0; var agSTA={};agNo={};agLT={};dccaAg={};agstg={};agD3stg={};dccaAgSTA={};
+        var spFlaf ='{!spFlaf}' ;
+        var lf='',af='',adf='',aO='',lif,aif,adif,cif,cnf,fnxPg;
+        
+        var licExp11='{!Acc.lcedt__c}';
+        var NewlicExp11='{!rq.xdedln__c}';
+        var cs = {};
+        function dformat(dt,id){
+            var d = new Date(dt);//alert(d);
+            var m=d.getMonth()+1;
+            var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+            var mm=m>9?m:'0'+m;
+            var yy=d.getFullYear();
+            document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+        }
+        function  dccaAGValidation(){
+            var issue='n/a';
+            var dissue='n/a';
+            var reason='';
+            var flh=true;
+            
+            for(var i=0;i<index;i++){ 
+                var ag=agNo["'"+i+"'"];
+                var stg=agstg["'"+i+"'"];
+                var d3stg=agD3stg["'"+i+"'"];
+                // console.log('ag:'+ag+'stg:'+stg+'d3stg:'+d3stg);
+                var rs;
+                var td=new Date();
+                dt=new Date();
+                if(agLT["'"+i+"'"]!==void 0){
+                    rs=agLT["'"+i+"'"].split('/');
+                    var mm=parseInt(rs[1])-1;
+                    dt=new Date(rs[2],mm,rs[0]);
+                }
+                //alert(d3stg);
+                if(stg=='New Lease'){
+                    for(var j=0;j<index1;j++){
+                        
+                        var dag=dccaAg["'"+j+"'"];
+                        var dsta=dccaAgSTA["'"+j+"'"];
+                        if(ag==dag && dsta=='Activetrue'){
+                            flh=true;
+                            issue='n/a';
+                            break;
+                        }else if(ag==dag && dsta!='Activetrue' && dt>td){
+                            flh=false; 
+                            issue=ag;
+                        }else if(ag!=dag && stg=='New Lease' && dt>td){ 
+                            
+                            flh=false; 
+                            issue=ag;
+                        }  
+                    }
+                }
+                
+                
+                if(d3stg!==void 0 && (d3stg=='New Lease' || d3stg=='Lease Downsize' || d3stg=='Lease Expansion' || d3stg=='Lease Relocation')){
+                    for(var j=0;j<index1;j++){
+                        
+                        var dag=dccaAg["'"+j+"'"];
+                        var dsta=dccaAgSTA["'"+j+"'"];
+                        
+                        if(ag!=dag &&  (d3stg=='New Lease' || d3stg=='Lease Downsize' || d3stg=='Lease Expansion' || d3stg=='Lease Relocation')){
+                            flh=false; 
+                            dissue=ag;reason=d3stg;
+                        } else if(ag==dag && dsta!='Activetrue' && (d3stg=='New Lease' || d3stg=='Lease Downsize' || d3stg=='Lease Expansion' || d3stg=='Lease Relocation')){
+                            flh=false; 
+                            dissue=ag;reason=d3stg;
+                        }/* else if(ag==dag && (d3stg=='New Lease' || d3stg=='Lease Downsize' || d3stg=='Lease Expansion' || d3stg=='Lease Relocation')){
+                                        
+                                        flh=false; 
+                                        dissue=ag;
+                                        reason=d3stg;
+                                    } */ else{
+                                        flh=true;
+                                        dissue='n/a';
+                                        break;
+                                    }
+                         }
+                
+                
+                
+            }
+            
+            
+            
+        }
+        console.log('####################');
+        console.log(issue);
+        console.log(spFlaf);  
+        console.log(dissue); 
+        console.log('####################');
+        if(issue!='n/a' &&  spFlaf=='false' ){
+            //  console.log(issue);
+            //  console.log(spFlaf);
+            axsAlert('Validation Error.','The Company is having new location '+(issue)+'. Please apply for License Amendment before proceeding for renewal.');
+            //xm('The Company is having new location '+(issue)+'. Please apply for License Amendment before proceeding for renewal.');
+            return false;
+        }
+        
+        
+        if(dissue!='n/a' && spFlaf=='false'){
+            axsAlert('Validation Error.','The Company is having'+ reason +(dissue)+' . Please apply for License Amendment before proceeding for renewal.');
+            //   xm();
+            return false;
+        }
+        return true;
+    }
+        
+        
+        $(document).ready(function() {
+            if("{!uboFlg}"=="true" &&('{!Acc.lc__c}' != '18062' && '{!Acc.lc__c}' != '94445' && '{!Acc.lc__c}' != '94313' && '{!Acc.lc__c}' != '100671' && '{!Acc.lc__c}' != '100411' )){//{!uboFlg}
+                $('#modal_Ubo_submission').modal('show');
+            }
+            if("{!lsdiffFlg}"=="true" && ("{!rq.Registered__c}"==null || "{!rq.Registered__c}"=="false")){//{!uboFlg}
+                $('#modal_LeaseDetails').modal('show');
+            }
+            if('{!brodcastFlag}'== 'true' && doclist!=null && (doclist.includes('Approval from Broadcasting Committee') || doclist.includes('Approval from Publishing Committee'))){
+                doclist = doclist.replace('Approval from Broadcasting Committee;', '');
+                doclist = doclist.replace('Approval from Publishing Committee;', '');
+                cs['xcddocs__c'].value = doclist;  
+            }
+            
+            //cs['xvn__c'].value;
+            var regOff= getC('regOffSel');
+            if('{!newRegOffDcca}'!=null && '{!newRegOffDcca}'!='null' && '{!newRegOffDcca}'!=''){
+                regOff.value='{!newRegOffDcca}';
+                /*$('#regOffSel').select2();
+                regOff.disabled=true;*/
+                cs['xvn__c'].value ='{!newRegOffDcca}'; 
+            }
+            if('{!rq.xmloc__c}' == 'true' && '{!rq.xcawp__c}' == 'true'){
+                //console.log('regofc::'+'{!regOffnew.size}');
+                
+                cs['xvn__c'].value =regOff.value;         
+                
+            }
+            
+            // regOff.value='{!newRegOffDcca}';
+            if('{!md.isView}' == 'true' && cs['xvn__c']!=null && regOff!=null )   {
+                
+                regOff.value=cs['xvn__c'].value;
+            }
+            
+            if(('{!rq.STA__c}' == 'Under Review' || '{!rq.STA__c}' == 'Completed') && regOff!=null ){
+                regOff.disabled=true;
+                if(ispu == true){
+                    if(cs['chktnc'] !='undefined' && cs['chktnc'] !=null && ispu == true) cs['chktnc'].checked = true;
+                    if(cs['chktnc2'] !='undefined'&& cs['chktnc2'] !=null && ispu == true)   cs['chktnc2'].checked = true; 
+                }
+            }
+            
+            //Selection of Template
+            var TemplateName;
+            var hasOpeOffice = false;
+            var hasChannels = false;
+            var hasTitle = false;
+            
+            
+            
+            if('{!rq.xcmn__c}' =='SME'){
+                TemplateName = 'DCCARENLICSME';  
+                
+            }else if('{!rq.xcmn__c}'=='Commercial License' || '{!rq.xcmn__c}' == 'SMEIN5'){
+                TemplateName = 'DCCARENLIC';   
+            }else if('{!rq.xcmn__c}' =='Freelancer'){
+                TemplateName = 'DCCARENLICFRELAN';   
+            }else if('{!rq.xcmn__c}' =='Limited License'){
+                TemplateName = 'DCCARENLICLIMIT';   
+            }else if('{!rq.xcmn__c}' =='Industrial License'){
+                TemplateName = 'DCCARENLICINDUS';   
+            }     
+            
+            if( loclen!=null && loclen>1){
+                hasOpeOffice = true;
+            }
+            
+            var chantitleCheck = '{!chanTMap}';
+            
+            if(chantitleCheck.includes('Channels')){
+                hasChannels= true;
+            }
+            if(chantitleCheck.includes('Titles')){
+                hasTitle= true;
+            }
+            
+            if(TemplateName!='DCCARENLICFRELAN'){
+                if(hasTitle && hasChannels && hasOpeOffice ){
+                    TemplateName = TemplateName+'All';
+                }else if(hasTitle== false && hasChannels == false && hasOpeOffice ){
+                    TemplateName = TemplateName+'mainOp';
+                }else if(hasTitle== false && hasChannels == false && hasOpeOffice==false ){
+                    TemplateName = TemplateName+'main';
+                }else if(hasTitle== true && hasChannels == false && hasOpeOffice==false ){
+                    TemplateName = TemplateName+'mainTitle';
+                }else if(hasTitle== false && hasChannels == true && hasOpeOffice==false ){
+                    TemplateName = TemplateName+'mainChann';
+                }else if(hasTitle== true && hasChannels == true && hasOpeOffice==false ){
+                    TemplateName = TemplateName+'mainTitleChann';
+                }else if(hasTitle== true && hasChannels == false && hasOpeOffice==true ){
+                    TemplateName = TemplateName+'mainTitleOp';
+                }else if(hasTitle== false && hasChannels == true && hasOpeOffice==true ){
+                    TemplateName = TemplateName+'mainChannOp';
+                }
+            }
+            // alert(TemplateName);
+            //Selection of template 
+            
+            cs['xltr__c'].value=TemplateName;
+            cs['xlt__c'].value='Corporate';
+            
+            
+            
+            
+            //  alert('Freelancer');
+            if(('{!Acc.Legal_Framework__c}'!=null && '{!Acc.Legal_Framework__c}'!='' && ('{!Acc.Legal_Framework__c}' == 'Freelancer' ) || '{!rq.xpmsle__c}'== 'true' ) ){
+                if(index !='undefined' && index>0){
+                    for(var i=0;i<index;i++){
+                        if(agSTA["'"+i+"'"]!==void 0 && ((agSTA["'"+i+"'"]=='Printed' ) || ('{!rq.xpmsle__c}'== 'true' && (agSTA["'"+i+"'"]!='Terminated' ) ) )){
+                            cs['xanum__c'].value = agNo["'"+i+"'"];
+                            //  alert(cs['xanum__c'].value);
+                        }
+                    }
+                }
+            }
+            if(cs["xddatc__c"] && cs["xddatc__c"].value == 'true') {
+                $( "#tANDc" ).prop( "checked", true );
+            }
+            
+            
+            //  alert();
+            // createdoc();
+            
+            
+        });
+        //Add validation error
+        /*function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(errElem);
+            }else{
+                elem.parent().append(errElem);
+            }
+        }
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+        }*/
+        
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        //Validate Data on click of next button
+        function validateData(e){
+            e.preventDefault();
+            var elem = $('#regOffSel');
+            var validated  = true;
+            
+            var licExp='{!Acc.lcedt__c}';
+            var NewlicExp='{!rq.xcbd__c}';
+            
+            var newlcExpDate=null;
+            var cRlcexpDate = null;  
+            
+            
+            if(licExp!=null && licExp!='' && licExp!==void 0 ){
+                cRlcexpDate = new Date(licExp).getTime();   
+            }
+            if(NewlicExp!=null && NewlicExp!='' && NewlicExp!==void 0 ){
+                newlcExpDate = new Date(NewlicExp).getTime();   
+            }
+            
+            var difDays = (new Date(licExp) - new Date())/(1000*60*60*24);
+            if(difDays>45 && '{!Acc.lc__c}' != '17056'&& '{!Acc.lc__c}' != '30959'){
+                axsAlert('Error','License is valid for <b>'+Math.round(difDays)+' days</b> more!<br/>Please try with in 45 days of license expiry.');
+                return;
+            }
+            
+            var timeDiff2 = Math.abs(newlcExpDate  - cRlcexpDate);
+            var diffDays2 = Math.ceil(timeDiff2 / (1000 * 3600 * 24)); 
+            
+            if(diffDays2 < 30 && ('{!rq.xpmsle__c}' != 'true' || ('{!rq.xpmsle__c}' == 'true' && '{!rq.xvnum__c}' != '')) && '{!Acc.lc__c}' != '98747' && '{!Acc.Legal_Framework__c}' != 'Freelancer'){  
+                axsAlert('Validation Error.','License Renewal request cannot be processed as validity of lease is less than a month.');
+                
+                return false;
+            }      
+            if('{!$Label.RenTst1}' == 'NA' ){
+                axsAlert('Lease Renewal required.','Lease is under termination, licence renewal cannot be processed with agreement {!$Label.RenAgr}. Please contact your relationship manager or for more information please contact 800 4 AXS(297).');
+                
+                return false;
+                
+            }
+            if('{!rq.xpmsle__c}' == 'true' && "{!lsdiffFlg}"=="true" && (cs['Registered__c'].value ==null || cs['Registered__c'].value=="false")){
+                //axsAlert('Lease amendment confirmation required.','If you are ready to proceed, kindly click the lease amendment "Confirm" button. Please contact your relationship manager or for more information please contact 800 4 AXS(297).');
+                $('#modal_LeaseDetails').modal('show');
+                return false;
+                
+            }
+            if(licExp!=null && licExp!='' && licExp!==void 0  && NewlicExp!=null && NewlicExp!='' && NewlicExp!==void 0 && '{!rq.xpmsle__c}' != 'true'){
+                // console.log(NewlicExp);
+                //console.log(NewlicExp);
+                if(NewlicExp!=null && NewlicExp.length>=10){
+                    // console.log('Inside');
+                    var arr=NewlicExp.split('/');
+                    var newExpDate = new Date(parseInt(arr[2]),parseInt(arr[1])-1,parseInt(arr[0])).getTime();
+                    var expDate = new Date(licExp).getTime();
+                    //  console.log('expDate'+expDate);console.log('newExpDate'+newExpDate);
+                    if(newExpDate<= expDate && '{!Acc.lc__c}' != '91286'){
+                        axsAlert('Validation Error.','Lease should be renewed before applying for licence renewal.For more information please contact 800 4 AXS(297).');
+                        return false;
+                    }
+                    
+                    
+                    
+                    var timeDiff = Math.abs(newExpDate  - expDate);
+                    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); 
+                    if(diffDays<=30 && '{!Acc.lc__c}' != '91286'){
+                        axsAlert('Validation Error.','Lease should be renewed before applying for licence renewal.For more information please contact 800 4 AXS(297).');
+                        return false;                        
+                    }
+                }
+                
+            }
+            var doclist2 = '{!SUBSTITUTE(rq.xcddocs__c,"'","")}';
+            if('{!brodcastFlag}'== 'false' && doclist2!=null && (doclist2.includes('Approval from Broadcasting Committee') || doclist2.includes('Approval from Publishing Committee'))){
+                axsAlert('Validation Error.','Committee approval is required to proceed. For more information contact Relationship manager or 800-4-DDA (332) or 800 4 AXS(297)');
+                /*
+            if(doclist2.includes('Approval from Broadcasting Committee'))  
+                axsAlert('Validation Error.','Broadcasting Committee approval is required to proceed. For more information please contact 800-4-DDA (332) OR 800 4 AXS(297)');
+            if(doclist2.includes('Approval from Publishing Committee'))  
+                axsAlert('Validation Error.','Publishing Committee approval is required to proceed. For more information please contact 800-4-DDA (332) OR 800 4 AXS(297)');
+             */
+            return false;
+        }
+            if('{!$Label.RenTst1}' == 'BA' ){
+                axsAlert('Validation Error.','Committee approval is required to proceed. For more information contact Relationship manager or 800-4-DDA (332) or 800 4 AXS(297)');
+                return false;
+            }
+            
+            if(ddaReqStatus != null && ddaReqStatus =='Waiting for Activity Confirmation'){
+                axsAlert('Validation Error.','One of the Acitivity is deactivated by DDA discretion. For more information please contact 800-4-DDA (332) OR 800 4 AXS(297)');
+                return false;
+            }
+            
+            var dccaError  =  '{!rq.xcha__c}'; 
+            if(dccaError!=null && dccaError.length>=2 && '{!Acc.lc__c}' != '103137' && '{!Acc.lc__c}' != '18686'){
+                axsAlert('Validation Error.',dccaError);
+                return false;
+            }
+            /*
+            if( '{!sancflag}'=='true'){
+                axsAlert('Sanction Alert.','Sanction has been added to the Company. For more information please contact 800-4-DDA (332) OR 800 4 AXS(297)');
+                return false;   
+            } */
+            
+            var doclen= '{!SUBSTITUTE(rq.xcddocs__c,"'","")}';
+            if(index !='undefined' && index==0){
+                console.log('doclen inside'+doclen);
+                cs['xmloc__c'].value =true;
+                doclen=doclen+' A copy of Valid Lease Agreement;';
+            }
+            console.log('doclen1'+doclen);
+            
+            var fl=dccaAGValidation();
+            console.log('fl'+fl);  
+            //return false; 
+            
+            if(!fl){return fl;};
+            var doclen= '{!SUBSTITUTE(rq.xcddocs__c,"'","")}';
+            console.log('doclen2'+doclen);
+            fnxPg='grqup';
+            var pr='{!ispu}';
+            amedFlag='{!amedFlag}';
+            var spFlaf ='{!spFlaf}' ;
+            // var amedFlag='{!amedFlag}';
+            agreeNoAmd='{!agreeNoAmd}';
+            var checkLength =agreeNoAmd.split('*');
+            console.log('fnxPg1'+fnxPg);
+            var newStr;
+            if(checkLength.length>=1){
+                newStr = 'are';}else{newStr = 'is';  }
+            
+            if(spFlaf=='true' && '{!brodcastFlag}'== 'false' ){
+                axsAlert('Validation Error.','Your request is pending for approval. For more information please contact 800-4-DDA (332) OR 800 4 AXS(297)') ;
+                return false;
+            }
+            
+            console.log('amedFlag '+amedFlag );
+            console.log('checkLength.length>'+checkLength.length);
+            console.log('spFlaf'+spFlaf);
+            console.log('{!rq.xdrv__c}');
+            
+            
+            if(amedFlag && '{!rq.xpmsle__c}' != 'true' && checkLength.length>1 && spFlaf=='false' && '{!rq.xdrv__c}' == 'false' &&  '{!Acc.lc__c}' !='92738' &&   '{!Acc.lc__c}' !='17525'  ){    
+
+                axsAlert('Validation Error.','Please contact 800 4 AXS(297) for location amendment. Agreements to amend  '+newStr+' '+agreeNoAmd) ;
+                //xm('Please contact 800 4 AXS(297) for location amendment. Agreements to amend  '+newStr+' '+agreeNoAmd) ;
+                return false;
+            }
+            
+            
+            
+            if(pr=='false'){ fnxPg='grqei'; }
+            if(doclen===void 0){fnxPg='grqpy';}
+            if('{!rq.xcawp__c}'=='true' && '{!rq.STA__c}'=='Open' && ispu ){
+                fnxPg='grqpy';        
+            }
+            if(doclen!=null && doclen.length==0){fnxPg='grqpy';}
+            console.log('fnxPg2'+fnxPg);
+            if(('{!rq.STA__c}' == 'Draft' || '{!md.isNew}' == 'true') && ispu){
+                if(cs['chktnc'] !='undefined' && cs['chktnc']!=null && !cs['chktnc'].checked ){alert(' Kindly confirm the Terms and Conditions in order to proceed futher.');
+                                                                                               return false;} 
+                if(cs['chktnc2'] !='undefined' && cs['chktnc2']!=null && !cs['chktnc2'].checked ){alert(' Kindly confirm the Terms and Conditions in order to proceed futher.');
+                                                                                                  return false;} 
+            }
+            var Expflag =false;
+            var Valdate =false;
+            var Agre = "";
+            
+            //New validation 
+            // Check if lease expiry dates are fine
+            var checkIfAct = false;
+            var listAgree = "";
+            if(index !='undefined'){
+                for(var i=0;i<index;i++){
+                    if(agNo["'"+i+"'"]!='undefined' && agLT["'"+i+"'"]!='undefined' && agSTA["'"+i+"'"]!='undefined'){
+                        //  alert(agLT["'"+i+"'"]); alert(agNo["'"+i+"'"]);alert(agSTA["'"+i+"'"]);
+                        if( agLT["'"+i+"'"]!==void 0 && (agSTA["'"+i+"'"]=='Active' || agSTA["'"+i+"'"]=='LA is ready to activated' || agSTA["'"+i+"'"]=='Contraction Activation' || agSTA["'"+i+"'"]=='Expansion Activation' ||  agSTA["'"+i+"'"]=='Original Lease Activation' ||  agSTA["'"+i+"'"]=='Renewal Activation' ||  agSTA["'"+i+"'"]=='Lease Printed' || agSTA["'"+i+"'"]=='Customer sign'  || agSTA["'"+i+"'"]=='Customer Signed' || agSTA["'"+i+"'"]=='Tecom Sign' || agSTA["'"+i+"'"]=='Tecom Signed' ||   agSTA["'"+i+"'"]=='LA sent for Signoff' || agSTA["'"+i+"'"]=='LA is signed off' || agSTA["'"+i+"'"]=='LA activated' || agSTA["'"+i+"'"]=='Signed LA received' || agSTA["'"+i+"'"]=='Ready for Activation' || agSTA["'"+i+"'"]=='Under Termination' || (agSTA["'"+i+"'"].includes('Collected by BP')) || (agSTA["'"+i+"'"].includes('Signed by BP')) || (agSTA["'"+i+"'"].includes('Counter Signed')) || (agSTA["'"+i+"'"].includes('Lease Signed')) || (agSTA["'"+i+"'"].includes('Ready for Activation')))){
+                            
+                            var rs=agLT["'"+i+"'"].split('/');
+                            var td=new Date();
+                            var mm=parseInt(rs[1])-1;
+                            var dt=new Date(rs[2],mm,rs[0]);
+                            var oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+                            var diffDays = Math.floor((Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()) - Date.UTC(td.getFullYear(), td.getMonth(), td.getDate()) ) /(1000 * 60 * 60 * 24));
+                            
+                            var newExpDate=dt.getTime();
+                            var cRexpDate = td.getTime();   
+                            var licExp='{!Acc.lcedt__c}'; 
+                            
+                            if(licExp!=null && licExp!='' && licExp!==void 0 ){
+                                cRexpDate = new Date(licExp).getTime();   
+                            }
+                            var timeDiff2 = Math.abs(newExpDate  - cRexpDate);
+                            var diffDays2 = Math.ceil(timeDiff2 / (1000 * 3600 * 24)); 
+                            
+                            
+                            
+                            
+                            if(dt<td){  
+                                if(listAgree == ""){
+                                    listAgree = 'License Renewal request cannot be processed as the lease is not active.<br/> .Lease Agreement no  '+agNo["'"+i+"'"]+' expired on '+ agLT["'"+i+"'"]+'.<br/> ';
+                                }else{
+                                    listAgree =listAgree+ 'Lease Agreement --no '+agNo["'"+i+"'"]+' expired on '+ agLT["'"+i+"'"]+'.<br/>';
+                                }
+                            }else if(diffDays2<30){  
+                                if(listAgree == ""){
+                                    listAgree = 'License Renewal request cannot be processed as validity of lease is less than a month.<br/> .Lease Agreement no '+agNo["'"+i+"'"]+' will expire on '+ agLT["'"+i+"'"]+'.<br/> ';
+                                }else{
+                                    listAgree =listAgree+ 'Lease Agreement -no '+agNo["'"+i+"'"]+' will expire on  '+ agLT["'"+i+"'"]+'.<br/>';
+                                }
+                            }
+                            
+                                else{
+                                    checkIfAct = true;
+                                }
+                            
+                            
+                        } 
+                    }
+                }
+                
+                
+            }
+            
+            // Check if status is fine
+            var checkActstat = false;
+            var listAgreeStatus = "";
+            
+            if(index !='undefined' && index>0){
+                for(var i=0;i<index;i++){
+                    
+                    
+                    
+                    if('{!Acc.Legal_Framework__c}'!=null && '{!Acc.Legal_Framework__c}'!='' && '{!Acc.Legal_Framework__c}' != 'Freelancer' && agSTA["'"+i+"'"]!==void 0 && agSTA["'"+i+"'"]!='Active' && agSTA["'"+i+"'"]!='Contraction Activation' && agSTA["'"+i+"'"]!='Expansion Activation'&&  agSTA["'"+i+"'"]!='Original Lease Activation' && agSTA["'"+i+"'"]!='Modification Activation' &&  agSTA["'"+i+"'"]!='Renewal Activation' &&  agSTA["'"+i+"'"]!='Lease Printed' && agSTA["'"+i+"'"]!='Customer sign' && agSTA["'"+i+"'"]!='LA sent for Signoff' && agSTA["'"+i+"'"]!='LA is signed off' &&  agSTA["'"+i+"'"]!='LA activated' && agSTA["'"+i+"'"]!='Signed LA received' && agSTA["'"+i+"'"]!='Customer Signed' && agSTA["'"+i+"'"]!='Tecom Sign' && agSTA["'"+i+"'"]!='Tecom Signed' && agSTA["'"+i+"'"]!='Ready for Activation' && !(agSTA["'"+i+"'"].includes('Collected by BP')) && !(agSTA["'"+i+"'"].includes('Signed by BP')) && !(agSTA["'"+i+"'"].includes('Counter Signed')) && !(agSTA["'"+i+"'"].includes('Lease Signed'))&& !(agSTA["'"+i+"'"].includes('LA is ready to activated')) && !(agSTA["'"+i+"'"].includes('Ready for Activation')) && !(agSTA["'"+i+"'"].includes('Modification In Progress')) || 
+                        ( '{!Acc.Legal_Framework__c}'!=null && '{!Acc.Legal_Framework__c}'!='' && '{!Acc.Legal_Framework__c}' == 'Freelancer' &&  ( agSTA["'"+i+"'"]!='Printed' &&  agSTA["'"+i+"'"]!='Contraction Activation' && agSTA["'"+i+"'"]!='Expansion Activation'&&  agSTA["'"+i+"'"]!='Original Lease Activation' &&  agSTA["'"+i+"'"]!='Renewal Activation' &&  agSTA["'"+i+"'"]!='Active' && agSTA["'"+i+"'"]!='LA sent for Signoff' && agSTA["'"+i+"'"]!='LA is signed off' &&  agSTA["'"+i+"'"]!='LA activated' && agSTA["'"+i+"'"]!='Signed LA received' && agSTA["'"+i+"'"]!='Ready for Activation'))){
+                        // alert(agSTA["'"+i+"'"]);
+                        if(listAgreeStatus == ""){
+                            listAgreeStatus = 'Agreement no-- '+agNo["'"+i+"'"]+' is in '+agSTA["'"+i+"'"]+'.<br/> ';
+                        }else{
+                            listAgreeStatus =listAgreeStatus+ 'Agreement no--- '+agNo["'"+i+"'"]+' is in '+agSTA["'"+i+"'"]+'.<br/>';
+                        }
+                    }else{
+                        checkActstat = true;
+                    }
+                }
+                
+            }
+            
+            
+            if(index !='undefined' && cs['xmloc__c'].value!='true' && '{!rq.xcawp__c}'!='true' && '{!Acc.lc__c}' != '30976'){
+                //  alert('listAgree'+listAgree);  alert('listAgreeStatus'+listAgreeStatus);alert('checkActstat'+checkActstat);alert('checkIfAct'+checkIfAct);
+                
+                
+                if(listAgree!=null && listAgree!=''  && listAgreeStatus!=null   && checkIfAct==false && '{!Acc.Legal_Framework__c}' != 'Freelancer' && '{!rq.xpmsle__c}' != 'true'){ //&& checkActstat==false
+                    //alert(1);
+                    axsAlert('Validation Error.','*'+listAgree+'<br/>'+'*'+listAgreeStatus +'<br/>'+'&nbsp;Please contact 800 4 AXS(297).');
+                    return false; 
+                }   
+                if(listAgree!=null && listAgree!='' && checkIfAct==false && '{!Acc.Legal_Framework__c}' != 'Freelancer' && '{!rq.xpmsle__c}' != 'true'){
+                    //alert(22);
+                    axsAlert('Validation Error.','*'+listAgree+'&nbsp;Please contact 800 4 AXS(297).');
+                    return false; 
+                } 
+                
+                if(listAgree!=null && listAgree!='' && checkIfAct==false && '{!Acc.Legal_Framework__c}' == 'Freelancer' && '{!rq.xpmsle__c}' != 'true' && !checkActstat){
+                    //alert(23);
+                    axsAlert('Validation Error.','*'+listAgree+'&nbsp;Please contact 800 4 AXS(297).');
+                    return false; 
+                } 
+                if(!listAgreeStatus.includes('AG-097643') &&listAgreeStatus!=null && listAgreeStatus!='' && checkActstat==false && '{!rq.xpmsle__c}' != 'true' &&'{!Acc.Legal_Framework__c}' != 'Freelancer'){
+                    //   alert(3);
+                    axsAlert('Validation Error.','*'+listAgreeStatus +'<br/>'+'&nbsp;Please contact 800 4 AXS(297).');
+                    return false;  
+                }
+                
+            }
+            
+            //Check If License Exp date is same as lease expiry date 
+            var licExp='{!Acc.lcedt__c}';
+            var NewlicExp='{!rq.xdedln__c}';
+            
+            var rs=NewlicExp.split('/');
+            var rs2 = licExp.split('/');
+            
+            var td=new Date(rs[0],rs[1],rs[2]);
+            //new Date();
+            var dt=new Date(rs[0],rs[1],rs[2]);
+            if(dt<=td){
+                //  xm('Please renew the lease before License renewal');
+                //return false ;
+            }
+            
+            
+            if(cs['xadtx2__c'] !='undefined' && cs['xadtx2__c'] != null && cs['xadtx2__c'].value.length > 131070){
+                cs['xadtx2__c'].value = ''; 
+            }
+            
+            var chks = []; chks = document.getElementsByClassName('chk');
+            var flg=false;
+            if(chks.length != 0){
+                for(var i=0;i<chks.length;i++){
+                    if(chks[i].checked){
+                        flg=true;
+                    }
+                }
+            }       
+            
+           var validated = true;
+            $('.requiredFld').each(function(){
+                //if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                //return;
+                 if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                
+                var v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            
+            if(validated){ 
+            var message = 'Please choose an office';
+            cs['xvn__c'].value =  $('#regOffSel').val();
+            if('{rq.xmloc__c}' == false && cs['xvn__c'].value == '' || cs['xvn__c'].value == '-1'){
+                elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">'+message+'</div>';
+                elem.parents('.form-group').eq(0).append(errElem);
+                return;
+            }
+            else if($('#tANDc').is(':checked')==false){
+                var errElem = '<div class="frmErrMsg">Please select Terms & Conditions.</div>';
+                $('.chk').append(errElem);
+            }   
+                else{
+                    $('#preloader').fadeIn();
+                    afso();
+                }
+          }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function confirmAmendment_JS(){
+            cs["Registered__c"].value = true; 
+            $('#modal_LeaseDetails').modal('hide');
+            
+        } 
+        function chkTC(){
+            if($('#tANDc').is(':checked')==true){
+                $('.chk').find('.frmErrMsg').remove();
+                cs["xddatc__c"].value = true;
+            }
+            else{
+                cs["xddatc__c"].value = false;
+                var errElem = '<div class="frmErrMsg">Please select Terms & Conditions.</div>';
+                $('.chk').append(errElem);
+            }
+        }
+        
+        function closeUboFromParent(){
+            scrollToDiv($('body'));
+            $('#modal_Ubo_submission').modal('hide');
+        }
+        function goToDashboard(){
+            showGLoader();
+            window.location = '/gpm';
+        }
+        function closeubopop(){
+            console.log('closeubopop:::::'); 
+            window.location = '{!urlfor($Page.gpm)}';
+        }
+        </script>
+        <style>
+           #modal_lease_breakdown span.onboarding-review-label,#modal_lease_breakdown span.onboarding-review-value {
+            width: calc(100%/6);
+            margin: 0 5px;
+            }
+            .onboarding-side-main {
+            padding: 0px !important;
+            }
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" oncomplete=" $('#preloader').fadeOut();" onbeforedomupdate="javascript: toggle_inputs();">
+                <apex:param name="nextPage"  value="lrqup" />
+            </apex:actionFunction> 
+            <apex:inputHidden id="xcddocs__c" value="{!rq.xcddocs__c}"/>
+            <apex:inputHidden id="xltr__c" value="{!rq.xltr__c}"/>
+            <apex:inputHidden id="xlt__c" value="{!rq.xlt__c}"/>
+            <apex:inputHidden id="xanum__c" value="{!rq.xanum__c}"/>
+            <apex:inputHidden id="xmloc__c" value="{!rq.xmloc__c}"/>
+            <apex:inputHidden id="xvn__c" value="{!rq.xvn__c}"/>
+            <apex:inputHidden id="Registered__c" value="{!rq.Registered__c}"/>
+            <apex:inputHidden id="xadtx3__c" value="{!rq.xadtx3__c}"/>
+            <apex:inputHidden id="xadtx1__c" value="{!rq.xadtx1__c}"/>
+            <apex:inputHidden id="xadtx2__c" value="{!rq.xadtx2__c}"/>
+            <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                <c:guheader heading="{!srv.lbl__c}" />
+            </apex:outputPanel>
+            <script type="text/javascript">
+            cs['xcddocs__c']=getC('{!$Component.xcddocs__c}');
+            cs['xltr__c']=getC('{!$Component.xltr__c}');
+            cs['xlt__c']=getC('{!$Component.xlt__c}');
+            cs['xanum__c']=getC('{!$Component.xanum__c}');
+            cs['xmloc__c']=getC('{!$Component.xmloc__c}');
+            cs['xvn__c']=getC('{!$Component.xvn__c}');
+            cs['Registered__c']=getC('{!$Component.Registered__c}');
+            cs['xadtx3__c']=getC('{!$Component.xadtx3__c}');
+            cs['xadtx1__c']=getC('{!$Component.xadtx1__c}');
+            cs['xadtx2__c']=getC('{!$Component.xadtx2__c}');
+            </script> 
+            <apex:repeat value="{!dccaStatusMap}" var="dcca" >
+                <script type="text/javascript"> 
+                
+                var y=index1.toString();
+                ///alert('{!dcca}'+'----'+'{!dccaStatusMap[dcca]}');
+                dccaAg["'"+y+"'"]='{!dcca}'; 
+                dccaAgSTA["'"+y+"'"]='{!dccaStatusMap[dcca]}';
+                index1++;
+                </script>
+            </apex:repeat>
+            <script type="text/javascript"> console.log('blank loc');console.log('{!tecomLeaseList}');</script>
+            <apex:repeat value="{!tecomLeaseList}" var="l">
+                <script type="text/javascript"> 
+                    var x=index.toString();
+            if('{!l.ContractStatusReason}' != null) {agSTA["'"+x+"'"]='{!l.ContractStatusReason}';}else {agSTA["'"+x+"'"]='{!l.ContractStatus}'; } 
+            agNo["'"+x+"'"]='{!l.AgNo}';
+            agLT["'"+x+"'"]='{!l.ContractEndDate}';
+            agstg["'"+x+"'"]='{!l.StageName}';
+            agD3stg["'"+x+"'"]='{!l.Type}';
+            index++;</script>
+        </apex:repeat>
+        
+        <apex:outputPanel rendered="{!AND(uboFlg,ispu,Acc.lc__c!= '30004',Acc.lc__c!= '19103')}"><!----> 
+            <div class="modal fade modal-base" id="modal_Ubo_submission" role="dialog" aria-hidden="true" data-backdrop="static">
+                <div class="modal-dialog" role="document" style="width:90%;height:90%"><!--width: 990px;-->
+                    <div class="modal-content" style="height:100%">
+                        <div class="modal-body">
+                            <!--<button aria-label="Close" class="close" data-dismiss="modal" type="button" onclick="closeubopop()"> 
+<i class="icon-close"></i> </button>-->
+                            
+                            <apex:outputPanel rendered="{!uboFlg}">
+                                <iframe style="min-height: 100%;width: 98%;margin-left: 1%;" src="/ubo_popup" id="ifrm" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                                </iframe>
+                                
+                            </apex:outputPanel>
+                        </div>
+                        <!-- .modal-body -->
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="modal fade modal-base" id="modal_Ubo_submitted" role="dialog" aria-hidden="true" >
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            Thanks for submitting UBO details
+                        </div>
+                        <!-- .modal-body -->
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!AND(lsdiffFlg,ispu)}"><!--{!AND(lsdiffFlg,ispu)} -->
+          
+                        <div class="container">
+                            <c:leasedatacmp rq="{!rq}" lsAmdInfo="{!lsAmdInfo}" />  
+                        </div>
+                        <!-- .modal-body -->
+                    
+            
+        </apex:outputPanel>
+        <apex:pageBlock id="pbMain">
+            <apex:outputPanel id="saveRq"> 
+            </apex:outputPanel>
+            <body class="base">
+                
+                <div id="main">
+                    <div class="container"> 
+                        <apex:outputPanel id="cpuUpdate" rendered="{!showCPUWarning}"> 
+                            <div class="alert alert-warning alert-icon align-items-center" style="background-color:#E89437; !important">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">
+                                    Please note that one or more member(s) information are incorrect/missing. Please click on update button to proceed.
+                                </div>
+                                <div class="alert-actions">
+                                    <a href="/custProfileUpdate?sid={!$Label.CPU}" target='_blank' class="btn btn-outline">UPDATE DETAILS</a>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                    <div class="container pt-2 pb-2">
+                        <div class="text-right">
+                            <apex:outputText rendered="{!rq.id != null}">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!rq.Name} </span>
+                                    <!-- <div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                            </apex:outputText>    
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div class="container">
+                        
+                        <div class="base-layout">
+                            <!--left-side pannel start-->   
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <div>
+                                        <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                        
+                                        <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                           data-target="#base_side_content_1">
+                                            <h3 class="text-primary">ABOUT THIS SERVICE</h3>
+                                        </a>
+                                        <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                                            <div class="collapse-content">
+                                                <p class="text-000 mb-0">
+                                                    This service enables the customer to apply for the renewal of company license or freelance license.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <h3 class="text-primary d-md-block d-none">DOCUMENTS YOU NEED</h3>
+                                        
+                                        <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                           data-target="#base_side_content_2">
+                                            <h3 class="text-primary">DOCUMENTS YOU NEED</h3>
+                                        </a>
+                                        <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                            <p>JPG / PDF / PNG Formats (max 5 MB each)</p>
+                                            
+                                            <!--<ul class="ul-style">
+<li>Contractor trade license</li>
+
+</ul> -->
+                                            <apex:outputText value="{!rq.xuvdet__c }" escape="true" /> 
+                                            
+                                            
+                                            
+                                        </div>
+                                        <!-- .collapse-content-wrapper -->
+                                    </div>
+                                    <apex:outputText rendered="{!Acc.Legal_Framework__c != 'Freelancer'}">
+                                        <c:leaserencmp segStr="{!pid }" R="{!rq}" LicMap="{!licpriceMap}" PrMap="{!pMap}" /> 
+                                    </apex:outputText>  
+                                    
+                                </div>
+                                <!-- .base-side-content -->
+                                
+                            </div>
+                            <!-- .base-side -->
+                            <!--left-side pannel- end -->  
+                            <div class="base-main">
+                                
+                                <div class="base-main-content">
+                                    <!--<c:grqbrdcrumbs req="{!rq}" applicant="active" addon="" payment=""/> --> 
+                                    <div class="steps steps-desktop">
+                                        <div class="step-item active">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-members"></i>
+                                                <div class="step-title">Request details</div>
+                                            </div>
+                                        </div>
+                                        <apex:outputText rendered="{!rq.xuvdet__c != ''}">
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                    <div class="step-title"> Documents</div>
+                                                </div>
+                                            </div>
+                                        </apex:outputText>
+                                        <div class="step-item">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-cash-deposit"></i>
+                                                <div class="step-title">Review &amp; Payment</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end .steps -->
+                                    
+                                    
+                                    <div class="steps steps-mobile">
+                                        
+                                        <div class="step-item active">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-members"></i>
+                                                <div class="step-title">Applicant</div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-addon"></i>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-cash-deposit"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .steps-mobile -->
+                                    
+                                    
+                                    <b><apex:pageMessages id="msg"  />
+                                        <apex:outputText rendered="false"><!--{!Acc.Legal_Framework__c='Freelancer'}-->
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Freelancers are requested to submit a valid Ejari contract alongside their six-month bank statement as part of their Visa Renewal process. Should you require further assistance, please contact your Partner Relations Manager or the axs team at 800-4-axs (297) or support@axs.ae.</b>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!AND(NOT(ejariLeaseFlg),rq.xpmsle__c)}">
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Partner service fee(PSF) requires approval from axs team,before proceeding with license renewal. Upload the copy of valid Ejari to proceed with the request. Once approved, you can pay the total amount (License Renwal and PSF). </b>
+                                            </div>
+                                        </apex:outputText>
+                                        
+                                        <apex:outputText rendered="{!AND(ejariLeaseFlg,rq.xpmsle__c)}"> <!--Acc.lcsta__c=='License Under Renewal' -->
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                               <b>As you owning a lease for a privately owned building, a partner service fee is applicable, which is calculated based on your EJARI. Below are the details calculated as per the EJARI contract.</b>
+                                            </div>
+                                        </apex:outputText> 
+                                        <apex:outputText rendered="{!$Label.RenTst1 == 'BA'}">
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Committee approval is required to proceed. For more information contact Relationship manager or 800-4-DDA (332) or 800 4 AXS(297)</b>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!AND(NOT(brodcastFlag),rq.xcddocs__c!=null,contains(rq.xcddocs__c,'Approval from Broadcasting Committee'),OR(ISBLANK(rq.AP__c),AND(rq.AP__c!=null ,Not(rq.AP__c>0))))}">
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Broadcasting Committee approval required before proceeding.</b>
+                                            </div>
+                                        </apex:outputText>
+                                        
+                                        <apex:outputText rendered="{!AND(NOT(brodcastFlag),rq.xcddocs__c!=null,contains(rq.xcddocs__c,'Approval from Publishing Committee'),OR(ISBLANK(rq.AP__c),AND(rq.AP__c!=null ,Not(rq.AP__c>0))))}">
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Publishing Committee approval required before proceeding.</b>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!AND(NOT(ispu),rq.xdrv__c,NOT(rq.dsgu__c))}">
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                <b>Client has opted to submit documents within 30 days; waiting for client to upload documents.  </b>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!AND(rq.xmloc__c,NOT(rq.tsrv__c),NOT(rq.xcawp__c),OR(ISBLANK(rq.Ap__c),AND(rq.Ap__c!=null ,Not(rq.Ap__c>0)))) }">   
+                                            <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                Due to discrepancy in lease details, license renewal request will be submitted to back office for review and approval. Please upload required docs, if any.
+                                            </div>
+                                        </apex:outputText> 
+                                        
+                                        
+                                    </b>
+                                    
+                                    <c:accountinfo req="{!rq}" acc="{!Acc}" id="ppdCmp"/>
+                                    <!-- {!priceMap} -->
+                                    <apex:outputPanel rendered="{!AND(rq.xpmsle__c,ejariLeaseFlg)}">
+                <p style="font-size: 1.125rem;">
+                   Partner Service Fee calculated as per below lease area
+                </p>
+                <div class="onboarding-review-table onboarding-review-table-static">
+                    <div id="popupfees">
+                         <div class="onboarding-review-toggle">
+                                        <div class="onboarding-review-row">
+                                            <span class="onboarding-review-label">Total Lease Area (SQFT)</span>
+                                            <span class="onboarding-review-value">
+                                              {!rq.xsvn__c}
+                                            </span>
+                                        </div>
+                             <div class="onboarding-review-row">
+                                            <span class="onboarding-review-label">Partner Service Fee (with VAT) </span>
+                                            <span class="onboarding-review-value">
+                                              AED {!rq.xvnum__c}
+                                            </span>
+                                        </div>
+                                    </div>
+                       
+                    </div>
+                </div>
+                           <br/>
+            </apex:outputPanel> 
+                                    <!--  Activity Details Start-->
+                                    <div class="slds-align_absolute-center">
+                                        <div class="base">
+                                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                               data-target="#fee_details">
+                                                <div class="collapse-title">Activity Details</div>
+                                            </a>
+                                            <div id="fee_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <div class="row">
+                                                        <div class="col-lg-12">
+                                                            <div class="form-group">
+                                                                <div class="table-responsive" style="overflow: auto;" >
+                                                                    <table class="table fs-13 table-sm" dataStyle="width:60%">
+                                                                        
+                                                                        
+                                                                        <tr>
+                                                                            <th align="center" style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">Segment</th>
+                                                                            
+                                                                            <th style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;" align="center">
+                                                                                <apex:outputText rendered="{!NOT(ISNULL(chanTMap))}">Activity/Titles/Channels</apex:outputText>
+                                                                                <apex:outputText rendered="{!ISNULL(chanTMap)}">Activity</apex:outputText>     
+                                                                                
+                                                                            </th>
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+                                                                        </tr>
+                                                                        
+                                                                        <apex:repeat value="{!mapAct}" var="key" >
+                                                                            
+                                                                            
+                                                                            
+                                                                            <tr>
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"><apex:outputText value="{!key}" escape="true" ></apex:outputText></td>
+                                                                                
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                    <apex:outputText value="{!mapAct[key]}" escape="true" ></apex:outputText></td>
+                                                                                
+                                                                            </tr>
+                                                                            
+                                                                        </apex:repeat>
+                                                                        
+                                                                        
+                                                                        <apex:repeat value="{!chanTMap}" var="ckey" rendered="{!NOT(ISNULL(chanTMap))}" >
+                                                                            
+                                                                            
+                                                                            
+                                                                            <tr>
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">&nbsp;</td>
+                                                                                
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                    
+                                                                                    <li><apex:outputText value="{!ckey}" escape="true" ></apex:outputText>
+                                                                                    </li>
+                                                                                    
+                                                                                </td>
+                                                                                
+                                                                                
+                                                                            </tr>
+                                                                            
+                                                                            
+                                                                            
+                                                                        </apex:repeat>
+                                                                        
+                                                                        <apex:outputPanel rendered="{!fine30Flag}">                  
+                                                                            <apex:outputPanel rendered="{!AND(NOT(ISNULL(Acc)),NOT(ISNULL(Acc.lcedt__c)),Today()-Acc.lcedt__c>30,NOT(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0)))}">
+                                                                                <tr>
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">&nbsp;</td>
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                        <li> Fine (Renewal Over Due for 31-60 Days)</li>
+                                                                                    </td>
+                                                                                    <apex:outputPanel rendered="{!NOT(or(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0),rq.STA__c=='Completed'))}">
+                                                                                        
+                                                                                        <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                            <ul style="margin-top:3px;text-align: -webkit-match-parent;">AED {!fine30amount}</ul>
+                                                                                        </td>
+                                                                                    </apex:outputPanel>
+                                                                                </tr>
+                                                                            </apex:outputPanel>
+                                                                        </apex:outputPanel> 
+                                                                        
+                                                                        <apex:outputPanel rendered="{!fine60Flag}"> 
+                                                                            <apex:outputPanel rendered="{!AND(NOT(ISNULL(Acc)),NOT(ISNULL(Acc.lcedt__c)),Today()-Acc.lcedt__c>60,NOT(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0)))}">
+                                                                                <tr> 
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">&nbsp;</td>
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                        <li> Fine (Renewal Over Due for 61-90 Days)</li>
+                                                                                    </td>
+                                                                                    <apex:outputPanel rendered="{!NOT(or(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0),rq.STA__c=='Completed'))}">
+                                                                                        
+                                                                                        <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                            <ul style="margin-top:3px;text-align: -webkit-match-parent;">AED {!fine60amount}</ul>
+                                                                                        </td>
+                                                                                    </apex:outputPanel>
+                                                                                </tr>
+                                                                            </apex:outputPanel>
+                                                                        </apex:outputPanel>
+                                                                        
+                                                                        <apex:outputPanel rendered="{!fine90Flag}">                            
+                                                                            <apex:outputPanel rendered="{!AND(NOT(ISNULL(Acc)),NOT(ISNULL(Acc.lcedt__c)),Today()-Acc.lcedt__c>90,NOT(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0)))}">
+                                                                                <tr>
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">&nbsp;</td>
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                        <li> Fine (Renewal Over Due for over 91 Days)</li>
+                                                                                    </td>
+                                                                                    <apex:outputPanel rendered="{!NOT(or(AND(NOT(ISNULL(rq.AP__c)),rq.AP__c>0),rq.STA__c=='Completed'))}">
+                                                                                        
+                                                                                        <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                            <ul style="margin-top:3px;text-align: -webkit-match-parent;">  AED {!fine90amount}</ul>
+                                                                                        </td>
+                                                                                    </apex:outputPanel>
+                                                                                </tr>
+                                                                            </apex:outputPanel>
+                                                                        </apex:outputPanel>
+                                                                        
+                                                                        
+                                                                        
+                                                                    <!--    <apex:outputPanel rendered="{!AND(rq.xpmsle__c,rq.xppsfv__c)}">
+                                                                            <tr>
+                                                                                
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;">&nbsp;</td>
+                                                                                
+                                                                                <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                    <li> PSF Fee</li>
+                                                                                </td>
+                                                                                <apex:outputPanel >
+                                                                                    
+                                                                                    <td style="border-bottom: solid 1px #DDEFEF; color: #333; padding: 10px; text-shadow: 1px 1px 1px #fff; white-space: nowrap;"> 
+                                                                                        <ul style="margin-top:3px;text-align: -webkit-match-parent;">  AED {!psfFee}</ul>
+                                                                                    </td>
+                                                                                </apex:outputPanel>
+                                                                            </tr>
+                                                                        </apex:outputPanel> -->
+                                                                        
+                                                                    </table>     
+                                                                    
+                                                                </div>    
+                                                                
+                                                                
+                                                                
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        
+                                                    </div>
+                                                    <!-- .row -->
+                                                </div>
+                                                <div class="pb-4"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .base-collapse -->
+                                    
+                                    <!--  Fee Details End-->
+                                    <apex:variable value="{!0}" var="locsize"/>
+                                    
+                                    <apex:repeat value="{!newmapLoc}" var="key" rendered="true">
+                                        <apex:variable var="locsize" value="{!locsize+1}" />
+                                    </apex:repeat>
+                                    <!--  Registered office Start -->
+                                    <div class="slds-align_absolute-center">
+                                        <div class="base">
+                                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                               data-target="#registered_office">
+                                                <div class="collapse-title">Select the registered office of your company</div>
+                                            </a>
+                                            <div id="registered_office" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <div class="row">
+                                                        <div class="col-lg-12" >
+                                                            <div class="form-group">
+                                                                <!--<label>Registered office</label> -->
+                                                                <div>
+                                                                    
+                                                                    <select onchange="$('.frmErrMsg').remove();" name="regOffSel" id="regOffSel" class="form-control input-select2-flat">
+                                                                        <apex:outputText rendered="{!IF(AND(Acc.Legal_Framework__c == 'Freelancer'),True,False)}">
+                                                                            <apex:outputText rendered="{!IF(AND(Acc.Prk__c == 'Dubai Media City'),True,False)}">
+                                                                                <option value='Floor: 2 ,Building:2 ,Business Park:Dubai Media City' selected="true">
+                                                                                    Floor: Ground,Building: 8,Business Park: Dubai Media City                           
+                                                                                </option> 
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!IF(AND(Acc.Prk__c == 'Dubai Internet City'),True,False)}">
+                                                                                <option value='Floor: Ground ,Building:16 ,Business Park:Dubai Internet City' selected="true">
+                                                                                    Floor: Ground ,Building:16 ,Business Park: Dubai Internet City                           
+                                                                                </option> 
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!IF(AND(Acc.Prk__c == 'Dubai Knowledge Park'),True,False)}">
+                                                                                <option value='Floor: Ground ,Building: 9 ,Business Park: Dubai Knowledge Park' selected="true">
+                                                                                    Floor: Ground ,Building: 9 ,Business Park: Dubai Knowledge Park                           
+                                                                                </option> 
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!IF(AND(Acc.Prk__c == 'Dubai Design District'),True,False)}">
+                                                                                <option value='Floor:3 ,Building:3 ,Business Park: Dubai Design District' selected="true">
+                                                                                    Floor: 3 ,Building: 3 ,Business Park: Dubai Design District                          
+                                                                                </option> 
+                                                                            </apex:outputText>
+                                                                        </apex:outputText>     
+                                                                        <apex:outputText rendered="{!IF(AND(rq.xmloc__c , rq.xcawp__c,Acc.Legal_Framework__c != 'Freelancer'),True,False)}">
+                                                                            <apex:outputText rendered="{!If(AND(regOffnew!=null,regOffnew.size>0,regOffnew[0].lstyp__c!='Land lease'),true,false)}">
+                                                                                <option value='Premises: {!regOffnew[0].offno__c} ,Floor: {!regOffnew[0].flr__c}  ,Building:  {!regOffnew[0].Bldg__c}   ,Business Park: {!regOffnew[0].bu__c}' selected="true">
+                                                                                    Premises: {!regOffnew[0].offno__c} ,Floor: {!regOffnew[0].flr__c}  ,Building:  {!regOffnew[0].Bldg__c}   ,Business Park: {!regOffnew[0].bu__c}                           
+                                                                                </option>   
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!If(AND(regOffnew!=null,regOffnew.size>0,regOffnew[0].lstyp__c=='Land lease'),true,false)}">
+                                                                                <option value='Plot: {!regOffnew[0].plt__c}' selected="true">
+                                                                                    Plot: {!regOffnew[0].plt__c}
+                                                                                </option>   
+                                                                            </apex:outputText>
+                                                                        </apex:outputText>
+                                                                        <apex:outputText rendered="{!IF(AND(rq.xmloc__c , rq.xcawp__c,Acc.Legal_Framework__c != 'Freelancer'),False,True)}">
+                                                                            <apex:outputText rendered="{!AND(locsize != null , locsize == 1)}">
+                                                                                <apex:repeat value="{!newmapLoc}" var="key" >
+                                                                                    <apex:repeat value="{!newmapLoc[key]}" var="key2" >
+                                                                                        <option value='{!key};{!key2}' selected="true">
+                                                                                            {!key2}
+                                                                                        </option>
+                                                                                        <script type="text/javascript">
+                                                                                        loclen++;
+                                                                                        </script>
+                                                                                    </apex:repeat>
+                                                                                </apex:repeat> 
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!AND(locsize != null , locsize > 1)}">
+                                                                                <option value='-1'>Select the registered office of your company</option>
+                                                                                <apex:repeat value="{!newmapLoc}" var="key" >
+                                                                                    <apex:repeat value="{!newmapLoc[key]}" var="key2" >
+                                                                                        <option value='{!key};{!key2}'>
+                                                                                            {!key2}
+                                                                                        </option>
+                                                                                        <script type="text/javascript">
+                                                                                        loclen++;
+                                                                                        </script>
+                                                                                    </apex:repeat>
+                                                                                </apex:repeat> 
+                                                                            </apex:outputText>
+                                                                        </apex:outputText>    
+                                                                        
+                                                                    </select>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .row -->
+                                                </div>
+                                                <div class="pb-4"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="conInfo"> 
+                                        <c:eContactInfo req="{!rq}" id="conTactcmp" cmpTitle="Contact Details"/>
+                                    </div>
+                                    <!--  Registered office End -->
+                                    <!-- Lease Locations Start -->
+                                    <!--  <div class="slds-align_absolute-center">
+<div class="base-collapse">
+<a href="#" class="collapse-header collapsed" data-toggle="collapse"
+data-target="#leaseDetails">
+<div class="collapse-title">Lease Locations</div>
+</a>
+<div id="leaseDetails" class="collapse show">
+<div class="collapse-content">
+<div class="table-responsive table-responsive-lg">
+<table class="table table-base">
+<thead>
+<tr>
+<th>Agreement No</th>
+<th style="min-width: 120px;">Location Details</th>
+<th style="min-width: 110px;">Status</th>
+<apex:outputText rendered="{!req.xpmsle__c}">
+<th>Total Area</th>
+</apex:outputText>
+<th>Start Date</th>
+<th>End Date</th>
+
+</tr>
+</thead>
+<tbody>
+<apex:repeat value="{!tecomLeaseList}" var="loc">
+<tr>
+<td><apex:outputText value="{!loc.AgNo}" /></td>
+<td>
+<apex:repeat value="{!finalAgreeLoc}" var="key" >
+<apex:outputText rendered="{!key==loc.AgNo}" >
+<apex:repeat value="{!finalAgreeLoc[loc.AgNo]}" var="key2">
+<table class="table table-base">
+<apex:repeat value="{!key2}" var="lc" >
+<tr>
+<td>
+<apex:outputText value="{!lc}" />
+</td>
+</tr>
+</apex:repeat>
+</table>
+
+</apex:repeat>
+</apex:outputText>
+</apex:repeat>  
+</td>
+<td><apex:outputText value="{!loc.ContractStatusReason}" /></td>
+<apex:outputText rendered="{!req.xpmsle__c}">
+<td><apex:outputText value="{!loc.OppArea}" /></td>
+</apex:outputText>
+<td><apex:outputText value="{!loc.ContractStartDate}" /></td>
+<td><apex:outputText value="{!loc.ContractEndDate}" /></td>
+</tr>
+</apex:repeat>
+</tbody>
+</table>
+</div>
+</div>
+<div class="pb-4"></div>
+</div>
+</div>
+</div> -->
+                                    <!-- .base-collapse -->
+                                    <!-- Lease Locations End -->
+                                    <!-- Terms& Condition Start -->
+                                    <apex:outputPanel rendered="{!AND(ispu)}" >
+                                        <div class="slds-align_absolute-center">
+                                            <div class="base">
+                                                <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                                   data-target="#terms_conditions">
+                                                    <div class="collapse-title"><b>Terms and Conditions</b></div>
+                                                </a>
+                                                <div id="terms_conditions" class="collapse show">
+                                                    <div class="collapse-content">
+                                                        <div class="row">
+                                                            <p class="mdc">
+                                                                <!--<i class="icon-info-circle text-primary" style="vertical-align: middle;font-size: 1.5em;"></i>
+Please note --> <br/> &nbsp;&nbsp;By proceeding, we acknowledge to: <br/>
+                                                                <apex:inputhidden id="xddatc__c"  value="{!rq.xddatc__c}"  /> 
+                                                                <script>
+                                                                cs["xddatc__c"] = document.getElementById("{!$Component.xddatc__c}");
+                                                                
+                                                                </script>
+                                                                <apex:outputText rendered="{!IF(Acc.Legal_Framework__c!='Freelancer',true,false)}" >
+                                                                    <ul>
+                                                                        <li>
+                                                                            All the above mentioned details in segments and activities, lease details are correct.
+                                                                        </li>
+                                                                        <li>
+                                                                            We shall maintain the details of the Ultimate Beneficial Ownership (UBO) of the Company at our Registered Office, as per Article 2.11 of the Decision No (1) of 2021 concerning License Categories.
+                                                                        </li>
+                                                                        <li>
+                                                                            •   We will prepare and maintain Audited Accounts (as that term is defined in Article 1.1 of the Decision No (1) of 2021 concerning License Categories) for our business at our premises in the Free Zone.
+                                                                        </li>
+                                                                        <apex:outputText rendered="{!req.xpmsle__c}">
+                                                                            <li>
+                                                                                Please verify the area shown in the leasing detail and the Fee would be calculated as total area * 5 AED per square feet plus 5% VAT
+                                                                            </li>
+                                                                        </apex:outputText>
+                                                                    </ul>  
+                                                                    
+                                                                </apex:outputText>
+                                                                <apex:outputText rendered="{!IF(Acc.Legal_Framework__c=='Freelancer',true,false)}">
+                                                                    <ul>
+                                                                        <li>
+                                                                            The selected segments and activities in the licence renewal application are correct.
+                                                                        </li>
+                                                                        <li>
+                                                                            The submitted details of the lease for the premises of the business in the Free Zone are correct.
+                                                                        </li>
+                                                                        <li>
+                                                                            I have read the leasing terms and conditions. <a href="#" onclick="window.open('../servlet/servlet.FileDownload?file=0152y000000c45H');">Click here</a> for details.
+                                                                        </li>
+                                                                    </ul>    
+                                                                </apex:outputText>
+                                                            </p>
+                                                            <p class="chk" style="vertical-align: middle;font-size: 1em;">
+                                                                <label class="custom-checkbox mr-4 data-value">
+                                                                    <input type="checkbox" id="tANDc" onchange="chkTC()" />
+                                                                    <span class="">I agree to terms &amp; conditions</span>
+                                                                </label>  
+                                                            </p>
+                                                        </div>
+                                                        <!-- .row -->
+                                                    </div>
+                                                    <div class="pb-4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>    
+                                    <!--  Terms& Condition  End-->
+                                    <!-- .base-main-content -->
+                                    <apex:outputPanel id="btnid">
+                                        <div class="base-main-footer">
+                                            <div class="base-nav">
+                                                
+                                                <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                <a href="#" onClick="validateData(event)"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-footer -->
+                                    </apex:outputPanel> 
+                                </div>
+                                <!-- .base-main -->
+                                
+                            </div>
+                            <!-- .base-layout -->
+                            
+                        </div>
+                        <!-- .container -->
+                        
+                        
+                        <!-- .site-footer-wrapper -->
+                    </div>
+                    
+                    <!-- Modal -->
+                    
+                </div>
+            </body>
+        </apex:pageBlock>
+    </apex:form>
+    <apex:form id="uploadFrm">
+        
+        <c:fileuploadpopupnew13 R="{!req}" /> 
+        
+    </apex:form>
+</html>    
+</apex:page>

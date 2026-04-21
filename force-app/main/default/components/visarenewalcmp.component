@@ -1,0 +1,158 @@
+<apex:component >
+    <apex:attribute name="rq" description="Request" type="g_Req__c"  required="true"/>
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="rqSave" description="Service Type Label" type="Boolean"  />
+    <apex:attribute name="srvTp" description="Service Type" type="String" />
+    <style>
+        .gvOptions{
+        display: none;
+        }
+    </style>
+    <div>
+        
+        
+        <div class="form-group mb-3 mt-4 pt-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <!--
+<c:gconlookup saveRq="{!rqSave}" id="conlookup" Request="{!rq}" role="{!rq.ConRol__c}" accId="{!rq.Acc__c}" sta="{!rq.ConSTA__c}" heading="{!If((rq.ConRol__c == 'Student')  ,'Select the student to renew his/her visa', if(srvTp == 'nidcncl','Select the employee to cancel his/her ID card',if(srvTp == 'imp','Select the employee to request the immigration status printout',if(srvTp == 'rso','Select the employee to release from your list of employees','Select the employee to renew his/her visa'))))}"/> 
+-->
+                        <c:gconlookup saveRq="{!rqSave}" id="conlookup"
+                                      Request="{!rq}" role="{!rq.ConRol__c}" accId="{!rq.Acc__c}"
+                                      sta="{!rq.ConSTA__c}" sdVType="{!srvTp}" heading="{!If(srvTp == 'par','Select the student to apply for part time employment permit',if(srvTp == 'nidcncl','Select the employee to cancel his/her ID card',if(srvTp == 'Elig','Select the student to request part time employment eligibility',if(srvTp == 'imp','Select the employee to request the immigration status printout',if(srvTp == 'rso','Select the employee to be released',If((rq.ConRol__c == 'Student'),'Select the student to renew his/her visa',if(srvTp == 'idcard','Select the employee to renew his/her ID card',if(srvTp == 'nidc','Select the employee to amend his/her ID card',if(srvTp == 'dgv','Select the dependent transfer to Golden Visa.',if(srvTp == 'egv','Select the employee for Golden Visa.','Select the employee to renew his/her visa'))))))))))}"/>                                                                                                                                                     </div>
+                </div>
+            </div>
+        </div>
+        <apex:outputPanel rendered="{!rq.Con__c <> null}">
+            <script>
+                console.log('rq.srvc__r.uid__c &--* '+'{!rq.srvc__r.uid__c}');
+            </script>
+            <apex:outputPanel rendered="{!AND(rq.srvc__r.uid__c!='gv',rq.srvc__r.uid__c!='070',OR(srvTp == 'idcard',rq.con__r.xsgv__c))}"> 
+                <div class="form-group" id="gvOptions" >
+                    <label class="mb-3 fs-18">Choose duration</label>
+                    <div class="row">
+                        <div class="col-lg-3 col-sm-6">
+                            <label class="box-check">
+                                <input type="radio" class="gvOpt" itmcode='id;' name="gvOpt" value="id;"/>
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        <span class="text-000">1 year</span>
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-lg-3 col-sm-6" style="{! If(rq.con__r.xsgv__c  ,'display: block;','display: none;') }">
+                            <label class="box-check">
+                                <input type="radio" class="gvOpt" itmcode='id2;' name="gvOpt" value="id2;"/>
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        <span class="text-000">2 years</span>
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-lg-3 col-sm-6" style="{! If(rq.con__r.xsgv__c  ,'display: block;','display: none;') }">
+                            <label class="box-check">
+                                <input type="radio" class="gvOpt" itmcode='gid;' name="gvOpt" value="gid;"/>
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        <span class="text-000">5 years</span>
+                                    </span>
+                                </div>
+                            </label>
+                            <script>
+                            $('.gvOpt').on('change',function(){
+                                cs['xadh__c'].value = $('.gvOpt:checked').attr('itmcode');
+                                console.log('adhoc:::', cs['xadh__c'].value);
+                                // showGLoader();
+                                //saveRequest2();
+                            });
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        
+        
+        <div class="form-group" style="{! If((srvLst.size > 1)  ,'display: block;','display: none;') }">
+            
+            <label class="mb-3 fs-18">{!srvLbl} </label>
+            
+            <div class="row">
+                <p><b>
+                    GDRFA (General Directorate of Residency and Foreigners Affairs) has stopped issuing 3 years of residence visas. Henceforth, GDRFA will issue either 1-year or 2 years residence visas only.
+                    </b>
+                </p>
+                <apex:repeat value="{!srvLst}" var="sr">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,false)}">
+                                <input type="radio" class="serRadio service_id" disabled="true" name="service_id" value="{!sr.id}"/>
+                                
+                                <div class="box box-center box-padding box-hover" style="background-color:#a29b9b;min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        <span class="text-000">{!sr.Short_Label__c}</span>
+                                    </span>
+                                </div>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,true)}">
+                                <input type="radio" class="serRadio service_id"  name="service_id" value="{!sr.id}"/>
+                                
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        <span class="text-000">{!sr.Short_Label__c}</span>
+                                    </span>
+                                </div>
+                            </apex:outputText>
+                            <script>
+                            cs["uid"].value = '{!sr.uid__c}';
+                            cs["xeidav__c"].value = 'Yes';
+                            if('{!srvLst.size}' ==1){
+                                $('.service_id').eq(0).attr('checked','true');
+                            }
+                            </script>
+                        </label>
+                    </div>
+                </apex:repeat>
+                
+            </div>
+            <div class="serErr">Please select the duration of visa.</div>
+        </div>
+        <!-- .form-group -->
+        <!--  <label class="custom-checkbox custom-checkbox-sm mb-4" id="copyDocs" >
+<input type="checkbox" name="copydocs"/>
+<span>Copy Documents from existing service.</span>
+</label> -->
+        <apex:outputText rendered="{!srvTp == 'nidc'}">
+            <label class="custom-checkbox custom-checkbox-sm mb-4" id="rcid">
+                <input type="checkbox" name="rpcard"/>
+                <span>Select if you would like to apply for Representative Card</span>
+            </label>
+        </apex:outputText>
+        <apex:outputText rendered="{!srvTp == 'egv'}">
+            <label class="custom-checkbox custom-checkbox-sm mb-4" >
+                <input type="checkbox" name="imgdeposit" id="imgdeposit" />
+                <span>Select if the applicant sponsors dependents</span>
+            </label>
+            <div class="form-group" id="dpnoid" style="display: none;width: 150px;">
+                <label>No of dependents</label>
+                <select id="depId" class="form-control input-select2-tags dum requiredFld">
+                    <option value="">--None--</option>
+                    <option value="0ip">1</option>
+                    <option value="1ip">2</option>
+                    <option value="2ip">3</option>
+                    <option value="3ip">4</option>
+                    <option value="4ip">5</option>
+                    <option value="5ip">6</option>
+                    <option value="6ip">7</option>
+                    <option value="7ip">8</option>
+                    <option value="8ip">9</option>
+                </select>
+                
+            </div>
+        </apex:outputText>                         
+    </div>
+</apex:component>

@@ -1,0 +1,435 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!srv.sdg__r.slbl__c}" >
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+        
+        <!-- Salutation-->
+        <script type="text/javascript">
+        var cs = {};
+        $(document).ready(function() {
+           cs['xrped__c'].value='';
+            cs['xrped'].value='';
+        });
+        function assignfldVal(val,fldId){cs[fldId].value=val;}
+        //Validate Data on click of next button
+        function validateData(){
+            console.log('validateData:::');
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            var stDt = $('#xrped__c').val().split('/');
+            var endDt = $('#xrpid__c').val().split('/');
+            var datesDiff = (new Date(stDt[1]+'/'+stDt[0]+'/'+stDt[2]) - new Date(endDt[1]+'/'+endDt[0]+'/'+endDt[2]))/1000/60/60/24;
+            if(datesDiff<30){
+                axsAlert('Error','Part time duration should be a minimum of 30 days.<br>Please check <b>Start date</b> and <b>End date</b>.');
+                validated = false;
+                return;
+            }
+            checkAllDates('input-datepicker','');
+            if(cs['ofr_StuHrs'].value>40 || cs['ofr_StuHrs'].value<1){
+                addValError(e,'Allowed working hours shoud be between 1 to 40.');
+                validated = false;
+            }
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            if(validated == true){
+                cs['xawh__c'].value=parseInt(cs['ofr_StuHrs'].value);
+                toggleGLoader();
+                next();
+            }
+             if(!$('#tANDc').prop('checked')){
+            $('.chk').find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+            scrollToDiv($('.chk'));
+            return;
+        }
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function checkDate(elem){   /** Override from Axs2Customjs**/
+            var e = $(elem);
+            var type = e.attr('validationname');
+            var date;
+            var date1 = e.val();
+            date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+            var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+            var msg = '';
+            if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+                msg = 'Please enter a valid date!'
+            }
+            else if(type=='sd'){
+                if(days>1)
+                    msg = 'Start date shoud not be a past date';
+            }else if(type=='ed'){
+                if(days>0){
+                    msg = 'End date shoud be a future date';
+                }
+            }
+            if(msg)
+                addValError(e,msg);
+            else
+                removeValError(e);
+        }
+        var date1;
+        var edate;
+        var date;
+        var edate1;
+        function changeDate(elem) {
+            var e = $(elem);
+            var vn = $(elem).attr('validationname');        
+            var date2;
+            if(vn=='pid') {
+                date1 = e.val();// start date
+                date =  date1.split('/')[2]+'/'+date1.split('/')[1]+'/'+date1.split('/')[0];
+            }
+            if(vn=='ped') {
+                edate = e.val();//end date
+                edate1 =  edate.split('/')[2]+'/'+edate.split('/')[1]+'/'+edate.split('/')[0];
+            }
+            date2 = visaExpiryDate.split('-')[0]+'/'+visaExpiryDate.split('-')[1]+'/'+visaExpiryDate.split('-')[2];// visa expiry date      
+            
+            var days = new Date(new Date(edate1)-new Date(date))/1000/60/60/24;
+            
+            if(days<30){
+                addValError('#xrped__c','Duration should be a minimum of 30 days');
+            }else{
+                removeValError('#xrped__c');
+            }
+            
+            if(new Date(date) > new Date(edate1)){
+                console.log('ERROR');
+                addValError('#xrpid__c','Start Date should be a less than end date');
+            } else {
+                removeValError('#xrpid__c');
+            }
+            if(vn=='pid'){
+                if(new Date(date2) < new Date(date)) {
+                    addValError('#xrpid__c','Start Date should not be more than visa expiry date');  
+                } 
+                else if(new Date(date) <= new Date()){
+                    addValError('#xrpid__c','Start Date should be a future date');  
+                } 
+                    else {
+                        removeValError('#xrpid__c');
+                    }
+            }
+            else if(vn=='ped'){
+                if(new Date(date2) < new Date(edate1)) {
+                    addValError('#xrped__c','End Date should not be more than visa expiry date');  
+                }
+                else if(new Date(edate1) <= new Date()){
+                    addValError('#xrped__c','End Date should be a future date');  
+                } 
+                    else {
+                        removeValError('#xrped__c');
+                    }
+            }
+        }
+        function rmErronTC(){
+            if($('#tANDc').is(':checked')==true)
+                $('.chk').find('.frmErrMsg').remove();
+            else{
+                var errElem = '<div class="frmErrMsg">Please accept Terms and Conditions.</div>';
+                $('.chk').append(errElem);
+            }
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #ff0000;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: -0.2rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" />
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="saveReqDraft3" action="{!saveDraft}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <body class="base">
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    <apex:outputPanel rendered="{!NOt(ISBLANK(req.Name))}">
+                                        SR # <span class="text-000">{!req.Name} </span>    
+                                    </apex:outputPanel>
+                                </span>
+                                <!-- <a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+                                
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" id="comp"/>
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    <div class="base-main-content">
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <b><apex:pageMessages id="msg"/></b>
+                                        <div class="base-collapse">
+                                            
+                                            <h4 class="mt-4">Applicant details </h4>
+                                            <br/>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        <div class="form-group">
+                                                            <label class="d-block">Title</label>
+                                                            <div class="from-group reqRadio">
+                                                                <apex:repeat value="{!Salutations}" var="title">
+                                                                    <apex:outputPanel style="display:inline-block" rendered="{!title.Value == req.xcslt__c}" styleClass="mb-4">
+                                                                        <label class="custom-radio mr-5">
+                                                                            <input type="radio" value="{!title.Value}" checked="true" disabled="true" name="salutation" class="requiredFld"/>
+                                                                            <span>{!title.Label}</span>
+                                                                        </label>
+                                                                    </apex:outputPanel>
+                                                                </apex:repeat>
+                                                                <div class="option-error frmErrMsg" style="display:none">Please select an option!</div>
+                                                                <script type="text/javascript">
+                                                                cs['xcslt__c']=document.getElementById('{!$Component.xcslt__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>First name</label>
+                                                                    <apex:inputField styleClass="disabledApex forDraft requiredFld form-control alphaChar" value="{!req.xcfn__c}" id="xcfn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcfnar__c}');"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcfn__c']=document.getElementById('{!$Component.xcfn__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Middle name</label>
+                                                                    <apex:inputField styleClass="disabledApex form-control alphaChar" value="{!req.xcmn__c}" id="xcmn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmnar__c}');"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcmn__c']=document.getElementById('{!$Component.xcmn__c}')
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Last name</label>
+                                                                    <apex:inputField styleClass="disabledApex forDraft requiredFld form-control alphaChar" value="{!req.xcln__c}" id="xcln__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xclnar__c}');"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcln__c']=document.getElementById('{!$Component.xcln__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Current nationality</label>
+                                                                    <input class="disabledApex form-control" value="{!req.xcnc__c}" />
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Course</label>
+                                                                    <apex:inputField styleClass="disabledApex form-control" id="Course_Name__c" value="{!req.Course_Name__c}"/>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Course year</label>
+                                                                    <apex:inputField styleClass="disabledApex form-control" id="Current_Course_Year__c" value="{!req.Current_Course_Year__c}"/>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Program</label>
+                                                                    <apex:inputField styleClass="disabledApex form-control" id="Program__c" value="{!req.Program__c}"/>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>GPA</label>
+                                                                    <apex:inputField styleClass="disabledApex form-control" id="GPA__c" value="{!req.GPA__c}"/>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Offered Job Title</label>
+                                                                    <apex:inputField value="{!req.action__c}" styleClass="alphaChar requiredFld form-control"
+                                                                                     id="action__c" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Allowed working hours per week(Max 40)</label>
+                                                                    <input class="requiredFld form-control numOnly" onchange="checkAWH(this)" maxlength="2" id="ofr_StuHrs" value="{!req.xawh__c}"/>
+                                                                    <apex:inputHidden id="xawh__c" value="{!req.xawh__c}" />
+                                                                    <script type="text/javascript">
+                                                                    cs['ofr_StuHrs'] = document.getElementById('ofr_StuHrs');
+                                                                    cs['xawh__c'] = document.getElementById('{!$Component.xawh__c}');
+                                                                    function checkAWH(e){
+                                                                        if($(e).val()>40 || $(e).val()<1)
+                                                                            addValError(e,'Allowed working hours shoud be between 1 to 40.');
+                                                                    }
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Start date</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <input type="text" class="requiredFld form-control input-datepicker" id="xrpid__c"
+                                                                               data-toggle="datetimepicker" data-target="#xrpid__c" value="{!req.xrpid__c}"
+                                                                               onchange = "assignfldVal(this.value,'xrpid'); checkDate(this)" validationname="sd" />
+                                                                        <apex:inputHidden id="xrpid" value="{!req.xrpid__c}" />
+                                                                        <script type="text/javascript">
+                                                                        cs['xrpid__c']=document.getElementById('xrpid__c');
+                                                                        dformat('{!JSENCODE(req.xrpid__c)}','xrpid__c');
+                                                                        cs['xrpid']=getC('{!$Component.xrpid}');
+                                                                        </script>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrpid__c">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                        
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>End date</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <input type="text" class="requiredFld form-control input-datepicker" id="xrped__c"
+                                                                               data-toggle="datetimepicker" data-target="#xrped__c" value="{!req.xrped__c}"
+                                                                               onchange = "assignfldVal(this.value,'xrped'); checkDate(this)" validationname="ed" />
+                                                                        <apex:inputHidden id="xrped" value="{!req.xrped__c}" />
+                                                                        <script type="text/javascript">
+                                                                        cs['xrped__c']=document.getElementById('xrped__c');
+                                                                        dformat('{!JSENCODE(req.xrped__c)}','xrped__c');
+                                                                        cs['xrped']=getC('{!$Component.xrped}');
+                                                                        </script>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrped__c">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                        
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                        </div> 
+                                                        <c:eContactInfo req="{!req}"/>
+                                                        <p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+                                                            <label class="custom-checkbox mr-4">
+                                                                <input id="tANDc" onchange="rmErronTC()" type="checkbox" />
+                                                                <span>I have read and agree to comply with the Employer Eligibility under the article 2.2, 2.3, 2.4 and 2.5 of “Order No (1) of 2016, concerning Student Part-time Employment”. </span>
+                                                            </label>  
+                                                        </p>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            <div class="base-main-footer">
+                                                <div class="base-nav">
+                                                    <a href="#" onClick="validateData()"
+                                                       class="btn btn-primary base-nav-next">
+                                                        NEXT
+                                                    </a> 
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+        </apex:form>
+    </html>    
+</apex:page>

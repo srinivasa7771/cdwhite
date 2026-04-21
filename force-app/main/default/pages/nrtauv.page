@@ -1,0 +1,701 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <style>
+        .text-light {
+        color: #9B9B9B !important;
+        }
+    </style>
+    
+    <apex:form >
+        <apex:actionFunction name="removeAttch"  action="{!deleteAttach}" status="theStatus"  rerender="VehicleCards1,msg" oncomplete="hideTempLoader_input();removeEmptyLables();">
+            <apex:param name="attId" value=""/> 
+        </apex:actionFunction>
+        <apex:actionFunction name="updItems" action="{!updateItemSTA}" reRender="msg"/>
+        <apex:actionFunction name="saveDraft" action="{!saveDraft}" reRender="msg,VehicleCards1"  oncomplete="hideTempLoader_input();" /><!--oncomplete="toggleGLoader();"-->
+        <apex:actionFunction name="pushPD" action="{!pushParkingData}" reRender="msg" oncomplete="toggleGLoader();" />
+        <apex:actionFunction name="attachmentSave" action="{!saveAtt}" oncomplete="errMsgScroll();enableAllatt();removeEmptyLables();" status="theStatus" rerender="docSec,VehicleCards1,random1,msg"/>
+        <apex:actionFunction name="saveAttachment_RC" action="{!saveAtt}" reRender="VehicleCards1,random1,msg" oncomplete="hideTempLoader_input();"/><!--window.open('/{!req.id}','_self')-->
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="settoFld('{!JSENCODE(parkingString)}','{!JSENCODE(parkingString1)}');loadPrevData();" rerender="cardList" /> <!--formData('{!JSENCODE(parkingString)}');-->
+        <apex:actionFunction name="saveReq_RC" action="{!saveReq1}" oncomplete="saveAttachment_RC();hideTempLoader_input();" reRender="msg" />
+        <apex:actionFunction name="saveReq_UR" action="{!saveReq1_UR}" reRender="msg" />
+        <apex:actionFunction name="copyApplicantInfo" action="{!saveReq1}" onbeforedomupdate="toggleGLoader()" oncomplete="window.open('/{!req.id}','_self')" reRender="msg" />
+        <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+        <apex:inputHidden id="docname" value="{!docname}" />
+        <apex:inputHidden id="parseId"  />  
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" />
+        <apex:inputHidden id="xvn__c" value="{!req.xvn__c}" />
+        <apex:inputHidden id="xvnum__c" value="{!req.xvnum__c}" />
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        <apex:inputHidden id="xadtx2__c" value="{!req.xadtx2__c}" />
+        <apex:inputHidden id="uid"  />
+        
+        
+        
+        <apex:outputPanel id="mainDiv">
+            <div id="main">
+                <b><apex:pageMessages id="msg"  /></b>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                <!--{!srv.sdg__r.sd__c}-->
+                                                Manage vehicle details such as vehicle registration card.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h3 class="text-primary d-md-block d-none">DOCUMENTS YOU NEED</h3>
+                                    
+                                    <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                       data-target="#base_side_content_2">
+                                        <h3 class="text-primary">DOCUMENTS YOU NEED</h3>
+                                    </a>
+                                    <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                        <p>JPG / JPEG / PDF / PNG / TIFF Formats (max 4 MB each)</p>
+                                        
+                                        <ul class="ul-style"> 
+                                            <li>Vehicle registration card - front</li>
+                                            <li>Vehicle registration card - back</li>
+                                        </ul>                                            
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <h3 class="base-main-title">Manage Vehicle Details</h3>
+                                <div class="mb-5"></div>
+                                
+                                <!--<div class="form-group">
+                                    <label class="fs-18">Select a parking card to assign to this vehicle (max 2 cars per card)</label>
+                                    <apex:outputPanel id="cardList">
+                                        <script>
+                                        </script>
+                                         <div class="table-responsive table-responsive-lg" style="max-height:600px;overflow:hidden;overflow-y:auto;">
+            
+                                             <table class="table table-parking table-align-middle " id="parkingtable">
+                                                 <thead>
+                                                     <tr>
+                                                         <th>SELECT</th>
+                                                         <th>PLATE NUMBER</th>
+                                                         <th>CITY</th>
+                                                         <th>VEHICLE OWNER</th>
+                                                         <th>VEHICLE TYPE</th>
+                                                         <th>EXPIRY</th>
+                                                         <th>CARD NUMBER</th>
+                                                     </tr>
+                                                 </thead>
+                                                 <tbody>
+                                                 </tbody>
+                                             </table>
+                                        </div>
+                                        <script>
+                                        
+                                        </script>
+                                        <div class="row">
+                                            <div class="col-xl-6 col-lg-10">
+                                                <div class="form-style">
+                                                    <select id="cardList" class="form-control input-select2-flat" onchange="settoFld(this)">
+                                                        <option value="">--None--</option>
+                                                        <apex:repeat value="{!lst_pd}" var="p">
+                                                            <option value="{!p.cardNum}">{!p.cardNum}-{!p.actStat}</option>
+                                                        </apex:repeat>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>-->
+                               <!-- <div id="select_employee" style="{!IF(ISBLANK(Eid),'','display: none;')}">
+                                    <div class="form-group">
+                                        <c:gconlookup id="conlookup" heading="Select an employee who owns this vehicle" saveRq="true" Request="{!req}" role="Employee" accId="{!req.Acc__c}" sta="Active"/>
+                                    </div>
+                                    <apex:outputPanel rendered="{!ISNULL(req.id)}">
+                                        <button class="btn btn-outline-primary btn-outline-primary2 btn-select-non-employee">
+                                            ADD NON-EMPLOYEE AS A CARDHOLDER</button>
+                                    </apex:outputPanel>
+                                </div>-->
+                                <!-- #select_employee -->
+                                <div id="vehicle_details" >
+                                    <div class="mb-5"></div>
+                                    <div class="row row-lg form-style">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Access number</label>
+                                                <apex:inputField id="rtacn__c" value="{!req.rtacn__c}" styleClass="cardNum form-control disabledApex"></apex:inputField>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Sector</label>
+                                                <apex:inputField id="xps__c" value="{!req.xps__c}" styleClass="sector form-control disabledApex"></apex:inputField>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Vehicle owner</label>
+                                                <apex:inputField id="xchn__c" value="{!req.xchn__c}" onchange="checkChange(this,'cHolderNm')" styleClass="cHolderNm form-control"></apex:inputField>
+                                                <input style="display:none" id="cHolderNm" onchange="setTo(this,'xchn__c')" type="text" class="form-control" value="" />
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Mobile number</label>
+                                                <div class="d-flex">
+                                                    <div style="flex-basis: 110px;width: 110px;">
+                                                        <input class="form-control" disabled="true" type="text" value="+971" />
+                                                    </div>
+                                                    <apex:inputField onchange="isUAEMobNum(this);" onkeyup="validDigits(this);" id="rmob__c" value="{!req.rmob__c}" styleClass="applMob chMob form-control ml-3"></apex:inputField>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Email</label>
+                                                <apex:inputField id="xceml__c" value="{!req.xceml__c}" styleClass="requiredFld chMail form-control" onchange="checkEmail(this);" />
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Landline(optional)</label>
+                                                <div class="d-flex">
+                                                    <div style="flex-basis: 110px;width: 110px;">
+                                                        <input class="form-control" disabled="true" type="text" value="+971" />
+                                                    </div>
+                                                    <apex:inputField id="xoln__c" onkeyup="validDigits(this);" value="{!req.xoln__c}" styleClass="chLand form-control numOnly ml-3"></apex:inputField>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Vehicle number</label>
+                                                <input id='vehNum' class="vehicleNumber form-control disabledApex" />
+                                                <apex:inputHidden id="xpveh__c" value="{!req.xpveh__c}"></apex:inputHidden><!--onchange="checkChange(this,'vehicleNumber')" -->
+                                                <apex:inputHidden id="xsvn__c" value="{!req.xsvn__c}"></apex:inputHidden>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Place of registraion</label>
+                                                <input id='por' class="pPlaceOfReg form-control disabledApex" />
+                                                <apex:inputHidden id="xppor__c" value="{!req.xppor__c}"></apex:inputHidden>
+                                                <apex:inputHidden id="xspor__c" value="{!req.xspor__c}"></apex:inputHidden>
+                                            </div>
+                                        </div>
+                                    </div>
+                                        <!-- primary Vehicle details starts 
+                                        <div class="grey-collapse">
+                                            <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse"
+                                               data-target="#prVeh_details">
+                                                <div class="collapse-title">Primary vehicle details</div>
+                                            </a>
+                                            <div id="prVeh_details" class="collapse show">
+                                                <div class="collapse-content row">
+                                                                                                        
+                                                    <div class="bg-grey-light" style="height: 4px;"></div>
+                                                </div>
+                                            </div>
+                                        </div>-->
+                                        <!-- Secondary Vehicle details starts -->
+                                        <div class="grey-collapse" style="display:none;">
+                                            <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse"
+                                               data-target="#scVeh_details">
+                                                <div class="collapse-title">Secondary vehicle details</div>
+                                            </a>
+                                            <div id="scVeh_details" class="collapse">
+                                                <div class="collapse-content row">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Vehicle number</label>
+                                                            <!--<apex:inputField id="xsvn__c" onchange="checkChange(this,'secVclNum')" value="{!req.xsvn__c}" styleClass="secVclNum form-control"></apex:inputField>-->
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Place of registraion</label>
+                                                            <!--<apex:inputField id="xspor__c" onchange="checkChange(this,'sPlaceOfReg')" value="{!req.xspor__c}" styleClass="sPlaceOfReg form-control"></apex:inputField>-->
+                                                        </div>
+                                                    </div>
+                                                    <div class="bg-grey-light" style="height: 4px;"></div>
+                                                    
+                                                </div>
+                                            </div>
+                                            <script>
+                                            var cs={};
+                                            cs["uid"] = getC("{!$Component.uid}");
+                                            cs["imageBase64"] = getC("{!$Component.imageBase64}");
+                                            cs["docname"] = getC("{!$Component.docname}");
+                                            cs["parseId"] = getC("{!$Component.parseId}");
+                                            cs['xadh__c']=getC('{!$Component.xadh__c}');
+                                            cs['ias__c']=getC('{!$Component.ias__c}');
+                                            cs['rtacn__c']=getC('{!$Component.rtacn__c}');
+                                            cs['xcslt__c']=getC('{!$Component.xcslt__c}');
+                                            cs['xvn__c']=getC('{!$Component.xvn__c}');
+                                            cs['xvnum__c']=getC('{!$Component.xvnum__c}');
+                                            cs['rmob__c']=getC('{!$Component.rmob__c}');
+                                            cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                            cs['xadtx4__c']=getC('{!$Component.xadtx4__c}');
+                                            cs['xadtx2__c']=getC('{!$Component.xadtx2__c}');
+                                            cs['xchn__c']=getC('{!$Component.xchn__c}');//Card Holder Name
+                                            cs['xoln__c']=getC('{!$Component.xoln__c}'); //Office Landline Number
+                                            cs['xps__c']=getC('{!$Component.xps__c}');//Sector
+                                            cs['xpveh__c']=getC('{!$Component.xpveh__c}');//Primary Vehicle number
+                                            cs['xsvn__c']=getC('{!$Component.xsvn__c}');//Secondary Vehicle number
+                                            cs['xppor__c']=getC('{!$Component.xppor__c}');//Place of Registraion
+                                            cs['xspor__c']=getC('{!$Component.xspor__c}');//Place of Registraion Secondary Vehicle
+                                            cs['parkingStr']=getC('{!$Component.parkingStr}');
+                                            </script>
+                                        </div>
+                                        <!-- Secondary Vehicle details starts -->
+                                        <!-- .col -->
+                                </div>
+                                <apex:outputPanel rendered="{!NOT(ISBLANK(Eid))}" ></apex:outputPanel>
+                                <div id="select_non_employee1" style="{!IF(NOT(ISBLANK(Eid)),'','display: none;')}">
+                                    <apex:outputPanel rendered="{!ISNULL(req.id)}">
+                                        <div>
+                                            <button class="btn btn-outline-primary btn-outline-primary2 mr-3 btn-select-employee">SELECT EMPLOYEE</button>
+                                            <span>You are adding a non-employee as a vehicle owner</span>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                </div>
+                                <div class="mb-5"></div>
+                                <div id="vDocs">
+                                    <apex:outputPanel id="random1"> <!--  style="{!IF(ISBLANK(req.id),'display:none;','')}" -->
+                                        <h3 class="text-light mb-3">VEHICLE DOCUMENTS</h3>
+                                        <apex:outputPanel id="VehicleCards1">
+                                            <div class="vehicleCards">
+                                                <div class="vehicle-detail" vNum='1'>
+                                                    <!--<h4 class="fs-20 mb-2">Primary Vehicle</h4>-->
+                                                    <apex:outputPanel rendered="{!DocList1.size>0}" styleClass="row">
+                                                        <apex:repeat value="{!DocList1}" var="doc" >
+                                                            <!--{!doc.DocName} - parse Value --- {!doc.parse}-->
+                                                            <apex:outputPanel styleClass="col-lg-6" rendered="{!IF(Contains(req.xadh__c,doc.ItemCode),true,false)}">
+                                                                <div class="box box-block mb-lg-4">
+                                                                    <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                                                        <label class="fs-18">{!doc.DocName}</label>
+                                                                        <span class="loader_img" style="float:right;display:none">
+                                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                                        </span>
+                                                                    </div>
+                                                                    <apex:outputPanel rendered="{!doc.attId != ''}">
+                                                                        <div class="upload-list">
+                                                                            <div class="upload-list-item box box-white box-padding">
+                                                                                <i class="fa fa-check-circle text-success"></i>
+                                                                                <a class="upload-item-title text-li" onclick="window.open('/servlet/servlet.FileDownload?file={!doc.attId}','_blank');" >
+                                                                                    <u>{!doc.attName}</u>
+                                                                                </a>
+                                                                                <a onclick="removeAttch1('{!JSENCODE(doc.attId)}','{!JSENCODE(doc.DocName)}');" class="upload-item-remove"><i class="fa fa-close"></i></a>
+                                                                            </div>
+                                                                        </div>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel rendered="{!doc.attId == ''}">
+                                                                        <div class="upload-field d-flex">
+                                                                            <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                                <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                                <span>Choose File to Upload</span>
+                                                                            </div>
+                                                                            <div>
+                                                                                <div class="btn btn-outline-primary btn-outline-primary-3" onclick="uploadDoc('{!JSENCODE(doc.DocName)}','{!JSENCODE(doc.parse)}','true')">BROWSE</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </apex:outputPanel>
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                        </apex:repeat>
+                                                    </apex:outputPanel>
+                                                    <div class="separator-dashed"></div>
+                                                </div>
+                                            </div>
+                                            <script>
+                                            
+                                            function submitPage(el,ev){
+                                                var validated = true;
+                                                var elem = '';
+                                                if('{!JSENCODE(req.id)}'==''||'{!nD}'!='false'){//getUrlParameter('id')
+                                                    axsAlert('Alert','Required vehicle documents are missing, please check');
+                                                    return;
+                                                }
+                                                ev.preventDefault();
+                                                for(i in mandateFlds){
+                                                    var v = cs[mandateFlds[i]].value;
+                                                    if(!v){
+                                                        addValError(cs[mandateFlds[i]],'This field is required!');
+                                                        validated = false;
+                                                        if(elem=='') elem = cs[mandateFlds[i]];
+                                                    }
+                                                    else{
+                                                        //removeValError(cs[mandateFlds[i]]);
+                                                    }
+                                                }
+                                                if($('.frmErrMsg').is(':visible')){
+                                                    scrollToDiv($('.frmErrMsg').eq(0).parent());
+                                                    return;
+                                                }
+                                                if(validated){
+                                                    //cs['xadtx4__c'].value = JSON.stringify(ad4);
+                                                    toggleGLoader();
+                                                    updItems();
+                                                    pushPD();
+                                                }
+                                                else if(elem!='')
+                                                    scrollToDiv($(elem));
+                                                
+                                            }
+                                            </script>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>  
+                                </div>
+                                <c:ocrcmp accPrk="{!Acc.park__c}"  />
+                                
+                                
+                                <div class="mb-5"></div>
+                                <div class="base-main-footer">
+                                    <div class="base-nav">
+                                        <a class="btn btn-primary base-nav-next sbmtBtn" onclick="submitPage(this,event)" style="color: #fff; width: 150px;">
+                                            SUBMIT
+                                        </a>
+                                    </div>
+                                </div>
+                                <!--<button class="btn btn-primary sbmtBtn" style="width: 150px;" onclick="submitPage(this,event)">SUBMIT</button>-->
+                                
+                                <div class="pb-5"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+        </apex:outputPanel>
+    </apex:form>
+    <script>
+    var selectedJSON = [];
+    var allJSON = {};
+    var lst_pdObj = {};
+    var allJSONStr = '';
+    var lst_pd = '';
+    var allJSONObj1=[];
+    var currentVehicle = 1;
+    var uid;
+    var fldToInput = {'cardNum':'rtacn__c','sector':'xps__c','cHolderNm':'xchn__c','chLand':'xoln__c','refMobile':'rmob__c','email':'xceml__c','vehicleNumber':'xpveh__c','pPlaceOfReg':'xppor__c','secVclNum':'xsvn__c','sPlaceOfReg':'xspor__c'};
+    var mandateFlds = {'email':'xceml__c','refMobile':'rmob__c'};//,'chLand':'xoln__c'
+    $(document).ready(function(){
+        cs["uid"].value = "{!srv.uid__c}";
+        //if()$('[vNum='+cs["xpveh__c"].value+']').prop('checked',true)
+        callWS();
+        $('.btn').on('click',function(event){
+            event.preventDefault();
+        });
+        //setTimeout(settoFld(),1000);
+        $('.requiredFldPop').on('change keyup',function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                return;
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+    });
+    
+    function formData(d){
+        allJSONStr = d;
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        allJSONObj = JSON.parse(allJSONStr);
+        //debugger;
+        for(i of allJSONObj){
+            var a = {};
+            var b = {};
+            // if(i.secVclNum==null){
+            for(j of Object.keys(i)){
+                if(j!='secVclNum'&&j!='sPlaceOfReg'){
+                    a[j] = i[j];
+                }
+            }
+            a['vehType'] = 'primary';
+            allJSONObj1.push(a);
+            //}
+            if(i.secVclNum!=null){
+                for(j of Object.keys(i)){
+                    if(j!='vehicleNumber'&&j!='pPlaceOfReg'){
+                        if(j == 'secVclNum')
+                            b['vehicleNumber'] = i[j];
+                        else if(j == 'sPlaceOfReg')
+                            b['pPlaceOfReg'] = i[j];
+                            else
+                                b[j] = i[j];
+                    }
+                }
+                b['vehType'] = 'secondary';
+                allJSONObj1.push(b);
+            }
+        }
+        var tableData='';
+        for(i of allJSONObj1){
+            var tr='<tr>';
+            tr += '<td><label class="custom-radio"><input cNum="'+i.cardNum+'" vNum="'+i.vehicleNumber+'" type="radio" name="Vehicle number" checked='+((cs["xpveh__c"].value==i.vehicleNumber)?true:false)+' onchange="settoFld(this)" /><span></span></label></td>';
+            if(i.vehicleNumber=='')
+                tr +='<td><div class="vehicle-number mb-1"><span style="color:red;">No Vehicle</span></div></td>';
+            else
+                tr +='<td><div class="vehicle-number mb-1"><span>'+i.vehicleNumber+'</span></div></td>';
+            tr +='<td>'+i.pPlaceOfReg+'</td>';
+            tr += '<td>'+i.cHolderNm+'</td>';
+            /*tr +='<td><b style="color: #E62D38;">NA</b></td>';*/
+            tr +='<td style="text-transform: capitalize;">'+i.vehType+'</td>';
+            tr +='<td>'+i.expDate+'</td>';
+            tr +='<td>'+i.cardNum+'</td>';
+            tr +='</tr>';
+            tableData +=tr;
+        }
+        $('#parkingtable tbody').append(tableData);
+    }
+    
+    
+    function setToRQFld1(e){
+        var id = $(e).attr('id');
+        var id1 = $(e).attr('id1');
+        if(cs['xadtx2__c'].value.includes('primary')){
+            setToRQFld(id,e);
+        }
+        else if(cs['xadtx2__c'].value.includes('secondary')){
+            setToRQFld(id1,e);
+        }
+    }
+    var changed = 0;
+    var changedJSON = {};
+    function checkChange(e,id){
+        if(selectedJSON.length>0&&selectedJSON[0][id]!=null){
+            if($(e).val()!=selectedJSON[0][id])
+                changedJSON[id]=1;
+            else
+                changedJSON[id]=0;
+        }
+        //for()
+    }
+    function loadPrevData(){
+        if('{!JSENCODE(req.id)}'!=''&&cs['xadtx2__c'] && cs['xadtx2__c'].value!=''){
+            if(cs['xadtx2__c'].value=='primary'){
+                $('#vehNum').val(cs['xpveh__c'].value);
+                $('#por').val(cs['xppor__c'].value);
+            }
+            if(cs['xadtx2__c'].value=='secondary'){
+                $('#vehNum').val(cs['xsvn__c'].value);
+                $('#por').val(cs['xspor__c'].value);
+            }
+        }
+        if(cs["xadtx4__c"].value!=''&&cs["xadtx4__c"].value){
+            ad4 = JSON.parse(cs["xadtx4__c"].value);
+        }
+    }
+    function checkVehicle(e){
+        var vnu = $('#xpveh__c').val();
+        for(i of lst_pdObj){
+            if(vnu == i.vehicleNumber || vnu == i.secVclNum){
+                addValError($('#xpveh__c'),'This vehicle already exists!');
+                return true;
+            }
+            else
+                removeValError($('#xpveh__c'));
+        }
+        return false;
+    }
+    function settoFld(p1,p2){
+        lst_pd = p1;
+        allJSONStr = p2;
+        $('#vehicle_details').show();
+        //$('#select_employee').show();
+        var cardNum = getUrlParameter('c');
+        var vehNum = getUrlParameter('v');
+        if(vehNum.includes('%20')){
+            vehNum = vehNum.replace('%20',' ');
+            }
+        //cs['rtacn__c'].value = cardNum;
+        //$('.table-parking').parent().parent().find('.frmErrMsg').remove();
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        lst_pd = lst_pd.split("\"Items\"").join('\'Items\'');
+        lst_pdObj = JSON.parse(lst_pd);
+        if('{!JSENCODE(req.id)}'==''){
+            if(allJSONStr.length>0){
+                allJSON = JSON.parse(allJSONStr);
+                // for(i=0;i<allJSON.length;i++){
+                    if(vehNum == allJSON[0].vehicleNumber||vehNum == allJSON[0].secVclNum){
+                        selectedJSON[0] = allJSON[0];
+                        $('#vehNum').val(vehNum);
+                        if(vehNum == allJSON[0].vehicleNumber){
+                            $('#por').val(allJSON[0].pPlaceOfReg);
+                            cs['xadtx2__c'].value = 'primary';
+                        }
+                        else{
+                            $('#por').val(allJSON[0].sPlaceOfReg);
+                            cs['xadtx2__c'].value = 'secondary';
+                        }
+                    }
+                //}
+                for(i in fldToInput){
+                    //var elem = $('.'+i);
+                    var elem = $(cs[fldToInput[i]]);
+                    elem.val(selectedJSON[0][i]);
+                    if(elem.is('select')){
+                        elem.trigger('change');
+                    }
+                }
+            }
+            else{
+                $('#vehicle_details').html("<h1 style='color:#E62D38;'>No Matching records.</h1>");
+                $('#vDocs,.sbmtBtn').hide();
+            }
+        }
+        //cs["xadh__c"].value = '';
+        //loadPrevData();
+    }
+    
+    var currentDoc;
+    function uploadDoc(docname,parseFlg,rqFlg){
+        currentDoc = docname;
+        cs["docname"].value = docname;cs["parseId"].value = parseFlg; 
+        $(".docname").text(docname);
+        //$('#modal_upload_passport').modal('show');
+        $('#modal_fileuploadPopUp').modal('show');
+    }
+    function removeAttch1(attchid,docName){
+        //axsConfirmation('Confirmation','Are you sure to delete the vehicle document!',false,'removeScndVeh');
+        var des = window.confirmDelete();
+        if(!des)
+            return;
+        $('[forLoad="'+docName+'"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+        removeAttch(attchid);
+    }
+    /*function submitPage(el,ev){
+        var doSubmit = false;
+        ev.preventDefault();
+        toggleGLoader();
+        pushPD();
+    }*/
+    
+    // for OCR Component
+    function attachmentSaveVRC(){
+        isValidData = true;
+        $('.requiredFldPop').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+                //return false;
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+            checkAllDates('vRegDate','152');
+            if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+                isValidData = false;
+            }
+        });
+        
+        if(checkVehicle() == true){
+            return;
+        }
+        if(vaidateData()!=false){
+            $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+            createAD4();
+            $('#modal_RC_confirm_information,#modal_RC_confirm_information_back').modal('hide');
+            saveAttachment_RC();
+        }
+    }
+    
+    function vaidateData(){
+        isValidData = true;
+        $('.requiredFldPop').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        checkAllDates('vRegDate','152');
+        if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+            isValidData = false;
+            //return isValidData;
+        }
+        return isValidData;
+    }
+    var ad4 = {};
+    function createAD4(){
+        if(!ad4[cs['xadtx2__c'].value])
+            ad4[cs['xadtx2__c'].value] = {};
+        $('#modal_RC_confirm_information,#modal_RC_confirm_information_back').find('input,select').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            var f = $(this).attr('fldname');
+            ad4[cs['xadtx2__c'].value][f] = v;
+        });
+        /*$('#modal_RC_confirm_information').find('input,select').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            var f = $(this).attr('fldname');
+            ad4[cs['xadtx2__c'].value][f] = v;
+        });*/
+        cs['xadtx4__c'].value = JSON.stringify(ad4);
+    }
+    function SalOnChange(salt){
+        cs['xcslt__c'].value=salt;
+    }
+    
+    
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            if(id=='xpveh__c' || id=='xsvn__c')
+                cs[id].value=$(el).val().split(' ').join('');
+            else
+                cs[id].value=$(el).val();
+    } 
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+
+    
+    </script>
+</apex:page>

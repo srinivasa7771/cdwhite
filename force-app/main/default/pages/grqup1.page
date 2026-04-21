@@ -1,0 +1,194 @@
+<apex:page id="x" sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!rq.srvc__r.lbl__c}" standardController="g_Req__c" extensions="gctlRequ">
+<style type="text/css">.actionColumn.c1 {width:1%;white-space:nowrap;}.message.infoM4.d1 {background-color:#f5fcff;border-color:#bee6ff;}</style>    
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>            
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew,'css/gsodocupload.css')}"/>       
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew, 'css/jquerycss.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew, 'css/jquery-ui.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew, 'css/scan.css')}" />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew, 'avgrund.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew, 'jquery-1.8.0.min.js')}"  />          
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+<c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="Upload Documents" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="Upload al required documents to ensure smooth processing of your application" STA="{!rq.STA__c}"/>
+<chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:form id="f">
+    <apex:actionFunction name="afs" action="{!saveAttachment}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:setAttachment();"/>
+    <apex:actionFunction name="afdltA" action="{!deleteAttachment}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount()" />
+    <apex:actionFunction name="afsvc" action="{!saveContinue}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount()" />
+    <apex:actionFunction name="afcnt" action="{!nextPage}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();"/>                
+    <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.docq__c}" rendered="false" />
+    <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+    <apex:InputHidden value="{!reqDocId}" id="reqDocId"/>
+    <apex:InputHidden value="{!docName}" id="docName"/> 
+    <input type="hidden" name="dfileId" id="dfileId" value=""/>         
+    <input type="hidden" id="width" value="300"/>
+    <input type="hidden" id="height" value="355"/>
+    <input type="hidden" id="resolution" value="300"/>
+    <input type="hidden" size="20" id="txt_fileNameforSave"/>
+    <input type="hidden" name="txt_fileName" id="txt_fileName"/>
+    <input type="hidden" name="uploaded_count" id="uploaded_count" value="0"/>
+    <input type="hidden" name="htempfieldname" id="htempfieldname" value="test"/>
+    <input type="hidden" name="currentImage" id="currentImage" value="test"/>
+    <input type="hidden" name="currentImageURL" id="currentImageURL" value="{!$Resource.gso_fileuploadNew}"/>
+    <input type="hidden" name="attchId" id="attchId" value=""/>                     
+    <script type="text/javascript">
+        //<![CDATA[
+            var imageBase64=document.getElementById("{!$Component.imageBase64}"),reqDocId=document.getElementById("{!$Component.reqDocId}"),docName=document.getElementById("{!$Component.docName}");
+             
+        //]]> 
+    </script>
+    <!--- pop up page start --->
+        <c:fileuploadPopUpold id="twinPp"  />
+    <!--- pop up page end --->
+    <apex:pageBlock mode="edit" id="p" tabStyle="g_Req__c" title="Upload Documents">
+        <apex:pageBlockButtons location="top">
+            <c:qrbtns isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqei" R="{!rq}" A="{!rq.acc__r}" Stp="3"/>
+        </apex:pageBlockButtons>
+         <apex:pageBlockButtons location="bottom">
+            <c:qrbtns showInfo="false" isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqei" R="{!rq}" A="{!rq.acc__r}" Stp="3"/>
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="msg"  escape="false"/>
+        <apex:outputpanel layout="none">
+            <apex:pageBlockSection id="a" collapsible="true" columns="1" title="Details">
+                <apex:outputpanel id="b">                               
+                    <table class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">
+                        <tbody>
+                            <tr class="headerRow">
+                                <th scope="col" class="actionColumn c1" colspan="3">Document</th>
+                                 <apex:outputpanel layout="none" rendered="{!NOT(ispu)}">
+                                    <th class="actionColumn c1">{!$ObjectType.g_reqDoc__c.fields.or__c.label}</th>
+                                    <th class="actionColumn c1">{!$ObjectType.g_reqDoc__c.fields.nt__c.label}</th>
+                                </apex:outputPanel>
+                                <th class="actionColumn c1" colspan="2"></th>
+                            </tr>
+                            <apex:repeat id="r0" value="{!Docs}" var="D">
+                                <tr class="dataRow">
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                    {!D.Doc.Name} {!IF(ISNULL(D.Doc.mbr__c),'','(&nbsp;&nbsp;{!D.Doc.mbr__r.Bane}&nbsp;)')}
+                                    </td>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputpanel layout="none" rendered="{!NOT(ISBLANK(D.Doc.tplt__c))}" >
+                                            <apex:outputLink value="{!D.Doc.tplt__c}" target="_blank" title="Template is available to download.">Download Template</apex:outputLink>
+                                        </apex:outputpanel>
+                                    </td>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputPanel layout="none" rendered="{!AND(NOT(pgHide),D.cnUp)}"> 
+                                            <a class="btnNrm" onclick="javascript:openDialog('{!JSENCODE(D.Doc.Name)}', '');">Upload...</a>
+                                            <input type="hidden" id="{!D.Doc.Name}_Id" value="{!D.Doc.Id}"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_cur" value="0"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_max"  value="{!D.Doc.mxAts__c}"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_min"  value="{!D.Doc.mnAts__c}"/> 
+                                        </apex:outputpanel>
+                                    </td>
+                                    <apex:outputpanel layout="none" rendered="{!NOT(ispu)}">
+                                        <td class="actionColumn c1" style="vertical-align:top;">
+                                             <apex:inputField value="{!D.Doc.or__c}" rendered="{!AND(NOT(pgHide),D.Doc.reqOr__c)}"/> 
+                                              <apex:outputField value="{!D.Doc.or__c}" rendered="{!AND(pgHide,D.Doc.reqOr__c)}"/> 
+                                        </td>
+                                        <td class="actionColumn c1" style="vertical-align:top;">
+                                            <apex:inputField value="{!D.Doc.nt__c}" style="width: 150px;" rendered="{!NOT(pgHide)}"/>
+                                            <apex:outputField value="{!D.Doc.nt__c}" rendered="{!pgHide}"/>
+                                        </td>
+                                    </apex:outputpanel>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputPanel layout="none" rendered="{!D.Ats.size>0}">
+                                            <table border="0" cellpadding="0" cellspacing="0" class="">
+                                                <tr>
+                                                    <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                                        <td class="actionColumn c1" style="vertical-align:top;border: none;">
+                                                            <a href="" onclick="imgPreview('{!JSENCODE(D.Doc.Name)}','/servlet/servlet.FileDownload?file={!A.A.Id}');">
+                                                                <img id="{!A.A.Id}" src="/servlet/servlet.FileDownload?file={!A.A.Id}" style="width:57px; height:57px;cursor:pointer;"/>
+                                                            </a>
+                                                            
+                                                        </td>                                                           
+                                                    </apex:repeat>
+                                                </tr>
+                                                <tr>
+                                                    <apex:repeat id="r2" value="{!D.Ats}" var="A">
+                                                        <td class="actionColumn c1" style="vertical-align:top;border: none;">
+                                                            <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!AND(NOT(pgHide),NOT(D.VF),OR(ispu,AND(NOT(ispu),NOT(A.crtbyPU))))}">                                                                          
+                                                                <a class="btnCncl" onclick="dltA('{!JSENCODE(A.A.Id)}');">Delete</a>
+                                                            </apex:outputpanel> 
+                                                        </td>
+                                                    </apex:repeat>
+                                                </tr>
+                                            </table>
+                                        </apex:outputpanel>
+                                    </td>
+                                    <td class="datacell" style="vertical-align:top;">
+                                        <apex:variable var="sN" value="{!OR(NOT(ISBLANK(D.info)),AND(NOT(pgHide),D.cnUp),AND(ispu,OR(D.Doc.reqOr__c,NOT(ISNULL(D.Doc.nt__c)))))}" />
+                                        <apex:outputPanel rendered="{!sN}">
+                                            <div class="message infoM4 d1">
+                                                <table border="0" cellpadding="0" cellspacing="0" class="messageTable">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="actionColumn c1" style="vertical-align:top;border:none;"><img alt="Information" class="msgIcon" src="/s.gif" title="Warnings"/></td>
+                                                            <td class="messageCell" style="border: none;">
+                                                                <div class="messageText">
+                                                                     <ul>
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(ispu,D.Doc.reqOr__c)}">
+                                                                            <apex:outputPanel layout="none" rendered="{!NOT(D.Doc.or__c)}">
+                                                                                <li><span>Original document is required</span></li>
+                                                                            </apex:outputpanel>                                                             
+                                                                            <apex:outputPanel layout="none" rendered="{!D.Doc.or__c}">
+                                                                                <li><span>Original document has been collected by back-office</span></li>
+                                                                            </apex:outputpanel>
+                                                                        </apex:outputpanel>  
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(NOT(pgHide),D.cnUp,OR(NOT(D.VF),NOT(ispu)))}">
+                                                                            <li><span>
+                                                                            <apex:outputPanel layout="none" rendered="{!D.Ats.size < D.Doc.mnAts__c}">
+                                                                            At least {!D.Doc.mnAts__c} attachment{!IF(D.Doc.mnAts__c>1,'s are ',' is')} required.
+                                                                            </apex:outputpanel>
+                                                                            <apex:outputPanel layout="none" rendered="{!AND(D.Ats.size < D.Doc.mxAts__c, D.Ats.size>=D.Doc.mnAts__c,D.Doc.mxAts__c>D.Doc.mnAts__c)}">
+                                                                            Up-to {!D.Doc.mxAts__c} attachment{!IF(D.Doc.mxAts__c>1,'s','')} can be uploaded.
+                                                                            </apex:outputpanel>
+                                                                            </span></li>
+                                                                        </apex:outputpanel>
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(ispu,NOT(ISNULL(D.Doc.nt__c)))}">
+                                                                            <li><apex:outputField value="{!D.Doc.nt__c}"/></li>
+                                                                        </apex:outputpanel>
+                                                                        <li><span>{!D.Info}</span></li>
+                                                                    </ul>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </apex:outputpanel>
+                                    </td>
+                                </tr>                                           
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                    
+                </apex:outputpanel>
+            </apex:pageBlockSection>
+        </apex:outputPanel>
+    </apex:pageBlock>
+    <apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew, 'scan.js')}"  />
+</apex:form>
+<script type="text/javascript">
+    //<![CDATA[
+         var previousOnload = window.onload;        
+         window.onload = function(){if(previousOnload){Pageonload();}}
+    //]]>  
+</script>
+<div id="imgPrv" title="Image Preview" style="vertical-align:center; text-align:center;" >
+    <img id="imP" src="" />
+</div>
+<script type="text/javascript">
+$("#imgPrv").dialog({autoOpen: false,show: {effect: "scale",duration: 200},hide: {effect: "explode",duration: 400}});
+function imgPreview(fName,src){
+    document.getElementById("imP").src=src;
+    $("#imgPrv").dialog("option","title",fName);        
+    $('#imgPrv').dialog({height:500,width:400,maxHeight:800,maxWidth:600,resizable:true,modal: true});
+    $( "#imgPrv" ).dialog({ position: { my: "left", at: "left", of: window } });
+    $( "#imgPrv" ).dialog({ position: { my: "top", at: "top", of: window } });
+    $("#imgPrv").dialog("open");
+    
+}   
+</script> 
+
+</apex:page>

@@ -1,0 +1,156 @@
+<apex:component id="collDelInfo" allowdml="true">
+    <apex:attribute name="srv" description="Request" type="g_Srvc__c" required="false"/>
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="cmpTitle" description="Component Title" type="String"/>
+    <apex:attribute name="noNotes" description="to show notes or not" type="String" required="false"/>
+    
+    <apex:outputText rendered="{!IF(cmpTitle == '',true,false)}">
+        <h4 class="mt-4">Collection &amp; Delivery Information</h4>
+    </apex:outputText>
+    <apex:outputText rendered="{!IF(cmpTitle == '',false,true)}">
+        <h4 class="mt-4">{!cmpTitle}</h4>
+    </apex:outputText>
+    <div class="row row-lg" id='cllInfor'>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Reference mobile</label>
+                <div class="d-flex">
+                    <div style="flex-basis: 150px;width: 150px;">
+                        <div style="flex-basis: 150px;width: 90px;">
+                            <div class="form-control">
+                                +971
+                            </div>
+                        </div>
+                    </div>
+                    <apex:inputField ignoreEditPermissionForRendering="true" type="text" styleClass="applMob form-control ml-3 numOnly jsnfld" value="{!req.rmob__c}" id="rmob__c"
+                                     />
+                    <script type="text/javascript">
+                    cs['rmob__c']=document.getElementById('{!$Component.rmob__c}');
+                    </script>
+                </div>
+            </div>
+        </div>
+        <!-- changes for DI starts -->
+        <apex:outputText rendered="{!(OR(srv.uid__c=='196',srv.uid__c!='197'))}">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <!--<label>Delivery Zone</label>-->
+                    <Label>Community</Label>
+                    <apex:inputField ignoreEditPermissionForRendering="true" onchange="createDepDds()" styleClass="jsnfld ddValidation requiredFld form-control input-select2-tags" value="{!req.xbrnd__c}" id="xbrnd__c"/>
+                    <script type="text/javascript">
+                    cs['xbrnd__c']=document.getElementById('{!$Component.xbrnd__c}');
+                    </script>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Building name</label>
+                    <apex:inputField ignoreEditPermissionForRendering="true" styleClass="jsnfld ddValidation depDD form-control input-select2-tags" value="{!req.xbn__c}" id="xbn__c"/>
+                    <script type="text/javascript">
+                    cs['xbn__c']=document.getElementById('{!$Component.xbn__c}');
+                    </script>
+                </div>
+            </div>
+        </apex:outputText>
+        <apex:outputText rendered="{!srv.uid__c=='197'}">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <Label>Community</Label>
+                    <select id="community_xbrnd" class="form-control input-select2-tags dum requiredFld" 
+                            onChange="setToRQFld('xbrnd',this);showDepFld(this);">
+                        <option value="">--None--</option>
+                        <option value="DI">DI</option>
+                        <option value="D3">D3</option>
+                        <option value="DHCC">DHCC</option>
+                        <option value="DIAC">DIAC</option>
+                        <option value="DIC">DIC</option>
+                        <option value="DKP">DKP</option>
+                        <option value="DMC">DMC</option>
+                        <option value="DOZ">DOC</option>
+                        <option value="IMPZ">DPC</option>
+                        <option value="DSC">DSC</option>
+                        <option value="DSP">DSP</option>
+                        <option value="TECOM">TECOM</option>
+                    </select>
+                    <apex:inputHidden id="xbrnd" value="{!req.xbrnd__c}" /> 
+                    <script type="text/javascript">
+                    cs['xbrnd']=document.getElementById('{!$Component.xbrnd}');
+                    if(cs['xbrnd'].value &&cs['xbrnd'].value!='--None--')
+                        $('#community_xbrnd').val(cs['xbrnd'].value);
+                    </script>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <Label>Building name</Label>
+                    <select id="bldng_xbn" class="form-control input-select2-tags dum requiredFld" 
+                            onChange="setToRQFld('xbn',this)">
+                        <option value="">--None--</option>
+                    </select>
+                    <apex:inputHidden id="xbn" value="{!req.xbn__c}" /> 
+                    <script type="text/javascript">
+                    cs['xbn']=document.getElementById('{!$Component.xbn}');
+                    if(cs['xbn'].value &&cs['xbn'].value!='--None--')
+                        $('#bldng_xbn').val(cs['xbn'].value);
+                    </script>
+                </div>
+            </div>
+        </apex:outputText>
+        <!-- changes for DI ends -->
+        <apex:outputText rendered="{!AND(srv.uid__c!='924',srv.uid__c!='196')}">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <Label>Delivery address</Label>
+                    <apex:inputField ignoreEditPermissionForRendering="true" styleClass="jsnfld requiredFld form-control" style="height:52px;" value="{!req.xaloc__c}" id="xaloc__c"/>
+                    <script type="text/javascript">
+                    cs['xaloc__c']=document.getElementById('{!$Component.xaloc__c}');
+                    </script>
+                </div>
+            </div>
+        </apex:outputText>
+        <apex:outputText rendered="{!srv.uid__c=='196'}">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <Label>Delivery and Collection Address</Label>
+                    <apex:inputField ignoreEditPermissionForRendering="true" styleClass="jsnfld requiredFld form-control" style="height:52px;" value="{!req.xaloc__c}" id="xaloc_lr__c"/>
+                    <script type="text/javascript">
+                    cs['xaloc__c']=document.getElementById('{!$Component.xaloc_lr__c}');
+                    </script>
+                </div>
+            </div>
+        </apex:outputText>
+        <div class="col-lg-12" style="{!IF(noNotes=='true','display:none','')}">
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <apex:inputField ignoreEditPermissionForRendering="true" styleClass="jsnfld form-control" value="{!req.nt__c}" id="nt__c"/>
+                <script type="text/javascript">
+                cs['nt__c']=document.getElementById('{!$Component.nt__c}');
+                </script>
+            </div>
+        </div>
+    </div>
+    <script>
+    var customBuildingbj = {"DI":"Building 01","DHCC":"AL BAKER Building. 26,AL FARIS Building. 39,Al Mossa Group Building,Al Razi Building 64,Al Zahrawi-Building 34,AXS Satellite Office at DHCC,Building 24,Building 25,Building 33,Building 40,Building 41,Building 47,Building 49,Building 53,Building 55,Building 59,Building 71,Building 72,Ibn Sina 27A,Ibn Sina 27B,Ibn Sina 27C,Ibn Sina 27D,Marriot Hotel Jadaf,MBR-AMC,School Primary Building,","DIAC":"All Day Shopping Center,AXS Satellite Office at DIAC,BITS Pilani,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Heriot-Watt Building,Institute of Management Technology,MANIPAL ETA,Sr. Building 01,Sr. Building 02,","DIC":"APTEC (EIB 03),Arenco Tower,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Building 13,Building 14,Building 15,Building 16,Building 17,Building 18,Butterfly Building,Cordoba Villa,EIB 01,EIB 02,EIB 03,EIB 04,EIB 05,EIB 06,Galadhari & Associates,Gloria Hotel(Dalma Tower 1),HSBC Building (Building 02),Huawei,Innovation Hub,Mashreq Bank DIC (Building 03 ),Master Card,Media One Tower,MSQ01,Office Park Block A,Office Park Block B,Office Park Block C,Office Park Block D,Office Park Block E,Shatha Tower,Studio DIC,","DKP":"AXS Satellite Office at DKV,Block 01,Block 02,Block 03,Block 04,Block 05,Block 06,Block 07,Block 08,Block 09,Block 10,Block 11,Block 12,Block 13,Block 14,Block 15,Block 16,Block 17,Block 18,Block 19,CYS &CO INC,DP Headquarters,Holiday INN Express Hotel,Injaz Building,Injaz Building PMS,Star Holding (EIB 04),Zayed University,","D3":"Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Design office,Others,","DOZ":"ACSS Building,Al Shaiba Building,Al Shaiba Building 03,Al Shaiba Building 04,Arab Bank Building,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Buliding A,Emirates Building,Mashreq Bank,Mashreq Bank PSC,","DMC":"Al Salam Tower,Al Sufouh Complex,Atlas Business Center,Boutique Office 01,Boutique Office 02,Boutique Office 03,Boutique Office 04,Boutique Office 05,Boutique Office 06,Boutique Office 07,Boutique Office 08,Boutique Office 09,Boutique Office 10,Boutique Office 11,Boutique Office 12,Boutique Office 13,Boutique Office 14,Boutique Office 15,Boutique Office 16,Boutique Office 17,Boutique Office 18,Boutique Office 19,Boutique Office 20,Boutique Office 21,Boutique Office 22,Boutique Office 23,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Building 13,Building 14,Business Central Tower WA,Business Central Tower- WB,CNN Building ( Building 02),Concord Tower,Dubai Jewel Tower,Dubai TV News Center,GBS Building PMS,Loft Office 1,Loft Office 2,Loft Office 3,Makjoda Building,OMD Building,Radisson Blue Hotel,Showtime Head Quarter,Taj TV Building,The Palladium,Zee Tower,","DSC":"Boutique Studio 01,Boutique Studio 02,Boutique Studio 03,Boutique Studio 04,Boutique Studio 05,Boutique Studio 06,Boutique Studio 07,Boutique Studio 08,Boutique Studio 09,Boutique Studio 10,Boutique Studio 11,Boutique Studio 12,Boutique Studio 13,Boutique Studio 14,Boutique Studio 15,Boutique Studio 16,Boutique Studio 17,Boutique Studio 18,BSR,Building 01,Building 02,Building 03,Building 04,DSC Tower,Gate Building 1,Gate Building 2,Sound Stage A,SoundStages Complex-Ph A,SoundStages Complex-Ph B,Workshop 01,Workshop 02,Workshop 03,Workshop 04,Workshop 05,Workshop 06,Workshop 07,Workshop 08,Workshops,","IMPZ":"Circular Building-G1,Circular Building-G2,Gate Building,Makateb,Makateb 1,Makateb 2,Makateb 3,Makateb 4,MASAR Printing & Publishing,PBU-A,PBU-A1,PBU-A10,PBU-A11,PBU-A12,PBU-A13,PBU-A14,PBU-A15,PBU-A16,PBU-A17,PBU-A18,PBU-A19,PBU-A2,PBU-A3,PBU-A4,PBU-A5,PBU-A6,PBU-A7,PBU-A8,PBU-A9,PBU-B,PBU-B20,PBU-B21,PBU-B22,PBU-B23,PBU-B24,PBU-B25,PBU-B26,PBU-B27,PBU-B28,PBU-B29,PBU-B30,PBU-B31,PBU-B32,PBU-B33,PBU-B34,PBU-B35,PBU-B36,PBU-B37,PBU-B38,PBU-C,PBU-C39,PBU-C40,PBU-C41,PBU-C42,PBU-C43,PBU-C44,PBU-C45,PBU-C46,PBU-C47,PBU-C48,PBU-C49,PBU-C50,PBU-C51,PBU-C52,PBU-C53,PBU-D,PBU-D54,PBU-D55,PBU-D56,PBU-D57,PBU-D58,PBU-D59,PBU-D60,PBU-D61,PBU-D62,PBU-D64,PBU-D65,PBU-D66,PBU-D67,PBU-D68,PBU-E,PBU-E69,PBU-E70,PBU-E71,PBU-E72,PBU-E73,PBU-E74,PBU-E75,PBU-E76,PBU-E77,PBU-E78,PBU-E79,PBU-E80,PBU-E81,PBU-E82,PBU-E83,PBU-E84,PBU-E85,PBU-E86,PBU-E87,PBU-F,PBU-F100,PBU-F101,PBU-F102,PBU-F104,PBU-F105,PBU-F106,PBU-F88,PBU-F89,PBU-F90,PBU-F91,PBU-F92,PBU-F93,PBU-F94,PBU-F95,PBU-F96,PBU-F97,PBU-F98,PBU-F99,Publishing Pavilion,The Crescent,","DSP":"DSP HQ Tower – North,DSP HQ Tower – South,DSP Laboratory Complex,DSP Warehouse Complex Block A1,DSP Warehouse Complex Block A2,DSP Warehouse Complex Block A3,DSP Warehouse Complex Block A4,DSP Warehouse Complex Block A5,DSP Warehouse Complex Block A6,DSP Warehouse Complex Block B10,DSP Warehouse Complex Block B11,DSP Warehouse Complex Block B12,DSP Warehouse Complex Block B13,DSP Warehouse Complex Block B7,DSP Warehouse Complex Block B8,DSP Warehouse Complex Block B9,DSP Warehouse Complex Block C14,DSP Warehouse Complex Block C15,DSP Warehouse Complex Block C16,DSP Warehouse Complex Block C17,DSP Warehouse Complex Block C18,DSP Warehouse Complex Block C19,DSP Warehouse Complex Block D20,DSP Warehouse Complex Block D21,DSP Warehouse Complex Block D22,DSP Warehouse Complex Block D23,DSP Warehouse Complex Block D24,DSP Warehouse Complex Block D25,DSP Warehouse Complex Block E,Smart Start Kindergarten building,Three Towers,","TECOM":"Al Ameri Tower,Al Hawai Residence,Al Shafar Tower,Al Sheba Tower,Al Yassat Tower,Atana Hotel,Auris Inn Al Muhanna Hotel,Auris Suites,Aurora Tower,Boutique 7 Hotel & Suites,Byblos Hotel,Cayan Business Centre,DAMAC Executive Heights,DAMAC SMART HEIGHTS,Design House,First Central Hotel Apartments,Golden Tulip Al Thanyah Hotel Apartment,Grand Millennium Hotel,Grosvenor Business Tower,Gulf Oasis Hotel Apartment,Home to Home Hotel Apartments,Icon Tower,I-Rise Office Tower,Media Rotana Dubai,Metro Appartment,Pacific Buiding,Promoseven Tower,SIDRA Tower,Tameem House,The One Tower,Thuraya 1,Thuraya Telecommunications Building,Time Oak Hotel & Suits,Two Towers,"};
+    //$('.input-select2-tags').select2();
+    setTimeout(function(){
+        $('.ddValidation').select2({
+            enableSearch:true,
+            allowClear: false
+        });
+    },1000);
+    function showDepFld(e){
+    	let v = $(e).val();
+        var options = '<option value="">--None--</option>';
+        if(v&&Object.keys(customBuildingbj).includes(v)){
+			for([i,j] of customBuildingbj[v].split(',').entries()){
+            	if(j)
+                    options+= '<option value="'+j+'">'+j+'</option>';
+            }
+            //options+= '<option value="'+customBuildingbj[v]+'">'+customBuildingbj[v]+'</option>';
+        }
+        $('#bldng_xbn option').remove();
+        $('#bldng_xbn').append(options);
+         $('#bldng_xbn').select2();
+    }
+    </script>
+</apex:component>

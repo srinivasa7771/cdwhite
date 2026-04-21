@@ -1,0 +1,97 @@
+<apex:component >
+    <apex:attribute name="priorityList" description="Priority Type List" type="String[]"  required="true"/>
+    <apex:attribute name="slaMp" description="Sla" type="map" />
+    <apex:attribute name="req" description="request" type="g_Req__c" required="false" />
+    <apex:attribute name="sd" description="ServiceDefinition" type="g_srvc_definition__c" required="false" />
+    <div class="form-group mb-5">
+        <label class="mb-3 fs-18">Select the priority type for your application</label>
+        <div class="row">
+            <apex:repeat value="{!priorityList}" var="pr">
+                <apex:outputText rendered="{!pr == 'normal'}">
+                    <div class="col-lg-4 col-xl-3 col-6">
+                        <label class="box-check mb-0">
+                            <apex:outputText rendered="{!sd.cv__c == 'missvVisa'}">
+                                <input type="radio" name="priority_type" value="normal"/>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!sd.cv__c != 'missvVisa'}">
+                                <input type="radio" name="priority_type" value="normal" checked="true"/>
+                            </apex:outputText>
+                            <div class="box box-center box-hover mb-lg-0" style="min-height: 74px;">
+                                <span class="badge-status badge-status-process fs-14">
+                                    <i class="fa fa-square mr-1 fs-12" style="transform: rotate(45deg);"></i> NORMAL
+                                </span>
+                                <div class="box-title font-weight-medium mt-1">
+                                    {!slaMp[pr]}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </apex:outputText>
+                <apex:outputText rendered="{!pr == 'express'}">
+                    <div class="col-lg-4 col-xl-3 col-6">
+                        <label class="box-check mb-0">
+                            <input type="radio" name="priority_type" value="express"/>
+                            <div class="box box-center box-hover mb-lg-0" style="min-height: 74px;">
+                                <span class="badge-status badge-status-completed fs-14">
+                                    <i class="fa fa-angle-double-right mr-1 fs-18"
+                                       style="line-height: 0.875rem;"></i> EXPRESS
+                                </span>
+                                <div class="box-title font-weight-medium mt-1">
+                                    {!slaMp[pr]}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </apex:outputText>
+                <apex:outputText rendered="{!pr == 'platinum'}">     
+                    <div class="col-lg-4 col-xl-3 col-6">
+                        <label class="box-check mb-0">
+                            <input type="radio" name="priority_type" value="platinum"/>
+                            <div class="box box-center box-hover mb-lg-0" style="min-height: 74px;">
+                                <span class="badge-status fs-14">
+                                    <i class="fa fa-star mr-1"></i> PLATINUM
+                                </span>
+                                <div class="box-title font-weight-medium mt-1">
+                                    {!slaMp[pr]}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </apex:outputText> 
+            </apex:repeat>   
+            
+        </div>
+        <!-- .row -->
+    </div>
+    <script>
+    $('input[name=priority_type]').change(function () {
+        var priority = $('[name="priority_type"]:checked').val();
+        if(cs['xadh__c'] != null){
+            var adh = cs['xadh__c'].value;
+            if(priority == 'normal')
+                cs['xadh__c'].value = adh.replace('ef;', '').replace('pf;', '');
+            else if(priority == 'express'){
+                cs['xadh__c'].value = adh.replace('pf;', '');
+                if (!adh.includes('ef;')) {
+                    cs['xadh__c'].value += ';ef;';
+                }
+                
+            }else if(priority == 'platinum'){
+                cs['xadh__c'].value = adh.replace('ef;', '');
+                if (!adh.includes('pf;')) {
+                    cs['xadh__c'].value += 'pf;';
+                }
+                
+            }
+            if(typeof(saveRequest2)!='undefined' && '{!req.id}'!='' && '{!sd.vtyp__c}' != 'idcard'){
+                showGLoader();
+                saveRequest2();
+            }
+        }
+        
+    });  
+    </script>    
+</apex:component>

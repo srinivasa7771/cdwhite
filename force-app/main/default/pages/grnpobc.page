@@ -1,0 +1,223 @@
+<apex:page cache="false" controller="ApplicantDetailController" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"
+           title="{!srv.sdg__r.slbl__c}" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    
+    <script type="text/javascript">
+    
+    var ispu={!ispu}, isgu={!isgu}, lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}, empInd ; var jsonExistingReps = [];var addonItems='';
+    var POBundles = {"PO Box Light":"pl","PO Box Standard":"ps","EziMail Bronze":"deb","EziMail Silver":"es","EziMail Gold":"eg"};
+    var isEditBO = true;
+    $(document).ready(function () {    
+        checkExistingItems();
+    });
+    
+    function chkAccount(accID){
+        if(!ispu && !isgu){
+            $(cs['acc_lkwgt']).addClass("lookupcc");
+
+            var urlParam = getAxsURLParam('m');
+            if(urlParam!='edit'){
+                isEditBO = false;
+                $(".base-nav-next").text('CONTINUE');
+            }
+            
+            if(accID==null || accID==undefined ||accID==""){
+                $("#pobdetsection").hide();
+            }else{
+                $("#pobdetsection").show();
+            }
+        }
+    }
+    
+    function checkExistingItems(){
+        var alItms = cs['xadh__c'].value;
+        if(alItms!= null && alItms.includes('lpk;')){ $('#keysTrue').prop("checked",""); cs['xoca__c'].value = false;}
+        if(alItms!= null && alItms.includes('xlp;')){ $('#keysTrue').prop("checked","true"); cs['xoca__c'].value = true;}
+    }
+    
+    function keysOnChange(e){
+        cs['xadh__c'].value = cs['xadh__c'].value.replace('lpk;','');
+        cs['xadh__c'].value = cs['xadh__c'].value.replace('xlp;','');
+        if($(e).prop("checked")){
+            cs['xadh__c'].value += 'xlp;'; cs['xoca__c'].value = true;
+        }else{
+            cs['xadh__c'].value += 'lpk;'; cs['xoca__c'].value = false;
+        }
+    }
+    
+    
+    function saveDetails(){
+        var brk = vflds('.requiredFld', true);
+        brk = isPOSelected() || brk;
+        if(!brk){toggleGLoader(); afso(); }
+    }
+    
+    
+    function vflds(clsName){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){ 
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        return brk;
+    }
+    
+    function keysSelected(){
+        getC('keysErr').style.display='none';
+        var keysSelected = getC('keysTrue').checked || getC('keysFalse').checked;
+        if(!keysSelected){
+            getC('keysErr').style.display=''; $("#keyTrue").focus();
+        }
+        return !keysSelected;
+    }
+    
+    function isPOSelected(){
+        getC('poberr').style.display='none';
+        var pobSelected = cs["xpbg__c"].value!=''&&cs["xpbg__c"].value!=null;
+        if(!pobSelected){
+            getC('poberr').style.display='';
+        }
+        return !pobSelected;
+    }
+    
+    function boSave(){
+        if(isEditBO){
+            boSave1();
+        }else{
+            saveDetails();
+        }
+    }
+    </script> 
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main" >
+                <apex:actionFunction name="afsd" action="{!saveDraftR}" status="theStatus" rerender="msg2"  oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraftR}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <apex:actionFunction name="boSave1" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" isBo="{!AND(NOT(ispu),NOT(isgu))}"/> 
+                </apex:outputPanel>
+                <apex:actionFunction name="assignAccount" action="{!assignAccount}" status="theStatus" rerender="deppanel" oncomplete="toggleGLoader();chkAccount('{!JSENCODE(req.Acc__c)}');" />
+                
+                
+                         
+                <apex:outputPanel id="rerenderImage">
+                    <apex:inputHidden id="imageBase64" value="{!tImageBase64}" />
+                    <apex:inputHidden id="docname" value="{!docname}" />
+                    <apex:inputHidden id="parseId" />
+                    <script>
+                    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                    cs["docname"] = document.getElementById("{!$Component.docname}");
+                    cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                    </script>
+                </apex:outputPanel>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <apex:outputPanel rendered="{!IF(req.id=='',true,false)}">
+                                        <c:srvdefcmp srv="{!srv}"/>
+                                    </apex:outputPanel>
+                                </div>
+                                
+                                <div>
+                                    <apex:outputPanel id="compupload" rendered="{!IF(req.id!='',true,false)}">
+                                        <c:grqupd Dim="V" PayDone="{!if(req.AP__c>0,true,false)}"/>  
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:outputPanel id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel id="deppanel">
+                                        <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                        
+                                        <c:accountcmp req="{!req}" rendered="{!AND(NOT(ispu),NOT(isgu))}" />
+
+                                        <div id="pobdetsection">
+                                            <div class="form-group form-style mb-2">
+                                                <label>Select a P.O. Box</label>
+                                                <c:allocatedpob id="gpboxlookup" accId="{!req.acc__r.id}"  Request="{!req}" srvc="cancellation" />
+                                            </div>
+                                            
+                                            
+                                            <div class="form-group">
+                                                <label class="mb-3 fs-18">Do you have P.O. Box keys? </label><br/>
+                                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                                    <input id="keysTrue" type="checkbox" name="lockchange" onchange="keysOnChange(this);"/>
+                                                    <span>Yes, I have the P.O. Box keys with me</span>
+                                                </label>
+                                            </div>
+                                            
+                                            
+                                            <div class="mb-4"></div>
+                                            <div class="form-style">
+                                                <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp" cmpTitle="Collection & Delivery Info"/> 
+                                            </div>
+                                            
+                                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}" />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </div>
+                            
+                        </div>
+                            
+                    </div>
+                </div>
+            </div>
+             <c:fileuploadpopupnew13 R="{!req}" /> 
+        </body>
+        
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="xoca__c" value="{!req.xoca__c}" />
+        <script type="text/javascript">
+        cs['xadh__c']=getC('{!$Component.xadh__c}'); 
+        cs['xoca__c']=getC('{!$Component.xoca__c}'); 
+        </script> 
+    </apex:form> 
+    
+</apex:page>

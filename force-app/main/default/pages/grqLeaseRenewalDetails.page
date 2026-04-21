@@ -1,0 +1,1283 @@
+<apex:page sidebar="false" standardController="g_Req__c" extensions="lrCtlReq" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" >
+    <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <style>
+        @keyframes blink {
+        0% {
+        opacity: 0.4;
+        }
+        50% {
+        opacity: 0.8;
+        }
+        80% {
+        opacity: 1;
+        }
+        100% {
+        opacity: 1;
+        }
+        }
+        
+        .blinkAny6 {
+        animation: blink 2s 6 ease-in-out;
+        }
+    </style>
+    <apex:form id="mainForm" styleClass="form-style">
+        
+        <apex:actionFunction name="updateRenewalRequest" action="{!updateRequestDetails}" rerender="rerenderImage" >
+            
+            <apex:param name="pType" assignTo="{!selectedInsuranceType}" value="" />
+            <apex:param name="pTypeChange" assignTo="{!isPolicyNumChange}" value="" />
+            <apex:param name="pComChange" assignTo="{!isPolicyComChange}" value="" />
+            <apex:param name="insTypeChange" assignTo="{!isInsTypeChange}" value="" />
+            <apex:param name="pExpireDChange" assignTo="{!isExpireDateChange}" value="" />
+            <apex:param name="digitalSignChange" assignTo="{!isDigitalSignChange}" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="initCou" status="theStatus"  reRender="msg" action="{!invokeCourier}"  >
+        </apex:actionFunction>
+        
+        
+        <apex:actionFunction status="theStatus" reRender="msg" name="callAdnicWS" action="{!calprem}" oncomplete="reassignPolicyInfo('{!JSENCODE(rq.xuvdet__c)}');" />
+        
+        
+        <apex:outputPanel id="rqfldId">
+            <apex:inputHidden id="documentlist" value="{!rq.xcddocs__c}"/>
+            <apex:inputHidden id="xadtx2__c" value="{!rq.xadtx2__c}"/>
+            <apex:inputHidden id="parCat__c" value="{!rq.parCat__c}"/>
+            <apex:inputHidden id="xcamc__c" value="{!rq.xcamc__c}"/>
+            <apex:inputHidden id="xintp__c" value="{!rq.xintp__c}"/>
+            <apex:inputHidden id="xdedc__c" value="{!rq.xdedc__c}"/>
+            <apex:inputHidden id="xlicd__c" value="{!rq.xlicd__c}"/>
+            <apex:inputHidden id="xloccr__c" value="{!rq.xloccr__c}"/>
+            <apex:inputHidden id="xrpid__c" value="{!rq.xrpid__c}"/>
+            <apex:inputHidden id="xceidedt__c" value="{!rq.xceidedt__c}"/>
+            <apex:inputHidden id="xceididt__c" value="{!rq.xceididt__c}"/>
+            <apex:inputHidden id="xadtx1__c" value="{!rq.xadtx1__c}"/>
+            <apex:inputHidden id="xadtx4__c" value="{!rq.xadtx4__c}"/>
+            
+            <apex:inputHidden id="xaccbrand__c" value="{!rq.xaccbrand__c}"/>
+            <apex:inputHidden id="xdmpn__c" value="{!rq.xdmpn__c}"/>
+            <apex:inputHidden id="Insurance_Company__c" value="{!rq.Insurance_Company__c}"/>
+            <apex:inputHidden id="xsvn__c" value="{!rq.xsvn__c}"/>
+            <apex:inputHidden id="xvnum__c" value="{!rq.xvnum__c}"/>
+        </apex:outputPanel>
+        
+        
+        <apex:outputPanel id="rerenderImage">
+            <apex:inputHidden id="docname" value="{!docname}" />
+            <script>
+            var cs = {};
+            cs["docname"] = document.getElementById("{!$Component.docname}");
+            cs["documentlist"] = document.getElementById("{!$Component.documentlist}");
+            cs["xadtx2__c"] = document.getElementById("{!$Component.xadtx2__c}");
+            cs["parCat__c"] = document.getElementById("{!$Component.parCat__c}");
+            cs["xcamc__c"] = document.getElementById("{!$Component.xcamc__c}");
+            cs["xintp__c"] = document.getElementById("{!$Component.xintp__c}");
+            cs["xdedc__c"] = document.getElementById("{!$Component.xdedc__c}");
+            cs['xrpid__c'] = document.getElementById("{!$Component.xrpid__c}");
+            cs['xceidedt__c'] = document.getElementById("{!$Component.xceidedt__c}");
+            cs['xceididt__c'] = document.getElementById("{!$Component.xceididt__c}");
+            cs["isDigitalSign"] = document.getElementById("{!$Component.xlicd__c}");
+            cs["isInsurance"] = document.getElementById("{!$Component.xloccr__c}");
+            cs["xaccbrand__c"] = document.getElementById("{!$Component.xaccbrand__c}");
+            
+            cs["xadtx1__c"] = document.getElementById("{!$Component.xadtx1__c}");
+			cs["xadtx4__c"] = document.getElementById("{!$Component.xadtx4__c}");
+            
+            cs["xsvn__c"] = document.getElementById("{!$Component.xsvn__c}");
+            cs["xvnum__c"] = document.getElementById("{!$Component.xvnum__c}");
+            
+            console.log('doc value :'+cs["documentlist"].value);
+            cs["isInsurance"].value = 'false';
+            
+            function initCourier(){
+                initCou();
+            }
+            
+            </script>
+        </apex:outputPanel>
+        
+        <div class="container">
+            <div class="container pt-2 pb-2">
+                <div class="text-right">
+                    <apex:outputPanel >
+                        <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                            SR # <span class="text-000">{!rq.Name} </span>
+                        </span>
+                    </apex:outputPanel>
+                    <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(AND(OR(req.STA__c=='Draft',req.STA__c=='Open'),!req.xoca__c),true,false)}"/>
+                </div>
+            </div>
+            <div class="base-layout">
+                <div class="base-side">
+                    <div class="base-side-content">
+                        <div>
+                            <h3 class="text-primary d-md-block d-none">LEASE DETAILS</h3>
+                            
+                            <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                               data-target="#base_side_content_1">
+                                <h3 class="text-primary">LEASE AGREEMENT</h3>
+                            </a>
+                            <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                                <div class="collapse-content pt-4">
+                                    <apex:repeat value="{!unitDetails}" var="unit">
+                                        <div class="media-unit">
+                                            <i class="icon-commercial media-unit-icon text-primary"></i>
+                                            <div class="media-unit-value badge-status">{!unit.area} SQFT</div>
+                                            <h5>{!unit.productName}</h5>
+                                            <div><strong>{!unit.name}</strong></div>
+                                            <div>{!unit.floor}, {!unit.buildingName}</div>
+                                        </div>
+                                    </apex:repeat>                                    
+                                    <a href="/DisplayDoc?id={!rq.ccrmldid__c}"  TARGET = "_blank"  class="blinkAny6 btn btn-outline-primary btn-outline-primary-2 mt-2 mb-4"><i class="fa fa-arrow-down"></i>
+                                        VIEW AGREEMENT
+                                    </a>                
+                                </div>
+                            </div>
+                            <div class="step-item-inner"><i class=""></i><h3 class="text-primary d-md-block d-none">Lease Renewal Flow</h3></div>
+                            <div class="row"><span class="progress-bar-label"></span></div>
+                            <apex:outputPanel rendered="{!rq.InsChk__c}">
+                                <div class="progress-vertical">
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">1</div>
+                                        <div class="progress-label">Review your lease</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">2</div>
+                                        <div class="progress-label">Submit for HSE (if needed)</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">3</div>
+                                        <div class="progress-label">Initiate courier</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">4</div>
+                                        <div class="progress-label">Submit lease agreement and cheques</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">5</div>
+                                        <div class="progress-label">Leasing team verification</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">6</div>
+                                        <div class="progress-label">Lease Renewed</div>
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!NOT(rq.InsChk__c)}">
+                                <div class="progress-vertical">
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">1</div>
+                                        <div class="progress-label">Review your lease</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">2</div>
+                                        <div class="progress-label">Initiate courier</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">3</div>
+                                        <div class="progress-label">Submit lease agreement and cheques</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">4</div>
+                                        <div class="progress-label">Leasing team verification</div>
+                                    </div>
+                                    <div class="progress-line"></div>
+                                    <div class="progress-item completed">
+                                        <div class="progress-number">5</div>
+                                        <div class="progress-label">Lease Renewed</div>
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                            <div style="height:150%; overflow: auto;" >
+                            </div>
+                            
+                        </div>
+                        <div>
+                            <apex:outputPanel id="dueAmount" rendered="false" >
+                                <div class="onboarding-side-footer" style="padding: 30px 40px;display:block; position: relative;background-color: #DCDCDC;margin-top: 30px">
+                                    <apex:outputText >
+                                        <a href="#" class="onboarding-side-footer-modal-toggle" style="position: absolute;right: 15px;top: 15px;font-size: 1rem;" data-toggle="modal" data-target="#modal_fees_breakdown">
+                                            <i class="icon-popup"></i>
+                                        </a>
+                                    </apex:outputText> 
+                                    <div class="data-info data-info-lg" style="margin-bottom: 10px;">
+                                        <h4 class="data-label">Payment Due</h4>
+                                        <div class="data-value">  
+                                            AED {!rq.xtpa__c}
+                                        </div>
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal fade modal-base" id="modal_fees_breakdown" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="padding-right: 17px;">
+                    <div class="modal-dialog" role="document" style="width: 600px;">
+                        <apex:outputPanel id="feeBreak"  >
+                            <div class="modal-content">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <i class="icon-close"></i>
+                                </button>
+                                <div class="modal-body px-xl-5">
+                                    <h2 class="modal-title mb-4">Fees breakdown</h2>
+                                    <div class='mb-4'> 
+                                        <p>
+                                            Below is a summary of the fees and costs calculated for your lease renewal request.
+                                        </p>
+                                    </div>
+                                    <div  class="onboarding-review-table onboarding-review-table-static"> <!-- class="onboarding-review-table onboarding-review-table-static" -->
+                                        <div id="othrbrkdwn">
+                                            <apex:outputPanel rendered="true">
+                                                <apex:repeat value="{!rq.Items__r}" var="itm">
+                                                    <apex:outputPanel rendered="{!itm.ATV__c != 0}">
+                                                        <div class="onboarding-review-toggle">
+                                                            <div class="onboarding-review-row">
+                                                                <span class="onboarding-review-label">{!itm.name}</span>
+                                                                <span class="onboarding-review-value">AED {!itm.ATV__c}</span>
+                                                            </div>
+                                                        </div>
+                                                    </apex:outputPanel>
+                                                </apex:repeat>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="base-main">
+                    <div class="base-main-content">
+                        <div class="steps steps-desktop">
+                            <div class="step-item completed">
+                                <div class="step-item-inner">
+                                    <i class="step-icon icon-review"></i>
+                                    <div class="step-title">Review Lease Renewal</div>
+                                    <i class="step-icon-check fa fa-check"></i>
+                                </div>
+                            </div>
+                            <div class="step-item active">
+                                <div class="step-item-inner">
+                                    
+                                    <i class="step-icon icon-addon"></i>
+                                    <div class="step-title">Upload Documents</div>
+                                </div>
+                            </div>
+                            <div class="step-item active">
+                                <div class="step-item-inner">
+                                    <i class="step-icon icon-cash-deposit"></i>
+                                    <div class="step-title">Payment Options</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="base-main-title">Lease Renewal</h3>
+                        <apex:outputPanel rendered="{!rq.xled__c < TODAY()}">
+                            <p>
+                                Your lease expired on <b><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.xled__c}" /></apex:outputText></b>. Please review the Renewal Agreement shared with you via email and return it at the soonest to help avoid potential compliance issues . We appreciate your prompt action.
+                            </p>
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel rendered="{!rq.xled__c > TODAY()}">
+                            <p>
+                                Your lease is approaching its renewal on <b><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.xled__c}" /></apex:outputText></b>. Please review the Renewal Agreement shared with you via email and return it at the soonest to help avoid potential compliance issues. We appreciate your prompt action.
+                            </p>
+                        </apex:outputPanel>
+                        <p>
+                            Any changes to your license not included in your previous Lease Agreement will automatically be reflected in the renewed agreement.
+                        </p>
+                        <p>
+                            For any modifications or questions related to your lease and renewal, please contact the Leasing Team by calling 800-4-axs (297).
+                        </p>
+                        <apex:outputPanel styleClass="col-lg-6">
+                            <div id="visiteduaepanel">
+                                <apex:outputPanel rendered="true">
+                                    <h4>Please provide your lease insurance details</h4>
+                                </apex:outputPanel>
+                            </div>
+                        </apex:outputPanel>
+                        
+                        <div id="section1" style="display:none;">
+                            <h3>Corporate Insurance from ADNIC</h3>
+                            <p>
+                                Register your interest for the services from below. Some of the services will be added to your
+                                payable fees whereas others will be charged by our partners directly at the time of the fulfilment
+                                of those services.
+                            </p>
+                            <c:adnicinscmp rqDraft="{!req}"/>     
+                        </div>
+                        <div id="section2">
+                            <div class="row row-lg">
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label id="emailId">Insurance Risk Type</label>
+                                        
+                                        <select id="insurancetype"
+                                                class="form-control select2-service requiredFld"
+                                                multiple="multiple"
+                                                onchange="updateInsuranceTypeMulti();">
+                                            <option value="All Risk Insurance">All Risk Insurance</option>
+                                            <option value="Third Party Liability">Third Party Liability</option>
+                                            <option value="Employee Compensation">Employee Compensation</option>
+                                            
+                                        </select>
+                                        <script type="text/javascript">
+
+                                        function updateInsuranceTypeMulti() {
+                                            var values = $('#insurancetype').val();
+                                            cs['xintp__c'].value = values ? values.join(',') : '';
+                                            console.log('inusarnce data :'+cs['xintp__c'].value);
+                                            toggleInsuranceExpiry(values);
+                                        }
+
+                                        function toggleInsuranceExpiry(values) {
+                                            if (!values || values.length === 0) {
+                                                $('.allRiskBlock, .tplBlock, .ecBlock').hide();
+                                                return;
+                                            }
+                                            if (values.includes('All Risk Insurance')) {
+                                                $('.allRiskBlock').show();
+                                            }
+                                            if (values.includes('Third Party Liability')) {
+                                                $('.tplBlock').show();
+                                            }
+                                            if (values.includes('Employee Compensation')) {
+                                                $('.ecBlock').show();
+                                            }
+
+                                            if (!values.includes('All Risk Insurance')) {
+                                                $('.allRiskBlock').hide();
+                                            }
+                                            if (!values.includes('Third Party Liability')) {
+                                                $('.tplBlock').hide();
+                                            }
+                                            if (!values.includes('Employee Compensation')) {
+                                                $('.ecBlock').hide();
+                                            }
+                                        }
+                                        </script>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <div class="row allRiskBlock" style="border-bottom: 1px dashed rgba(0, 0, 0, 0.1);">
+                                    <div class="col-lg-12">All Risk Policy</div>
+                                    <div class="col-lg-4 allRiskBlock" >
+                                        <div class="form-group">
+                                            <label>Expire Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit requiredFld" validationName="ped"
+                                                       fldName="Date of Expiry" id="datepicker3" value="{!rq.xrpid__c}"
+                                                       data-toggle="datetimepicker" data-target="#datepicker3" placeholder="DD/MM/YYYY"   onchange="validateDate(this);" />
+                                                <div class="input-group-append">
+                                                    <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 allRiskBlock" >
+                                        <div class="form-group">
+                                            <label id="MobId">Policy Number</label>
+                                            <div class="d-flex">
+                                                <apex:inputField styleClass="jsnfld requiredFld form-control" value="{!rq.xdmpn__c}"   onchange="validateInput(this,'xdmpn__c',20)"/> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 allRiskBlock" >
+                                        <div class="form-group">
+                                            <label id="emailId" style="white-space: nowrap">Company Name</label>
+                                            <apex:inputField value="{!rq.Insurance_Company__c}" styleClass="jsnfld requiredFld form-control insCompany" id="insCompany" onchange="updateInsuranceCompany(this.value,'All Risk Insurance')"/>
+                                            <script type="text/javascript">
+                                            cs['Insurance_Company__c'] =document.getElementById('{!$Component.Insurance_Company__c}');
+                                            </script> 
+                                        </div> 
+                                    </div>
+                                </div>
+                                <div class="row tplBlock" style="border-bottom: 1px dashed rgba(0, 0, 0, 0.1);">
+                                    <div class="col-lg-12">Third Party Liability Policy</div>
+                                    <div class="col-lg-4 tplBlock">
+                                        <div class="form-group">
+                                            <label style="white-space: nowrap">Expire Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit requiredFld" validationName="ped"
+                                                       fldName="Date of Expiry" id="datepicker4" value="{!rq.xceidedt__c}"
+                                                       data-toggle="datetimepicker" data-target="#datepicker4" placeholder="DD/MM/YYYY"   onchange="validateDate(this);" />
+                                                <div class="input-group-append">
+                                                    <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 tplBlock">
+                                        <div class="form-group">
+                                            <label id="MobId" style="white-space: nowrap">Policy Number</label>
+                                            <div class="d-flex">
+                                                <apex:inputField styleClass="jsnfld requiredFld form-control" value="{!rq.xsvn__c}"  onchange="validateInput(this,'xsvn__c',20)"/> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 tplBlock">
+                                        <div class="form-group">
+                                            <label id="emailId" style="white-space: nowrap">Company Name</label>
+                                            <apex:inputField value="{!rq.Insurance_Company__c}" styleClass="jsnfld requiredFld form-control insCompany1" id="insCompany1" onchange="updateInsuranceCompany(this.value,'Third Party Liability')"/>
+                                            <script type="text/javascript">
+                                            cs['Insurance_Company__c'] =document.getElementById('{!$Component.Insurance_Company__c}');
+                                            </script> 
+                                        </div> 
+                                    </div>
+                                </div>
+                                
+                                <div class="row ecBlock" style="border-bottom: 1px dashed rgba(0, 0, 0, 0.1);">
+                                    <div class="col-lg-12">Employee Compensation Policy</div>
+                                    <div class="col-lg-4 ecBlock">
+                                        <div class="form-group">
+                                            <label style="white-space: nowrap">Expire Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit requiredFld" validationName="ped"
+                                                       fldName="Date of Expiry" id="datepicker5" value="{!rq.xceididt__c}"
+                                                       data-toggle="datetimepicker" data-target="#datepicker5" placeholder="DD/MM/YYYY"   onchange="validateDate(this);" />
+                                                <div class="input-group-append">
+                                                    <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker5">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 ecBlock">
+                                        <div class="form-group">
+                                            <label id="MobId" style="white-space: nowrap">Policy Number</label>
+                                            <div class="d-flex">
+                                                <apex:inputField styleClass="jsnfld requiredFld form-control" value="{!rq.xvnum__c}"   onchange="validateInput(this,'xvnum__c',20)"/> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 ecBlock">
+                                        <div class="form-group">
+                                            <label id="emailId" style="white-space: nowrap" >Company Name</label>
+                                            <apex:inputField value="{!rq.Insurance_Company__c}" styleClass="jsnfld requiredFld form-control insCompany2" id="insCompany2" onchange="updateInsuranceCompany(this.value,'Employee Compensation')"/>
+                                            <script type="text/javascript">
+                                            cs['Insurance_Company__c'] =document.getElementById('{!$Component.Insurance_Company__c}');
+                                            </script> 
+                                        </div> 
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>  
+                        
+                        <apex:outputPanel styleClass="col-lg-6">
+                            <div id="signdigital">
+                                <apex:outputPanel rendered="true">
+                                    <h4>How would you like to sign your lease agreement?</h4>
+                                    <div class="form-group mt-3 isvisitedUAE reqRadio row">
+                                        <div class="col-lg-3 col-sm-6">
+                                            <label class="box-check mb-0">
+                                                <input type="radio" class="form-control" name="signatureChoice" id="isDigitalSignYes" onchange="updateDigitalSign(true)" />
+                                                <div class="box box-center box-hover mb-lg-0" style="min-height: 74px;">
+                                                    <span class="box-title font-weight-medium">
+                                                        Digital Signature
+                                                    </span>
+                                                    <div class="box-title font-weight-medium mt-1">
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-lg-3 col-sm-6">
+                                            <label class="box-check mb-0">
+                                                <input type="radio" class="form-control" name="signatureChoice" id="isDigitalSignNo" onchange="updateDigitalSign(false)"  checked="checked"/>
+                                                <div class="box box-center box-hover mb-lg-0" style="min-height: 74px;">
+                                                    <span class="box-title font-weight-medium">
+                                                        Wet Signature
+                                                    </span>
+                                                    <div class="box-title font-weight-medium mt-1">
+                                                        
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="option-error" style="display:none">Please select an option!</div>
+                                    </div>
+                                </apex:outputPanel>
+                            </div>
+                        </apex:outputPanel>                  
+                        <div id="isDigitalSignSection">
+                            <p class="text-primary">   <i class="icon-info-circle text-primary" style="vertical-align: middle;color:#b90e0e;"></i>Your Company’s General Manager as per your trade licence will receive an email to approve the lease renewal. Kindly make sure the email and mobile number are correct. If you notice any issues, contact your Partner Relationship Manager or call 800-4-axs(297).<br/></p>
+                            <div class="row row-lg">
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label id="emailId">Manager Incharge Name</label>
+                                        <div class="d-flex">
+                                            <apex:inputField styleClass="forReadOnly jsnfld requiredFld form-control" id="Manager_Incharge_Name__c" value="{!rq.Acc__r.Manager_Incharge_Name__c}" html-disabled="true"  /> 
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label id="emailId">Mobile Number</label>
+                                        <div class="d-flex">
+                                            <apex:inputField styleClass="forReadOnly jsnfld requiredFld form-control" id="PRM_MobileNo__c" value="{!rq.Acc__r.Manager_Mobile__c}" html-disabled="true"  /> 
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label id="MobId">Email</label>
+                                        <div class="d-flex">
+                                            <apex:inputField styleClass="forReadOnly jsnfld requiredFld form-control" id="PRM_Email__c" value="{!rq.Acc__r.Manager_Email__c}" html-disabled="true"  /> 
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>  
+                        
+                        <div id="iswetSignSection">
+                            <p class="text-primary">  
+                                <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i> 
+                           		Please download the Lease Agreement and obtain the signature of your Company’s General Manager as per your trade licence. Kindly submit the wet-signed Lease Agreement alongside your other required documents  and payment cheques ready by arranging for courier collection.
+                            </p>
+                        </div>
+                        <div class="row">
+                        </div>
+                        
+                        <apex:outputPanel styleClass="col-lg-6">
+                            <apex:outputPanel rendered="true">
+                                <c:collectionanddeliveryinfo req="{!rq}" srv="{!srv}" id="collDelcmp"/> 
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        
+                        
+                        <div class="base-collapse">
+                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#paymentscheudle">
+                                <div class="collapse-title">Below is the breakdown of the first-term payment, which you can pay online or alternatively settle using current-dated cheques </div>
+                            </a>
+                            <div id="paymentscheudle" class="show">
+                                <div class="collapse-content">
+                                    <div class="row">
+                                        <div class="form-group col-12">
+                                            <div class="newMems mb-4 mt-4" id="addedMems">
+                                                <table class="table table-hover table-responsive-sticky table-list m-0">
+                                                    <thead>
+                                                        <tr class="slds-line-height_reset">
+                                                            <th>Description<div class="fs-14">&nbsp;</div></th>
+                                                            <th>Term<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right; ">Price<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right;">VAT<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right;">Total Amount<div class="fs-14">&nbsp;</div></th>
+                                                            <th>Due Date<div class="fs-14">&nbsp;</div></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <apex:repeat value="{!paymentSchDetails}" var="c">
+                                                            <tr>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;">{!c.description}</td>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;">{!c.term}</td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> <apex:outputText value="{0, number, ###,##0.00}"><apex:param value="{!c.billedAmount}" /> </apex:outputText> </span> </td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> <apex:outputText value="{0, number, ###,##0.00}"><apex:param value="{!c.vatAmount}" /> </apex:outputText> </span> </td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> 
+                                                                    <apex:outputText value="{0, number, ###,##0.00}"><apex:param value="{!c.totalAmountIncludingVat}" /></apex:outputText> 
+                                                                     </span> </td>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!c.chargeFrom}" /></apex:outputText></td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </tbody>
+                                                </table>                     
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                         <apex:outputPanel styleClass="col-lg-6">
+                            <div id="l">
+                                <label>Tenant Code:</label>
+                                <i>{!rq.rtacn__c} </i>
+                            </div>
+                            <div id="l"> <label>First Term Total Amount to be paid:</label>
+                                <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;">
+                                <i>
+                                    <apex:outputText value="{0,number,###,##0.##}"> <apex:param value="{!rq.xtpa__c}" /> </apex:outputText>
+                                </i>
+                                </span>
+                            </div>
+                            <div id="l"><label>First Term Total Amount to be paid in words:</label>
+                                <i> {!amtinWords}</i>
+                            </div>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel layout="block" rendered="{!NOT(ISNULL(paymentSchDetailsPost)) && paymentSchDetailsPost.size > 0}">
+                            <div>
+                                <p class="text-primary">
+                                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                    The remaining payment terms must be settled by cheque. Please ensure that each cheque reflects the correct due date as per the breakdown below and is made payable to
+                                    <apex:outputText >{!IF(ACC.Type='Customer - IN5','Innovation Hub Phase 1 FZ LLC',IF(ACC.Prk__c='Dubai Design District',' Dubai Design District FZ LLC',IF(ACC.Prk__c='Dubai Industrial City',' Dubai Industrial City LLC',' TECOM Investment FZ LLC')))}</apex:outputText>.                                    <br />
+                                    Should you wish to make future payments online, please select the respective lease term for which you will be provided digital payment details.
+                                </p>
+                                <div class="row">
+                                    <a  href="javascript:void(0);" onclick="showCourierPopUp();" class="btn btn-outline-primary mb-4">
+                                        <i class="icon icon-courier-collection" style="margin-left: 2px;"></i>&nbsp;COURIER BOOKING
+                                    </a>
+                                </div>
+                                <div id="paymentscheudle1" class="show">
+                                    <div class="row">
+                                        <div class="form-group col-12">
+                                            <div class="newMems mb-4 mt-4" id="addedMems">
+                                                <table class="table table-hover table-responsive-sticky table-list m-0">
+                                                    <thead>
+                                                        <tr class="slds-line-height_reset">
+                                                            <th>Select<div class="fs-14">&nbsp;</div></th>
+                                                            <th>Description<div class="fs-14">&nbsp;</div></th>
+                                                            <th>Term<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right; ">Price<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right; ">VAT<div class="fs-14">&nbsp;</div></th>
+                                                            <th style="text-align: right;">Total Amount<div class="fs-14">&nbsp;</div></th>
+                                                            <th>Due Date<div class="fs-14">&nbsp;</div></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <apex:repeat value="{!paymentSchDetailsPost}" var="c">
+                                                            <tr>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;">
+                                                                    <label class="custom-checkbox">
+                                                                        
+                                                                        <input type="checkbox"
+                                                                               class="ps-checkbox focus"
+                                                                               data-id="{!c.Id}"
+                                                                               onclick="validatePrecedingCheckbox(this);recalculateTotal();" 
+                                                                               data-selected="{!IF(c.isSelected,'true','false')}" />
+                                                                        <span></span>
+                                                                    </label>
+                                                                </td>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;">{!c.description}</td>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;">{!c.term}</td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> <apex:outputText value="{0, number, ###,##0.00}"> <apex:param value="{!c.billedAmount}" /> </apex:outputText> </span> </td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> <apex:outputText value="{0, number, ###,##0.00}"> <apex:param value="{!c.vatAmount}" /> </apex:outputText> </span> </td>
+                                                                <td style="text-align: right; padding: 4px 10px; white-space: nowrap;"> <img class="aed" style="vertical-align: middle;" /> <span style="vertical-align: middle;"> <apex:outputText value="{0, number, ###,##0.00}"><apex:param value="{!c.totalAmountIncludingVat}" /> </apex:outputText> </span> </td>
+                                                                <td style="text-align: left; padding: 4px 10px; white-space: nowrap;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!c.chargeFrom}" /></apex:outputText></td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </tbody>
+                                                </table>                     
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                    <div class="base-main-footer">
+                        <div class="base-nav">
+                            <p class="base-nav-info base-footer-info text-primary" style="max-width: 620px;">
+                                <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                To avoid delays, please ensure that cheque dates match the due dates, amounts are correct, and all cheques are payable to 
+                                    <apex:outputText >{!IF(ACC.Type='Customer - IN5','Innovation Hub Phase 1 FZ LLC',IF(ACC.Prk__c='Dubai Design District',' Dubai Design District FZ LLC',IF(ACC.Prk__c='Dubai Industrial City',' Dubai Industrial City LLC',' TECOM Investment FZ LLC')))}</apex:outputText>.                            </p>
+                            <a  href="javascript:void(0);" onclick="validateInputAndShowPopUp();" class="btn btn-primary base-nav-next">
+                                SUBMIT TO LEASING
+                            </a>
+                        </div>
+                    </div>                    
+                </div>                
+            </div>            
+        </div>
+        <div class="modal fade modal-base" id="modal_lease_breakdown" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="max-width: 70% !important;width: 1000px !important;margin: auto !important;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body px-xl-5">
+                        <h3 class="mb-3 text-primary">HSE Endorsement </h3>
+                        <p>As part of your {!rq.xcamc__c} lease renewal, we are starting the required HSE approval process. Our HSE team will reach out if they need further information from you. Please complete all necessary HSE requirements.</p>
+                        <div class="text-right mt-3">
+                            <a  href="javascript:void(0);" onclick="processLeaseRenewal();" class="btn btn-primary base-nav-next">
+                                Ok
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade modal-base" id="modal_courierPopUp" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="max-width: 70% !important;width: 1000px !important;margin: auto !important;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body px-xl-5">
+                        <h3 class="mb-3 text-primary">Would you like us to initiate courier collection?</h3>
+                        <p id="isd" style="display:none">Please keep all cheques in a single envelope. Ensure that the cheque dates match the due dates, the amounts are correct, and all cheques are payable to 
+						<apex:outputText >{!IF(ACC.Type='Customer - IN5','Innovation Hub Phase 1 FZ LLC',IF(ACC.Prk__c='Dubai Design District',' Dubai Design District FZ LLC',IF(ACC.Prk__c='Dubai Industrial City',' Dubai Industrial City LLC',' TECOM Investment FZ LLC')))}</apex:outputText>.
+                        </p><p id="isw" style="display:none">Please place all cheques in a single envelope along with the lease agreement signed by the General Manager (as per the trade licence). Ensure that the cheque dates match the due dates, the amounts are correct, and all cheques are payable to 
+						<apex:outputText >{!IF(ACC.Type='Customer - IN5','Innovation Hub Phase 1 FZ LLC',IF(ACC.Prk__c='Dubai Design District',' Dubai Design District FZ LLC',IF(ACC.Prk__c='Dubai Industrial City',' Dubai Industrial City LLC',' TECOM Investment FZ LLC')))}</apex:outputText>.
+                        </p>
+                        <div class="text-right mt-3">
+                            <a data-dismiss="modal" href="javascript:void(0);" onclick="initCourier();" class="btn btn-primary base-nav-next">
+                                Ok
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <c:ocrcmp accPrk="{!rq.acc__r.park__c}" />
+        <c:fileuploadpopupnew13 R="{!rq}" rerender="ricPanel"/> 
+        <apex:outputPanel > 
+            <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+            <script type="text/javascript">
+            cs['xadh__c']=getC('{!$Component.xadh__c}');
+            </script>
+        </apex:outputPanel>
+        <script>
+        (function ($) {
+            $(function () {
+                $('#corporate_check').change(function () {
+                    if ($(this).prop('checked')) {
+                        $('#corporate').slideDown();
+                        setTimeout(function () {
+                            $(".input-select2-flat").select2({
+                                placeholder: "Select",
+                                minimumResultsForSearch: Infinity
+                            });
+                        }, 100);
+                    } else {
+                        $('#corporate').slideUp();
+                    }
+                });
+            });
+        }(jQuery));
+        </script>
+        <script>
+        var reqType = '{!JSENCODE(rqTp)}'; var bCallAdnic='{!bCallAdnic}';
+        var isDependentApp={!isDependentApp};
+        
+        $(document).ready(function(){
+            var yesRadio = document.getElementById("isDigitalSignYes");
+            var noRadio = document.getElementById("isDigitalSignNo");
+            const section = document.getElementById("isDigitalSignSection");
+
+            cs['digitalSignonLoad'] = cs['xaccbrand__c'].value;
+
+            if (cs['xaccbrand__c'] && cs['xaccbrand__c'].value === 'Wet Signature') {
+                section.style.display = "none";
+                noRadio.checked = true;
+                document.getElementById('isDigitalSignSection').style.display = 'none';
+                document.getElementById('iswetSignSection').style.display = 'block';
+            } else {
+                section.style.display = "block";
+                cs['xaccbrand__c'].value ='DocuSign with OTP';
+                yesRadio.checked = true;
+                document.getElementById('isDigitalSignSection').style.display = 'block';
+                document.getElementById('iswetSignSection').style.display = 'none';
+            }
+            
+            cs['policyNumOnLoad'] = '{!JSENCODE(rq.xdmpn__c)}';
+            cs['isHseApplicable'] = '{!JSENCODE(rq.InsChk__c)}';  
+            console.log('hse applicale :'+cs['isHseApplicable']);
+
+            cs['insCompanyOnLoad'] = '{!JSENCODE(rq.Insurance_Company__c)}';
+            let insType ='{!JSENCODE(rq.xintp__c)}';
+            cs['insTypeOnLoad'] = insType;
+            cs["xintp__c"].value = insType;
+
+            setFormattedDate("{!TEXT(rq.xrpid__c)}",'xrpid__c','datepicker3');
+            setFormattedDate("{!TEXT(rq.xceidedt__c)}",'xceidedt__c','datepicker4');
+            setFormattedDate("{!TEXT(rq.xceididt__c)}",'xceididt__c','datepicker5');
+            
+            console.log("Raw xrpid__c_OnLoad:", cs['xrpid__c_OnLoad']);
+            
+            document.querySelectorAll('.ps-checkbox').forEach(cb => {
+                cb.checked = cb.getAttribute('data-selected') === 'true';
+            });
+
+            $('.allRiskBlock, .tplBlock, .ecBlock').hide();
+            var selectedVals = '{!JSENCODE(rq.xintp__c)}'.split(',');
+            console.log('selectedVals :'+selectedVals);
+            if(selectedVals){
+                $('#insurancetype option').each(function () {
+                    console.log('data :'+$(this).val());
+                    if (selectedVals.includes($(this).val())) {
+                        $(this).prop('selected', true);
+                    }
+                });
+            }
+            toggleInsuranceExpiry(selectedVals);
+                
+            populateInsuranceFields();
+
+            var cmpRoot = document.getElementById('{!$Component.collDelcmp}');
+            if(cmpRoot){
+                var requiredFields = cmpRoot.querySelectorAll('.requiredFld');
+                requiredFields.forEach(function (el) {
+                    el.classList.remove('requiredFld');
+                });
+            }
+
+        });
+
+        function populateInsuranceFields() {
+            var jsonField = document.getElementById('{!$Component.xadtx2__c}');
+            if (!jsonField.value) return; // No JSON stored
+
+            try {
+                var insuranceData = JSON.parse(jsonField.value);
+                // Update input fields with stored values
+                if (insuranceData["All Risk Insurance"] !== undefined) {
+                    console.log('first');
+                    document.querySelector('.insCompany').value =insuranceData["All Risk Insurance"] ;
+                    cs["Insurance_Company1__c"] = insuranceData["All Risk Insurance"] ;
+                }
+                if (insuranceData["Third Party Liability"] !== undefined) {
+                     console.log('second');
+                    document.querySelector('.insCompany1').value  = insuranceData["Third Party Liability"];
+                    cs["Insurance_Company2__c"] = insuranceData["Third Party Liability"];
+                }
+                if (insuranceData["Employee Compensation"] !== undefined) {
+                    console.log('third');
+                    document.querySelector('.insCompany2').value = insuranceData["Employee Compensation"];
+                    cs["Insurance_Company3__c"] = insuranceData["Employee Compensation"];
+                }
+            } catch(e) {
+                console.error('Invalid JSON in Insurance_JSON__c:', e);
+            }
+        }
+
+
+        function setFormattedDate(fieldValue, fieldApiName, inputId) {
+            if (!fieldValue || fieldValue === '') {
+                return;
+            }
+            // Safe date parsing (Salesforce DATE → JS Date)
+            var dateObj = new Date(fieldValue + 'T00:00:00');
+
+            if (isNaN(dateObj.getTime())) {
+                console.error('Invalid date value:', fieldValue);
+                return;
+            }
+
+            var dd = String(dateObj.getDate()).padStart(2, '0');
+            var mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            var yyyy = dateObj.getFullYear();
+
+            var formattedDate = dd + '/' + mm + '/' + yyyy;
+
+            // Set value to custom state object
+            if (fieldApiName) {
+                cs[fieldApiName].value = formattedDate;
+                cs[fieldApiName+ '_'+ 'OnLoad'] = formattedDate;
+            }
+            // Set value to input field
+            if (inputId && document.getElementById(inputId)) {
+                document.getElementById(inputId).value = formattedDate;
+            }
+            return formattedDate;
+        }
+
+        function uploadDoc(docname){
+            console.log('cs["docname"] '+cs["docname"]);
+            $(".docname").text(docname);
+            $('#modal_fileuploadPopUp').modal('show');
+        }
+            
+        function showCourierPopUp(){
+            if(cs["xaccbrand__c"].value=='DocuSign with OTP'){
+                document.getElementById('isd').style.display='block';
+                document.getElementById('isw').style.display='none';
+            }else{
+                document.getElementById('isd').style.display='none';
+                document.getElementById('isw').style.display='block';
+            }
+            $('#modal_courierPopUp').modal('show');
+        }
+            
+        function mobileNumValidate(docname,parseVal){
+            console.log('docname :'+docname);
+            console.log('parseVal :'+parseVal);
+            uploadDoc(docname,parseVal);
+        }
+
+        var isDigitalSignYes = document.getElementById('isDigitalSignYes');
+        var isDigitalSignNo = document.getElementById('isDigitalSignNo');
+        var isDigitalSignSection = document.getElementById('isDigitalSignSection');
+            
+        // Event listener for the "Yes" radio button
+        isDigitalSignYes.addEventListener('click', function() {
+            isDigitalSignSection.style.display = 'block';
+        });
+            
+            // Event listener for the "No" radio button
+        isDigitalSignNo.addEventListener('click', function() {
+            isDigitalSignSection.style.display = 'none';
+        });
+            
+        function validateInputAndShowPopUp() {
+            if(vflds('.requiredFld') && validateError('.frmErrMsg')){
+                const payload = InsPayload('');
+                console.log('adhoc 4 JSON :'+JSON.stringify(payload));
+                cs['xadtx4__c'].value=JSON.stringify(payload);
+
+                if(cs['isHseApplicable'] && cs['isHseApplicable'] === 'true'){
+                    $('#modal_lease_breakdown').modal('show');
+                }
+                else{
+                    processLeaseRenewal();
+                }
+            }
+        }
+            
+        function processLeaseRenewal() {
+            toggleGLoader();
+            if (cs['isInsurance'].value ===  'true' && !cs['xadh__c'].value.includes('ins;')) {
+            cs['xadh__c'].value += 'ins;';
+        }
+
+        if (cs['isInsurance'].value === 'false' && cs["documentlist"]  && !cs['documentlist'].value.includes('Insurance Policy;')) {
+            cs['documentlist'].value = 'Insurance Policy;';
+        }
+        
+        let datepicker3 = document.getElementById("datepicker3").value;
+        if (datepicker3) {
+            const [day, month, year] = datepicker3.split('/');
+            const formattedDate = `${year}-${month}-${day}`;
+            cs['xrpid__c'].value = datepicker3;
+            console.log('Formatted Date:', formattedDate);
+        }
+
+        let datepicker4 = document.getElementById("datepicker4").value;
+        if (datepicker4) {
+            const [day, month, year] = datepicker4.split('/');
+            const formattedDate = `${year}-${month}-${day}`;
+            cs['xceidedt__c'].value = datepicker4;
+            console.log('Formatted Date:', formattedDate);
+        }
+
+        let datepicker5 = document.getElementById("datepicker5").value;
+        if (datepicker5) {
+            const [day, month, year] = datepicker5.split('/');
+            const formattedDate = `${year}-${month}-${day}`;
+            cs['xceididt__c'].value = datepicker5;
+            console.log('Formatted Date:', formattedDate);
+        }
+        
+        console.log('insTypeOnLoad :'+cs['insTypeOnLoad']);
+        console.log('xintp__c date :'+cs["xintp__c"].value);
+
+        let isPolicyNumChanged = cs["xdmpn__c"] && cs['policyNumOnLoad'] != cs["xdmpn__c"].value ? 'true' : 'false';
+        let insCompanyChanged = cs["Insurance_Company1__c"] && cs['insCompanyOnLoad'] != cs["Insurance_Company1__c"].value ? 'true' : 'false';
+        let isIntypeChanged = cs["xintp__c"] && cs['insTypeOnLoad'] != cs["xintp__c"].value ? 'true' : 'false';
+        let insExpireDateChanged= cs["xrpid__c"] && cs['xrpid__c_OnLoad'] != cs["xrpid__c"].value ? 'true' : 'false';
+        let isDigitalSignChanged = cs["xaccbrand__c"] && cs['digitalSignonLoad'] != cs["xaccbrand__c"].value ? 'true' : 'false';
+        
+        isPolicyNumChanged = true;
+
+        let jsonPaload = buildInsuranceJSON();
+
+         console.log('jsonPaload final :'+JSON.stringify(jsonPaload));
+
+        if(jsonPaload){
+            cs["xadtx2__c"].value = JSON.stringify(jsonPaload);
+        }
+        
+        updateRenewalRequest(cs["xintp__c"].value,isPolicyNumChanged,insCompanyChanged,isIntypeChanged,insExpireDateChanged,isDigitalSignChanged);
+        }
+        
+        
+        function recalculateTotal() {
+            //let total = 0;
+            let jsonStr = cs['xadtx1__c'].value;
+            let data = JSON.parse(jsonStr);
+            
+            let boxes = document.querySelectorAll(".ps-checkbox");
+            
+            boxes.forEach(box => {
+                let id = box.getAttribute("data-id");
+                let checked = box.checked;
+                
+                for (let term in data.paymentSchedule) {
+                let schedules = data.paymentSchedule[term];
+                schedules.forEach(item => {
+                if (item.Id === id) {
+                item.isSelected = checked;
+            }
+                          });
+        }
+        });
+        
+        cs['xadtx1__c'].value = JSON.stringify(data);
+        }
+        
+        function vflds(clsName){
+            let isNoError = true;
+            console.log('vflds::::::');
+            var brk = true;var elem = '';
+            var ubrk = true;var cbrk = true; var ucnt = 6; var ccnt = 4;
+            $(clsName).each(function(){
+                var v = $(this).val();
+                if($(this).is(':visible')){      
+                    if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                        isNoError = false;
+                        brk=false; 
+                        addValError(this,'Value is required!'); 
+                        if(elem==''){ 
+                            elem = $(this);
+                        }
+                    }
+                    else{
+                        removeValError(this);
+                    }
+                    if(elem!=''){
+                        $('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();
+                    }
+                }
+            });
+            return isNoError;
+        }
+        
+        function validateError(clsName) {
+            // Find the first visible element with the class
+            var firstError = $(clsName + ':visible').first();
+        
+            if (firstError.length > 0) {
+                // Scroll to the element
+                $('html, body').animate({ scrollTop: firstError.offset().top - 60 }, 100);
+        
+                // Focus on it if it can be focused
+                if (firstError.is('input, textarea, select, button')) {
+                    firstError.focus();
+                } else {
+                    // If not focusable, try to focus on the first input inside it
+                    firstError.find('input, textarea, select').first().focus();
+                }
+                return false;
+            }
+            return true; // No visible element found
+        }
+        
+        
+        function updateDigitalSign(isDigital) {
+            cs["xaccbrand__c"].value =  isDigital ? 'DocuSign with OTP' : 'Wet Signature';
+            
+            cs['isDigitalSign'].value = isDigital;
+            if(isDigital) {
+                document.getElementById('isDigitalSignSection').style.display = 'block';
+                document.getElementById('iswetSignSection').style.display = 'none';
+            } else {
+                document.getElementById('isDigitalSignSection').style.display = 'none';
+                document.getElementById('iswetSignSection').style.display = 'block';
+            }
+        }
+        
+        function updateIsBuyInsurance(isInsurance) {
+            console.log('isInsurance value :'+isInsurance);
+            cs['isInsurance'].value = isInsurance;
+        }
+        
+        function updateInsuranceType(insType) {
+            cs["xintp__c"].value = insType;
+        }
+        
+        function updateInsuranceCompany(insTypeCmp, insType) {
+            if(insType == 'All Risk Insurance'){
+                cs["Insurance_Company1__c"] = insTypeCmp;
+            }
+            else if(insType == 'Third Party Liability'){
+                cs["Insurance_Company2__c"] = insTypeCmp;
+            }
+            else if(insType == 'Employee Compensation'){
+                cs["Insurance_Company3__c"] = insTypeCmp;
+            }
+            
+        }
+        
+        
+        function validateInput(elem,fieldId, limit) {
+            var id = elem.id;
+            var value = elem.value;
+            console.log('id :'+id);
+            console.log('value :'+value);
+            // POLICY NUMBER Field
+            if(value){
+                var cleaned = value.replace(/[^A-Za-z0-9]/g, ''); 
+                if (fieldId == 'xaloc__c') {
+                    cleaned = value.replace(/[^A-Za-z0-9,: ]/g, '');
+                    if(cleaned.length > limit){
+                        addValError(elem, 'Please enter valid address.');
+                    }
+                    else{
+                        removeValError(elem);
+                    }
+                }
+                else if (cleaned.length > limit) {
+                    addValError(elem, 'Please enter valid Policy Number.');
+                } else {
+                    removeValError(elem);
+                }
+                elem.value = cleaned;
+                if (cs && cs[fieldId]) {
+                    cs[fieldId].value = cleaned;
+                     console.log('cs[id].value :'+cs[fieldId].value);
+                }
+            }
+        }
+
+        
+        function validateDate(elem) {
+            var value = elem.value.trim();
+            if (!value) {
+                removeValError(elem); // empty field, no error
+            }
+            
+            // Convert DD/MM/YYYY to Date object
+            var parts = value.split('/');
+            if(parts.length !== 3) {
+                addValError(elem, 'Invalid date format. Use DD/MM/YYYY.');
+            }
+            
+            var day = parseInt(parts[0], 10);
+            var month = parseInt(parts[1], 10) - 1;
+            var year = parseInt(parts[2], 10);
+            
+            var inputDate = new Date(year, month, day);
+            
+            if (isNaN(inputDate.getTime())) {
+                addValError(elem, 'Invalid date.');
+            }
+            
+            // Compare with today's date
+            var today = new Date();
+            today.setHours(0,0,0,0); // ignore time
+            
+            if (inputDate <= today) {
+                addValError(elem, 'Policy Expire Date must be in the future.');
+            } else {
+                removeValError(elem);
+            }
+        }
+
+        function validatePrecedingCheckbox(currentCheckbox) {
+            const checkboxes = Array.from(
+                document.querySelectorAll('input[type="checkbox"]')
+            );
+            const currentIndex = checkboxes.indexOf(currentCheckbox);
+            
+            if (currentIndex > 2 && !checkboxes[currentIndex - 1].checked) {
+                axsAlert('Alert!','You must select the earlier payment term first. Payments can only be selected in order of their due dates.');
+                currentCheckbox.checked = false;
+                return;
+            }
+        }        
+
+
+        function buildInsuranceJSON() {
+
+            var selectedTypes = $('#insurancetype').val() || [];
+            var payload = {};
+            if (selectedTypes.includes('All Risk Insurance')) {
+                payload["All Risk Insurance"] = cs["Insurance_Company1__c"] || "";
+            }
+
+            if (selectedTypes.includes('Third Party Liability')) {
+                payload["Third Party Liability"] = cs["Insurance_Company2__c"] || "" ;
+            }
+
+            if (selectedTypes.includes('Employee Compensation')) {
+                payload["Employee Compensation"] = cs["Insurance_Company3__c"] || "" ;
+            }
+
+            console.log("Insurance JSON Payload:", JSON.stringify(payload, null, 2));
+            return payload;
+        }
+
+        const POLICY_CONFIG = {allRiskBlock: { tableName: 'COMMLEASEBUT_InsInfo', fields: [ { name: 'ALLRISKINS', fixedValue: 'Yes' },{ name: 'ALLRISK_EXP', selector: '#datepicker3' }, { name: 'ALLRISK_INS_PLC_NO', selector: '.allRiskBlock input.jsnfld' }, { name: 'ALLRISK_INS_CO_N', selector: '.insCompany' } ] }, tplBlock: { tableName: 'COMMLEASEBUT_InsInfo', fields: [ { name: 'THIRDPARTY_LIAB', fixedValue: 'Yes' }, { name: 'THIRD_EXP', selector: '#datepicker4' }, { name: 'THIRD_INS_PLC_NO', selector: '.tplBlock input.jsnfld' }, { name: 'THIRD_INS_CO_N', selector: '.insCompany1' } ] }, ecBlock: { tableName: 'COMMLEASEBUT_InsInfo', fields: [ { name: 'EMPLCOMP', fixedValue: 'Yes' },{ name: 'EMPL_EXP', selector: '#datepicker5' }, { name: 'EMPL_INS_PLC_NO', selector: '.ecBlock input.jsnfld' }, { name: 'EMPL_INS_CO_N', selector:'.insCompany2' } ] } };
+        function PolicypayLoad(blocks, tCode) {
+
+            const config = POLICY_CONFIG[blocks];
+            if (!config) return null;
+
+            const fields = [];
+
+            config.fields.forEach(f => {
+                let value = '';
+
+                if (f.fixedValue !== undefined) {
+                value = f.fixedValue;
+                } else {
+                const el = document.querySelector(f.selector);
+                value = el ? el.value : '';
+                }
+                if (value && f.selector && f.selector.includes('#date')) {
+                    value = formatDateMMDDYYYY(value);
+                }
+
+                if (value) {
+                fields.push({
+                    Field_Name: f.name,
+                    Field_Value: value
+                });
+                }
+            });
+
+            if (!fields.length) return null;
+
+            return {
+                Table_Name: config.tableName,
+                Entity_Record_Code: tCode,
+                Fields: fields
+            };
+        }
+
+        function formatDateMMDDYYYY(dateVal) {
+            if (!dateVal) return '';
+            let dateSplit = dateVal.split('/');
+            return dateSplit[1]+'/'+dateSplit[0]+'/'+dateSplit[2];
+        }
+         function  InsPayload(tCode) {
+            const blocks =[];
+            var selectedTypes = $('#insurancetype').val() || [];
+            if (selectedTypes.includes('All Risk Insurance')) {
+                blocks[0]='allRiskBlock';
+            }
+
+            if (selectedTypes.includes('Third Party Liability')) {
+                blocks[1]='tplBlock';
+            }
+
+            if (selectedTypes.includes('Employee Compensation')) {
+                blocks[2]='ecBlock';
+            }
+            tCode='{!JSENCODE(rq.rtacn__c)}';
+        
+            const oneToManyData = blocks
+                .map(block => PolicypayLoad(block, tCode))
+                .filter(Boolean);
+
+            return {
+                OneToManyData: oneToManyData
+            };
+        }
+
+        </script>
+        <style type="text/css"> img.aed{ height:0.7em; width:auto; content: url("data:image/svg+xml; base64,PHN2ZyB2ZXJzaW9uPSIxLjIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDEwMDAgODcwIiB3aWR0aD0iMTAwMCIgaGVpZ2h0PSI4NzAiPgoJPHRpdGxlPkxheWVyIGNvcHk8L3RpdGxlPgoJPHN0eWxlPgoJCS5zMCB7IGZpbGw6ICMwMDAwMDAgfSAKCTwvc3R5bGU+Cgk8cGF0aCBpZD0iTGF5ZXIgY29weSIgY2xhc3M9InMwIiBkPSJtODguMyAxYzAuNCAwLjYgMi42IDMuMyA0LjcgNS45IDE1LjMgMTguMiAyNi44IDQ3LjggMzMgODUuMSA0LjEgMjQuNSA0LjMgMzIuMiA0LjMgMTI1LjZ2ODdoLTQxLjhjLTM4LjIgMC00Mi42LTAuMi01MC4xLTEuNy0xMS44LTIuNS0yNC05LjItMzIuMi0xNy44LTYuNS02LjktNi4zLTcuMy01LjkgMTMuNiAwLjUgMTcuMyAwLjcgMTkuMiAzLjIgMjguNiA0IDE0LjkgOS41IDI2IDE3LjggMzUuOSAxMS4zIDEzLjYgMjIuOCAyMS4yIDM5LjIgMjYuMyAzLjUgMSAxMC45IDEuNCAzNy4xIDEuNmwzMi43IDAuNXY0My4zIDQzLjRsLTQ2LjEtMC4zLTQ2LjMtMC4zLTgtMy4yYy05LjUtMy44LTEzLjgtNi42LTIzLjEtMTQuOWwtNi44LTYuMSAwLjQgMTkuMWMwLjUgMTcuNyAwLjYgMTkuNyAzLjEgMjguNyA4LjcgMzEuOCAyOS43IDU0LjUgNTcuNCA2MS45IDYuOSAxLjkgOS42IDIgMzguNSAyLjRsMzAuOSAwLjR2ODkuNmMwIDU0LjEtMC4zIDk0LTAuOCAxMDAuOC0wLjUgNi4yLTIuMSAxNy44LTMuNSAyNS45LTYuNSAzNy4zLTE4LjIgNjUuNC0zNSA4My42bC0zLjQgMy43aDE2OS4xYzEwMS4xIDAgMTc2LjctMC40IDE4Ny44LTAuOSAxOS41LTEgNjMtNS4zIDcyLjgtNy40IDMuMS0wLjYgOC45LTEuNSAxMi43LTIuMSA4LjEtMS4yIDIxLjUtNCA0MC44LTguOSAyNy4yLTYuOCA1Mi0xNS4zIDc2LjMtMjYuMSA3LjYtMy40IDI5LjQtMTQuNSAzNS4yLTE4IDMuMS0xLjggNi44LTQgOC4yLTQuNyAzLjktMi4xIDEwLjQtNi4zIDE5LjktMTMuMSA0LjctMy40IDkuNC02LjcgMTAuNC03LjQgNC4yLTIuOCAxOC43LTE0LjkgMjUuMy0yMSAyNS4xLTIzLjEgNDYuMS00OC44IDYyLjQtNzYuMyAyLjMtNCA1LjMtOSA2LjYtMTEuMSAzLjMtNS42IDE2LjktMzMuNiAxOC4yLTM3LjggMC42LTEuOSAxLjQtMy45IDEuOC00LjMgMi42LTMuNCAxNy42LTUwLjYgMTkuNC02MC45IDAuNi0zLjMgMC45LTMuOCAzLjQtNC4zIDEuNi0wLjMgMjQuOS0wLjMgNTEuOC0wLjEgNTMuOCAwLjQgNTMuOCAwLjQgNjUuNyA1LjkgNi43IDMuMSA4LjcgNC41IDE2LjEgMTEuMiA5LjcgOC43IDguOCAxMC4xIDguMi0xMS43LTAuNC0xMi44LTAuOS0yMC43LTEuOC0yMy45LTMuNC0xMi4zLTQuMi0xNC45LTcuMi0yMS4xLTkuOC0yMS40LTI2LjItMzYuNy00Ny4yLTQ0bC04LjItMy0zMy40LTAuNC0zMy4zLTAuNSAwLjQtMTEuN2MwLjQtMTUuNCAwLjQtNDUuOS0wLjEtNjEuNmwtMC40LTEyLjYgNDQuNi0wLjJjMzguMi0wLjIgNDUuMyAwIDQ5LjUgMS4xIDEyLjYgMy41IDIxLjEgOC4zIDMxLjUgMTcuOGw1LjggNS40di0xNC44YzAtMTcuNi0wLjktMjUuNC00LjUtMzctNy4xLTIzLjUtMjEuMS00MS00MS4xLTUxLjgtMTMtNy0xMy44LTcuMi01OC41LTcuNS0yNi4yLTAuMi0zOS45LTAuNi00MC42LTEuMi0wLjYtMC42LTEuMS0xLjYtMS4xLTIuNCAwLTAuOC0xLjUtNy4xLTMuNS0xMy45LTIzLjQtODIuNy02Ny4xLTE0OC40LTEzMS0xOTcuMS04LjctNi43LTMwLTIwLjgtMzguNi0yNS42LTMuMy0xLjktNi45LTMuOS03LjgtNC41LTQuMi0yLjMtMjguMy0xNC4xLTM0LjMtMTYuNi0zLjYtMS42LTguMy0zLjYtMTAuNC00LjQtMzUuMy0xNS4zLTk0LjUtMjkuOC0xMzkuNy0zNC4zLTcuNC0wLjctMTcuMi0xLjgtMjEuNy0yLjItMjAuNC0yLjMtNDguNy0yLjYtMjA5LjQtMi42LTEzNS44IDAtMTY5LjkgMC4zLTE2OS40IDF6bTMzMC43IDQzLjNjMzMuOCAyIDU0LjYgNC42IDc4LjkgMTAuNSA3NC4yIDE3LjYgMTI2LjQgNTQuOCAxNjQuMyAxMTcgMy41IDUuOCAxOC4zIDM2IDIwLjUgNDIuMSAxMC41IDI4LjMgMTUuNiA0NS4xIDIwLjEgNjcuMyAxLjEgNS40IDIuNiAxMi42IDMuMyAxNiAwLjcgMy4zIDEgNi40IDAuNyA2LjctMC41IDAuNC0xMDAuOSAwLjYtMjIzLjMgMC41bC0yMjIuNS0wLjItMC4zLTEyOC41Yy0wLjEtNzAuNiAwLTEyOS4zIDAuMy0xMzAuNGwwLjQtMS45aDcxLjFjMzkgMCA3OCAwLjQgODYuNSAwLjl6bTI5Ny41IDM1MC4zYzAuNyA0LjMgMC43IDc3LjMgMCA4MC45bC0wLjYgMi43LTIyNy41LTAuMi0yMjcuNC0wLjMtMC4yLTQyLjRjLTAuMi0yMy4zIDAtNDIuNyAwLjItNDMuMSAwLjMtMC41IDk3LjItMC44IDIyNy43LTAuOGgyMjcuMnptLTEwLjIgMTcxLjdjMC41IDEuNS0xLjkgMTMuOC02LjggMzMuOC01LjYgMjIuNS0xMy4yIDQ1LjItMjAuOSA2Mi0zLjggOC42LTEzLjMgMjcuMi0xNS42IDMwLjctMS4xIDEuNi00LjMgNi43LTcuMSAxMS4yLTE4IDI4LjItNDMuNyA1My45LTczIDcyLjktMTAuNyA2LjgtMzIuNyAxOC40LTM4LjYgMjAuMi0xLjIgMC4zLTIuNSAwLjktMyAxLjMtMC43IDAuNi05LjggNC0yMC40IDcuOC0xOS41IDYuOS01Ni42IDE0LjQtODYuNCAxNy41LTE5LjMgMS45LTIyLjQgMi05Ni43IDJoLTc2Ljl2LTEyOS43LTEyOS44bDIyMC45LTAuNGMxMjEuNS0wLjIgMjIxLjYtMC41IDIyMi40LTAuNyAwLjktMC4xIDEuOCAwLjUgMi4xIDEuMnoiLz4KPC9zdmc+"); } </style>
+        
+    </apex:form>
+    
+</apex:page>

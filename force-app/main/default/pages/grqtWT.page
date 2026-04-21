@@ -1,0 +1,255 @@
+<apex:page id="x" sidebar="false" cache="false" expires="0" docType="html-5.0" tabStyle="g_Tran__c"  title="Customer Deposit" standardController="g_Tran__c" extensions="gctlTWT">
+ <script type="text/javascript">var cs={};</script>
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+   
+<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+
+    <apex:includeScript value="{!$Resource.jsH}" />
+    <apex:includeScript value="{!$Resource.eiJS}" />
+
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/vendors/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css')}" />
+    <!-- main css -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css2/style.css')}" />
+
+
+<style>
+        .bPageBlock {
+            background-color: white !important;
+            }
+     .requiredBlock1 {
+    background-color: #c00;
+    position: absolute;
+    left: -4px;
+    width: 3px;
+    top: 1px;
+    bottom: 1px;
+}
+        .amount-collapse {
+            margin-bottom: 10px;
+        }
+        
+        .amount-collapse .amount-collapse-toggle {
+            display: block;
+            position: relative;
+        }
+        
+        .amount-collapse .amount-collapse-toggle::after {
+            content: "\f106";
+            display: inline-block;
+            font: normal normal normal 14px/1 FontAwesome;
+            font-size: inherit;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: absolute;
+            top: 0;
+            right: 12px;
+            font-size: 32px;
+            color: rgba(74, 74, 74, 0.5);
+            line-height: 45px;
+            transition: all 0.3s;
+            transform-origin: center center;
+        }
+        
+        .amount-collapse .amount-collapse-toggle.collapsed::after {
+            top: 2px;
+            transform: rotate(180deg);
+        }
+        
+        .amount-collapse .amount-row-head {
+            margin-bottom: 0;
+        }
+        
+        .amount-collapse .amount-row {
+            padding-right: 40px;
+        }
+        
+        @media (min-width: 768px) {
+            .amount-collapse .amount-row {
+                padding-right: 50px;
+            }
+        }
+        
+        .amount-row {
+            display: flex;
+            padding: 6px 15px 0;
+        }
+        
+        .amount-row:first-child {
+            padding-top: 12px;
+        }
+        
+        .amount-row-head {
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #F5F5F5;
+            color: #4A4A4A;
+        }
+        
+        .amount-row-head .amount-row-title {
+            font-weight: 500;
+            font-family: "Helvetica Neue Cond", "Helvetica Neue", Arial, sans-serif;
+            letter-spacing: 0.75px;
+        }
+        
+        .amount-row-foot {
+            font-size: 1rem;
+        }
+        
+        .amount-row-rp {
+            padding-right: 40px;
+        }
+        
+        @media (min-width: 768px) {
+            .amount-row-rp {
+                padding-right: 50px;
+            }
+        }
+        
+        .amount-row-col {
+            flex: 0 0 35%;
+        }
+        
+        @media (min-width: 768px) {
+            .amount-row-col {
+                flex: 0 0 180px;
+            }
+        }
+    </style>
+    <style>
+        .tabs .right-actions {
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+        
+        .tabs .right-actions-text {
+            font-size: 1.25rem;
+        }
+        
+        @media (min-width: 992px) {
+            .tabs .right-actions-text {
+                font-size: 1.875rem;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .tabs .right-actions {
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+        }
+    </style>
+
+
+
+
+    <script type="text/javascript">
+   
+    function cancelTran(chk){
+       if(chk.checked){
+         cs['nt__c'].style.display='';
+         cs['ntlbl'].style.display='';
+        }
+        else{
+           cs['nt__c'].style.display='none';
+           cs['ntlbl'].style.display='none'; 
+        }
+        }
+    function vfrm(){
+        var brq = false; 
+       
+         brq=fldReq('tp__c',cs)||brq;
+        if(cs['fwc__c'].checked)
+          brq=fldReq('nt__c',cs)||brq;
+       
+        if(!brq && cs['tp__c'].value <1)
+          fldErr('tp__c','Amount should ve valid.',!0);
+         if(!brq) 
+          afc();
+        }
+ </script>
+    <c:pgHeader id="sH" entityId="{!T.Id}" ispu="false" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="Customer Deposit Details" subtitle="" description="" STA="Open"  />
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+    <apex:form id="f">
+ <apex:pageBlock mode="edit" id="p" >
+     <apex:actionFunction name="afc" action="{!crtTran}" status="theStatus" rerender="p,sH,msg" onbeforedomupdate="javascript:toggle_inputs();"/>
+     <apex:pageBlockButtons >
+          <a href="" onClick="vfrm();" class="btnCncl"> Submit</a>
+     </apex:pageBlockButtons>
+     <apex:pageBlockSection columns="1">
+         <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Account" />
+                    <apex:outputPanel >
+                        <div id="acc" >
+                          <apex:outputField id="accId" value="{!T.Acc__c}" style="font-size:11px;"/>
+                        </div>
+                    </apex:outputPanel>
+         
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Customer Deposit Topup Amount" />
+                    <apex:outputPanel >
+                        <div id="tp__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:input type="number" id="tp__c" value="{!topamt}" style="font-size:15px;"/>
+                            <script type="text/javascript">
+                                cs['tp__c']=getC('{!$Component.tp__c}');
+                            </script>                         
+                        </div>
+                    </apex:outputPanel>
+         
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Do you want to cancel existing Transaction?" />
+                    <apex:outputPanel >
+                        <div id="fwc__cRI" >
+                            <div>
+                            <apex:inputCheckbox onclick="cancelTran(this)" id="fwc__c" /> 
+                                <script type="text/javascript">
+                                cs['fwc__c']=getC('{!$Component.fwc__c}');
+                            </script>
+                            </div>                            
+                        </div>
+                    </apex:outputPanel>
+         
+        </apex:pageBlockSectionItem>
+       <apex:pageBlockSectionItem >
+         <apex:outputLabel value="Notes" id="ntlbl" style="display:none" />
+             
+                  <apex:outputPanel >
+                      <div id="nt__cRI" class="requiredInput">
+                       <div class="requiredBlock"></div>
+                       <apex:inputTextarea value="{!nt}" id="nt__c" rows="5"  cols="100" style="display:none" /> 
+                      <script type="text/javascript">
+                                cs['nt__c']=getC('{!$Component.nt__c}');
+                                 cs['ntlbl']=getC('{!$Component.ntlbl}');
+                                
+                            </script>
+                      </div>
+                   </apex:outputPanel>
+           
+         
+         
+        </apex:pageBlockSectionItem>  
+     
+     </apex:pageBlockSection>
+ </apex:pageBlock>
+    
+ </apex:form>  
+</apex:page>

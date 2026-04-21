@@ -1,0 +1,148 @@
+<apex:component controller="gctlDynaBindingCntrl">
+    
+    <script>
+    
+    var allFlds= [];
+    $(document).ready(function(){
+        renderFields(); updateChk(); hdBlankFlds(); renderMultipicklists();
+    });
+                                 
+    function renderFields(){
+        var str ='{!fieldsJSON}'; 
+        if(str!='' && str!=null){
+            var allCons = JSON.parse(str);
+            for(var i=0; i<allCons.length; i++){
+                var cField  = allCons[i];  
+                for(var k=0; k<cField.STA.length; k++){
+                    var fieldAPI = cField.field.trim(); 
+                    var displayStyle = cField.STA[k].display=="block"?"block":"none";
+                    var innerText = ""; if(getC(fieldAPI)!=null){innerText = getC(fieldAPI).innerText.toLowerCase();}
+                        
+                    if(innerText!="" && (innerText.includes(cField.STA[k].v.toLowerCase()) || (getC(fieldAPI).innerHTML.includes('img src') && getC(fieldAPI).innerHTML.includes(cField.STA[k].v)))){
+                        var allflds =  cField.STA[k].fields.split(';'); 
+                        for(var j=0; j<allflds.length; j++){ 
+                            var fldAndLbl =  allflds[j].split("=");
+                            var fld =  fldAndLbl[0].trim(); 
+                            if(getC(fld)!=null){getC(fld).style.display=displayStyle;}
+                            // update the label
+                            if(fldAndLbl.length==2 && fldAndLbl[1]!=undefined && fldAndLbl[1]!=""){
+                            	$('#'+fld+'lab').text(fldAndLbl[1]); 
+                                if(fldAndLbl[1]==" "){$('#'+fld+'val').hide();} // hide the field label and value to leave blank space 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //each value on next line for multipicklists
+    function renderMultipicklists(){
+        for(var i=0; i<allFlds.length; i++){
+            var multipickLst = $('#'+allFlds[i]+'val').text();
+            if(multipickLst!=undefined && multipickLst!=null && multipickLst.includes(';')){
+                $('#'+allFlds[i]+'val').html($('#'+allFlds[i]+'val').html().replaceAll(';','</br>'))
+            }
+        }
+    }
+    function updateChk(){
+        $(".checkImg").each(function() {
+            if($(this).attr("alt") == "Not Checked"){
+                $(this).parent().html("No");
+            }else{ 
+                $(this).parent().html("Yes");
+            }
+        });
+    }    
+    
+    // hide all blank fields 
+    function hdBlankFlds(){
+        var srvcCD = '{!dummyReq.srvc__r.uid__c}';
+        if(srvcCD=='220' || srvcCD=='200'){
+            $(".conditionFld").each(function() {if($(this).text().includes('#Fieldvalue_blank#')){ $(this).hide();}});
+        }
+    } 
+    // Sample str : [{"field":"xcrlg__c","STA":[{"v":"Hindu","fields":"xcfnar__c, xcot__c, xclnar__c, xcmnar__c"},{"v":"Muslim","fields":"xcfn__c, xcln__c, xcmn__c"}]}]; 
+    </script>
+    
+    
+    <div class="accordion-content-inner px-xl-5"> 
+        
+        <div class="row">
+            <apex:repeat value="{!lstFieldNames}" var="FieldName" >
+                <div class="col-lg-{!columnWidth} col-sm-6 conditionFld" id="{!FieldName}" style="display:{!displayStyle}">
+                    <div class="data-info">
+                        <div class="data-label" id="{!FieldName}lab">{!mapFieldsByName[FieldName]}</div>
+                        <div class="data-value" style="{!IF(ispu,'pointer-events:none;','')}" id="{!FieldName}val">
+                            <!-- using outputField to represent Dates and Lookup values in standard format -->
+                            <apex:outputField value="{!dummyReq[FieldName]}" rendered="{!NOT(dummyReq[FieldName]=='')}" />
+                            <apex:outputlabel value="-" rendered="{!dummyReq[FieldName]==''}" />
+                            <apex:outputlabel value="#Fieldvalue_blank#" rendered="{!dummyReq[FieldName]==''}" style="display:none;"/>
+                        </div>
+                    </div>
+                </div>
+                <script type="text/javascript">
+                allFlds.push('{!FieldName}');
+                </script>
+            </apex:repeat>
+        </div>
+        
+        
+        <!-- link to reprint letters, only for BO -->
+        <apex:outputPanel rendered="{!AND(NOT(ispu),bShowPrint,OR(dummyReq.STA__c=='Completed',AND(dummyReq.AP__c>0)))}">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6" id="print">
+                    <div class="data-info">
+                        <div class="data-label">Re-print the letter</div>
+                        <div class="data-value"> 
+                           <apex:outputField value="{!dummyReq.Print__c}"/>
+                        </div>
+                    </div>
+                </div>         
+            </div>
+        </apex:outputPanel>
+       
+        <!-- link to download personal, corporate letters -->
+        <!-- <apex:outputPanel rendered="{!AND(bShowPrint,OR(dummyReq.STA__c=='Completed',AND(dummyReq.AP__c>0)))}">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6" id="print">
+                    <div class="data-info">
+                        <div class="data-label">Print letter</div>
+                        <div class="data-value"> 
+                            <apex:repeat value="{!dummyReq.Attachments}" var="string">
+                                <a href="/servlet/servlet.FileDownload?file={!string.id}" target="_blank"><b>Click here</b></a>
+                            </apex:repeat>  
+                            <apex:outputPanel rendered="{!AND(dummyReq.Attachments.size<1,dummyReq.STA__c=='Completed')}">
+                                <div class="data-value">Please wait, Letter is being Generated.</div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>         
+            </div>
+        </apex:outputPanel>-->
+        
+        
+         <!-- link to download Building Access Permit -->
+        <!--<apex:outputpanel rendered="{!IF(dummyReq.srvc__r.uid__c=='apt' && (dummyReq.i_STA__c=='Access Permit | Approved' || dummyReq.i_STA__c=='Access Permit (Renewal) | Approved'),true,false)}">
+               <div class="row">
+                <div class="col-lg-4 col-sm-6" id="print">
+                    <div class="data-info">
+                        <div class="data-label">Access Permit Details</div>
+                        <div class="data-value"> 
+                           <apex:outputpanel rendered="{!dummyReq.xcped__c!= null && dummyReq.xcped__c>=TODAY() && (dummyReq.i_STA__c=='Access Permit | Approved' || dummyReq.i_STA__c=='Access Permit (Renewal) | Approved')}">
+                                 <a href="/apex/grqAPPdf?id={!dummyReq.id}" target="_blank">Print Permit</a>   
+                            </apex:outputpanel>  
+                            <apex:outputpanel rendered="{!dummyReq.xcped__c!= null && dummyReq.xcped__c<TODAY()}">
+                                <apex:outputLabel style="color:Red;" value="Permit expired"/>
+                            </apex:outputpanel>
+                        </div>
+                    </div>
+                </div>         
+            </div>
+        </apex:outputpanel>-->
+        
+        <!--<div class="bg-grey-light" style="height: 4px;"></div>-->
+        
+    </div>
+    
+</apex:component>

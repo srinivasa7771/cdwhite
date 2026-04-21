@@ -1,0 +1,281 @@
+<apex:page cache="false" controller="pendingActions" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="Pending Actions" >
+    <style>
+        
+        .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link{
+        background-color: #e7e8ef !important;
+        }
+        .nav-pagination li{
+        cursor: pointer;
+        }
+        #reqTable_length,#reqTable_filter{display:none !important;}
+        #reqTable{width:100% !important;}
+        .recommended-services-slider-wrapper .swiper-button-next {
+        right: -10px;
+        }
+        .bodyDiv.brdPalette.brandPrimaryBrd {
+        width: 100%;
+        }
+        
+        table#bodyTable {
+        table-layout: fixed;
+        width: inherit;
+        }
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.ico" />
+    <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:form id="form" >
+        <div id="main" data-aos="zoom-in">
+            <div id="page_content">
+                <div class="container">
+                    <div class="page-header">
+                        <ul class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li> 
+                            <li class="breadcrumb-item">Pending Actions</li>
+                        </ul>
+                        <div class="d-lg-flex flex-wrap align-items-center">
+                            <h1 class="page-title mr-auto">PENDING&nbsp;ACTIONS</h1>
+                            
+                            <div class="table-form-wrapper">
+                                <!-- search field  -->
+                                <div class="table-form-col col-6">
+                                    <div class="search-field mb-0">
+                                        <div class="input-group">
+                                            <input type="text" onkeyup="srch4prsn()" class="form-control" placeholder="Search" id="p"  />
+                                            <div class="input-group-append">
+                                                <button class="btn" type="button">
+                                                    <div class="icon-search" onclick='srch4prsn()'></div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                 <!--dropdown filter--> 
+                                <div class="table-form-col col-6">
+                                    <div class="">
+                                        <select class="dropdown-filter form-control input-select2-flat" id="dayFilter" onchange='dateFilter(this)'>
+                                            <option search="no" value="no">All</option>
+                                            <option value=",one,">Today</option>
+                                            <option value=",seven,">Last 7 days</option>
+                                            <option value=",thirty,">Last 30 days</option>
+                                            <option value=",ninety,">Last 90 days</option>
+                                        </select>
+                                    </div>
+                                    
+                                   
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .page-header -->
+                    <input type="hidden" value="{!RequestString1}" id="rStr" />
+                    <apex:outputPanel id="panelBlock">
+                        <apex:outputPanel id="tableBlock" rendered="{!allDPRqs1.size>0}" >
+                            <div class="panel">
+                                <div class="panel-body pb-1">
+                                    <div class="table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0" style="">
+                                        <table class="table table-hover table-responsive-sticky table-list m-0" id="reqTable">
+                                            <thead>
+                                                <tr>
+                                                    <th field="Name" tdClass="sticky-col" class="sticky-col">SR NUMBER</th>
+                                                    <th field="prio__c" class="text-center" style="min-width: 100px;">PRIORITY</th>
+                                                    <th field="sName">SERVICE</th>
+                                                    <th field="Applicant_Name__c">NAME</th>
+                                                    <th field="xcnc__c">NATIONALITY / PASSPORT</th>
+                                                    <!--<th field="xcp__c">PASSPORT</th>-->
+                                                    <th field="damsgs__c" class="actionReq">ACTION REQUIRED</th>
+                                                    <th field="STA__c" class="text-center">STATUS</th>
+                                                    <th field="Last_MDays__c" style="display:none !important;">DAYS</th><!---->
+                                                </tr>
+                                            </thead>
+                                            <!-- end thead -->
+                                            <tbody>
+                                                
+                                            </tbody>
+                                            <!-- end tbody -->
+                                        </table>
+                                    </div>
+                                    <!-- .table-responsive -->
+                                </div>
+                                <!-- .panel-body -->
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!allDPRqs1.size<1}">
+                            No results for the search criteria!
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    
+                    
+                </div>
+                <!-- .container -->
+            </div>
+            <div class="container mt-lg-5 mt-3" data-aos="fade-up" data-aos-once="true">
+                <apex:image value="{!URLFOR($Resource.assets_NUI,'images/banner.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                <div class="text-center">
+                    <apex:image value="{!URLFOR($Resource.assets_NUI,'images/banner-mobile.png')}" styleClass="image-banner d-sm-none" />
+                </div>
+            </div>
+            
+            <!--<c:addons ></c:addons>-->
+        </div>
+    </apex:form>
+    <script>
+    var str = '';
+    var srchCrit = '';
+    var s; var strAllDPRqs1 = '';     
+    $(document).ready(function(){
+        if(!Array.prototype.includes){
+            Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+        }
+        if (!String.prototype.includes) {
+            String.prototype.includes = function() {
+                return String.prototype.indexOf.apply(this, arguments) !== -1;
+            };
+        }
+        str = document.getElementById('rStr').value;
+        if(srchCrit =="pndg"){
+            s='Pending ';
+        }
+        
+        formTable(str,'#reqTable');
+    });
+    function srch4prsn(){
+        var p = document.getElementById('p').value;
+        dataTableSearch('#reqTable',p);
+    }
+    function dateFilter(d){
+        var att = $(d).val();
+        if(att == "no"){
+            dataTableSearchByCol('#reqTable',7,'');
+            return;
+        }
+	        dataTableSearchByCol('#reqTable',7,att);
+    }
+    function stFilter(s){
+        var att = $(s).find('option:selected').attr('search');
+        if(att == "no")
+            return;
+        showTempLoader_input(s);
+        var t = $(s).val().toUpperCase();
+        $('.page-title').text(t+' REQUESTS');
+        statusFilter();
+    }
+    function statusFilter(){
+        var days = $('#dayFilter').val();
+        var status = $('#staFilter').val();
+        if($('#dayFilter').find('option:selected').attr('search')=='no')
+            statusSearch('',status);
+        else if($('#staFilter').find('option:selected').attr('search')=='no')
+            statusSearch(days,'');
+            else statusSearch(days,status);
+    }
+              
+    /******* Datatable code starts -- VMKR *******/
+    
+    
+    function dataTableSearchByCol(tableId,columnIndex,srchCrt){ // to search each column(colIndex have to be given)
+        //$(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt,false,true,false).draw();  // for Case Sesitive
+        $(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt).draw();  // for Case In-Sesitive
+    }
+    function dataTableSearch(tableId,srchCrt){ // to search entire table
+        $(tableId).dataTable().api().data().search(srchCrt).draw();
+    }
+    var table;
+    function formTable(dataStr, tableId) {
+        $(tableId).find('tbody').html('');
+        var data = JSON.parse(dataStr);
+        var tableData = '';
+        for(var j=0;j<data.length;j++){
+            var i = data[j];
+            var tr = '<tr req="'+i.Id+'" style="cursor:pointer;">';
+            $(tableId).find('th').each(function() {
+                var j = $(this).attr('field');
+                var v = i[j] ? i[j] : 'NA';
+                var tdc = $(this).attr('tdClass'); tdc=tdc?tdc:'';
+                var cls = '';
+                if (j == 'STA__c') {
+                    cls = (i[j]=='Completed') ? 'badge-status-completed':(i[j]=='In Process'||i[j]=='Under Review') ? 'badge-status-process':(i[j]=='Rejected'||i[j]=='Cancelled') ? 'badge-status-urgent':(i[j]=='Draft') ? 'badge-status-draft':(i[j]=='New') ? 'badge-status-new':'';
+                    v = '<span class="badge-status initialism text-center '+cls+'"> ' + (i[j]=='Under Review'?'In Process':i[j])  + '</span>';
+                }else if (j == 'prio__c') {
+                    cls = (i[j]=='Platinum') ? 'badge-status-urgent':(i[j]=='Express') ? 'badge-status-process':'badge-status-draft';
+                    v = '<span class="badge-status initialism text-center '+cls+'"> ' + i[j] + '</span>';
+                }else if (j == 'damsgs__c') {
+                    v = (i[j]?(i.AOP__c>0?'Awaiting Payment':i[j]):'-');
+                }else if (j == 'sName') {
+                    v = i['srvc__r']['Name'];
+                }else if (j == 'xcnc__c') {
+                    var ntnlty = (i[j]?i[j]:(i['CurrentNationality__c']?i['CurrentNationality__c']:'-'));
+                    var pp = (i['xcp__c']?i['xcp__c']:(i['tmpp__c']?i['tmpp__c']:''));
+                    v = '<div class="mr-2">'+ntnlty+'</div>'+(pp ? ('<span class="text-grey">'+pp+'</span>') : '');
+                }else if (j == 'Last_MDays__c') {
+                    v = i[j];//'<span class="text-grey">'+(i[j]?i[j]:"-")+'</span>';
+                } else {
+                    v = (i[j] ? i[j] : '-');
+                }
+                if (j == 'Last_MDays__c')
+                    tr += '<td class="'+tdc+'" style="display:none !important">' + v + '</td>';//parseInt((new Date()-new Date(i.LastModifiedDate))/1000/60/60/24)
+                else
+                    tr += '<td class="'+tdc+'">' + v + '</td>';
+            });
+            tr +=  '</tr>';
+            tableData += tr;
+        }
+        $(tableId).find('tbody').html(tableData);
+        $(tableId).find('tbody').find('tr').on('click',function(){
+            var l = $(this).attr('req');
+            window.open('../'+l,'_blank')
+        });
+        table = $(tableId).DataTable({
+            dom: 'Alfrtip',
+            language: {
+                'paginate': {
+                    'previous': '<i class="fa fa-long-arrow-left"></i><span> PREV</span>',
+                    'next': '<span>NEXT </span><i class="fa fa-long-arrow-right"></i>'
+                }
+            }
+        });
+        $(tableId+' th').each(function(){
+            $(this).css('cursor','pointer').attr('title','Click to sort').append('<i class="fa text-primary">');
+        });
+        $(tableId+' th').click(function(){
+            var c = $(this).attr('class');
+            $(tableId+' th').find('i').hide();
+            $(this).find('i').show();
+            if(c.includes('desc')){
+                $(this).find('i').removeClass('fa-arrow-up').addClass('fa-arrow-down');
+            }
+            else{
+                $(this).find('i').removeClass('fa-arrow-down').addClass('fa-arrow-up');
+            }
+        });
+    }
+    
+    
+
+    /******* Datatable code ends -- VMKR *******/
+    
+    </script>
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <style>
+        
+        
+    </style>
+    
+</apex:page>

@@ -1,0 +1,395 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlReq" >
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <style>
+        #table-parking th, #table-parking td {
+        width: 25% !important;
+        }
+        .text-light {
+        color: #9B9B9B !important;
+        }
+        #scriptErr{
+        position: absolute;
+        background-color:#fff;
+        width:100%;
+        height:100%;
+        z-index: 10000;
+        }
+    </style>
+    
+    <apex:form >
+         <apex:outputPanel rendered="{!!ispu}">
+            <c:onlyBOCss />
+        </apex:outputPanel>
+        <apex:actionFunction name="callWS1" action="{!loadCards}" oncomplete="createDD('{!JSENCODE(lstCardsStr)}')" status="theStatus" rerender="cardList" />
+        <apex:actionFunction name="saveReq_DR" status="theStatus" action="{!saveDraft}" oncomplete="hideGLoader()" />
+        <apex:actionFunction name="saveReq" status="theStatus" action="{!saveOpen}" oncomplete="hideGLoader()" />
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:inputHidden id="rtacn__c" value="{!rq.rtacn__c}" />
+        <apex:inputHidden id="prntcnt__c" value="{!rq.prntcnt__c}" />
+        
+        <script type="text/javascript">
+        var cs={};
+        cs['rtacn__c']=getC('{!$Component.rtacn__c}');
+        cs['prntcnt__c']=getC('{!$Component.prntcnt__c}');
+        </script>
+        
+        <apex:outputPanel id="mainDiv">
+            <div id="main">
+                <b><apex:pageMessages id="msg"  /></b>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(rq.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!rq.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                Using this service you can apply for Lease Document Collection .
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <h3 class="base-main-title">Lease Document Collection</h3>
+                                <!--<div class="mb-5"></div>
+                                rq.xuvdet__c -- {!rq.xuvdet__c}-->
+                                <apex:outputPanel rendered="{!NOT(OR(isgu,ispu))}">
+                                    <div class="row row-lg">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Select Account</label>
+                                                <!--<apex:inputField id="acc__c" value="{!rq.Acc__c}" onchange="updateAgr();" required="true"/>-->
+                                                <apex:inputField styleClass="form-control" onchange="updateAgr(this);" value="{!rq.Acc__c}" id="Acc__c"/>
+                                                <script type="text/javascript">
+                                                cs['Acc__c']=document.getElementById('{!$Component.Acc__c}');
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel id="cardList">
+                                    <div class="form-group">
+                                         <p>Select agreement(s)</p>
+                                        <table class="table table-align-middle" id="table-parking" data-page-length='25'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Select<i class="fa text-primary"></i></th>
+                                                    <th>Agreement number<i class="fa text-primary"></i></th>
+                                                    <th>Category type<i class="fa text-primary"></i></th>
+                                                    <th>No of cheques<i class="fa text-primary"></i></th>
+                                                    <!--<th>Expiry Date<i class="fa text-primary"></i></th>-->
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <apex:repeat value="{!lst_pd}" var="c">
+                                                    <tr>
+                                                        <td>
+                                                            <label class="custom-checkbox mt-2">
+                                                                <input type="checkbox" onchange="settoFld(this)" for="{!c.cardNum}" class="cards" />
+                                                                <span>&nbsp;</span>
+                                                            </label>
+                                                        </td>
+                                                        <td>{!c.cardNum}</td>
+                                                        <td>{!c.cardType}</td>
+                                                        <td>
+                                                            <apex:input disabled="true" html-maxLength="3" styleClass="form-control numOnly" onchange="setChqVal(this)" html-for="{!c.cardNum}" style="width:50%;" value="{!c.BusinessPark}" />
+                                                        </td>
+                                                        <!--<td>{!c.cardexpDate}</td>-->
+                                                    </tr>
+                                                </apex:repeat>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </apex:outputPanel>
+                                <div id="selectedSector" style="">
+                                    <h4 class="mt-4">Lease Document Details</h4>
+                                    <div class="row row-lg">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Agreement number(s)</label>
+                                                <apex:inputField styleClass="form-control disabledApex" value="{!rq.xanum__c}" id="xanum__c"/>
+                                                <script type="text/javascript">
+                                                cs['xanum__c']=document.getElementById('{!$Component.xanum__c}');
+                                                cs['xanum__c'].disabled = true;
+                                                </script>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Total cheques</label>
+                                                <apex:inputField html-disabled="true" styleClass="form-control disabledApex" value="{!rq.xneng__c}" id="xneng__c"/>
+                                                <script type="text/javascript">
+                                                cs['xneng__c']=document.getElementById('{!$Component.xneng__c}');
+                                                </script>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Agr - cheques</label>
+                                                <apex:inputField html-disabled="true" styleClass="form-control disabledApex" value="{!rq.xccn__c}" id="xccn__c"/>
+                                                <script type="text/javascript">
+                                                cs['xccn__c']=document.getElementById('{!$Component.xccn__c}');
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4"></div>
+                                    <div class="form-style">
+                                        <c:collectionanddeliveryinfo srv="{!srv}" req="{!rq}" id="collDelcmp" cmpTitle="Collection Information"/> 
+                                    </div>
+                                </div>
+                                <div class="pb-5"></div>
+                            </div>
+                            <!--<button class="btn btn-primary" style="width: 150px;" onclick="submitPage(this,event)">SUBMIT</button>-->
+                            <div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a class="btn btn-primary base-nav-next" onclick="submitPage(this,event)" style="color: #fff;">
+                                        SUBMIT 
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </apex:outputPanel>
+    </apex:form>
+    <script type="text/javascript">
+    var axs2CusomJS = "{!$Resource.AXS2CustomJs}";
+    var allJSON = {};
+    var allJSONStr = '';
+    var data = [];
+    var selectedJSON = [];
+    var uPrc = 0;
+    var currentVehicle = 1;
+    var serviceId = '197';
+    var uid;
+    var fldToEIDAFlds = {'Name':'xchn__c','ID_Number':'xceidid__c','country2':'','emailid':'xceml__c','mobileid':'rmob__c'};
+    $(document).ready(function(){
+        callWS();
+        $('.btn').on('click',function(event){
+            event.preventDefault();
+        });
+        setTimeout(function(){
+            const script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = axs2CusomJS;
+            document.head.appendChild(script);
+            
+            eval(script);
+            /*$('.ddValidation').on('change',function(){
+                $('.depDD').select2({
+                    enableSearch:true
+                });
+                $('.depDD').on('change',function(){
+                    removeValError(this);
+                });
+            });*/
+            
+        },2000);
+    });
+    function callWS(){
+        console.log('call started');
+        setTimeout(function(){
+            callWS1();
+            console.log('call done');
+        },200);
+    }
+    function updateAgr(e){
+        if($(e).val()){
+            callWS1();
+        }
+    }
+    function createDD(str){
+        allJSONStr = str;
+        allJSON = JSON.parse(str);
+        /*var reqSelectedJSON = '';
+        var reqSeleCards = '';
+        if(reqSelectedJSON){
+            reqSelectedJSON  = JSON.parse(reqSelectedJSON);
+            if(reqSelectedJSON.Cardlist && reqSelectedJSON.Cardlist.includes(';')){
+                reqSeleCards = reqSelectedJSON.Cardlist; //.split(';');
+            }
+        }
+        
+        if(reqSeleCards){
+            for(i of allJSON){
+                if(reqSeleCards.includes(i.CardNumber+';')){
+                    selectedJSON[i.CardNumber]= i;
+                    $('input.cards[for="'+i.CardNumber+'"]').prop('checked','true');
+                }
+            }
+        }else{
+            for(i of allJSON){
+                selectedJSON[i.CardNumber]= i;
+            }
+        }
+       */
+    }
+    function loadPrevData(){
+        $('#cardDet').val( cs["xanum__c"].value).trigger('change');
+    }
+    var selectedCards = '';var agrArr = [];
+    function settoFld(e){
+        var cardNum = $(e).attr('for');
+        var isChecked = $(e).prop('checked');
+        if(!cardNum){
+            $('#selectedSector').hide();
+            $('.frmErrMsg').remove();
+            return;
+        }
+        if(isChecked){
+            $('[type="text"][for="'+cardNum+'"]').removeAttr('disabled',true);
+            agrArr.push(cardNum);
+        }
+        else{
+            $('[type="text"][for="'+cardNum+'"]').val('').trigger('change').attr('disabled',true);
+            agrArr = agrArr.filter(z=>z!=cardNum);
+        }
+        cs['xanum__c'].value = agrArr.join(',');
+    }
+    var chqAgrArr = [];
+    function setChqVal(e){
+        let totalCheques = 0;
+        let agrNum = $(e).attr('for');
+        let val = $(e).val();
+        let finalVal = '';
+        if(agrArr.includes(agrNum)){
+            if(val && parseInt(val)){
+                finalVal = agrNum+':'+val;
+                (val>0)?chqAgrArr[agrNum] = val:chqAgrArr[agrNum] = 0;
+            }
+            else{
+                delete chqAgrArr[agrNum];
+            }
+        }
+        for(let i in chqAgrArr){
+            if(chqAgrArr[i]){
+                totalCheques += parseInt(chqAgrArr[i]);
+            }
+        }
+        cs['xneng__c'].value =totalCheques;
+    }
+    
+    function submitPage(el,ev){
+        let errAgs = '',chqAgrStr='';
+        let totalCheques = 0;
+        var validated = true;
+        if(agrArr.length<=0 &&(!(cs['xanum__c'] && cs['xanum__c'].value))){
+            var errMsg = 'Please select atleast one agreement to proceed!';
+            axsAlert('Error',errMsg);
+            validated = false;
+            return;
+        }
+        $('input.cards').each(function() {
+            let agrNum = $(this).attr('for');
+            let val = $(this).prop('checked');
+            let numOfChqs = $('[type="text"][for="'+agrNum+'"]').val();
+            if(val && (!numOfChqs||numOfChqs<1)){
+                errAgs+=agrNum+',';
+            }
+        });
+        if(errAgs){
+            axsAlert('Alert','Number of cheques were missing for the below agrrements.<br><br><b>'+errAgs+'</b>');
+            return;
+        }
+        for(let i in chqAgrArr){
+            if(chqAgrArr[i]){
+                chqAgrStr += i+':'+chqAgrArr[i]+',';
+            }
+        }
+        cs['xccn__c'].value =chqAgrStr;
+        $('.requiredFld,.applMob').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined){
+                addValError($(this),'This field is required.');
+                scrollToDiv($(this));
+                validated = false;
+            }
+        });
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0));
+            validated = false;
+            return;
+        }
+        if(validated){
+            ev.preventDefault();
+            toggleGLoader()
+            saveReq();
+        }
+        //saveReq();
+    }
+    
+    function vaidateData(){
+        isValidData = true;
+        $('.requiredFldPop').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        checkAllDates('vRegDate','152');
+        if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+            isValidData = false;
+            //return isValidData;
+        }
+        return isValidData;
+    }
+    
+    
+    // update in axs2customjs
+    
+    function showErrMsg(elem,elemType,errType){
+        if(errType == true){
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+            elem.next().find('.select2-selection').removeClass('is-invalid');
+            elem.removeClass('is-invalid');
+            return;
+        }
+        var errElem = '<div class="frmErrMsg">'+formErrMsgs1[elemType][errType]+'</div>';
+        elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+        elem.parents('.form-group').append(errElem);
+        elem.addClass('is-invalid');
+        //elem.next().find('.select2-selection, .select2-selection--single, .select2-selection--multiple').addClass('is-invalid')
+        return false;
+    }
+    
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            cs[id].value=$(el).val();
+    }
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    </script>
+</apex:page>

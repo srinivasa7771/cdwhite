@@ -1,0 +1,286 @@
+<apex:page docType="html-5.0" controller="ClaimValidate" sidebar="false"  tabStyle="g_cmb__c">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script>
+ <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+    <style type="text/css">
+        div.dataTables_wrapper {
+            width: 1000px;
+            margin: 0 auto;
+        }
+    </style>
+<script>     
+  function validateFile(a){
+      
+    if(a.value == 'ALL'){
+       document.getElementById('stmtFileId').style.display='block';
+       document.getElementById('visaFileId').style.display='block';
+       
+    }
+    else if(a.value == 'RP-EDNRD' ){
+       document.getElementById('appFileId').style.display='block';
+       document.getElementById('stmtFileId').style.display='block';
+       document.getElementById('visaFileId').style.display='none';
+    }
+    else if(a.value == 'EP-EDNRD' ){
+        document.getElementById('appFileId').style.display='none';
+       document.getElementById('stmtFileId').style.display='block';
+       document.getElementById('visaFileId').style.display='block';
+    }
+    else if(a.value == 'E-Vision' ){
+       document.getElementById('appFileId').style.display='none';
+       document.getElementById('stmtFileId').style.display='block';
+       document.getElementById('visaFileId').style.display='none';
+    }
+    else if(a.value != 'EIDA' && a.value != 'E-Vision') {
+        document.getElementById('stmtFileId').style.display='block';
+        document.getElementById('visaFileId').style.display='none';
+        
+    }       
+    else{
+       document.getElementById('stmtFileId').style.display='none';
+       document.getElementById('visaFileId').style.display='none';  
+    }
+      if(a.value == 'ALL'){
+       var lbl1 = document.getElementById('lbl1');
+       lbl1.textContent = 'EDNRD Stmt'; 
+       var lbl2 = document.getElementById('lbl2');
+       lbl2.textContent = 'VISA Stmt'; 
+        var lbl3 = document.getElementById('lbl3');
+       lbl3.textContent = 'Noqodi Stmt'; 
+      }
+      else if(a.value == 'RP-EDNRD' || a.value == 'DNRD'){
+        var lbl1 = document.getElementById('lbl1');
+       lbl1.textContent = 'EDNRD Stmt'; 
+       var lbl3 = document.getElementById('lbl3');
+       lbl3.textContent = 'Noqodi Stmt'; 
+          
+      }
+       else if(a.value == 'EP-EDNRD'){
+        var lbl1 = document.getElementById('lbl2');
+       lbl1.textContent = 'VISA Stmt'; 
+       var lbl3 = document.getElementById('lbl3');
+       lbl3.textContent = 'Noqodi Stmt'; 
+          
+      }
+      else if(a.value == 'E-Vision'){
+       var lbl1 = document.getElementById('lbl3');
+       lbl1.textContent = 'Noqodi Stmt'; 
+        
+      }
+      else if(a.value == 'EIDA'){
+          var lbl1 = document.getElementById('lbl1');
+       lbl1.textContent = 'EIDA Stmt'; 
+      
+      }
+     
+
+      
+}
+  function ifrm(){
+      if("{!fileType}" != null && "{!fileType}" != '' && "{!fileType}" == 'ALL'){
+         document.getElementById('stmtFileId').style.display='block';
+         document.getElementById('visaFileId').style.display='block'; 
+      }
+      else if("{!fileType}" != null && "{!fileType}" != '' && "{!fileType}" != 'EIDA' && "{!fileType}" != 'E-Vision' )
+     {
+       document.getElementById('stmtFileId').style.display = 'block';
+       document.getElementById('visaFileId').style.display='none'; 
+     }
+      else{
+          document.getElementById('stmtFileId').style.display='none';
+          document.getElementById('visaFileId').style.display='none'; 
+      }
+         
+    }  
+</script>  
+ <apex:form >
+  <apex:pageBlock id="pbk">
+ <apex:outputPanel id="stsId"> 
+  
+</apex:outputPanel> 
+     
+      <apex:actionFunction name="appNoValidate" action="{!appValidate}" status="theStatus"  />
+  <apex:pageMessages ></apex:pageMessages>
+  <div cclass="bPageTitle" >
+    <div class="content"><img src="/s.gif" alt="Claim Validate" class="pageTitleIcon" title="Claim Validate"/>
+        <h1 class="pageType">Claim Validate<span class="titleSeparatingColon">:</span></h1>
+        <h2 class="pageDescription"></h2>
+        <div class="blank">&nbsp;</div>
+    </div>
+    </div><br/>
+     <div class="content">
+         <table align="center" width="70%">
+             <tr>
+               <td>
+                 <b>File Type :</b>&nbsp;&nbsp;<apex:selectList value="{!fileType}" multiselect="false" size="1" onchange="validateFile(this);">
+                            <apex:selectOption itemLabel="---Select---" itemValue=""></apex:selectOption>
+                            <apex:selectOption itemLabel="EIDA" itemValue="EIDA"></apex:selectOption>
+                            <apex:selectOption itemLabel="RP-EDNRD" itemValue="RP-EDNRD"></apex:selectOption>
+                            <apex:selectOption itemLabel="EP-EDNRD" itemValue="EP-EDNRD"></apex:selectOption>
+                            <apex:selectOption itemLabel="E-Vision" itemValue="E-Vision"></apex:selectOption>
+                            <apex:selectOption itemLabel="Noqodi Validation" itemValue="ALL"></apex:selectOption>
+                  </apex:selectList>  
+               </td>
+               <td>
+                  <b>Created Date :</b>  &nbsp;&nbsp;<!-- <apex:input value="{!ti.End_Date__c}" type="date"  id="demo"  styleClass="datepicker"  onclick="DatePicker.pickDate(false, this, false);" 
+                                                    onfocus="DatePicker.pickDate(false, this, false);" required="true" /> -->
+                   <apex:inputField value="{!ti.End_Date__c}"/>
+                   <br/> 
+                   <font color="red">  </font>
+               </td>
+             </tr>
+             <tr><td/><td/></tr>
+              <tr>
+               <td style="padding-left: 65px;">
+                   <div id="appFileId">    
+       <div id="lbl1"></div> <apex:inputFile value="{!contentFile}" filename="{!nameFile}" style="" />
+       
+      </div>  <br/>  
+      <div id="stmtFileId" style="display: none;">    
+      <div id="lbl3"></div> <apex:inputFile value="{!contentStmtFile}" filename="{!nameStmtFile}" />
+      </div> <br/> 
+      <div id="visaFileId" >    
+       <div id="lbl2"></div><apex:inputFile value="{!contentEPFile}" filename="{!ePFile}" style="" /> 
+      </div>              
+               </td>
+               <td>
+                 <apex:commandButton action="{!appNoUpload}" value="Upload" id="theButton"  style="width:70px;"/>   
+               </td>
+             </tr>
+         </table>
+     </div>
+     
+      <!--
+      &nbsp; To Date &nbsp; <apex:input value="{!toDate}" type="date"/> 
+-->
+
+     
+      
+ <br/><br/>
+      <apex:pageBlockButtons >
+        <apex:commandButton value="Next" action="{!nextPage}" rendered="{!isRefValidate}"/>
+        <apex:commandButton value="Export" action="{!exportDetails}" rendered="{!isExport}"/>  
+        <apex:commandButton value="Validate" action="{!appValidate}" rendered="{!validate}"/>  
+      </apex:pageBlockButtons>
+     
+       
+     <apex:pageBlockSection columns="1" title="Transactions Matched" rendered="{!AND(NOT(ISBLANK(trnLst)),trnLst.size > 0)}" > 
+         <apex:pageblockTable value="{!trnLst}" var="item" id="theTable" styleClass="opp-table">
+            
+             <apex:column headervalue="Trans No" >
+                 <b>{!item.tranNo}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!ttlMCnt} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+             </apex:column>
+           <apex:column headervalue="Item Name" >
+                 <b>{!item.itmName}</b>
+           </apex:column>  
+          <!-- <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlMAmount} 
+                </apex:facet>
+             </apex:column> -->
+             <apex:column headervalue="Reference Amount" >
+                 <b>{!item.amntDiff}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlDiffAmount} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="User" >
+                 <b>{!item.ownerName}</b>
+              </apex:column>
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+             </apex:column> 
+              
+            
+          </apex:pageblockTable>
+       </apex:pageBlockSection>
+      
+       <apex:pageBlockSection columns="1" title="Transactions Not Matched" rendered="{!AND(NOT(ISBLANK(trnUnMatchLst)),trnUnMatchLst.size > 0)}" > 
+         <apex:pageblockTable value="{!trnUnMatchLst}" var="item" id="theTable" styleClass="opp-table">
+             
+             <apex:column headervalue="Trans No" >
+                 <b>{!item.tranNo}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!ttlNMCnt} 
+                </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+             </apex:column>
+             <apex:column headervalue="Request No" >
+                 <b>{!item.reqNo}</b>
+             </apex:column>
+           <apex:column headervalue="Item Name" >
+                 <b>{!item.itmName}</b>
+           </apex:column>  
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlNMAmount} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="User" >
+                 <b>{!item.ownerName}</b>
+              </apex:column>
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+             </apex:column> 
+              
+            
+          </apex:pageblockTable>
+         
+          
+      </apex:pageBlockSection>
+       <apex:pageBlockSection columns="1" title="Applications Not Matched" rendered="{!AND(NOT(ISBLANK(appUnMatchLst)),appUnMatchLst.size > 0)}" > 
+         <apex:pageblockTable value="{!appUnMatchLst}" var="item" id="theTable" styleClass="opp-table">
+             
+             <apex:column headervalue="Application No" >
+                 <b>{!item.appNo}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!ttlappNMCnt} 
+                </apex:facet>
+             </apex:column> 
+             
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlappNMAmount} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="Ref No" >
+                 <b>{!item.refNo}</b>
+              </apex:column>
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+             </apex:column> 
+              
+            
+          </apex:pageblockTable>
+         
+          
+      </apex:pageBlockSection>
+      
+       
+    </apex:pageBlock>
+   <script type="text/javascript">
+        ifrm();
+        j$ = jQuery.noConflict();
+        j$(document).ready(function () {
+            j$('[id$=theTable]').DataTable( {
+                "bSort" : false,
+                "bPaginate": false,
+                "bFilter": false,
+                "bInfo": false,
+                "scrollY": 300,
+                "scrollX": false
+            } );
+        });  
+    </script>       
+</apex:form>   
+</apex:page>

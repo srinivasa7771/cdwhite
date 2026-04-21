@@ -1,0 +1,118 @@
+<apex:component allowDML="true" id="EIDDetail">
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <script>
+    function rpCheck(elem,event){
+        $(elem).parent().find('.frmErrMsg').remove();
+        $(elem).attr('maxlength',18);
+        if(event.keyCode == 8)
+            return;
+        let v = $(elem).val();
+        let l = $(elem).val().length;
+        if(l==3 || l==8 ){
+            $(elem).val(v+'/');
+        }
+    }
+    
+    function validateRP(v){
+        // let v = $(e).val();
+        //let test = (/^784-[0-9]{4}-[0-9]{7}-[0-9]{1}$/).test(v);
+        let test = (/^[0-9]{3}\/[0-9]{4}\//).test(v);
+        return test;
+    }
+    
+    function checkRP(elem){
+        if(!validateRP($(elem).val())){
+            addValError(elem,'Invalid Visa number!');
+        }else{
+            removeValError($(elem));
+        }
+    }
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    function addTLoaders(e){
+        showTLoader(e);
+        $('.loader_rerender').show();
+    }
+    
+    function showTLoader(e){
+        if($(e).is('select'))
+            showTempLoader_select(e);
+        else
+            showTempLoader_input(e);
+    }
+    function showTempLoader_select(e){
+        $(e).parent().find('.select2-selection--single').addClass('tempLoader_input');
+        setTimeout(function(){
+            $('*').addClass('loadingProgress');
+        },400);
+    }
+    </script>
+    <div class="base-collapse">
+        <a href="#" class="collapse-toggle collapsed" data-toggle="collapse" data-target="#rpInfo" aria-expanded="true">
+            <div class="collapse-title">Visa details</div>
+        </a>
+        <div id="rpInfo" class="collapse show" style="">
+            <div class="collapse-content">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Visa number </Label>
+                            <apex:inputField onkeydown="rpCheck(this,event)" onchange="checkRP(this)" styleClass="requiredFld form-control numOnly" value="{!req.xrp__c}" id="xrp__c"/>
+                            <script type="text/javascript">
+                            cs['xceidid__c']=document.getElementById('{!$Component.xrp__c}');
+                            </script>
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Expiry date</Label>
+                            <div class="input-datepicker-group input-group">
+                                <apex:inputHidden id="xrped__c" value="{!req.xrped__c}" />
+                                <input type="text" class="requiredFld form-control input-datepicker" id="xrped__c"
+                                       data-toggle="datetimepicker" data-target="#xrped__c" value="{!req.xrped__c}"
+                                       onchange="assignfldVal(this.value,'xrped__c');checkValidDate(this)"/>
+                                <script type="text/javascript">
+                                cs['xceidedt__c']=document.getElementById('xrped__c');
+                                dformat('{!req.xrped__c}','xrped__c');
+                                cs['xrped__c']=getC('{!$Component.xrped__c}');
+                                </script>
+                                <div class="input-group-append">
+                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrped__c">
+                                        <i class="icon-date"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <!-- .col -->
+                </div>
+                <!-- .row -->
+                <div class="pb-4"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function rpChangeHandler(thisElement){
+        console.log('eidChangeHandler::::');
+        if(!$(thisElement).is(':visible'))
+            return;
+        var val = $(thisElement).val();
+        console.log('val:::'+val);
+        
+        if(val == 'Yes'){
+            console.log('Yes::::');
+            $('.addRqrd').addClass('requiredFld').removeAttr("disabled");
+        }
+        else{
+            console.log('No::::');
+            $('.addRqrd').val('').removeClass('requiredFld').attr('disabled','disabled');
+            removeValError('.addRqrd');
+        }
+    }
+     $(document).ready(function() {
+         //rpChangeHandler(cs['xeidav__c']);
+     });
+    </script>
+</apex:component>

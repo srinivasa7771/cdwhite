@@ -1,0 +1,388 @@
+<apex:page sidebar="false" standardstylesheets="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!pt}" standardController="g_Req__c" extensions="gctlReq" action="{!authenticateUser}" showHeader="false">
+   
+    
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+   <head>
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /> 
+     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+     <meta name="viewport" content="width=device-width,user-scalable=no" /> 
+     <title>AXS : Visa Services : Dependent Visa</title>
+     <link charset="UTF-8" href="/resource/AXSM1/styles.css" rel="stylesheet" />
+        <link charset="UTF-8" href="/resource/AXSM3/datepicker.min.css" rel="stylesheet" />
+       <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+       
+      
+    
+       <style>       
+       .datepicker {
+    background: #000 !important;
+    color: #fff !important;
+    }
+       </style>
+       
+    </head>
+     
+   
+   
+    <script type="text/javascript">
+    var cs={};
+    var oeidid='',oeididt='',oeidedt='';
+    
+       /* function enEida(){
+        blrq = cs['xeidav__c'].value == 'Yes' || cs['xeidav__c'].value == 'Lost';
+        cs['xceidid__c'].disabled= !blrq;cs['xceididt__c'].disabled= !blrq;cs['xceidedt__c'].disabled= !blrq;
+        cs['xceidid__c'].value= blrq?oeidid:'';cs['xceididt__c'].value= blrq?oeididt:'';cs['xceidedt__c'].value= blrq?oeidedt:'';       
+        
+    }*/
+    
+                        
+    function vfrm(){
+        
+         $("button.proceed").on("click", function(){
+    var el = $(this).closest("section");
+    if (validate(el) == 0){
+     afso();
+    }
+  });
+        
+          }
+    function verifyDetails1(){}
+    function vEml1(){}   
+    
+    function verifyDetails(){
+        
+        var brq=false; stat = false;
+        brq=fldReq('xcfn__c',cs)||brq; brq = fldReq('xcln__c',cs)||brq;
+        brq=fldReq('xcslt__c',cs)||brq; 
+        brq = fldReq('xcfan__c',cs)||brq;brq = fldReq('xcmon__c',cs)||brq;
+        
+        //if(cs['xcln__c'].value=='' || cs['xcln__c'].value==null){alert("Last Name cannot be blank."); return false;}
+        if(brq){alert("Required fields are missing"); return false;}
+        stat=true;
+    }
+    
+    function adhocItems(){
+        var xadh = cs['xadh__c'].value;       
+       
+    }
+    
+    
+    function valDates(fldId,type) { 
+        // fldErr('xcpid__c', null, !0);fldErr('xcped__c', null, !0);
+        
+        var stDate = cs[fldId].value; var splitDt = stDate.split("/");
+        if (splitDt != "" && splitDt.length == 3) {stDate = splitDt[2] + '-' + splitDt[1] + '-' + splitDt[0];}
+        
+        var date = new Date(); var today1 = date.getTime();
+        stDate = new Date(stDate).getTime();
+        
+        if(type=='future'){
+            if(stDate > today1){ return false; } // should not be future date
+        }else if(type=='past'){
+            if(stDate < today1){ return false; } // should not be past date
+        }
+        
+        
+        return true;  
+    }
+    
+    
+    
+    </script>
+    
+    <body>
+   <!-- <section id="intro">
+      <img class="logo" src="https://axs.force.com/resource/1451394261000/AXSLogo" />
+      <div class="intro-text">
+        <p>
+          "axs" arranges residence visas for dependents of employees if their salary is in line with Immigration requirements.
+        </p>
+        <p>
+          To obtain a dependent visa, the minimum monthly salary requirement is AED 4,000.
+          <ul>
+            <li>For Child Visa: A marriage certificate is required if the spouse is not under the sponsor's visa.</li>
+            <li>For Spouse Visa: NOC from embassy is required if the spouse's and sponsor's nationalities are different.</li>
+          </ul>
+        </p>
+        <h5>
+          Total Fee for a 3 year visa is <small>AED</small> 2,380
+        </h5>
+      </div>
+      <button class="wide primary" id="btn-start">Apply Now</button>
+    </section> -->
+      <b><apex:pageMessages id="msg"  /></b>
+        <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+      
+        <apex:form styleClass="pbform">
+            <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+            <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+            <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" />
+            <apex:actionFunction name="afs" action="{!save}" status="theStatus"  />
+            <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+            <apex:actionFunction name="spDets" status="theStatus" action="{!saveDraft}" reRender="pbMain" /> 
+            <apex:variable var="isRC" value="{!IF(true,false,false)}" />
+            <apex:repeat value="{!rq.Items__r}" var="i"> 
+                <apex:outputPanel rendered="{!AND(i.sta__r.staown__c == 'Customer')}">
+                    <apex:variable var="isRC" value="{!IF(true,true,true)}" />
+                </apex:outputPanel></apex:repeat>
+            <apex:variable var="showEr" value="{!OR(acc.lcsnc__c , acc.psasnc__c , acc.ecsnc__c , NOT(AND(acc.snc__c == '', acc.snc__c == null)))}"/>
+            <apex:variable var="showWrn" value="{!OR(isRC)}" />   
+            <apex:variable var="OnlyAct" value="{!IF(AND(rq.amsgs__c != null),rq.amsgs__c,'')}" /> 
+            <apex:variable var="correctionSec" value="{!IF(OR(showEr,showWrn,OnlyAct !=null,OnlyAct !=''), TRUE, FALSE)}" /> 
+            
+    <section id="step-1" >
+      <ul class="progress">
+        <li class="current">Sponsor Information</li>
+        <li>Applicant Info</li>
+        <li>Passport Info</li>
+        <li>Contact Info</li>
+      </ul>
+      <div class="clearfix"></div>
+     
+        <h3>Sponsor Information</h3>
+        
+        
+        <div class="component required alpha">
+          <label for="i-name">Sponsor Name</label>          
+          <apex:inputField id="xcsfn__c" value="{!rq.xcsfn__c}" />
+          <script type="text/javascript">cs['xcsfn__c']=getC('{!$Component.xcsfn__c}');
+          </script>  
+        </div>
+        <div class="component required">
+            <label for="s-relation">Sponsor Relationship</label>
+            <apex:inputField id="xcsrs__c" required="true" value="{!rq.xcsrs__c}"   onchange="adhocItems();" />
+                                    <script type="text/javascript">cs['xcsrs__c']=getC('{!$Component.xcsrs__c}');
+                                    </script>
+        </div>
+        <div class="component required email">
+          <label for="i-email">Sponsor Email</label>
+            <apex:inputField id="xave__c" required="true"   value="{!rq.xave__c}" />
+                                    <script type="text/javascript">cs['xave__c']=getC('{!$Component.xave__c}');  //cs['xave__c'].disabled=true;
+                                    </script> 
+        </div>
+        <div class="component required alpha" >
+          <label for="i-passport">Sponsor Passport #</label>
+          <apex:inputField required="true" id="xcsp__c"  value="{!rq.xcsp__c}"  />
+                                    <script type="text/javascript">cs['xcsp__c']=getC('{!$Component.xcsp__c}');
+                                    </script>
+        </div>
+        <div class="component required">
+            <label for="s-nationality">Sponsor Nationality</label>
+            <apex:inputField required="true" id="xcsnc__c"  value="{!rq.xcsnc__c}" />
+                                    <script type="text/javascript">cs['xcsnc__c']=getC('{!$Component.xcsnc__c}');
+                                    </script>
+        </div>
+        <div class="actions">
+          <button class="primary proceed">Proceed</button>
+        </div>
+    
+    </section>
+    <section id="step-2" class="hidden">
+      <ul class="progress">
+        <li class="done">Sponsor Information</li>
+        <li class="current">Applicant Info</li>
+        <li>Passport Info</li>
+        <li>Contact Info</li>
+      </ul>
+      <div class="clearfix"></div>
+     
+        <h3>Applicant Information</h3>
+        <div class="component required">
+            <label for="s-title">Title</label>
+           <apex:inputField required="true"  id="xcslt__c" value="{!rq.xcslt__c}"  /> <!-- onchange="shwPS();" -->
+                                    <script type="text/javascript">
+                                    cs['xcslt__c']=getC('{!$Component.xcslt__c}');
+                                    </script>
+        </div>
+        <div class="component required alpha">
+          <label for="i-fname">First Name</label>
+          <apex:inputField required="true"  id="xcfn__c"  value="{!rq.xcfn__c}" />
+                                    <script type="text/javascript">cs['xcfn__c']=getC('{!$Component.xcfn__c}');
+                                    </script>
+        </div>
+        <div class="component alpha">
+          <label for="i-mname">Middle Name</label>
+          <apex:inputField id="xcmn__c"   value="{!rq.xcmn__c}" />
+                                    <script type="text/javascript">cs['xcmn__c']=getC('{!$Component.xcmn__c}');
+                                    </script>
+        </div>
+        <div class="component required alpha">
+          <label for="i-lname">Last Name</label>
+          <apex:inputField required="true"  id="xcln__c"  value="{!rq.xcln__c}" />
+                                    <script type="text/javascript">cs['xcln__c']=getC('{!$Component.xcln__c}');
+                                    </script>
+        </div>
+        
+        <div class="component required alpha">
+          <label for="i-f-name">Father's Name</label>
+           <apex:inputField required="true"  id="xcfan__c" value="{!rq.xcfan__c}" />
+                                    <script type="text/javascript">cs['xcfan__c']=getC('{!$Component.xcfan__c}');
+                                    </script>
+        </div>
+        <div class="component required alpha">
+          <label for="i-m-name">Mother's Name</label>
+           <apex:inputField required="true"  id="xcmon__c" value="{!rq.xcmon__c}" />
+                                    <script type="text/javascript">cs['xcmon__c']=getC('{!$Component.xcmon__c}');
+                                    </script>
+        </div>
+        <div class="component required">
+            <label for="s-m-status">Marital Status</label>
+           <apex:inputField required="true" id="xcms__c"  value="{!rq.xcms__c}"   /> 
+                                    <script type="text/javascript">
+                                    cs['xcms__c']=getC('{!$Component.xcms__c}');
+                                    </script>
+        </div>
+        <div class="component required">
+            <label for="s-religion">Religion</label>
+          <apex:inputField required="true" id="xcrlg__c"  value="{!rq.xcrlg__c}" />
+                                    <script type="text/javascript">cs['xcrlg__c']=getC('{!$Component.xcrlg__c}');
+                                    </script>
+        </div>
+        <div class="component required date fdate">
+          <label for="s-c-birth">Date of Birth</label>
+          
+         <apex:inputField required="true" id="xcbd__c"  value="{!rq.xcbd__c}" onchange="adhocItems();" styleclass="datepicker-here" />
+                                    
+                                    <script type="text/javascript">cs['xcbd__c']=getC('{!$Component.xcbd__c}');
+                                    </script>
+        </div>
+        <div class="component required">
+          <label for="s-c-nationality">Current Nationality</label>
+          <apex:inputField required="true" id="xcnc__c"  value="{!rq.xcnc__c}" />
+                                    <script type="text/javascript">cs['xcnc__c']=getC('{!$Component.xcnc__c}');
+                                    </script>
+                                    <script type="text/javascript">
+                                    //<![CDATA[                                        
+                                    var cnt = '{!$Component.xcnc__c}';   
+                                    var selectobject=document.getElementById(cnt)
+                                    for (var i=0; i<selectobject.length; i++){
+                                        if (selectobject.options[i].value == 'Bahrain' || selectobject.options[i].value == 'Oman'  || selectobject.options[i].value == 'Kuwait' || selectobject.options[i].value == 'Qatar' || selectobject.options[i].value == 'Saudi Arabia' || selectobject.options[i].value == 'United Arab Emirates'){
+                                            selectobject.remove(i);
+                                        }
+                                    }
+                                    //]]>
+                                    </script>
+        </div>
+        <div class="component required">
+          <label for="s-p-nationality">Previous Nationality</label>
+           <apex:inputField required="true"  id="xcnp__c" value="{!rq.xcnp__c}" />
+                                    <script type="text/javascript">cs['xcnp__c']=getC('{!$Component.xcnp__c}');
+                                    </script>
+        </div>
+        <div class="actions">
+          <button class="secondary back">Back</button>
+          <button class="primary proceed">Proceed</button>
+        </div>
+     
+    </section>
+
+    <section id="step-3" class="hidden">
+      <ul class="progress">
+        <li class="done">Sponsor Information</li>
+        <li class="done">Applicant Info</li>
+        <li class="current">Passport Info</li>
+        <li>Contcat Info</li>
+      </ul>
+      <div class="clearfix"></div>
+     
+        <h3>Passport Information</h3>
+        <div class="component required alpha">
+          <label for="i-a-passport">Passport Number</label>
+          <apex:inputField required="true"  id="xcp__c" value="{!rq.xcp__c}"  />
+                                    <script type="text/javascript">cs['xcp__c']=getC('{!$Component.xcp__c}');
+                                    </script>
+        </div>
+        <div class="component required date fdate">
+          <label for="i-a-passport-issue">Passport Issue Date</label>
+           <apex:inputField required="true"  id="xcpid__c" value="{!rq.xcpid__c}"  styleclass="datepicker-here"/>
+                                    
+                                    <script type="text/javascript">cs['xcpid__c']=getC('{!$Component.xcpid__c}');
+                                    </script>
+        </div>
+        <div class="component required date pdate">
+          <label for="i-a-passport-expiry">Passport Expiry Date</label>
+           <apex:inputField required="true"  id="xcped__c" value="{!rq.xcped__c}"  styleclass="datepicker-here"/>
+                                    
+                                    <script type="text/javascript">cs['xcped__c']=getC('{!$Component.xcped__c}');
+                                    </script>
+        </div>
+        <div class="component required alpha">
+          <label for="i-a-passport-place">Passport Place of Issue</label>
+            <apex:inputField required="true"  id="xcpip__c" value="{!rq.xcpip__c}" />
+                                    <script type="text/javascript">cs['xcpip__c']=getC('{!$Component.xcpip__c}');
+                                    </script>
+        </div>
+        <div class="component required">
+          <label for="s-a-passport-country">Country of Issue</label>
+           <apex:inputField required="true"  id="xcpic__c" value="{!rq.xcpic__c}" />
+                                    <script type="text/javascript">cs['xcpic__c']=getC('{!$Component.xcpic__c}');
+                                    </script>
+        </div>
+
+        <div class="actions">
+          <button class="secondary back">Back</button>
+          <button class="primary proceed">Proceed</button>
+        </div>
+     
+    </section>
+   
+         <section id="step-5" class="hidden">
+      <ul class="progress">
+        <li class="done">Sponsor Info</li>
+        <li class="done">Applicant Info</li>
+        <li class="done">Passport Info</li>
+        <li class="current">Contact Details</li>
+      </ul>
+      <div class="clearfix"></div>
+     
+        <h3>Contact Information</h3>
+       <div class="component required number">
+                                    <label for="xchph__c">Home Country Phone</label>
+                                    <apex:inputField required="true"  id="xchph__c" value="{!rq.xchph__c}" />
+                                    <script type="text/javascript">cs['xchph__c']=getC('{!$Component.xchph__c}');
+                                    </script>
+                                </div>
+                                <div class="component required number">
+                                    <label for="xcmob__c">UAE Mobile</label>
+                                    <apex:inputField required="true"  id="xcmob__c"  value="{!rq.xcmob__c}" onchange="vMob('xcmob__c',cs,false)"/>
+                                    <script type="text/javascript">cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                    </script>
+                                </div>
+                                <div class="component required email">
+                                    <label for="xcped__c">Email</label>
+                                    <apex:inputField required="true" id="xceml__c"  value="{!rq.xceml__c}" onchange="vEml1('xceml__c',cs,false)"/>
+                                    <script type="text/javascript">cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                    </script>
+                                </div>
+                                <div class="component required alpha">
+                                    <label for="xcha__c">Address Outside UAE</label>
+                                    <apex:inputField required="true" id="xcha__c"  value="{!rq.xcha__c}" />
+                                    <script type="text/javascript">cs['xcha__c']=getC('{!$Component.xcha__c}');
+                                    </script>
+                                </div>
+                              
+                              
+      
+
+        <div class="actions">
+          <button class="secondary back">Back</button>
+         <button class="primary proceed" onclick="return vfrm();">Submit</button>
+        </div>
+     
+    </section>
+          
+            <apex:outputPanel > 
+                <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+                <script type="text/javascript">cs['xadh__c']=getC('{!$Component.xadh__c}'); 
+                </script>
+            </apex:outputPanel>
+    </apex:form>
+    
+    <script src="/resource/AXSM2/visa.js"></script>
+     <script src="/resource/AXSM3/datepicker.js"></script>
+       <script src="/resource/AXSM3/datepicker_en.js"></script>
+  </body>
+  
+</apex:page>

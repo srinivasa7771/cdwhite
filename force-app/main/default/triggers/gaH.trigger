@@ -1,0 +1,1 @@
+trigger gaH on Attachment (after insert,after delete){if(trigger.isInsert && trigger.isAfter){grqH.hIAAttach(trigger.new);}else if(trigger.isDelete && trigger.isAfter){grqH.hDAAttach(trigger.old);}}

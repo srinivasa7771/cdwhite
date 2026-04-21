@@ -1,0 +1,3 @@
+trigger StatusHistoryTrigger on g_itmHistorySTA__c (before Insert, after insert, after update, after delete, after undelete) {
+    /*List<g_itmHistorySTA__c> listOfStatusHistories = null; if(Trigger.isDelete){ listOfStatusHistories = Trigger.old; }else{ listOfStatusHistories = Trigger.new; }  MilestnH h=new MilestnH(); if(trigger.isDelete && trigger.isAfter){ h.hMsntu(listOfStatusHistories,true); }  if(trigger.isAfter){ h.hMsntu(listOfStatusHistories,false); }*/
+}

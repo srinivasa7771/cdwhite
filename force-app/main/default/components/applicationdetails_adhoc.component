@@ -1,0 +1,59 @@
+<apex:component controller="gctlDynaBindingCntrl_adhoc">
+    
+    <apex:attribute name="rq" description="Request"  type="g_Req__c" />
+    <script>
+    
+    var allFlds= [];
+    var renameJSON = {"g_bacnm":"Bank Account Name","bName":"Bank Name","bic":"Bank Identifier Code","g_banum":"Bank Account Number","cntry":"Country Name","g_iban":"IBAN Number","g_basft":"Swift Code","g_bfrc":"Bank Routing Code","g_bfsc":"Bank Sort Code","g_bifc":"IFSC Code","inba":"Intermediary Bank Account"};
+    
+    $(document).ready(function(){
+        loadValues();
+    });
+    var xad1Val,xad2Val;
+    function createElem(lab,val){
+        if(lab!='gbrnlkid'){
+            //let k = renameJSON[lab]?renameJSON[lab]:lab;
+            let k = lab;
+            let h = '<div class="col-lg-3 col-sm-6" id="" style=""><div class="data-info">';
+            h+='<div class="data-label" id="'+lab+'lab">'+k+'</div>';
+            if(!val)
+                h+='<div class="data-val" id="val">-</div>';
+            else if(val.includes('https'))
+                h+='<div class="data-val" id="val">NA</div>';
+            //h+='<div class="data-val" id="val"><a href="'+val+'" target="_blank">Click here</a></div>';
+                else
+                    h+='<div class="data-val" id="'+val+'val">'+val+'</div>';
+            h+='</div></div></div>';
+            return h;
+        }
+        return '';
+    }
+    function loadValues(){
+        xad1Val = JSON.parse(cs['xadtx3__c'].value);
+        xad2Val = JSON.parse(cs['xadtx4__c'].value);
+        let h = '';
+        for(i of Object.keys(xad1Val))
+            if(i)
+                h+=createElem(i,xad1Val[i]);
+        //for(i of Object.keys(xad2Val))
+        //  if(i)
+        //      h+=createElem(i,xad2Val[i]);
+        $('#valsParent').append(h);
+        $('#valsParent').append('<div class="col-lg-3 col-sm-6" id="" style=""><div class="data-info"><div class="data-label" id="ManagerInchargelab">Manager Incharge</div><div class="data-val" id="val">{!rq.acc__r.Manager_Incharge_Name__c}</div>')
+    }
+    </script>
+    
+    
+    <div class="accordion-content-inner px-xl-5"> 
+        <apex:inputHidden id="xadtx4__c" value="{!dummyReq.xadtx4__c}" />
+        <apex:inputHidden id="xadtx3__c" value="{!dummyReq.xadtx3__c}" />
+        <script>
+        cs["xadtx4__c"] = document.getElementById("{!$Component.xadtx4__c}");
+        cs["xadtx3__c"] = document.getElementById("{!$Component.xadtx3__c}");
+        </script>
+        <div class="row" id="valsParent">
+        </div>
+        
+    </div>
+    
+</apex:component>

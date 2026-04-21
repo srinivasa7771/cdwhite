@@ -1,0 +1,56 @@
+<apex:page docType="html-5.0" standardController="g_cmb__c" extensions="Couriersummary" readOnly="true" tabStyle="g_cmb__c" > 
+<apex:form >
+  <apex:pageBlock >
+  
+  
+<div cclass="bPageTitle" >
+    <div class="content"><img src="/s.gif" alt="Courier Booking Log" class="pageTitleIcon" title="Courier Booking Summary"/>
+        <h1 class="pageType">Courier Booking Summary<span class="titleSeparatingColon">:</span></h1>
+        <h2 class="pageDescription"></h2>
+        <div class="blank">&nbsp;</div>
+    </div>
+    </div><br/>
+
+  
+      Created Date &nbsp; <apex:input value="{!fromDate}" type="date"  id="demo"  styleClass="datepicker"  onclick="DatePicker.pickDate(false, this, false);" 
+      onfocus="DatePicker.pickDate(false, this, false);" required="true" /> 
+      <!--
+      &nbsp; To Date &nbsp; <apex:input value="{!toDate}" type="date"/> 
+-->
+
+ <apex:variable value="{!"0"+text(MONTH(fromDate))+"/"+"0"+text(Day(fromDate))+"/"+text(YEAR(fromDate))}" var="fdate"/>
+&nbsp;&nbsp;&nbsp;<apex:commandButton value="Get Summary" action="{!CouriersummaryMethod}"/> <br/><br/>
+      <apex:pageBlockSection columns="1" title="Courier status report" rendered="{!NOT(ISBLANK(Lstcls))}" > 
+          <apex:pageblockTable value="{!Lstcls}" var="item" >
+             <apex:column headervalue="Status" >
+                 <b>{!item.status}</b>
+             </apex:column>
+                            <apex:column value="{!item.EMPOSTCount}" headerValue="EMPOST">
+                  <apex:facet name="footer">
+                    {!empTotal} 
+                </apex:facet>
+              </apex:column>
+             <apex:column value="{!item.AXSCount}" headerValue="AXS">
+              
+                 <apex:facet name="footer">
+                    <apex:outputText value="{!axsTotal}"/>
+
+                </apex:facet>
+              </apex:column>
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+                 
+                 <apex:facet name="footer" >
+                    <apex:image value="{!If(axsTotal==empTotal,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+                </apex:facet>
+            </apex:column> 
+              <apex:column headervalue="Report">
+                 <apex:outputLink target="_blank" value="/00O280000070Dee?pv0={!fdate}&pv1={!item.status}"> Details </apex:outputLink>
+             </apex:column>
+          </apex:pageblockTable>
+         
+          
+      </apex:pageBlockSection>
+  </apex:pageBlock>
+</apex:form>
+</apex:page>

@@ -1,0 +1,396 @@
+<apex:component controller="SegmentsActivitiesController" allowDML="true" id="dedseg">
+    <apex:attribute name="rq" description="request" type="g_Req__c" required="false" assignTo="{!req}" />
+    <style>
+        a:not([href]):hover{
+        color: #fff;
+        }
+        label.box-check .box {
+        min-height: 6.25rem !important;
+        }
+        /*styles for Search*/
+        .search-results-container ul li {
+        padding: 12px 8px;
+        margin-bottom: 2px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        }
+        .search-results-container ul{
+        max-height: 200px;
+        overflow-y: auto;
+        }
+        
+        .search-results-container {
+        display:none;
+        padding: 4px;
+        border-top: none;
+        top: 5px;
+        max-height:200px;
+        border: none;
+        -webkit-box-shadow: 0 3px 11px #0000001f;
+        box-shadow: 0 3px 11px #0000001f;
+        border-radius: 0.5rem;
+        }
+        
+        .search-results-container ul li:hover {
+        background-color: #f0ecf0;
+        }
+        .search-results-container span {
+        padding: 5px;
+        font-size: 1.2em;
+        color: red !important;
+        }
+        
+    </style>
+    
+    <apex:inputHidden id="adhoc2" value="{!adhoc2}" />
+    
+    <script>
+    cs["adhoc2"] = document.getElementById("{!$Component.adhoc2}");
+    </script>
+    
+    <div id="activities"> 
+        <div data-switch="true" data-json='{!dedActsJson}' style="display:none;"></div>
+        <h3>
+            Great! Tell us about your business activities
+        </h3>
+        <div class="row mt-4 mb-3">
+            <div class="col-lg-3">
+                <a href="#" class="forReadOnly business-segment box box-center bg-primary text-white">
+                    <span class="box-title" data-toggle="tooltip" data-placement="bottom" title="DED Segment" data-original-title=" DED Segment">
+                        DED Segment
+                    </span>   
+                </a>
+            </div>
+            <div class="col-lg-9">
+                <!--<p class="activityErrorElement" style="display:none; color: red;" >
+                    <i class="icon-info-circle" style="vertical-align: middle;color: red;"></i>
+                    Please select an activity
+                </p> -->
+                <apex:outputPanel rendered="{!req.xvtyp__c == 'DED'}">
+                    <div id="hpr__cRI">
+                        <div class="row" >
+                            <label>Select relevant activities as per the trade license.</label>
+                            <select id="hpr" data-placeholder="Input the activity name (Min 3 chars)" class="requiredFld form-control input-select2-flat dum"
+                                    multiple="multiple" onchange="activitiesOnchange();checkEmptSel(this)" >
+                            </select>
+                            <script>
+                            var activities = [];
+                            var strAct = '';
+                            $('#dedActid').html('');  
+                            
+                            function formatState(state)
+                            {	
+                                strAct = '';
+                                $('#dedActid').html('');  
+                                // if (!state.id) {
+                                // return state.text;
+                                // }
+                                strAct += '<div class="col-md-4 col-6 act">'+
+                                    '<label class="box-check activityLabel popup" attr="4454">'+
+                                    '<input type="checkbox" name="business_activity" onclick="notify(this)" class="DEDSegment forReadOnly avtivityCheckBox" id="btnShow" >'+
+                                    '<div class="business-activity box box-center box-hover activityDiv">'+
+                                    '<span class="ActivityPrice" style="display:none">0</span>'+
+                                    '<span id ="'+state.text+'" class="box-title ActivitySpan" data-toggle="tooltip" data-placement="bottom" title="deder" data-original-title="'+state.text+'">'+state.text+'</span>'+
+                                    '</div>'+
+                                    '</input>'+
+                                    '</label>'+
+                                    '</div>'
+                                $('#dedActid').html(strAct);
+                                
+                                /* var baseUrl = "/user/pages/images/flags";
+                  var $state = $(
+                    '<span><img class="img-flag" /> <span></span></span>'
+                  );
+                
+                  // Use .text() instead of HTML string concatenation to avoid script injection issues
+                  $state.find("span").text(state.text);
+                  $state.find("img").attr("src", baseUrl + "/" + state.element.value.toLowerCase() + ".png");*/
+                
+                return state;
+            }
+            var searchstr = [];
+            function matchVal(params, data)
+            {
+                
+                
+                // If there are no search terms, return all of the data
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+                
+                // Do not display the item if there is no 'text' property
+                if (typeof data.text === 'undefined') {
+                    return null;
+                }
+                
+                // `params.term` should be the term that is used for searching
+                // `data.text` is the text that is displayed for the data object
+                if (data.text.indexOf(params.term) > -1) {
+                    var modifiedData = $.extend({}, data, true);
+                    //modifiedData.text += ' (matched)';
+                    if(!searchstr.includes(modifiedData.activityId))
+                    {
+                        searchstr.push(modifiedData.activityId);
+                        strAct += '<div class="col-md-4 col-6 act">'+
+                            '<label class="box-check activityLabel popup" attr="4454">'+
+                            '<input type="checkbox" data-actId = "'+modifiedData.activityId+'" name="business_activity" onclick="notify(this)" class="DEDSegment forReadOnly avtivityCheckBox" id="btnShow" >'+
+                            '<div class="business-activity box box-center box-hover activityDiv">'+
+                            '<span class="ActivityPrice" style="display:none">0</span>'+
+                            '<span id ="'+modifiedData.activityId+'" class="box-title ActivitySpan" data-toggle="tooltip" data-placement="bottom" title="'+modifiedData.text+'" data-original-title="'+modifiedData.text+'">'+modifiedData.text+'</span>'+
+                            '</div>'+
+                            '</input>'+
+                            '</label>'+
+                            '</div>'
+                        $('#dedActid').html(strAct);
+                    }
+                    // You can return modified objects from here
+                    // This includes matching the `children` how you want in nested data sets
+                    return modifiedData;
+                    //return null;
+                }
+                
+                // Return `null` if the term should not be displayed
+                return null;
+            }            
+            function createDedActOption(){
+                var data = [];
+                console.log('ChkActivityMapKey==={!ChkActivityMapKey}');
+                //var segwraper = $("[data-json]").data("json");
+                console.log('activities===',segwraper[0].Activities);
+                var activities = segwraper[0].Activities;
+                var opts='';
+                for(var j = 0; j < activities.length; j++){
+                    var c = activities[j];
+                    objData = {};
+                    objData.Id = c.activityId+':'+c.Name;
+                    objData.text = c.Name;
+                    objData.activityId = c.activityId;
+                    data.push(objData);
+                    var c = activities[j];
+                    console.log('c===', c);
+                    var opt = '<option id="'+c.activityId+'" value="'+c.activityId+':'+segwraper[0].segmentId+'">'+c.Name+'</option>';
+                    opts += opt;
+                }
+                $('#hpr').find('option').remove();
+                $('#hpr').append(opts);
+                $("#hpr").select2({
+                    
+                    
+                    language: {
+                        inputTooShort: function (args) {
+                            return "Min 3 chars required to search.";
+                        },
+                        noResults: function () {
+                            return "Not Found.";
+                        },
+                        searching: function () {
+                            return "Searching...";
+                        }
+                        
+                    },
+                    minimumInputLength: 3,
+                    //  matcher: matchVal,
+                    //templateSelection: formatState,
+                    
+                })
+                updateActivityDetailsToSegment();
+                removeTempLoader();
+                
+            }
+            var $eventSelect = $('#hpr');
+            /*$eventSelect.on("select2:open", function (e) { 
+                console.log("select2:open", e); strAct = '';
+                   $('#dedActid').html('');  
+                searchstr = [];
+            });*/
+            
+            $eventSelect.on("select2:select", function (e) {
+                console.log("select2:select", e.params.data.id); 
+                $('.activityErrorElement').hide();
+            });
+            </script>
+                            <p class="activityErrorElement" style="display:none; color: red;" >
+                                <i class="icon-info-circle" style="vertical-align: middle;color: red;"></i>
+                                Please select an activity
+                            </p>   
+                        </div>
+                    </div>
+                 </apex:outputPanel>
+            </div>
+            <div class="col-lg-3"></div>
+            <div class="col-lg-9"> 
+                <label>Describe your business activities as per the trade license</label>
+                <apex:inputField styleClass="forReadOnly form-control dum  requiredFld no-blank" value="{!rq.Acc__r.Description}" id="Description" onkeyup="hideError(this);"></apex:inputField>
+                <div id="descError"  class="invalid-feedback"></div>
+            </div>
+        </div> 
+        <!--<div class="row mt-4 mb-3">
+            <div class="col-lg-3"></div>
+            <div class="col-lg-9">
+                <div class="row" >
+                    <label>Select relevant activities for your planned business.</label>
+                    <apex:inputField styleClass="forReadOnly form-control dum  no-blank" value="{!rq.Acc__r.Description}" id="Description" onkeyup="hideError(this);"></apex:inputField>
+                </div>
+            </div>
+        </div>  -->
+        
+        <div class="text-right mt-4"> 
+                <a  style="color: #fff; float:left"  class="forReadOnly btn btn-primary onboarding-nav-prev" onclick="nextpg('Lease Info');">
+                   <i class="fa fa-angle-left"></i> <span>BACK</span>
+                </a>
+                <a  style="color: #fff;"   class="forReadOnly btn btn-primary onboarding-nav-next" onclick="checkActivity();">
+                    <span>NEXT</span> <i class="fa fa-angle-right"></i> 
+                </a> 
+            </div>
+    </div>
+            
+    <script>
+    $(document).ready(function(){
+        console.log('in rady3434');
+        //Hide fields
+        setTimeout(function(){
+            console.log('in createDedActOption456');
+            getRemoteContact();
+            // createDedActOption();
+        },1000); });
+    
+    function activitiesOnchange(){
+        console.log('activitiesOnchange:::');
+        var activities = '';
+    }
+    
+    function checkEmptSel(e){
+        //debugger;
+        var v = $(e).val();
+        console.log(740+' --- '+v);
+        if(v!=''&&v!='--None--'&&v!='Select')
+            removeValError($(e));
+    }
+    var segwraper ;
+    function getRemoteContact() {
+        showTempLoader_input();
+        //SaveImage.saveImage('001Ik000005yIpM',imgData,handleResult); 
+        Visualforce.remoting.Manager.invokeAction(
+            //Invoking controller action getcon
+            '{!$RemoteAction.SegmentsActivitiesController.getDedActivities}',
+            
+            function(result, event){
+               //We can access the records through the parameter result
+               //event.status determines if there is error or not 
+               if(event.status){
+                   console.log('result===',result);
+                  segwraper = result;
+                    console.log('data-json===',segwraper); 
+                     createDedActOption();                                     
+               }               
+            },
+            {escape: true}
+        );
+    }
+    
+    function checkActivity()
+    {
+        var isProceedNext = true;
+        $('.requiredFld').each(function(){
+            let v = $(this).val(); 
+            if(!v)
+            {
+                $(this).parent().find('.invalid-feedback').html('* This field is required!').show();
+                // alert('Please fill required value');
+                isProceedNext = false;
+            }
+        });
+        
+        if(isProceedNext)
+        {
+            $(this).parent().find('.invalid-feedback').html('').hide();
+        }
+        var actNum = $('#hpr').val()?.length;
+        if(!actNum || actNum < 1)
+        {
+            $('.activityErrorElement').show();
+        }
+        else
+        {
+            $('.activityErrorElement').hide();
+            var dedselAct = $('#hpr').val();
+            
+            cs["xadtx2__c"].value = createDedAct(dedselAct);
+            if(isProceedNext == true)
+            {
+            	nextpg('members'); 
+            }
+            
+        }
+    }
+        
+    function createDedAct(dedselAct)
+    {
+        
+        let segJson = {};
+        var segArray=[];
+        var activityArray=[];
+        for(var j = 0; j < dedselAct.length; j++)
+        {
+            let delsel = dedselAct[j];
+            var segId = delsel.split(':')[1];
+            var actId  = delsel.split(':')[0];
+            var selectedData = segwraper[segwraper.map(function (item) { return item.segmentId; }).indexOf(segId)];
+            console.log('selectedData=====', selectedData);
+            console.log('actId=====', actId);
+            if(selectedData)
+            {
+                segJson.name = selectedData.Segment;
+                segJson.segId = selectedData.segmentId;
+                segJson.allowed = selectedData.AllowedActivites;
+                segJson.price = selectedData.Price;
+                var act = selectedData.Activities;
+                var selact = act[act.map(function (item) { console.log('item.activityId==', item.activityId) ; return item.activityId;  }).indexOf(actId)]
+                
+                if(selact)
+                {
+                    let activityJson = {};
+                    activityJson.name = selact.Name;
+                    activityJson.actId = selact.activityId
+                    activityJson.price = selact.Price;
+                    activityJson.channel = '';
+                    var docList =[];
+                    activityJson.docs =docList;
+                    activityArray.push(activityJson);
+                }                
+            }
+        }
+        segJson.SegActivities = activityArray;
+        segArray.push(segJson);
+        segJson = JSON.stringify(segArray);
+        console.log('segArray:::'+segJson);
+        return segJson;
+    }
+    
+    function updateActivityDetailsToSegment()
+    {
+        var cuval = [];
+        var segJson = (cs["xadtx2__c"].value)?JSON.parse(cs["xadtx2__c"].value):[];
+        console.log('segJson===', segJson);
+        if(segJson)
+        {
+            for(i of segJson){
+                console.log('i===', i);
+                if(i.SegActivities && i.SegActivities.length>0){
+                    for(j of i.SegActivities){
+                        cuval.push( j.actId+':'+i.segId);
+                    }
+                }
+            }
+            if(cuval && cuval.length > 0 )
+            {
+                $('#hpr').val(cuval).trigger('change');
+            }
+            console.log('cuval===',cuval);
+        }
+    }
+        
+                
+    </script>    
+</apex:component>

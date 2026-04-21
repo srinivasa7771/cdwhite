@@ -1,0 +1,341 @@
+<apex:component controller="gctlDEDCmp"  id="c" allowDML="true">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+     <style type="text/css">
+         
+.loading-icon {
+   background-image: url(/img/loading.gif);
+   width: 16px;
+   height: 16px;
+}
+
+a.alpha-link {
+   font-weight: normal;
+   font-size: 91%;
+   padding: 0 4px;
+   color: #015BA7 !important;
+}
+
+a.alpha-link+a.alpha-link {
+   border-left: 1px solid #CFCECE;
+}
+
+a.alpha-link:hover {
+   background-color: #e0f5fc !important;
+}
+
+a.alpha-select {
+   font-weight: bold;
+   text-decoration: none;
+   background-color: #C6E1FF;
+   color: #000000 !important;
+}
+
+.search-block {
+   text-align: center;
+}
+
+.search-block input {
+   margin: 0px 15px 0px 5px;
+}
+
+.search-block-button {
+   min-width: 110px;
+}
+
+.process-block {
+   text-align: center;
+   margin-top: 10px;
+}
+
+.process-block input {
+   margin: 0px 15px;
+}
+
+.process-block-button {
+   min-width: 110px;
+}
+
+.page-buttons input {
+   min-width: 110px;
+}
+</style>
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {margin-left: 0.5em;margin-bottom: 0.6em;} 
+        .lookupInput {display: inline;white-space: nowrap;vertical-align: middle;display: -webkit-box;}
+    </style>
+   <script>
+    //$(document).ready(function(){ cs['xuvdet__c'].value ='{!stradd}';});
+    
+    function  selAct(a){
+        //cs['xuvdet__c'].value =a;
+        //alert(a);
+    }
+    
+    function findActSelection(type) { 
+        if(type=='actyes'){ 
+            
+            if(getC("actyes").checked){ getC("actno").checked = false;
+                                      }               
+        }else if(type=='actno'){if(getC("actno").checked){getC("actyes").checked = false;}}
+                
+        cs['actChangeId'].value = type; 
+        actChange(type);
+       
+    }
+    function findActOnLoad() { 
+       
+        if('{!draftReq.InsChk__c}' =='true'){ 
+          getC("actyes").checked = true; 
+          getC("actno").checked = false; 
+           cs['actChangeId'].value	= 'actyes';	  
+         }else{
+		    getC("actyes").checked = false; 
+            getC("actno").checked = true; 
+            cs['actChangeId'].value	= 'actno';			
+		 }
+         actChange(cs['actChangeId'].value);
+       
+    }
+    function seltdId(cBx,Tid,tName){
+        if(cBx.checked){
+            if(!cs['xuvdet__c'].value.includes(Tid)){
+                cs['xuvdet__c'].value += tName+':' + Tid+';';
+                cs['amsgs__c'].value +=Tid+';';
+            }
+        }else{
+            cs['xuvdet__c'].value = cs['xuvdet__c'].value.replace(tName+':'+Tid+';','');
+            cs['amsgs__c'].value = cs['amsgs__c'].value.replace(Tid+';','');
+        }
+        
+    }
+ </script>
+    <apex:attribute name="acc" type="string" assignTo="{!accId}" description="account Id" />   
+    <apex:attribute name="draftReq" type="g_Req__c" assignTo="{!rqDraft}" description="Request" /> 
+    <apex:attribute name="pgType" type="string" assignTo="{!rqTp}" description="RenewalOrNew" />  
+    <apex:attribute name="isEd" type="Boolean" assignTo="{!isEdit}" description="PageModeE" /> 
+    <apex:attribute name="isVw" type="Boolean" assignTo="{!isview}" description="PageModeV" /> 
+    <apex:actionFunction name="actRender" reRender="pbact"/>
+    
+    <apex:actionFunction name="actChange" action="{!activityChange}" oncomplete="selAct('{!stradd}');" status="theStatus" rerender="pbact">
+        <apex:param assignTo="{!isActChange}" name="paramfirst" value=""/>
+    </apex:actionFunction>
+    <apex:pageBlock id="cpgblc" rendered="{!AND(pgType != 'n',NOT(isVw))}">
+        <apex:pageBlockSection id="cpgblci"> 
+            
+            <apex:pageBlockSectionItem >
+                <span style="white-space:nowrap;">Do you want to change your Activity? </span>
+            </apex:pageBlockSectionItem>
+            
+            <apex:outputLabel ></apex:outputLabel>            
+            <apex:pageBlockSectionItem > 
+                <apex:outputLabel ></apex:outputLabel>  
+                <apex:outputPanel >
+                    <apex:inputHidden id="actChangeId" value="{!isActChange}" />
+                     
+                    <script type="text/javascript">
+                        cs['actChangeId']=getC('{!$Component.actChangeId}');
+                    </script>                    
+                    <input type="checkbox" id="actyes" name="Activity" value="1"  onclick="findActSelection('actyes');" /> YES 
+                    <input type="checkbox" id="actno" name="Activity" value="2" onclick="findActSelection('actno');"/> NO
+                     
+                </apex:outputPanel>
+            </apex:pageBlockSectionItem>
+         </apex:pageBlockSection>   
+    </apex:pageBlock>
+    <apex:outputText rendered="{!AND(isVw)}">
+            <apex:pageBlock title="Selected Activities">
+               <apex:pageBlockTable value="{!SelectedAct}" var="selAct">
+                 <apex:column >
+                     <apex:facet name="header">
+                        <apex:outputText value="Name" />
+                     </apex:facet>
+                     <apex:outputText value="{!selAct.Name}" ></apex:outputText>
+                  </apex:column>
+                </apex:pageBlockTable>
+            </apex:pageBlock>
+        </apex:outputText>
+    <apex:outputPanel id="pbact">
+        
+        <apex:outputText rendered="{!AND(selActNmLst.size >0,pgType != 'n',!isVw)}">
+            <apex:pageBlock >
+               <apex:pageBlockTable value="{!ActSelList}" var="selAct">
+                  <apex:column >
+                     <apex:facet name="header">
+                        <div style="text-align: center;">
+                              <apex:outputText value="Selected" />
+                          </div>
+                      </apex:facet>
+                      <div style="text-align: center;">
+                          <apex:inputCheckBox value="{!selAct.isSel}" id="check-box" onclick="seltdId(this,'{!selAct.selid}');" />
+                     </div>
+                  <!--   <div style="text-align: center;">
+                        <apex:inputCheckBox value="{!selAct.isSel}" id="check-box">
+                         
+                         </apex:inputcheckbox>
+                     </div>-->
+                  </apex:column>
+                  <apex:column >
+                     <apex:facet name="header">
+                        <apex:outputText value="Name" />
+                     </apex:facet>
+                     <apex:outputText value="{!selAct.Name}" ></apex:outputText>
+                  </apex:column>
+                </apex:pageBlockTable>
+            </apex:pageBlock>
+        </apex:outputText>    
+       <apex:outputText rendered="{!AND(isActChange != null,!isVw,OR(isActChange == 'actyes',rqTp == 'n'))}">
+        <!-- ***************************** -->
+      <!-- Search Criteria               -->
+      <apex:pageBlock mode="maindetail">
+         <div class="search-block">
+            <div style="display: inline-table">
+              <apex:inputText value="{!SearchName}" />
+            </div>
+            
+            <apex:commandButton styleClass="search-block-button" value="Search" action="{!SearchAct}" rerender="TablePanel"
+               status="TableUpdateStatus" />
+             <apex:actionStatus id="ProcessButtonStatus">
+               <apex:facet name="stop">
+                  <apex:outputPanel >
+                    <!-- <apex:commandButton styleClass="process-block-button" value="Process Selected" action="{!saveActivity}"
+                        status="ProcessButtonStatus" rerender="nothing" />-->
+                     <apex:commandButton styleClass="process-block-button" value="Clear All" action="{!ClearAll}"
+                        rerender="TheForm,TablePanel" />
+                  </apex:outputPanel>
+               </apex:facet>
+               <apex:facet name="start">
+                  <apex:outputPanel >
+                     <apex:commandButton styleClass="process-block-button" value="Processing..." disabled="true" />
+                     <apex:commandButton styleClass="process-block-button" value="Processing..." disabled="true" />
+                  </apex:outputPanel>
+               </apex:facet>
+            </apex:actionStatus> 
+             
+         </div>
+
+         <div class="process-block">
+           
+         </div>
+      </apex:pageBlock>
+
+      <!-- ************************* -->
+      <!-- search results table      -->
+      <apex:pageBlock id="TablePanel">
+         <div>
+            <span class="page-buttons" style="float: left; margin-bottom: 5px;"> <apex:commandButton disabled="{!!StdSetControllerAct.hasprevious}" value="Previous" action="{!StdSetControllerAct.previous}"
+                  rerender="TablePanel" /> <apex:commandButton disabled="{!!StdSetControllerAct.hasnext}" value="Next"
+                  action="{!StdSetControllerAct.next}" rerender="TablePanel" />
+            </span>
+            <!-- alphabet selection -->
+            <span style="float: right; margin: 5px 5px 5px 5px;"> <apex:repeat value="{!AlphaList}" var="a">
+                  <apex:commandLink value="{!a}" action="{!BuildQuery}" rerender="TablePanel"
+                     styleClass="alpha-link{!if(AlphaFilter=a,' alpha-select','')}" status="TableUpdateStatus">
+                     <apex:param name="AlphaFilter" value="{!a}" assignTo="{!AlphaFilter}" />
+                  </apex:commandLink>
+               </apex:repeat>
+            </span>
+         </div>
+
+         <div style="clear: both;"></div>
+
+         <apex:actionStatus id="TableUpdateStatus">
+            <apex:inputHidden value="{!AlphaFilter}" id="hiddenField" />
+            <!-- loading message -->
+            <apex:facet name="start">
+               <apex:outputPanel layout="block" styleClass="message infoM4">
+                  <apex:panelGrid columns="2" styleClass="messageTable" columnClasses="messageCell" style="padding:0px;margin:0px;">
+                     <apex:panelGroup >
+                        <img class="loading-icon" src="/s.gif" />
+                     </apex:panelGroup>
+                     <apex:panelGroup >
+                        <div class="messageText">Please wait...</div>
+                     </apex:panelGroup>
+                  </apex:panelGrid>
+               </apex:outputPanel>
+            </apex:facet>
+
+            <!-- Account table -->
+            <apex:facet name="stop">
+               <apex:pageblocktable value="{!CurrentActList}" var="a" >
+                  <apex:column >
+                     <apex:facet name="header">
+                        <apex:outputPanel id="SelectedCount">
+                           <div style="text-align: center;">
+                              <apex:outputText value="Selected" />
+                              <br />
+                              <apex:outputText value="{!ActSelectedCount}" />
+                           </div>
+                        </apex:outputPanel>
+                     </apex:facet>
+                     <div style="text-align: center;">
+                        <apex:inputCheckBox value="{!a.isSel}" id="check-box"  onclick="seltdId(this,'{!a.act.id}','{!a.act.Name}');">
+                           <apex:actionSupport event="onchange" rerender="SelectedCount" action="{!UpdateActivitySelectedSet}" />
+                           </apex:inputcheckbox>
+                     </div>
+                  </apex:column>
+                  <apex:column >
+                     <apex:facet name="header">
+                        <apex:commandLink action="{!SortToggle}" rerender="TablePanel" status="TableUpdateStatus">
+                           <apex:param name="SortField" value="Name" assignTo="{!SortField}" />
+                           <apex:outputText value="Activity {!IF(SortField=='Name',IF(SortDirection='asc','▲','▼'),'')}" />
+                        </apex:commandLink>
+                     </apex:facet>
+                     <apex:outputLink value="/{!a.act.Id}" target="_blank">{!a.act.Name}</apex:outputlink>
+                      
+                  </apex:column>
+                   
+                   <apex:column >
+                       <apex:facet name="header">
+                           <apex:outputText value="Arabic Name" />
+                       </apex:facet>
+                       <apex:outputText value="{!a.act.DED_Activity_Name_Arabic__c}" />
+                   </apex:column>  
+                   <apex:column >
+                       <apex:facet name="header">
+                           <apex:outputText value="DED Activity Code" />
+                       </apex:facet>
+                       <apex:outputText value="{!a.act.DED_Activity_Code__c}" />
+                   </apex:column>  
+                   <apex:column >
+                       <apex:facet name="header">
+                           <apex:outputText value="ISIC Code" />
+                       </apex:facet>
+                       <apex:outputText value="{!a.act.ISIC_Code__c}" />
+                   </apex:column>
+                         </apex:pageblocktable>
+            </apex:facet>
+         </apex:actionStatus>
+         <div style="margin-top: 5px;">
+            <apex:outputText value="Number of Records per Page: " />
+            <apex:selectList value="{!RecPerPage}" size="1">
+               <apex:selectOptions value="{!RecPerPageOption}" />
+               <apex:actionSupport event="onchange" action="{!BuildQuery}" reRender="TablePanel" status="TableUpdateStatus" />
+            </apex:selectList>
+          </div>
+          
+           </apex:pageBlock>
+        </apex:outputText>
+        
+        <apex:inputHidden id="amsgs__c" value="{!rqDraft.amsgs__c}"/>
+        <script type="text/javascript">
+        cs['amsgs__c']=getC('{!$Component.amsgs__c}');
+        </script>
+        
+    </apex:outputPanel>
+    
+
+ <script type="text/javascript">
+     window.onload = function(e){ 
+         if('{!rqTp}' == 'n' && '{!isVw}' != 'true')
+             actChange('actno');
+         if('{!rqTp}' != 'n' && '{!isVw}' != 'true')
+         findActOnLoad();
+         }
+  </script>  
+</apex:component>

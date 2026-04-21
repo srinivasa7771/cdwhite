@@ -1,0 +1,960 @@
+<apex:component controller="gctlRequ" allowDML="true" >
+    
+    
+
+    <!-- Rerendeing start -->
+    <apex:attribute name="keyAssigned"
+                    type="String"
+                    assignTo="{!key}"
+                    description="The key given to this component so the page can easliy get access to it." required="false" />
+    
+    <apex:attribute name="PageControllerBaseCalling" 
+                    type="pgBsCtrl" 
+                    assignTo="{!pageController}" 
+                    description="The controller for the page." required="false"/>
+    <apex:attribute name="rerender" description="Hand over a list of additional element ids to rerender" type="String" required="false"/>
+    <!-- Rerendeing end-->
+    
+    <apex:attribute name="Dim" description="layout: S-Single, V-Verticle, H-Horizontal" type="String" required="false"/>   
+    <apex:attribute name="PayDone" description="" type="Boolean" required="false"/>   
+    <apex:attribute name="DocType" description="Type of documnet FOR Single Upload" type="String" assignTo="{!sDocName}" required="false"/>  
+    <script>
+     function attachmentEJARI() {
+          cs["csp__c"].value = $('#contractid').val();
+         if ($('#contractid').val() == null || $('#contractid').val() == '') {
+            $('.rqrdMsg').html('Contract number is mandatory').css('color', 'red').fadeOut().fadeIn();
+            return;
+         }
+          afs();
+      }
+    </script>   
+   <apex:actionFunction name="docValidity" action="{!updateDocValidity}" status="theStatus" rerender="p,sH,twinPp,msg" oncomplete="removeTempLoader();" />
+    
+    <apex:actionFunction name="updatePriority"  action="{!updatePrirityItm}"  rerender="fid" oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+        <apex:param name="prType" value=""/> 
+    </apex:actionFunction>
+    <apex:actionFunction name="updateInc"  action="{!updateIncItm}"  rerender="fid" oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+        <apex:param name="incType" value=""/> 
+    </apex:actionFunction>
+    <apex:actionFunction name="updateOffl"  action="{!updateOfflItm}"  rerender="fid"  oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+        <apex:param name="offType" value=""/> 
+    </apex:actionFunction>
+	<apex:actionFunction name="fetchEjariDetails"  action="{!fetchLeaseInfo}" status="theStatus" rerender="eDetails" oncomplete="showEjariDtetails('{!rq.activitiesFL__c}');">
+        <apex:param name="contractNo" value=""/> 
+    </apex:actionFunction>
+    
+    <apex:actionFunction name="reloadDocDiv" action="{!resetDoc}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocL,opDocLR"  oncomplete="javascript:stopLoader();"/>
+    <apex:actionFunction name="afdltAtt" action="{!deleteAttachment2}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocL,opDocLR"  oncomplete="javascript:stopLoader();"  />
+    <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+    <apex:InputHidden value="{!reqDocId2}" id="reqDocId2"/>
+    <apex:InputHidden value="{!docName}" id="docName"/>
+    <apex:InputHidden value="{!fileSrc}" id="fileSrc"/>
+    <apex:inputHidden id="xmamd__c" value="{!rq.xmamd__c}"  />
+	<apex:inputHidden id="xcs__c" value="{!rq.xcs__c}"  />
+    <apex:inputHidden id="xdrv__c" value="{!rq.xdrv__c}"  />
+	 <apex:inputHidden id="csp__c" value="{!rq.csp__c}"  />
+    <script type="text/javascript">
+    cs['xmamd__c']=getC('{!$Component.xmamd__c}');
+	cs['xcs__c']=getC('{!$Component.xcs__c}');
+    cs['xdrv__c']=getC('{!$Component.xdrv__c}');
+	cs['csp__c']=getC('{!$Component.csp__c}');
+    </script>
+    
+    <style>
+        .whiteDiv{
+        padding: 12px 15px;     
+        background-color: #fff;
+        border: 1px solid #E1E1E1;
+        }
+    </style>
+    
+    <script type="text/javascript">
+    function revertSaveAttEvent_mem(){
+        $('#saveAtt').unbind().removeAttr('onclick').on('click',function(){closeDialog();btnUpload_onclick('123','300','355','96');});
+    }
+    function popupDocModel_ob(lbl,typ,seq){
+        revertSaveAttEvent_mem();
+        popupDocModel(lbl,typ,seq)
+        /*currentDoc = lbl;
+        cs["docname"].value = lbl;
+        cs["reqDocId"].value = seq;
+        $('#modal_upload_lerqob').modal('show');*/
+    }
+    /*
+    function popupDocModel(lbl,typ,seq){
+        
+        //startLoader(typ);
+        currentDoc = lbl;
+        console.log('In popupDocModel() DocLabel >> '+'lbl');  
+        document.getElementById("udDocType").value = typ;//dname;
+        document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
+        document.getElementById("udDocLabel").innerHTML = lbl;
+        $('#modal_fileuploadPopUp').modal('show');
+    }*/
+    function closeDialog() {
+        // startLoader();
+        $('#modal_fileuploadPopUp').modal('hide');
+    }
+    
+    function dltAtt(a){
+        reqDocId2=document.getElementById("{!$Component.reqDocId2}");
+        reqDocId2.value=a;
+        afdltAtt();
+        reloadDocDiv();
+    };
+    
+    function spnChange(){
+        console.log('Change in reloadDocDivJS');
+        reloadDocDiv();
+        
+    }
+	function fetchEjariInfo(){
+        console.log('contract NO :'+cs['csp__c'].value);
+        fetchEjariDetails($('#contractid').val());
+    } 
+    
+    </script>
+    
+    <script>
+    (function ($) {
+        $(function () {
+            if('{!rq.crflg__c}'=='true' || '{!rq.xcs__c}' == 'true'){
+                $('#modal_Correction_submission').modal('show')
+            }
+            
+            $('#inc').change(function () { 
+                var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                if(isIncountryChecked)
+                    $('#ofl').show(); 
+                else
+                    $('#ofl').hide();
+            });
+            
+        });
+    }(jQuery));
+    </script>            
+    <apex:outputPanel id="opDoc">
+        
+        
+        <!-- Horizontal2 Look : START -->
+        
+        <!-- Horizontal2 Look : END -->
+        <!-- Horizontal3 Look : START -->
+        
+        <!-- Horizontal3 Look : END -->
+        
+             <!-- correction modal starts -->
+    <apex:outputPanel rendered="{!OR(rq.xcs__c,rq.crflg__c)}">
+        <div class="modal fade modal-base" id="modal_Correction_submission" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <apex:outputPanel rendered="true">
+                            <iframe style="min-height: 500px;width:100%" src="/apex/crtn_popup?id={!rq.id}" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                            </iframe>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </apex:outputPanel>
+    <!-- correction modal ends -->   
+        <!-- Horizontal4 Look : START -->
+        <apex:outputPanel rendered="{!if(Dim='LR',true,false)}">
+             <apex:outputPanel rendered="{!AND(rq.os__c!='CCL Accepted',rq.os__c!='PSF Approved',rq.xpmsle__c)}">
+                <p style="font-size: 1.005rem; font-weight:bold; font-style: italic;">
+                   <!--Since you have selected a PMS lease, we kindly request you to upload a copy of the EJARI document. This document can be obtained from your landlord as part of the lease agreement. For EJARI registration, please utilize your initial name approval number {!rq.xdccaRq__c}. Once you have obtained the EJARI document, please proceed to upload it along with the other necessary legal documents.-->
+                    Please upload the EJARI document. It can be obtained from your landlord as part of the lease agreement. Please utilize your initial name approval number {!rq.xdccaRq__c} for EJARI registration. 
+                </p>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!AND(OR(rq.os__c=='CCL Accepted',rq.os__c=='PSF Approved'),rq.xpmsle__c)}">
+                <p style="font-size: 1.125rem;">
+                   Partner Service Fee calculated as per below lease area
+                </p>
+                <div class="onboarding-review-table onboarding-review-table-static">
+                    <div id="popupfees">
+                         <div class="onboarding-review-toggle">
+                                        <div class="onboarding-review-row">
+                                            <span class="onboarding-review-label">Total Lease Area (SQFT)</span>
+                                            <span class="onboarding-review-value">
+                                              {!rq.xsvn__c}
+                                            </span>
+                                        </div>
+                             <div class="onboarding-review-row">
+                                            <span class="onboarding-review-label">Partner Service Fee (with VAT) </span>
+                                            <span class="onboarding-review-value">
+                                              AED {!rq.xvnum__c}
+                                            </span>
+                                        </div>
+                                    </div>
+                       
+                    </div>
+                </div>
+            </apex:outputPanel>
+           
+            <apex:outputPanel rendered="{!OR(rq.os__c=='CCL Issued',rq.os__c=='LCL Issued')}">
+                <h3>Your application has been approved ! </h3>
+                
+           <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land', rq.piFlg__c,  rq.AP__c>0)}">
+            <p style="font-size: 1.125rem;">
+                
+                We are pleased to inform you that your application for the land lease has been approved by the committee.
+
+As the next step, please accept the offer letter and proceed with the payment. You will need to upload the trustee receipt for further processing of the DLD registration.
+
+To obtain the trustee registration receipt, kindly visit the DLD department along with the  offer letter.
+                <br/>
+Once the payment is received, your application will be submitted for committee review to verify the legal terms. This process will take approximately fifteen (15) working days,to issue the Musataha agreement.
+
+Upon receiving the Musataha agreement, you will need to sign it and submit it along with post-dated cheques and any current-dated cheques (if applicable).
+
+                </p>
+                </apex:outputPanel>
+       
+                
+                <!--
+<div class="alert alert-warning-alt">
+<div class="d-flex">
+<div class="mr-4 mt-2">
+<i class="icon-high-priority warning-icon-high-priority"></i>
+</div>
+<p class="mb-0">
+Please complete all lease related requirements and accept the lease confirmation letter to proceed. 
+</p>
+</div>
+</div>
+-->
+                
+                <p>
+                    Below is the summary of documents you have submitted.
+                </p>
+                <p>
+                    Please also accept the offer letter on the left side of the page to proceed with payments
+                </p>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!OR(rq.piFlg__c)}">
+                <!--<p> In addition, please submit the original attested version of the document(s) above to your relationship manager within 60 days </p>-->
+            </apex:outputPanel>
+            
+            <apex:outputPanel id="opDocLR">
+                <apex:outputtext rendered="{!dUflg}">
+                    <div class="slds-align_absolute-center">
+                        <div class="base-collapse">
+                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                               data-target="#docs_tobesubmitted">
+                                <div class="collapse-title">DOCUMENTS TO BE SUBMITTED<br/>
+                                    <p style="color: red;animation: blink 10s infinite;font-size:12px; {!IF(AND(rq.xvtyp__c == 'DED' , rq.Acc__r.clt__c == 'Land'),'','display:none')}" >
+                                           <i>All documents need to be in coloured pdf format and attested by Dubai courts.</i></p>
+                                </div>
+                            </a>
+                            
+                            <div id="docs_tobesubmitted" class="collapse show">
+                                <div class="collapse-content">
+                                    <div class="row row-lg">
+                                        
+                                        <apex:repeat id="hr06" value="{!dasLst}" var="das" >
+                                           
+                                            <apex:outputtext rendered="{!AND(das.upload,NOT(das.d.Doc.x30gr__c),OR(ISBLANK(das.d.Doc.tplt__c),AND(NOT(ISBLANK(das.d.Doc.tplt__c)),rq.piFlg__c)))}">    
+                                          
+                                                
+                                                <div class="col-lg-6"> 
+                                                    <div class="box {!if(AND(das.d.doUp,NOT(contains(das.d.doc.lbl__c,'Attested Power of Attorney')) ),'box-danger','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                                        <apex:outputText rendered="{!AND(NOT(ISBLANK(das.d.dsc)))}">
+                                                           
+                                                          <!--<label class="fs-18">{!das.d.dsc}</label>  -->
+                                                            <apex:outputPanel rendered="{!AND(contains(das.d.dsc,'Attested Power of Attorney'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED')}">
+                                                               
+                                                                <label class="fs-18">Attested Power of Attorney (if applicable)</label>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!AND(Not(contains(das.d.dsc,'Attested Power of Attorney' )),  OR (AND(rq.xvtyp__c == 'DDA' && rq.Acc__r.clt__c == 'Land'),AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DED'), AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c != 'DED')))}">
+                                                                <label class="fs-18">{!das.d.dsc}</label>
+                                                            </apex:outputPanel>
+                                                        </apex:outputText>
+                                                        <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),ISBLANK(das.d.doc.lbl__c))}">
+                                                            <apex:outputPanel rendered="{!AND(contains(das.d.doc.lbl__c,'Attested Power of Attorney'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED')}">
+                                                                <label class="fs-18">Attested Power of Attorney (if applicable)</label>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!AND(Not(contains(das.d.doc.lbl__c,'Attested Power of Attorney')), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED')}">
+                                                                <label class="fs-18">{!If(AND(contains(das.d.doc.Name,'MoA or AoA of Parent Company'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED'), 'MoA or AoA of Company',  das.d.doc.Name)}</label>
+                                                            </apex:outputPanel>
+                                                             <apex:outputPanel rendered="{!OR (AND(rq.xvtyp__c == 'DDA' && rq.Acc__r.clt__c == 'Land'),AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DED'), AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c != 'DED'))}">
+                                                                  <label class="fs-18">{!If(AND(contains(das.d.doc.Name,'MoA or AoA of Parent Company'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED'), 'MoA or AoA of Parent Company',  das.d.doc.Name)}</label>
+                                                            </apex:outputPanel>
+                                                            <!-- <apex:outputPanel rendered="{!AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DDA')}">
+                                                                  <label class="fs-18">{!If(AND(contains(das.d.doc.Name,'MoA or AoA of Parent Company'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED'), 'MoA or AoA of Company',  das.d.doc.Name)}</label>
+                                                            </apex:outputPanel>-->
+                                                        </apex:outputText>
+                                                        <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),NOT(ISBLANK(das.d.doc.lbl__c)))}">
+                                                            <apex:outputPanel rendered="{!AND(contains(das.d.doc.lbl__c,'Attested Power of Attorney'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED')}">
+                                                                <label class="fs-18">Attested Power of Attorney (if applicable)</label>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!AND(Not(contains(das.d.doc.lbl__c,'Attested Power of Attorney')), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED')}">
+                                                                <label class="fs-18">{!If(AND(contains(das.d.doc.Name,'MoA or AoA of Parent Company'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED'), 'MoA or AoA of Company',  das.d.doc.Name)}</label>
+                                                            </apex:outputPanel> 
+                                                            <apex:outputPanel rendered="{!OR (AND(rq.xvtyp__c == 'DDA' && rq.Acc__r.clt__c == 'Land'),AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DED'), AND( rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c != 'DED'))}">
+                                                                <label class="fs-18">{!If(AND(contains(das.d.doc.lbl__c,'MoA or AoA of Parent Company'), rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED'), 'MoA or AoA of Parent Company',  das.d.doc.lbl__c)}</label>
+                                                            </apex:outputPanel>
+                                                           
+                                                        </apex:outputText>
+                                                        
+                                                        <div class="upload-field d-flex">
+                                                            <div
+                                                                 class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                <span>Choose File to Upload</span>
+                                                            </div>
+                                                            <div>
+                                                                <apex:outputText rendered="{!ISBLANK(das.d.doc.lbl__c)}">
+                                                                    <a onclick="popupDocModel_ob('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                                </apex:outputText>
+                                                                <apex:outputText rendered="{!NOT(ISBLANK(das.d.doc.lbl__c))}">
+                                                                    <a onclick="popupDocModel_ob('{!das.d.Doc.lbl__c}','{!das.d.Doc.lbl__c}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                                </apex:outputText>
+                                                            </div>
+                                                        </div>
+                                                        <!--<div class="mt-2"><apex:outputText value="{!das.d.Info}" escape="false" rendered="{!das.d.Info != ''}" /> </div> -->
+                                                        <!-- .upload-list -->
+                                                        
+                                                        <apex:outputtext rendered="{!NOT(ISBLANK(das.d.Doc.tplt__c))}">
+                                                            <apex:outputText rendered="{!das.d.Doc.Name == 'Signed Article of Association'}">
+                                                                <label class="srvNew custom-checkbox custom-checkbox-sm mb-4" id="xaoaAmd" >
+                                                                    <input type="checkbox" id="xaoaAmdid" value="xaoaAmd" onchange="xaoaAmdChange(this)" />
+                                                                    <span>customized AOA (pdf) can be downloaded. if you wish to amend the AOA , click to download the word document / disclaimer amendments to the AOA will be reviewed by the authorities before processing further. Please upload statement of incorporator along with the amended AOA.</span>
+                                                                </label>
+                                                                <apex:outputText rendered="{!rq.xmamd__c}">
+                                                                    <span>Kindly upload the Statement of the Incorporators signed by all the incorporators.</span>
+                                                                    <br/>
+                                                                    <a href="/apex/getdoccopy?lc={!rq.xdei__c}&dc=AOADOC&rg=Y" target="_blank" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                                                                </apex:outputText>  
+                                                                <apex:outputText rendered="{!NOT(rq.xmamd__c)}">
+                                                                    <br/>
+                                                                    <a href="{!das.d.Doc.tplt__c}" target="_blank" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                                                                </apex:outputText>
+                                                            </apex:outputText> 
+                                                            <apex:outputText rendered="{!das.d.Doc.Name != 'Signed Article of Association'}">
+                                                                <br/>
+                                                                <a href="{!das.d.Doc.tplt__c}" target="_blank" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                                                            </apex:outputText>
+                                                            <br/>
+                                                            
+                                                        </apex:outputtext>
+                                                    </div>
+                                                    <!-- .box -->
+                                                </div>
+                                                <!-- .col -->
+                                            </apex:outputtext>
+                                        </apex:repeat>   
+                                        <div class="separator-dashed"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputtext>
+                <apex:outputtext rendered="{!grpflg}">
+                    
+                    <div class="slds-align_absolute-center">
+                        <div class="base-collapse">
+                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                               data-target="#docs_submittlater">
+                                <div class="collapse-title">DOCUMENTS CAN BE SUBMITTED LATER</div>
+                            </a>
+                            
+                            <div id="docs_submittlater" class="collapse show">
+                                <div class="collapse-content">
+                                    
+                                    <p>The following documents can be submitted to your relationship manger within 60 days. </p>
+                                    
+                                    <div class="mb-4">
+                                        <label class="custom-checkbox" id="xdrv">
+                                            <input type="checkbox" id="xdrvid" value="xdrv" />
+                                            <span>We hereby undertake that the company will submit the required documents within 60 days and acknowledge that a Sanction will be imposed on the Company for non-submission within the grace period. </span>
+                                        </label>
+                                    </div>
+                                    <div class="row row-lg">
+                                        
+                                        <apex:repeat id="hr05" value="{!dasLst}" var="das" >
+                                            <apex:outputtext rendered="{!AND(das.upload,das.d.Doc.x30gr__c,OR(ISBLANK(das.d.Doc.tplt__c),AND(NOT(ISBLANK(das.d.Doc.tplt__c)),rq.piFlg__c)))}">    
+                                                <div class="col-lg-6">
+                                                    <div class="box {!if(das.d.doUp,'box-danger','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                                        <apex:outputText rendered="{!AND(NOT(ISBLANK(das.d.dsc)))}">
+                                                            <label class="fs-18">{!das.d.dsc}</label>
+                                                        </apex:outputText>
+                                                        <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),ISBLANK(das.d.doc.lbl__c))}">
+                                                            <label class="fs-18">{!das.d.doc.Name}</label>
+                                                        </apex:outputText>
+                                                        <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),NOT(ISBLANK(das.d.doc.lbl__c)))}">
+                                                            <label class="fs-18">{!das.d.doc.lbl__c}</label>
+                                                        </apex:outputText>
+                                                        <div class="upload-field d-flex">
+                                                            <div
+                                                                 class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                <span>Choose File to Upload</span>
+                                                            </div>
+                                                            <div>
+                                                                 <apex:outputText rendered="{!ISBLANK(das.d.doc.lbl__c)}">
+                                                                    <a onclick="popupDocModel_ob('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                                </apex:outputText>
+                                                                <apex:outputText rendered="{!NOT(ISBLANK(das.d.doc.lbl__c))}">
+                                                                    <a onclick="popupDocModel_ob('{!das.d.Doc.lbl__c}','{!das.d.Doc.lbl__c}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                                </apex:outputText>
+                                                                <!--<button class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                                
+                                                            </div>
+                                                        </div>
+                                                        <!--<div class="mt-2"><apex:outputText value="{!das.d.Info}" escape="false" rendered="{!das.d.Info != ''}" /> </div> -->
+                                                        <!-- .upload-list -->
+                                                        
+                                                        <apex:outputtext rendered="{!NOT(ISBLANK(das.d.Doc.tplt__c))}">
+                                                            <a href="{!das.d.Doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                        </apex:outputtext>
+                                                    </div>
+                                                    <!-- .box -->
+                                                </div>
+                                                <!-- .col -->
+                                            </apex:outputtext>
+                                            
+                                        </apex:repeat>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </apex:outputtext>
+                <div class="slds-align_absolute-center">
+                    <div class="base-collapse">
+                        <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                           data-target="#docs_submitted">
+                            <div class="collapse-title">DOCUMENTS SUBMITTED</div>
+                        </a>
+                        
+                        <div id="docs_submitted" class="collapse show">
+                            <div class="collapse-content">
+                                
+                                <div class="row row-lg">
+                                    
+                                    <apex:repeat id="hr04" value="{!dasLst}" var="das" >
+                                        
+                                        <apex:outputtext rendered="{!AND(NOT(das.upload),OR(ISBLANK(das.d.Doc.tplt__c),AND(NOT(ISBLANK(das.d.Doc.tplt__c)),rq.piFlg__c)))}">    
+                                            
+                                            <div class="col-lg-6">
+                                                <div class="box box-block">
+                                                    <apex:outputText rendered="{!AND(NOT(ISBLANK(das.d.dsc)))}">
+                                                        <label class="fs-18">{!das.d.dsc}</label> 
+                                                    </apex:outputText> 
+                                                    <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),ISBLANK(das.d.doc.lbl__c))}">
+                                                       
+                                                         <apex:outputpanel rendered="{!AND( rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c == 'DED' , contains(das.d.doc.Name, 'MoA or AoA of Parent Company'))}">
+                                                            MoA or AoA of Company
+                                                        </apex:outputpanel>
+                                                        <apex:outputpanel rendered="{!OR(!contains(das.d.doc.Name, 'MoA or AoA of Parent Company'),  rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DDA')}">
+                                                            <label class="fs-18">{!das.d.doc.Name}</label> 
+                                                        </apex:outputpanel>
+                                                    </apex:outputText>
+                                                    <apex:outputText rendered="{!AND(ISBLANK(das.d.dsc),NOT(ISBLANK(das.d.doc.lbl__c)))}">
+                                                        
+                                                        <apex:outputpanel rendered="{!AND( rq.Acc__r.clt__c == 'Land',  rq.xvtyp__c != 'DDA' , contains(das.d.doc.lbl__c, 'MoA or AoA of Parent Company'))}">
+                                                            MoA or AoA of Company
+                                                        </apex:outputpanel>
+                                                        <apex:outputpanel rendered="{!OR(!contains(das.d.doc.lbl__c, 'MoA or AoA of Parent Company'), rq.Acc__r.clt__c != 'Land', rq.xvtyp__c == 'DDA')}">
+                                                           <label class="fs-18">{!das.d.doc.lbl__c}</label>
+                                                        </apex:outputpanel>
+                                                    </apex:outputText>
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <i class="fa fa-check-circle text-success"></i>
+                                                            <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/servlet/servlet.FileDownload?file={!das.A.Id}');" >
+                                                                
+                                                                <apex:outputpanel rendered="{!AND( rq.Acc__r.clt__c == 'Land', rq.xvtyp__c != 'DDA', contains(das.A.Name, 'MoA or AoA of Parent Company'))}">
+                                                                    MoA or AoA of Company
+                                                                </apex:outputpanel>
+                                                                <apex:outputpanel rendered="{!OR(!contains(das.A.Name, 'MoA or AoA of Parent Company'), rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c == 'DDA')}">
+                                                                   <u>{!das.A.Name}</u>
+                                                                </apex:outputpanel>
+                                                            </a>
+                                                            <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(OR(rq.AP__c!=0,NOT(ISBLANK(rq.AP__c))),'Display:None;','')}" >
+                                                                <i class="fa fa-close"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <!--<div class="mt-2"><apex:outputText value="{!das.d.Info}" escape="false" /> </div> -->
+                                                    <!-- <div class="mt-2">Uploaded: {!das.A.createdDate} </div>-->
+                                                    
+                                                    <!-- .upload-list -->
+                                                    <apex:outputtext rendered="{!NOT(ISBLANK(das.d.Doc.tplt__c))}">
+                                                        <a href="{!das.d.Doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                    </apex:outputtext>
+                                                </div>
+                                                <!-- .box -->
+                                            </div>
+                                            <!-- .col -->
+                                        </apex:outputtext>
+                                    </apex:repeat>   
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- .row --> 
+                
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Horizontal3 Look : END -->
+        <!-- Single Look : Start -->
+        <apex:outputPanel rendered="{!if(Dim=='S',true,false)}">
+            
+            <script type="text/javascript">
+            console.log('Should Reload');
+            spnChange();
+            </script>
+            
+            <apex:outputPanel id="opDocS">
+                
+                <div class="document-uploads">
+                    <apex:repeat id="sr0" value="{!Docs}" var="D">
+                        <apex:outputPanel rendered="{!D.cnUp}">
+                            
+                            <div class="document-upload-field bg-grey-light" style="wiidth:100px;" >
+                                <label class="fs-18">{!D.Doc.Name}</label>
+                                <div class="upload-field d-flex">
+                                    <div
+                                         class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                        <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                        <span id="dropB{!D.Doc.id}{!Dim}" >Choose File to Upload</span>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel_ob('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">BROWSE</button>
+                                    </div>
+                                </div>
+                                <!-- .upload-field -->
+                            </div>
+                            
+                        </apex:outputPanel>
+                        <apex:outputPanel ><!--rendered="{!NOT(D.cnUp)}"-->
+                            <div class="document-upload-field bg-grey-light"  style="wiidth:100px;" >
+                                <label class="fs-18 text-light-2">{!D.Doc.Name}</label>
+                                <div class="upload-list">
+                                    <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                        Done
+                                        <div class="upload-list-item box box-white box-padding">
+                                            <i class="fa fa-check-circle text-success"></i>
+                                            <a style="color:#eee" class="upload-item-title text-li" onclick="filePreview('{!D.Doc.Name}','/servlet/servlet.FileDownload?file={!A.A.Id}');" ><u>{!A.A.Name}</u></a>
+                                            <a style="color:#eee" class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!A.A.Id}');};" ><i class="fa fa-close"></i></a>
+                                        </div>
+                                    </apex:repeat>
+                                </div>
+                                <!--div class="mt-2">Uploaded: {!A.A.CreatedDate} </div-->
+                            </div>
+                        </apex:outputPanel>
+                    </apex:repeat>
+                </div>
+                
+                
+                
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Single Look : END -->
+        
+    </apex:outputPanel>
+    
+    <apex:outputPanel rendered="{!AND(rq.srvc__r.name='Employee Visa (3 Years)',Dim=='S')}">
+        <div class="box box-padding box-dark p-xl-3 position-relative mt-4 mb-0">
+            <a href="#" class="side-footer-icon">
+                <i class="icon-formation"></i>
+            </a>
+            <div class="data-info mb-2">
+                <div class="data-label text-light-2 mb-0">Visa Length From CMp</div>
+                <div class="data-value text-000">3 Years</div>
+            </div>
+            <div class="data-info mb-0">
+                <div class="data-label text-light-2 mb-0">Priority</div>
+                <div class="data-value text-000">Express</div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    
+    
+    <!-- Model EJARI OCR -->
+     <div class="modal fade modal-base" id="modal_confirm_EJARI" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 85%;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Review and confirm information</h2>
+                    <p>
+                        We have captured below information from uploaded documents, please review, correct and confirm to proceed.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                       
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label>Contract Number</label>
+                                    <input type="text" maxlength="40" onkeyup="validAlphaNumeric(this)" fldname="Contract_Number" id="contractid" class="requiredFld form-control forEdit" value="" />
+                                </div>
+                            </div>
+                           <!-- <div class="col-2">
+                                <div class="form-group">
+                                    <label>&nbsp;</label><br />
+                                    <a id="fetchDetails" onclick="showTempLoader(this);fetchEjariInfo();" class="fff-Font btn btn-primary">FETCH</a>
+                                </div>
+                            </div> -->
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Account Name</label>
+                                    <input maxlength="80" type="text" fldName="Tenant_Name" id="accName" class="readOnlyElem form-control" value="" />
+                                </div>
+                            </div>
+                        </div>
+                        <apex:outputPanel id="eDetails" >
+                            <apex:outputText rendered="{!AND(rq.activitiesFL__c != null,rq.activitiesFL__c != '')}">
+                        	<div class="row">
+                                <div class="col-3">
+                                    <div class="data-info">
+                                        <div class="data-label">Building Name</div>
+                                        <div class="data-value">
+                                        	<elem id="bldName_ejari"></elem>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="data-info">
+                                        <div class="data-label">Building Owner</div>
+                                        <div class="data-value">
+                                        	<elem id="bldOwner_ejari"></elem>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="data-info">
+                                        <div class="data-label">Location Name</div>
+                                        <div class="data-value">
+                                        	<elem id="locName_ejari"></elem>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="data-info">
+                                        <div class="data-label">Contract Startdate</div>
+                                        <div class="data-value">
+                                        	<elem id="csd_ejari"></elem>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="data-info">
+                                        <div class="data-label">Contract Enddate</div>
+                                        <div class="data-value">
+                                        	<elem id="ced_ejari"></elem>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                                <div  class="">
+                                   <i class="icon-info-circle text-primary"></i>
+                                    <span id="ejari-error">Please select your registered office, which will be printed on your license. </span><br />
+                                    <span>All other offices will be printed as additional addresses.</span>
+                                </div>
+                            <table class="table table-align-middle table-ejari" id="table-ejari" data-page-length='25'>
+                                <thead>
+                                    <tr>
+                                        <th>SELECT<i class="fa text-primary"></i></th>
+                                        <th>UNIT NUMBER<i class="fa text-primary"></i></th>
+                                        <th>PROPERTY TYPE<i class="fa text-primary"></i></th>
+                                        <th>PROPERTY SUBTYPE<i class="fa text-primary"></i></th>
+                                        <th>AREA (Sqmt)<i class="fa text-primary"></i></th>
+                                        <th>AREA (Sqft)<i class="fa text-primary"></i></th>
+                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group text-right">
+                                        <label>&nbsp;</label><br />
+                                        <a id="confirmDetails" onclick="updateLease_JS(this);" class="fff-Font btn btn-primary">CONFIRM</a>
+                                    </div>
+                                </div>
+                            </div>
+                            </apex:outputText>    
+                        </apex:outputPanel>
+                            <!-- .col -->
+                           
+                            
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade modal-base" id="modal_vfs" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <h2 class="modal-title" style="margin-left: 1.8rem;" ><u><label id="mdHeader">File Preview</label></u></h2>
+                <!--
+<button type="button" class="btn btn-primary btn-icon mb-4" data-dismiss="modal"  onclick="printFile();" ><i class="icon icon-print"></i></button> -->
+                
+                <button type="button" class="close" onclick="printFile();" style="margin-right:40px;">
+                    <i class="icon icon-print" />
+                </button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body" style="padding: 0px 30px 30px;">
+                    <div class="mb-3"></div>
+                    <img src="{!fileSrc}" id='previewDiv' />
+                </div>
+                
+                <!--a href="#"  onclick="printFile();" style="align-self: flex-end;margin: 0px 30px 5px;"><u>Print</u></a-->
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_process_upload" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="process-upload-wrapper">
+                        <h2 class="mb-4">Please wait</h2>
+                        <div class="process-upload-image">
+                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/process-'+rq.acc__r.park__c+'.png')}"/>
+                            <i class="icon-process"></i>
+                        </div>
+                        <p>
+                            We are currently extracting and processing information from the uploaded image. 
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loader -->
+    
+    
+    <script type="text/javascript">
+	var ejariData = '';
+    $( document ).ready(function() {
+        $('#preloader').fadeOut();
+        $('#prTypeId').val('{!priorityType}').change();
+        
+        '{!incType}'=='true'? $("#incountryId").prop( "checked", true ): $("#incountryId").prop( "checked", false );
+        '{!incType}'=='true'? $("#ofl").show():$("ofl").hide();
+        '{!incType}'=='true' && '{!offType}'=='true'? $("#offerleterId").prop( "checked", true ): $("#offerleterId").prop( "checked", false );
+        '{!rq.xdrv__c}' == 'true' ? $("#xdrvid").prop( "checked", true ): $("#xdrvid").prop( "checked", false );
+        '{!rq.xmamd__c}' == 'true' ? $("#xaoaAmdid").prop( "checked", true ): $("#xaoaAmdid").prop( "checked", false );
+        
+        if('{!DocType}'!=''){console.log('calling Reload');spnChange(); }
+        $('#xdrv').on('change',function(){
+            var drvChk = $('input[id="xdrvid"]:checked').length > 0;
+            if(drvChk){
+                cs['xdrv__c'].value = true;
+                
+            }
+            else{
+                cs['xdrv__c'].value = false;
+                
+            }
+            $('#preloader').fadeIn();
+            showTempLoader();
+            docValidity();
+        });
+    });
+	 function showEjariDtetails(ed){
+        removeTempLoader();
+        console.log('ejari data::'+ed);
+        if(!ed){
+            $('#modal_process_upload').unbind('hidden.bs.modal').modal('hide').on('hidden.bs.modal',function(){
+                //$('#modal_confirm_EJARI').modal('show');
+            });
+            axsAlert('ERROR','Please upload valid <b>EJARI document</b>');
+            
+            return;
+        }
+        ejariData = JSON.parse(ed);
+        var tenentName = ejariData[0].tenantInformation.name.englishName;
+        
+        /* if(tenentName != '{!rq.Acc__r.Name}'){
+            console.log('tenentName:'+tenentName);
+            console.log('Acc Name:'+'{!rq.Acc__r.Name}');
+            $('#modal_process_upload').unbind('hidden.bs.modal').modal('hide');
+            axsAlert('ERROR','Approved account name not matching with Ejari. Please upload valid <b>EJARI document</b>');
+            return;
+            
+            }*/
+        $('#accName').val(ejariData[0].tenantInformation.name.englishName);
+        if(ejariData[0].contractNumber !=  null)
+          $('#contractid').val(ejariData[0].contractNumber);
+        $('#bldName_ejari').text(ejariData[0].buildingName.englishName);
+        $('#locName_ejari').text(ejariData[0].location.name.englishName);
+        $('#bldOwner_ejari').text(ejariData[0].landLordInformation.name.englishName);
+        $('#csd_ejari').text(ejariData[0].startDate);
+        $('#ced_ejari').text(ejariData[0].endDate);
+        var tBody = '',totalArea_sm=0,totalArea_sf=0;
+        for([i,v] of ejariData[0].propertyInformationList.entries()){
+            var tData = '<tr>';
+            let areaInSQF = (Number(v.area) * 10.7639).toFixed(2);
+            tData +='<td><label class="custom-radio mt-2"><input name="unitCheck" type="radio" onchange="setSelectedUnit(this)" for="'+v.unitNumber+'" class="cards" />';
+            tData +='<span>&nbsp;</span></label></td>';
+            
+            tData +='<td>'+v.unitNumber+'</td>';
+            tData +='<td>'+v.propertyType+'</td>';
+            tData +='<td>'+v.propertySubType+'</td>';
+            tData +='<td>'+v.area+'</td>';
+            tData +='<td>'+areaInSQF+'</td>';
+            tData +='</tr>';
+            tBody +=tData;
+            totalArea_sm += Number(v.area);
+            totalArea_sf += Number(areaInSQF);
+        }
+        totalArea_sm = totalArea_sm.toFixed(2);
+        totalArea_sf = totalArea_sf.toFixed(2);
+        var tData1 = '<tr><td colspan="4">Total Area</td><td>'+totalArea_sm+'</td><td>'+totalArea_sf+'</td></tr>';
+        tBody +=tData1;
+        $('#table-ejari tbody').html(tBody);
+        if(ejariData[0].propertyInformationList.length==1)
+            $('[name="unitCheck"]').prop('checked',true);
+        $('#modal_process_upload').unbind('hidden.bs.modal').modal('hide').on('hidden.bs.modal',function(){
+            $('#modal_confirm_EJARI').modal('show');
+        });
+        
+    }
+    var selectedUnit ;
+    function setSelectedUnit(e){
+    	selectedUnit = $(e).attr('for');
+    }
+    function updateLease_JS(e){
+        if($('[name="unitCheck"]').length==1){
+            $('[name="unitCheck"]').eq(0).prop('checked',true);
+        }
+    	if(!$('[name="unitCheck"]').is(':checked'))
+            $('#ejari-error').css({'color':'#E62D38'});
+        else{
+            if(rgUnit)
+             rgUnit.value = selectedUnit;
+            showTempLoader(e);
+            updateLease();
+        }
+    }
+    function xaoaAmdChange(e){
+        var aoaAmdChk = $(e).prop('checked');
+        cs['xmamd__c'].value = aoaAmdChk;
+        /*var aoaAmdChk = $('input[id="xaoaAmdid"]:checked').length > 0;
+            if(aoaAmdChk){
+                cs['xmamd__c'].value = true;
+            }
+            else{
+                cs['xmamd__c'].value = false;
+            }*/
+        showTempLoader();
+        docValidity();
+    }
+    function prTypeChange(){
+        let prVal = document.getElementById("prTypeId").value;
+        if(prVal != '{!priorityType}'){
+            axsConfirmation('Confirm','Do you want to change the priority?',true,'updatePriority',prVal);
+            $('#prTypeId').val('{!priorityType}').trigger('change');
+        }
+        // updatePriority(prVal);
+    } 
+    
+    function incChange(){
+        
+        var incVal = document.getElementById("incountryId").value;
+        
+        //if(incVal != '{!priorityType}'){
+        if($('#incountryId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to add applicant as InCountry?',true,'updateInc','true');
+            $("#incountryId").prop("checked", false); 
+        }else if(!$('#incountryId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to remove applicant as InCountry?',true,'updateInc','false');
+            $("#incountryId").prop("checked", true); 
+            $("#offerleterId").prop( "checked", false ); 
+        }
+        $('#incountryId').val('{!incType}').trigger('change');
+        //}
+        // updatePriority(prVal);
+    } 
+    function offChange(){
+        
+        let offVal = document.getElementById("offerleterId").value;
+        if($('#offerleterId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to opt for offer letter?',true,'updateOffl','true');
+            $("#offerleterId").prop( "checked", false );
+        }else if(!$('#offerleterId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to opt for offer letter?',true,'updateOffl','false');
+            $("#offerleterId").prop( "checked", true );
+        }  
+        $('#offerleterId').val('{!offType}').trigger('change');
+        //}
+        // updatePriority(prVal);
+    }
+    function filePreview(fName,src){
+        console.log('In filePreview>>'+fName);
+        fileSrc=document.getElementById("{!$Component.fileSrc}");
+        fileSrc.value=src;
+        document.getElementById("mdHeader").innerHTML = fName;
+        document.getElementById("previewDiv").src = src;
+        //$('#modal_vfs').modal('show');
+        window.open(src, '_blank');
+    }
+    function printFile(){
+        console.log('Print Image');
+        fileSrc=document.getElementById("{!$Component.fileSrc}");
+        var src=fileSrc.value;
+        console.log('fil Src>>'+ src);
+        
+        var html  = "<html><head>" +
+            "</head>" +
+            "<body  style ='-webkit-print-color-adjust:exact;'>"+
+            "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+            "</body>";
+        var win = window.open("about:blank","_blank");
+        win.document.write(html);
+        
+    }
+    </script>
+    <script type="text/javascript">
+    var currentDoc = "";
+    function startLoader(typ){
+        currentDoc = typ;//document.getElementById("udDocType").value;
+        console.log('in startLoader!!! >> '+ currentDoc);
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+    }   
+    function stopLoader(){
+        
+        currentDoc = document.getElementById("udDocType").value;
+        console.log('in startLoader!!! >> '+ currentDoc);
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').hide();
+        $('*').removeClass('loadingProgress');
+    }
+    </script>
+    
+    
+   <!-- <c:fileuploadpopupnew13 R="{!rq}"  /> -->
+    
+</apex:component>

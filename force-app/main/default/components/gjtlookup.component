@@ -1,0 +1,517 @@
+<apex:component controller="gulkpCtrl2"  >
+    <style>
+        .hidden_elem{
+        display: none !important;
+        }
+        .selectData1{
+        display:block;
+        max-height : 24em;
+        overflow-y:scroll;
+        }
+    </style>
+    <apex:attribute name="req" description="request" type="g_Req__c" required="false" assignTo="{!rq}" />
+    <apex:attribute name="rqId" description="requestId" type="String" required="false" assignTo="{!rID}" />
+    <apex:attribute name="jobId" description="jobId" type="String" required="false" assignTo="{!jId}" />
+    <apex:attribute name="attFlag" description="Boolean value for attachment" type="Boolean" required="false" assignTo="{!showAtt}" />
+    <apex:attribute name="type" description="Lookup type like job, contact, request etc" type="String" required="false" />
+    <div class="jbCustLookup">
+        <!-- Modal -->
+        <div class="modal fade modal-base" id="modal_upload_passport_jt" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 993px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        
+                        <div class="row">
+                            <div class="col-md-12 order-md-2">
+                                <div class="d-flex flex-column h-100">
+                                    <div class="mb-auto">
+                                        <h2 class="mb-4">Upload Certificate</h2>
+                                        <p>
+                                            Note: Please upload a relevant <b>Attested Certificate</b>
+                                        </p>
+                                        <p>
+                                            Note: Please ensure that the Certificate to be uploaded is in colour and the
+                                            orientation
+                                        </p>
+                                        <p id="saveText" style="display:none">
+                                            File uploaded please click on <b>SAVE</b> to Proceed.
+                                        </p>
+                                        <input type="file" onchange="checkFile_jt(this)" id="files" name="files" style="display: none;"/>
+                                        <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                                style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick_jt();">
+                                            UPLOAD CERTIFICATE
+                                        </button>
+                                        <div class="err frmErrMsg" style="display:none;">
+                                            Only PDF,JPG and JPEG Formats allowed.
+                                        </div>
+                                    </div>
+                                    <div class="text-right d-none d-md-block" >
+                                        <a onclick="saveAttachment_jt(this);" style="color: #fff;" 
+                                           class="saveAtt btn btn-primary disabled">
+                                            SAVE
+                                        </a>
+                                        <!--<button class="btn btn-primary btn-block-sm button-process-upload" id="saveAttachment">SAVE</button>-->
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- .col -->
+                        </div>
+                        <!-- .row -->
+                        <div class="text-right d-block d-md-none mt-4">
+                            <a onclick="saveAttachment_jt(this);" style="color: #fff;" 
+                               class="saveAtt btn btn-primary disabled">
+                                SAVE
+                            </a>
+                        </div>
+                        
+                    </div>
+                    <!-- .modal-body -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade modal-base" id="modal_lookup_values" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body pt-5 pb-5">
+                        <div class="mb-4 d-flex">
+                            <h3 class="modal-title">
+                                Available Job Titles
+                            </h3>
+                            
+                            <div class="search-field mb-0 ml-5" style="width: auto;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" style="min-width:10em;" placeholder="Search for Job" id="searchJT" />
+                                    <div class="input-group-append">
+                                        <div class="btn"  onclick="searchJTWithVal()">
+                                            <div class="icon-search"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="frmErrMsg2" class="frmErrMsg1" style="display:none;padding-left:0px;">
+                                    Minimun 3 characters needed to search!
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <apex:outputPanel styleClass="selectData1" id="selectData1">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50%;">NAME</th>
+                                        <th style="width: 50%;">EDUCATIONAL CERTIFICATE REQUIRED</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!jobList}" var="j">
+                                        <tr style="cursor: pointer;" onclick="setData(this);" jId="{!j.id}" jCert="{!j.rc__c}">
+                                            <td>{!j.name}</td>
+                                            <td><apex:outputLabel value="{!IF(j.rc__c=true,'YES','NO')}"></apex:outputLabel></td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6 jtLkp">
+                <div class="form-group">
+                    <apex:outputText >Job title</apex:outputText>
+                    <div class="input-group input-group-transparent" data-toggle="modal" id="jd" data-target="#modal_lookup_values">
+                        <input readonly="true" type="text" class="lookup form-control pointer requiredFld" id="serachVal" />
+                        <div class="pointer input-group-append"><!--  id="jtLkpSearch" -->
+                            <span class="input-group-text">
+                                <i class="icon-request-preference text-primary"></i><!--  data-toggle="modal" data-target="#modal_ticket_requests" -->
+                            </span>
+                        </div>
+                    </div>
+                    <div id="frmErrMsg1" class="frmErrMsg1" style="display:none">
+                        
+                    </div>
+                </div>
+            </div>
+            <apex:outputText rendered="{!AND(req.srvc__r.uid__c != '068',req.srvc__r.uid__c != '050',req.srvc__r.uid__c != '123',req.srvc__r.uid__c != '301',req.srvc__r.uid__c != '302')}">
+                <div id="vfslabel" class="form-group" style="display:none">
+                    <div class="col-lg-12">
+                        <div class="text-primary mb-auto fs-15">                               
+                            <b>
+                                AXS has forged a partnership with VFS to expedite your visa processing. Applicant no longer need to wait for an attested degree certificate while applying for an employment visa.
+                                We, in collaboration with VFS, will simultaneously handle your degree attestation alongside with the visa processing. 
+                                The attestation process will not affect your visa processing timeline.  
+                            </b>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12" id="vfsOpt" style="display:none">
+                    <div class="d-block">Would you like to apply for attestation through VFS ? </div>
+                    <div class="col-lg-12">
+                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                            <label class="custom-radio mr-4">
+                                <input type="radio" value="Yes" id="vfsYes" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                <span>Yes</span>
+                            </label>
+                        </apex:outputPanel>
+                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                            <label class="custom-radio mr-4">
+                                <input type="radio" value="No" id="vfsNo" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                <span>No</span>
+                            </label>
+                        </apex:outputPanel>
+                    </div>
+                </div> 
+            </apex:outputText>        
+             
+            
+            <!-- <span>
+<c:grqupdG type="jtLkp" req="{!rq}" />
+</span>-->
+            <apex:outputPanel id="attDetail" rendered="{!attFlag}">
+                <div class="col-lg-12 fileAtt hidden_elem">
+                    <apex:outputLabel rendered="{!A.Id=null}">
+                        <div class="box box-block">
+                            <div class="forLoader" forLoad="Attested Degree Certificate" style="display:block">
+                                <label class="fs-18 ">Attested educational certificate</label>
+                                <span class="loader_img" style="float:right;display:none">
+                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                </span>
+                            </div>
+                            <div class="upload-field d-flex">
+                                <div data-toggle="modal" data-target="#modal_upload_passport_jt" class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                    <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                    <span>Choose File to Upload</span>
+                                </div>
+                                <div>
+                                    <a class="btn btn-outline-primary btn-outline-primary-3" 
+                                       data-toggle="modal" data-target="#modal_upload_passport_jt"
+                                       >BROWSE</a>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputLabel>
+                </div> 
+                <!-- A. --- {!A}-->
+                <div class="col-lg-12">
+                    <apex:outputLabel rendered="{!A.Id!=null}">
+                        <div class="box box-block " style="display:none;"><!-- added disply:none, to hide as we added this doc in left panel -->
+                            <label class="fs-18"><a href='/servlet/servlet.FileDownload?file={!A.id}'>Attested educational certificate</a></label>
+                            <div class="upload-list">
+                                <div class="upload-list-item box box-white box-padding">
+                                    <i class="fa fa-check-circle text-success"></i>
+                                    <span class="upload-item-title">Attested educational certificate</span>
+                                    <a style="cursor:pointer !important" onclick="delAtt();" class="upload-item-remove"><i class="fa fa-close"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputLabel>
+                </div>
+            </apex:outputPanel>
+        </div>
+        
+        
+        <apex:outputPanel id="selectData">
+            <apex:actionFunction name="loadData_jt" action="{!init}" oncomplete="removeEmptyLables();getData()" rerender="dummy,selectData1,attDetail">
+            </apex:actionFunction>
+            <apex:actionFunction name="sdraft1" action="{!saveDraft}" oncomplete="" rerender="attDetail"><!--$('#preloader').fadeOut();removeEmptyLables();-->
+                <apex:param name="lkp"  value=""/>
+            </apex:actionFunction>
+            <apex:actionFunction name="dummy"  action="{!updateRequest}" oncomplete="setData()" rerender="selectData">
+            </apex:actionFunction>
+            <apex:actionFunction name="jobSrch" action="{!searchJobTitles}"  oncomplete="showLkpModel();hideTempLoader_input();" rerender="selectData,selectData1"><!-- changed -->
+                <apex:param name="title" assignTo="{!title}" value=""/>
+            </apex:actionFunction>
+            <apex:actionFunction name="insertAtt" action="{!insertAttachment}" oncomplete="removeEmptyLables();" rerender="attDetail">
+            </apex:actionFunction>
+            <apex:actionFunction name="deleteAtt"  action="{!deleteAttachment}" oncomplete="$('#preloader').fadeOut();removeEmptyLables();" rerender="attDetail">
+            </apex:actionFunction>
+            
+            <!-- this action function can be called from javascript
+<apex:actionFunction name="updatevfsFlag" action="{!updateVfsField}" rerender="vfsLabel,vfsOpt">
+<apex:param name="vfsFlagValue" assignTo="{!vfsFlagValue}" value="" />
+</apex:actionFunction>
+-->
+        </apex:outputPanel>
+        <apex:outputPanel id="dummy">
+            
+            <!--jobString --- {!jobString}-->
+            <apex:inputHidden id="jobString" value="{!jobString}"/>
+            <apex:inputHidden id="selectedJobTitle" value="{!selectedJobTitle}"/>
+            
+            <!--<apex:inputHidden id="certFlag" value="{!certFlag}"/>-->
+            <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+            <apex:inputHidden id="docname" value="{!docname}" />
+            <apex:inputHidden id="xcjb__c" value="{!rq.xcjb__c}" />
+            <apex:inputHidden id="vfsFlag__c" value="{!rq.vfsFlag__c}" />
+            <apex:inputHidden id="rc__c" value="{!requiresCert}" />
+            <!--<apex:inputHidden id="rc__c" value="{!rq.Tech_rc__c}" />-->
+            <br />
+            <!-- num---- {!rq.name}<br />
+id---- {!rq.id}<br />
+job---- {!rq.xcjb__c}<br />-->
+            <script>
+            cs["xcjb__c"] = document.getElementById("{!$Component.xcjb__c}");
+            cs['attDetail']=document.getElementById('{!$Component.attDetail}');
+            cs['jobString']=document.getElementById('{!$Component.jobString}');
+            cs['selectedJobTitle']=document.getElementById('{!$Component.selectedJobTitle}');
+            // cs['certFlag']=document.getElementById('{!$Component.certFlag}');
+            cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+            cs["docname"] = document.getElementById("{!$Component.docname}");
+            cs["vfsFlag__c"] = document.getElementById("{!$Component.vfsFlag__c}");
+            cs["rc__c"] = document.getElementById("{!$Component.rc__c}");
+            /* 
+            document.getElementById("currentImage").value = 'Attested Degree Certificate';*/
+            </script>
+        </apex:outputPanel>
+    </div>
+    <script>
+    
+    $(document).ready(function(){
+        console.log('gjtlookup ready fct');
+        setTimeout(function(){loadData_jt();},500);
+        //check if job title requires a certif ( if rq.xcjb__r_.rc__c == true)
+        // console.log('within ready fct');
+        
+    });
+    
+    $('#jtLkpSearch').unbind().on('click',function(){
+        showTempLoader_input('#serachVal');
+        let sv = $('#serachVal').val();
+        console.log('in jtl...!');
+        $("#searchJT").val(sv);
+        jobSrch(sv);
+    });
+    function showLkpModel(){
+        if(!$('#modal_lookup_values').is(':visible'));
+        $('#modal_lookup_values').modal('show');
+    }
+    function searchJTWithVal(elem){
+        let v = $("#searchJT").val();
+        if(v!=undefined&&v!=null&&v.length>2){
+            $('#frmErrMsg2').hide();
+            console.log('before job srch');
+            jobSrch(v);
+            console.log('after job srch');
+            showTempLoader_input('#searchJT');
+            
+        }
+        else
+            $('#frmErrMsg2').show();
+    }
+    function setData(elem){
+        removeValError($('#serachVal'));
+        let id = $(elem).attr('jId');
+        let c = $(elem).attr('jCert');
+        //to display vfs section without using controller
+        //cs['certFlag'].value=c;
+        if(c=='true'){
+            $('#vfslabel,#vfsOpt').show();
+            //document.getElementById("vfslabel").style.display='block';
+            //document.getElementById("vfsOpt").style.display='block';  
+        }else{
+            $('#vfslabel,#vfsOpt').hide();
+            //document.getElementById("vfslabel").style.display='none';
+            //document.getElementById("vfsOpt").style.display='none'; 
+        }
+        let n = $(elem).find('td').eq(0).text();
+        $('#serachVal').val(n);
+        $('.modal-backdrop').hide();
+        $('#modal_lookup_values').modal('hide');
+        if(cs['xcjb__c'].value == id)
+            return;
+        cs['selectedJobTitle'].value = n;
+        cs['xcjb__c'].value = id;
+        if(c=='true'){
+            //$('.fileAtt').removeClass('hidden_elem');
+        }
+        else{
+            $('.fileAtt').addClass('hidden_elem');
+        }
+        if('{!type}' != 'ritem'){
+            //$('#preloader').fadeIn();
+            addTLoaders('#serachVal');
+            saveReqDraft3();
+            //sdraft1();
+        }
+    }
+    function getData(){
+        
+        if(!cs["jobString"].value){
+            $('#jd').attr('data-target','#modal_lookup_values');
+            return;
+        }
+        let jobData = JSON.parse(cs["jobString"].value)[0];
+        let id = jobData.Id;
+        let requires_certificate = jobData.rc__c;
+        let n = jobData.Name;
+        //var requires_certificate = cs["rc__c"].value;
+        console.log('before reqid');         
+        var req_uid = '{!rq.srvc__r.uid__c}';
+        console.log('reqid' + req_uid);
+        if(requires_certificate && (req_uid != '306' && req_uid != '105' && req_uid != '106' && req_uid != '016' && req_uid != '055' && req_uid != '305')){
+            $('#vfslabel,#vfsOpt').show();
+            //document.getElementById("vfslabel").style.display='block';
+            //document.getElementById("vfsOpt").style.display='block';  
+            //check if vfs flag field is yes or no and check the one of them (for draft and open requests) 
+            if (cs["vfsFlag__c"].value === 'true'){
+                //update the vfs input radio with checked  
+                $('#vfsYes').prop('checked',true);
+                //var vfsYes = document.getElementById("vfsYes");
+                //vfsYes.checked = true;
+            }
+            if (cs["vfsFlag__c"].value === 'false'){
+                //update the vfs input radio with checked
+                $('#vfsNo').prop('checked',true);
+                //var vfsNo = document.getElementById("vfsNo");
+                //vfsNo.checked = true;
+            }
+        }
+        //if(('{!rq.acc__r.Legal_Framework__c}'!='Freelancer')||('{!rq.acc__r.Legal_Framework__c}'=='Freelancer'  && jobData.aff__c == true) ){
+        if (req_uid == '301') $('#serachVal,#jtRo').val(n);
+        else $('#serachVal').val(n);
+        $('#modal_lookup_values').modal('hide');
+        cs['selectedJobTitle'].value = n;
+        cs['xcjb__c'].value = id;
+        if(c==true){
+            
+            //$('.fileAtt').removeClass('hidden_elem');
+        }
+        else{
+            $('.fileAtt').addClass('hidden_elem');
+        }
+        //('{!rq.acc__r.Legal_Framework__c}'=='Freelancer')?$('#jd').attr('data-target','#modal_lookup_values'):'';
+        /*}
+        else{
+            $('#jd').attr('data-target','#modal_lookup_values');
+        }*/
+    }
+    function delAtt(){
+        var f = $('#files')[0].files[0];
+        var ch="Are You sure to <b>Delete</b>";
+        var cb="Once you delete this attachment, you may need to re upload!";
+        axsConfirmation(ch,cb,true,'deleteAtt',[]);
+        /*if (r == true) {
+            $('body').css('pointer-events','none;');
+            deleteAtt();
+        }*/
+    }
+    function sdraft(){
+        let v = $('#serachVal').val();
+        let v1 = cs['selectedJobTitle'].value;
+        
+        if(v!=v1){
+            $('.jtLkp').find('#frmErrMsg1').html('** Selected look up value has changed!').show();
+        }
+        else{
+            
+            $('#preloader').fadeIn();
+            sdraft1(cs["xcjb__c"].value);
+            $('.jtLkp').find('#frmErrMsg1').hide();
+        }
+    }
+    
+    // for document upload
+    var base64String;
+    function handleBrowseClick_jt(){
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    function checkFile_jt(e){
+        //showPrview(e);
+        var f = $('#files')[0].files[0];
+        let ext = f.name.split('.')[f.name.split('.').length-1];
+        if(ext!='pdf'&&ext!=='jpg'&&ext!=='jpeg'){
+            $('#saveText').css('color','#E62D38').html('Only <b>PDF</b>,<b>JPG</b> and <b>JPEG</b> Formats allowed.').fadeIn().fadeOut().fadeIn().fadeOut().fadeIn();
+            return;
+        }
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ //showPrview(e);
+            $('#saveText').css('color','#000').html('File uploaded please click on <b>SAVE</b> to Proceed.').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    function showPrview_jt(elem) {
+        var f = $('#files')[0].files[0];
+        var t;
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                t =f.name.split('.')[1];
+            }
+        }(f);
+        reader.readAsBinaryString(f);
+    }
+    function saveAttachment_jt(elem) {
+        if($(elem).hasClass('disabled')) return;
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_jt();
+            //document.getElementById('files').addEventListener('change', handleFileSelect, false);
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function delAtt(){
+        var f = $('#files')[0].files[0];
+        var ch="Are You sure to <b>Delete</b>";
+        var cb="Once you delete this attachment, you may need to re upload!";
+        axsConfirmation(ch,cb,true,'deleteAtt',[]);
+    }
+    function handleFileSelect_jt(evt) {
+        var f = $('#files')[0].files[0];
+        $('[forLoad="Attested Certificate"]').find('.loader_img').show();
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                var binaryData = e.target.result;
+                base64String = window.btoa(binaryData);
+                cs["imageBase64"].value = base64String;
+                cs["docname"].value="Attested Degree Certificate";
+                $('#fName').html(f.name);
+                $('#fileAttDet').show();
+                insertAtt();
+                $('#modal_upload_passport_jt').modal('hide');
+                $('.modal-backdrop').remove();
+            }
+        }(f);
+        reader.readAsBinaryString(f);
+    }
+    
+    
+    function vfsOnChange() {/*MR - 25.03.25 */
+        console.log('---------entering on change method------');
+        var vfsOption = $("input[name='vfsOption']:checked").val();
+        cs["vfsFlag__c"].value = false;
+        if (vfsOption == 'Yes') {
+            cs["vfsFlag__c"].value = true;
+            if (cs['xadh__c'] != null) {
+                var adh = cs['xadh__c'].value;
+                if (!adh.includes('vfs;')) {
+                    cs['xadh__c'].value += 'vfs;';
+                    console.log('adhocvalues::' + cs['xadh__c'].value);
+                } 
+            }
+        }
+        else{
+            cs["vfsFlag__c"].value = false;
+            cs['xadh__c'].value = cs['xadh__c'].value.replaceAll('vfs;', '');
+        }
+        console.log('vfs option returned' + cs["vfsFlag__c"].value);
+        console.log(' cs["xadh__c"].value -- ' + cs['xadh__c'].value);
+    }
+    
+    
+    </script>
+</apex:component>

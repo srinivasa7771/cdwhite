@@ -1,0 +1,998 @@
+<apex:page cache="false" controller="grp_NonVisaServiceReportController" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="AXS" >
+    <html>
+        <head>
+            <title>AXS</title>
+            <style>
+                [hidden="0"],[hidden=false] {
+                display: block !important;
+                }
+            </style>
+        </head>
+        <script type="text/javascript">
+        function reloadDIV () {
+            alert('inside reloadDiv');
+        }
+        function loadTabData(){
+            renderTab2PassData();
+            renderTab2PermitData();
+        }
+        function getNxtOneYrData(filterVal){
+            if(filterVal=='nxtOneYear')
+                Nxt1YrData();
+            if(filterVal=='lastMonth')
+                lstMonthData();
+            if(filterVal=='last3Month')
+                lst3MonthData();
+            if(filterVal=='last6Month')
+                lst6MonthData();
+            if(filterVal=='last12Month')
+                lst12MonthData();
+        }
+        </script>
+        <apex:form id="frm">
+            <apex:messages id="errorMsg"/>
+            <apex:actionfunction name="onChangeDate1Method" action="{!valueupdateDate1}" rerender="datepicker1">
+                <apex:param name="dat1FromVf" value=""/>
+            </apex:actionfunction>
+            <apex:actionfunction name="onChangeDate2Method" action="{!valueupdateDate2}" rerender="datepicker2">
+                <apex:param name="dat2FromVf" value=""/>
+            </apex:actionfunction>
+            <apex:actionfunction name="onChangeDate3Method" action="{!valueupdateDate3}" rerender="datepicker3">
+                <apex:param name="dat3FromVf" value=""/>
+            </apex:actionfunction>
+            <apex:actionfunction name="onChangeDate4Method" action="{!valueupdateDate4}" rerender="datepicker4">
+                <apex:param name="dat4FromVf" value=""/>
+            </apex:actionfunction>
+            <apex:actionfunction name="onChangePay1Method" action="{!valuepay1}" rerender="dummyDiv">
+                <apex:param name="pay1Val" value=""/>
+            </apex:actionfunction>
+            <apex:actionfunction name="renderTab2PassData" action="{!passportChangeMethod}" rerender="passportSection"></apex:actionfunction>
+            <apex:actionfunction name="renderTab2PermitData" action="{!rpChangeMethod}" rerender="rpSection"></apex:actionfunction>
+            <apex:actionfunction name="Nxt1YrData" action="{!nxtOneYrData}" rerender="transTable,dateVal34"></apex:actionfunction>
+            <apex:actionfunction name="lstMonthData" action="{!lastMonthData}" rerender="transTable,dateVal34"></apex:actionfunction>
+            <apex:actionfunction name="lst3MonthData" action="{!last3MonthData}" rerender="transTable,dateVal34"></apex:actionfunction>
+            <apex:actionfunction name="lst6MonthData" action="{!last6MonthData}" rerender="transTable,dateVal34"></apex:actionfunction>
+            <apex:actionfunction name="lst12MonthData" action="{!last12MonthData}" rerender="transTable,dateVal34"></apex:actionfunction>
+            <body onload="removeUnwantedCSS()">
+                <div id="main">
+                    <div id="page_content">
+                        <div class="container">
+                            <div class="page-header">
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li>
+                                    <li class="breadcrumb-item">Reports</li>
+                                </ul>
+                                <!-- .breadcrumb -->
+                                <h1 class="page-title">REPORTS</h1>
+                            </div>
+                            <!-- .page-header -->
+                            <div class="row">
+                                <div class="col-xl-3 col-lg-4 col-md-6">
+                                    <div class="report-counter">
+                                        <i class="icon-total-employees text-primary"></i>
+                                        <div>
+                                            <div class="counter-number">{!TotalEmployeeCount}</div>
+                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">TOTAL EMPLOYEES</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6" style="{!IF(showStudentThings,'display:block','display:none')}">
+                                    <div class="report-counter">
+                                        <i class="icon-sponsored-employee text-primary"></i>
+                                        <div>
+                                            <div class="counter-number">{!TotalStudentCount}</div>
+                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">TOTAL STUDENTS</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-3 col-lg-4 col-md-6">
+                                    <div class="report-counter">
+                                        <i class="icon-globe text-primary"></i>
+                                        <div>
+                                            <div class="counter-number">{!nationCount}</div>
+                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">TOTAL NATIONALITIES</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-4"></div>
+                            <div class="row">
+                                <div class="col-xl-12 mb-xl-0 mb-4">
+                                    <div class="tabs accordion-tabs tabs-3">
+                                        <ul class="nav nav-tabs" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" data-toggle="tab" href="#tab_1">
+                                                    {!IF(showStudentThings,'EMPLOYEES/STUDENTS','EMPLOYEES')}
+                                                    <i class="tab-icon icon-account"></i>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#tab_2" onclick="loadTabData();">
+                                                    EXPIRY DATES 
+                                                    <i class="tab-icon icon-expiry-date"></i>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" style="{!IF(hidTab,'display:none','display:block')}">
+                                                <a class="nav-link" data-toggle="tab" href="#tab_3">
+                                                    PAYMENTS / STATMENTS
+                                                    <i class="tab-icon icon-payment-statement"></i>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                        <!-- .nav-tabs -->
+                                        <div class="accordion" id="app_accordion">
+                                            <div class="tab-content">
+                                                <!-- #tab_1 -->
+                                                <div class="accordion-item open tab-pane fade show active" id="tab_1">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_1">
+                                                            <i class="tab-icon icon-account"></i>&nbsp;
+                                                            {!IF(showStudentThings,'EMPLOYEES / STUDENT','EMPLOYEES')}
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_1" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <div class="d-md-flex pt-4">
+                                                                <h2 class="mb-2">EXPORT ALL DATA</h2>
+                                                                <div class="ml-auto">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!exportAllSelVal}" id="exportAllFilter" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!Allvalues}"/>
+                                                                                <apex:actionSupport event="onchange" reRender="allDataSec"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <apex:pageBlock id="allDataSec" >
+                                                                        <div class="ml-4 mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="{!exportAllSelVal}"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="AllData"/>
+                                                                                <apex:param assignTo="{!ptEmp}" name="myparm3" value="ptData"/>
+                                                                            </apex:commandLink>
+                                                                            </div>
+                                                                        </apex:pageBlock>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <hr class="mb-5"/>
+                                                            <h2 class="mb-3">AGE RANGE</h2>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!ageSelectedValue}" id="ageFilterVal" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!Allvalues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!ageChangeMethod}" reRender="AgeSection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="Age__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <apex:pageBlock id="AgeSection" >
+                                                                <div class="row" style="width:100%;">
+                                                                    <div class="col-xl-6">
+                                                                        <apex:chart data="{!ChartData.ageRangeData.grData}" height="334px" width="100%" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af" animate="true">
+                                                                            <apex:axis position="left" fields="peopleCount" grid="true" gridFill="true" type="Numeric"/>
+                                                                            <apex:axis position="bottom" fields="Range" grid="true" type="Category">
+                                                                            </apex:axis>
+                                                                            <apex:barSeries orientation="vertical" axis="left" xField="Range" yField="peopleCount" colorsProgressWithinSeries="true" tips="true" title="peopleCount" >
+                                                                                <apex:chartTips height="28" width="120" />
+                                                                            </apex:barSeries>
+                                                                        </apex:chart>
+                                                                        <div class="mb-3"></div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.ageRangeData.totalAvg} <small class="fs-16">YEARS</small></div>
+                                                                            <div class="counter-label fs-16 text-light initialism" style="color: #9B9B9B !important;">AVG. AGE OF {!ageSelectedValue}s</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.ageRangeData.largestNumber} <small class="fs-16">YEARS</small></div>
+                                                                            <div class="counter-label fs-16 text-light initialism" style="color: #9B9B9B !important;">OLDEST {!ageSelectedValue}</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.ageRangeData.smallestNumber} <small class="fs-16">YEARS</small></div>
+                                                                            <div class="counter-label fs-16 text-light initialism" style="color: #9B9B9B !important;">YOUNGEST {!ageSelectedValue}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <table class="table table-report-sm">
+                                                                            <thead style="background-color: white; !important">
+                                                                                <tr>
+                                                                                    <th>Age Range</th>
+                                                                                    <th>#</th>
+                                                                                    <th style="text-align: center; !important">%</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <apex:repeat value="{!ChartData.ageRangeData.grData}" var="string">
+                                                                                    <tr>
+                                                                                        <td>
+                                                                                            <apex:outputText value="{!string.Range}" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <apex:outputText value="{!string.peopleCount}" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                        <td style="text-align: center; !important">
+                                                                                            <apex:outputText value="{!string.peoplePercent}%" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </apex:repeat>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                </div>
+                                                            </apex:pageBlock>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                        <!-- .accordion-content-inner -->
+                                                        <div class="accordion-content-inner">
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <h2 class="mb-3">GENDER</h2>
+                                                                </div>
+                                                                <!-- .col -->
+                                                                <div class="col-xl-6">
+                                                                    <h2 class="mb-3">ROLE</h2>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!genderSelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!Allvalues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!genderChangeMethod}" reRender="genderSection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="Gender__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!TypeSelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!EmpTypeDropValues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!typeChangeMethod}" reRender="empTypeSection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="rol__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <apex:pageBlock id="genderSection">
+                                                                        <apex:chart data="{!ChartData.genderData.BarGrData}" height="330px" width="100%" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af" background="#FFFFFF">
+                                                                            <apex:legend position="right"/>
+                                                                            <apex:pieSeries dataField="peopleCountParam" labelField="RangeParam" donut="40" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af" highlight="true">
+                                                                                <apex:chartTips height="28" width="120" />
+                                                                                <apex:chartLabel display="none" />
+                                                                            </apex:pieSeries>
+                                                                        </apex:chart>
+                                                                    </apex:pageBlock>
+                                                                    <div class="mb-3"></div>
+                                                                </div>
+                                                                <div class="col-xl-6">
+                                                                    <apex:pageBlock id="empTypeSection">
+                                                                        <apex:chart data="{!ChartData.employeeTypeData.BarGrData}" height="350px" width="100%" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af">
+                                                                            <apex:legend position="right"/>
+                                                                            <apex:pieSeries dataField="peopleCountParam" donut="40" labelField="RangeParam" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af" highlight="true" >
+                                                                            <apex:chartTips height="28" width="120" />
+                                                                                <apex:chartLabel display="none" />
+                                                                                </apex:pieSeries>
+                                                                        </apex:chart>
+                                                                    </apex:pageBlock>
+                                                                    <div class="mb-3"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                        <!-- .accordion-content-inner -->
+                                                        <div class="accordion-content-inner" style="{!IF(hidTab,'display:none','display:block')}">
+                                                            <h2 class="mb-3">SALARY RANGE</h2>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!salarySelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!SalDropValues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!salaryChangeMethod}" reRender="salarySection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="mgs__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <apex:pageBlock id="salarySection">
+                                                                <div class="row">
+                                                                    <div class="col-xl-6">
+                                                                        <apex:chart data="{!ChartData.salaryRangeData.grData}" height="334px" width="100%" colorSet="#7b9a95,#807a86,#b7a2a0,#8e7392,#979b83,#8896af" animate="true" theme="Salesforce">
+                                                                            <apex:axis position="left" fields="peopleCount" grid="true" gridFill="true" type="Numeric"/>
+                                                                            <apex:axis position="bottom" fields="Range" grid="true" type="Category">
+                                                                            </apex:axis>
+                                                                            <apex:barSeries orientation="vertical" axis="left" xField="Range" yField="peopleCount" colorsProgressWithinSeries="true">
+                                                                                <apex:chartTips height="28" width="120" />
+                                                                            </apex:barSeries>
+                                                                        </apex:chart>
+                                                                        <div class="mb-3"></div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">
+                                                                                <apex:outputText value="{0, number, ###,###,##0}">
+                                                                                    <apex:param value="{!ChartData.salaryRangeData.totalAvg}"/>
+                                                                                </apex:outputText>
+                                                                                <!--{!ChartData.salaryRangeData.totalAvg} -->
+                                                                                <small class="fs-16">AED</small>
+                                                                            </div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">AVG SALARY</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">
+                                                                                <apex:outputText value="{0, number, ###,###,##0}">
+                                                                                    <apex:param value="{!ChartData.salaryRangeData.largestNumber}"/>
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <small class="fs-16">AED</small>
+                                                                            </div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">HIGHEST SALARY</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">
+                                                                                <apex:outputText value="{0, number, ###,###,##0}">
+                                                                                    <apex:param value="{!ChartData.salaryRangeData.smallestNumber}"/>
+                                                                                </apex:outputText>
+                                                                                 
+                                                                                <small class="fs-16">AED</small>
+                                                                            </div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">LOWEST SALARY</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <table class="table table-report-sm">
+                                                                            <thead style="background-color: white; !important">
+                                                                                <tr>
+                                                                                    <th>Salary Range</th>
+                                                                                    <th>#</th>
+                                                                                    <th style="text-align: center; !important">%</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <apex:repeat value="{!ChartData.salaryRangeData.grData}" var="string">
+                                                                                    <tr>
+                                                                                        <td>
+                                                                                            <apex:outputText value="{!string.Range}" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <apex:outputText value="{!string.peopleCount}" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                        <td style="text-align: center; !important">
+                                                                                            <apex:outputText value="{!string.peoplePercent}%" />
+                                                                                            <br/>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </apex:repeat>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                </div>
+                                                            </apex:pageBlock>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                        <!-- .accordion-content-inner starts-->
+                                                        <div class="accordion-content-inner">
+                                                            <h2 class="mb-3">COUNTRIES</h2>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!countrySelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!Allvalues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!countryChangeMethod}" reRender="countrySection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="nc__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <apex:pageBlock id="countrySection">
+                                                                <div class="row">
+                                                                    <div class="col-xl-8 col-lg-7">
+                                                                        <img src="{!URLFOR($Resource.assets_NUI, '/images/map.png')}" alt=""/>
+                                                                        <div class="mb-3"></div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    
+                                                                        <div class="col-xl-4 col-lg-5">
+                                                                            <table class="table table-report-sm mb-0">
+                                                                                <thead style="background-color: white; !important"> 
+                                                                                    <tr>
+                                                                                        
+                                                                                        <th style="width: 60%;">Country</th>
+                                                                                        <th style="width: 20%;">#</th>
+                                                                                        <th style="width: 20%; text-align: center; !important">%</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                            </table>
+                                                                            <div class="custom-scroll" style="height: 480px;">
+                                                                                <table class="table table-report-sm">
+                                                                                    <thead>
+                                                                                        <tr>
+                                                                                            <th style="padding: 0;width: 60%;"></th>
+                                                                                            <th style="padding: 0;width: 20%;"></th>
+                                                                                            <th style="padding: 0;width: 20%;"></th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        
+                                                                                        <apex:repeat value="{!ChartData.countryData.grData}" var="string">
+                                                                                            <tr>
+                                                                                                <td>
+                                                                                                    <apex:outputText value="{!string.Range}" />
+                                                                                                    <br/>
+                                                                                                </td>
+                                                                                                <td>
+                                                                                                    <apex:outputText value="{!string.peopleCount}" />
+                                                                                                    <br/>
+                                                                                                </td>
+                                                                                                <td style="text-align: center; !important">
+                                                                                                    <apex:outputText value="{!string.peoplePercent}%" />
+                                                                                                    <br/>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        </apex:repeat>
+                                                                                            
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    
+                                                                    <!-- .col -->
+                                                                </div>
+                                                                </apex:pageBlock>
+                                                        </div>
+                                                        <!-- .accordion-content-inner ends-->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_1 -->
+                                                <!-- #tab_2 -->
+                                                <div class="accordion-item open tab-pane fade" id="tab_2">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_2">
+                                                            <i class="tab-icon icon-account"></i>&nbsp;
+                                                            EXPIRY DATES
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_2" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <h2 class="mb-3">PASSPORTS</h2>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!passSelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!AllValues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!passportChangeMethod}" reRender="passportSection"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="p__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <apex:pageBlock id="passportSection">
+                                                                <div class="row">
+                                                                    <div class="col-xl-9">
+                                                                        <apex:chart data="{!ChartData.passportData.BarGrData}" height="334px" width="100%" colorSet="#b7a2a0" animate="true">
+                                                                            <apex:axis position="left" fields="peopleCountParam" grid="true" gridFill="true" type="Numeric"/>
+                                                                            <apex:axis position="bottom" fields="RangeParam" grid="true" type="Category">
+                                                                            </apex:axis>
+                                                                            <apex:barSeries orientation="vertical" axis="left" xField="RangeParam" yField="peopleCountParam" tips="true">
+                                                                                <apex:chartTips height="28" width="120" />
+                                                                            </apex:barSeries>
+                                                                        </apex:chart>
+                                                                        <div class="mb-3"></div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.passportData.totalAvg} <small class="fs-16">PASSPORTS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING TODAY</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.passportData.largestNumber} <small class="fs-16">PASSPORTS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING IN NEXT 30 DAYS</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.passportData.smallestNumber} <small class="fs-16">PASSPORTS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING THIS YEAR</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <!-- .col -->
+                                                                </div>
+                                                            </apex:pageBlock>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                        <!-- .accordion-content-inner -->
+                                                        <div class="accordion-content-inner">
+                                                            <apex:pageBlock id="idorRP">
+                                                                <h2 class="mb-3" style="{!IF(showIdCardData , 'display:none' , 'display:block')}">RESIDENCE VISAS</h2>
+                                                                <h2 class="mb-3" style="{!IF(showIdCardData , 'display:block' , 'display:none')}">ID CARD</h2>
+                                                            </apex:pageBlock>
+                                                            <div class="row">
+                                                                <div class="col-xl-6">
+                                                                    <div class="d-flex form-style">
+                                                                        <div class="form-group" style="width: 300px;">
+                                                                            <apex:selectList value="{!rpSelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                                <apex:selectOptions value="{!AllValues}"/>
+                                                                                <apex:actionSupport event="onchange" action="{!rpChangeMethod}" reRender="rpSection,idorRP"/>
+                                                                            </apex:selectList>
+                                                                        </div>
+                                                                        <div class="ml-auto mt-1">
+                                                                            <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                                <apex:param assignTo="{!filterVal}" name="myparm1" value="Employee-Non Sponsored-Student-Spouse-Child"/>
+                                                                                <apex:param assignTo="{!fieldVal}" name="myparm2" value="rp__c"/>
+                                                                            </apex:commandLink>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <apex:pageBlock id="rpSection">
+                                                                <div class="row">
+                                                                    <div class="col-xl-9">
+                                                                        <apex:chart data="{!ChartData.rpData.BarGrData}" height="334px" width="100%" colorSet="#b7a2a0" animate="true" theme="Salesforce">
+                                                                            <apex:axis position="left" fields="peopleCountParam" grid="true" gridFill="true" type="Numeric"/>
+                                                                            <apex:axis position="bottom" fields="RangeParam" grid="true" type="Category">
+                                                                            </apex:axis>
+                                                                            <apex:barSeries orientation="vertical" axis="left" xField="RangeParam" yField="peopleCountParam">
+                                                                                <apex:chartTips height="28" width="120" />
+                                                                            </apex:barSeries>
+                                                                        </apex:chart>
+                                                                        <div class="mb-3"></div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <div class="col-xl-3">
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.rpData.totalAvg} <small class="fs-16">VISAS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING TODAY</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.rpData.largestNumber} <small class="fs-16">VISAS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING IN NEXT 30 DAYS</div>
+                                                                        </div>
+                                                                        <div class="report-counter report-counter-sm">
+                                                                            <div class="counter-number">{!ChartData.rpData.smallestNumber} <small class="fs-16">VISAS</small></div>
+                                                                            <div class="counter-label fs-16 text-light" style="color: #9B9B9B !important;">EXPIRING THIS YEAR</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- .col -->
+                                                                    <!-- .col -->
+                                                                </div>
+                                                            </apex:pageBlock>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_2 -->
+                                                <!-- #tab_3 -->
+                                                <div class="accordion-item open tab-pane fade" id="tab_3">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_3">
+                                                            <i class="tab-icon icon-account"></i>&nbsp;
+                                                            PAYMENTS / STATEMENTS
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_3" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <h2 class="mb-3">STATEMENT OF ACCOUNT</h2>
+                                                            <div class="form-horizontal form-style">
+                                                                <div class="form-group mr-3">
+                                                                    <label>&nbsp;</label>
+                                                                    <apex:selectList value="{!paySelectedValue}" size="1" styleClass="form-control input-select2-flat" onchange="onChangePay1Method(this.value);">
+                                                                        <apex:selectOptions value="{!payDropValues}"></apex:selectOptions>
+                                                                    </apex:selectList>
+                                                                </div>
+                                                                <div class="form-group mr-3" style="width: 190px;">
+                                                                    <label>From</label>
+                                                                    <div class="input-datepicker-group input-group" id="date1Div">
+                                                                        <input type="text" class="form-control input-datepicker" id="datepicker1" data-toggle="datetimepicker"
+                                                                               data-target="#datepicker1" value="{!dateVal1}" onchange="onChangeDate1Method(this.value);" onkeydown="return false"/>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker1">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group mr-3" style="width: 190px;">
+                                                                    <label>To</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <input type="text" class="form-control input-datepicker" id="datepicker2" data-toggle="datetimepicker"
+                                                                               data-target="#datepicker2" value="{!dateVal2}" onchange="onChangeDate2Method(this.value);" onkeydown="return false"/>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group ml-4" style="width: auto;">
+                                                                    <label>&nbsp;</label>
+                                                                    <div>
+                                                                        <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                            <apex:param assignTo="{!filterVal}" name="myparm1" value="{!paySelectedValue}"/>
+                                                                            <apex:param assignTo="{!fieldVal}" name="myparm2" value="transaction"/>
+                                                                        </apex:commandLink>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="separator-dashed my-5"></div>
+                                                            <h3>PAYMENTS</h3>
+                                                            <div class="mb-2"></div>
+                                                            <div class="form-horizontal form-style align-items-end">
+                                                                <!--<label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="nxtOneYear" class="radio-filter" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <apex:commandButton action="{!nxtOneYrData}" value="NEXT ONE YEAR" id="theButton1"  reRender="transTable,theButton1,theButton2,theButton3,theButton4,theButton5" style="{!if(nxt1Yr,'color:#94CB59;padding: 0;', 'padding: 0;')}"/>
+                                                                    </div>
+                                                                </label>-->
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="nxtOneYear" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <span class="box-title font-weight-medium">
+                                                                            NEXT ONE YEAR
+                                                                        </span>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="lastMonth" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <span class="box-title font-weight-medium">
+                                                                            LAST MONTH
+                                                                        </span>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last3Month" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <span class="box-title font-weight-medium">
+                                                                            LAST 3 MONTHS
+                                                                        </span>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last6Month" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <span class="box-title font-weight-medium">
+                                                                            LAST 6 MONTHS
+                                                                        </span>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last12Month" onclick="getNxtOneYrData(this.value);" checked="true"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <span class="box-title font-weight-medium">
+                                                                            LAST 12 MONTHS
+                                                                        </span>
+                                                                    </div>
+                                                                </label>
+                                                                
+                                                                <!--<label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="lastMonth" class="radio-filter" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <apex:commandButton action="{!lastMonthData}" value="LAST MONTH" id="theButton2" styleClass="box-title font-weight-medium" reRender="transTable,theButton1,theButton2,theButton3,theButton4,theButton5" style="{!if(lstMonth,'color:#94CB59;padding: 0;', 'padding: 0;')}"/>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last3Month" class="radio-filter" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <apex:commandButton action="{!last3MonthData}" value="LAST 3 MONTHS" id="theButton3" styleClass="box-title font-weight-medium" reRender="transTable,theButton1,theButton2,theButton3,theButton4,theButton5" style="{!if(lst3Month,'color:#94CB59;padding: 0;', 'padding: 0;')}"/>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last6Month" class="radio-filter" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <apex:commandButton action="{!last6MonthData}" value="LAST 6 MONTHS" id="theButton4" styleClass="box-title font-weight-medium" reRender="transTable,theButton1,theButton2,theButton3,theButton4,theButton5" style="{!if(lst6Month,'color:#94CB59;padding: 0;', 'padding: 0;')}"/>
+                                                                    </div>
+                                                                </label>
+                                                                <label class="box-check mr-3 mb-3">
+                                                                    <input type="radio" name="payment_filter" value="last12Month" class="radio-filter" onclick="getNxtOneYrData(this.value);"/>
+                                                                    <div class="box box-center box-hover py-2 mb-0" style="min-height: 49px;">
+                                                                        <apex:commandButton action="{!last12MonthData}" value="LAST 12 MONTHS" id="theButton5" styleClass="box-title font-weight-medium" reRender="transTable,theButton1,theButton2,theButton3,theButton4,theButton5" style="{!if(lst12Month,'color:#94CB59;padding: 0;', 'padding: 0;')}"/>
+                                                                    </div>
+                                                                </label>-->
+                                                                <apex:outputPanel styleClass="form-horizontal" id="dateVal34"  >
+                                                                    <div class="form-group mr-3 mb-3" style="width: 190px;">
+                                                                        <label>From</label>
+                                                                        <div class="input-datepicker-group input-group">
+                                                                            <input type="text" class="form-control input-datepicker" id="datepicker3" data-toggle="datetimepicker"
+                                                                                   data-target="#datepicker3" value="{!dateVal3}" onchange="onChangeDate3Method(this.value);" onkeydown="return false"/>
+                                                                            <div class="input-group-append">
+                                                                                <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                                                    <i class="icon-date"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group mr-3 mb-3" style="width: 190px;">
+                                                                        <label>To</label>
+                                                                        <div class="input-datepicker-group input-group">
+                                                                            <input type="text" class="form-control input-datepicker" id="datepicker4" data-toggle="datetimepicker"
+                                                                                   data-target="#datepicker4" value="{!dateVal4}" onchange="onChangeDate4Method(this.value);" onkeydown="return false"/>
+                                                                            <div class="input-group-append">
+                                                                                <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                                                                    <i class="icon-date"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <script>
+                                                                    $('.input-datepicker').datetimepicker({
+                                                                        format: 'DD/MM/YYYY'
+                                                                    });
+                                                                    </script>
+                                                                </apex:outputPanel>
+                                                                <div class="mb-3">
+                                                                    <apex:commandLink value="DOWNLOAD DATA" action="{!exportData}" target="_blank" styleClass="btn btn-outline-primary btn-outline-primary-3">
+                                                                        <apex:param assignTo="{!filterVal}" name="myparm1" value="{!paySelectedValue2}"/>
+                                                                        <apex:param assignTo="{!fieldVal}" name="myparm2" value="transactions2"/>
+                                                                        <apex:param assignTo="{!addfilterVal}" name="myparmAddVal" value="{!payMetSelectedValue}"/>
+                                                                    </apex:commandLink>
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-horizontal form-style">
+                                                                <div class="form-group mr-3">
+                                                                    <label>&nbsp;</label>
+                                                                    <apex:selectList value="{!paySelectedValue2}" size="1" styleClass="form-control input-select2-flat">
+                                                                        <apex:selectOptions value="{!payDropValues}"></apex:selectOptions>
+                                                                        <apex:actionSupport event="onchange" action="{!payChangeMethod}" reRender="transTable"/>
+                                                                    </apex:selectList>
+                                                                </div>
+                                                                <div class="form-group mr-3">
+                                                                    <label>&nbsp;</label>
+                                                                    <apex:selectList value="{!payMetSelectedValue}" size="1" styleClass="form-control input-select2-flat">
+                                                                        <apex:selectOptions value="{!PayMethodDropValues}"/>
+                                                                        <apex:actionSupport event="onchange" action="{!payMetChangeMethod}" reRender="transTable"/>
+                                                                    </apex:selectList>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-3"></div>
+                                                            <div class="table-responsive table-responsive-lg table-list-wrapper mt-0">
+                                                                <apex:pageBlock id="transTable">
+                                                                    <table class="table table-hover">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th>TRANSACTION NUMBER</th>
+                                                                                <th>SR NUMBER</th>
+                                                                                <th>SERVICE NAME</th>
+                                                                                <th>PAYMENT TYPE</th>
+                                                                                <th>PAYMENT METHOD</th>
+                                                                                <th>APPLICANT NAME</th>
+                                                                                <th>PAYMENT INITIATED</th>
+                                                                                <th>PAYMENT PROCESSED</th>
+                                                                                <th>AMOUNT (AED)</th>
+                                                                                <th><span><i class="fa fa-arrow-up"></i> STATUS</span></th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            <apex:repeat value="{!transDa}" var="string">
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.Name}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.RQ__r.Name}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.RQ__r.srvc__r.Name}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.TP__c}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.md__c}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <apex:outputText value="{!string.RQ__r.Con__r.Name}" />
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <apex:outputText value="{0,date,dd'/'MM'/'yyyy}">
+                                                                                            <apex:param value="{!string.CreatedDate}" /> 
+                                                                                        </apex:outputText>
+                                                                                        <!--<apex:outputText value="{!string.CreatedDate}" />-->
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <apex:outputText value="{0,date,dd'/'MM'/'yyyy}">
+                                                                                            <apex:param value="{!string.dt__c}" /> 
+                                                                                        </apex:outputText>
+                                                                                        <!--<apex:outputText value="{!string.dt__c}" />-->
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td style="text-align: center;">
+                                                                                        <apex:outputText value="{0, number, ###,###,##0}">
+                                                                                            <apex:param value="{!string.A__c}"/>
+                                                                                        </apex:outputText>
+                                                                                        <br/>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <apex:outputPanel rendered="{!if((string.STA__c=='Open'),true,false)}">
+                                                                                            <div class="badge-status badge-status-process">OPEN</div>
+                                                                                        </apex:outputPanel>
+                                                                                        <apex:outputPanel rendered="{!if((string.STA__c=='Completed'),true,false)}">
+                                                                                            <div class="badge-status badge-status-completed">COMPLETED</div>
+                                                                                        </apex:outputPanel>
+                                                                                        <apex:outputPanel rendered="{!if((string.STA__c=='Cancelled'),true,false)}">
+                                                                                            <div class="badge-status badge-status-urgent">CANCELLED</div>
+                                                                                        </apex:outputPanel>
+                                                                                        <apex:outputPanel rendered="{!if((string.STA__c=='Failed'),true,false)}">
+                                                                                            <div class="badge-status badge-status-urgent">FAILED</div>
+                                                                                        </apex:outputPanel>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            </apex:repeat>
+                                                                        </tbody>
+                                                                    </table>
+                                                                    <apex:panelGrid columns="3" style="width: -webkit-fill-available;">
+                                                                        <apex:panelgroup styleClass="col-xl-3">
+                                                                            <span >
+                                                                                <strong>{!LNumber}-{!UNumber} of {!RecordCount}</strong>
+                                                                            </span>
+                                                                            <span>  </span>
+                                                                            <span>
+                                                                                <strong>Total {!RecordCount} records</strong>
+                                                                            </span>
+                                                                            <span>  </span>                                         
+                                                                        </apex:panelgroup>
+                                                                        <apex:panelgroup styleClass="col-xl-3">
+                                                                            <span class="prevNextLinks">
+                                                                                <span class="prevNext">
+                                                                                    <apex:commandlink id="linkMoveFirst" immediate="true" status="statusPaging" action="{!First}" rerender="transTable" rendered="{!allowMovePrev}">First
+                                                                                    </apex:commandlink>
+                                                                                    <apex:outputpanel layout="none" rendered="{!NOT(allowMovePrev)}">First |
+                                                                                    </apex:outputpanel>
+                                                                                </span>
+                                                                                <span class="prevNext">
+                                                                                    <apex:commandlink id="linkMovePrev" immediate="true" title="Previous" status="statusPaging" action="{!Prev}" rerender="transTable" rendered="{!allowMovePrev}">
+                                                                                        <span>Previous |</span>
+                                                                                    </apex:commandlink>
+                                                                                    <apex:outputpanel layout="none" rendered="{!NOT(allowMovePrev)}">
+                                                                                        <span>Previous</span>
+                                                                                    </apex:outputpanel>
+                                                                                </span>
+                                                                                <span class="prevNext">
+                                                                                    <apex:commandlink id="linkMoveNext" immediate="true" title="Next" status="statusPaging" action="{!Next}" rerender="transTable" rendered="{!allowMoveNext}">
+                                                                                        <span>Next |</span>
+                                                                                    </apex:commandlink>
+                                                                                    <apex:outputpanel layout="none" rendered="{!NOT(allowMoveNext)}">
+                                                                                        <span>Next</span>
+                                                                                    </apex:outputpanel>
+                                                                                </span>
+                                                                                <span class="prevNext">
+                                                                                    <apex:commandlink id="linkMoveLast" immediate="true" status="statusPaging" action="{!Last}" rerender="transTable" rendered="{!allowMoveNext}">Last
+                                                                                    </apex:commandlink>
+                                                                                    <apex:outputpanel layout="none" rendered="{!NOT(allowMoveNext)}">Last
+                                                                                    </apex:outputpanel>
+                                                                                </span>
+                                                                            </span>
+                                                                        </apex:panelgroup>
+                                                                        <apex:panelgroup styleClass="col-xl-3">
+                                                                            <span >
+                                                                                <strong> Page {!PageNumber} of {!PageCount}</strong>
+                                                                            </span>
+                                                                        </apex:panelgroup>
+                                                                    </apex:panelGrid>
+                                                                </apex:pageBlock>
+                                                            </div>
+                                                            <div class="mb-5"></div>
+                                                            <div id="dummyDiv">
+                                                            </div>
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                            </div>
+                                            <!-- .tab-content -->
+                                        </div>
+                                        <!-- .accordion -->
+                                    </div>
+                                    <!-- .accordion-tabs -->
+                                </div>
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                        </div>
+                    </div>
+                </div>
+                <!-- .connect-buttons -->
+                <!-- Vendor js -->
+                <!--<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />-->
+                <!-- main js -->
+                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+            </body>
+        </apex:form>
+        
+        <script>
+            $(document).ready(function(){
+                $("link.user").each(function(){
+                    var h = $(this).attr('href');
+                    if(h.includes('vf-chart'))
+                        $(this).removeAttr('disabled');
+                });
+            });
+        </script>
+    </html>
+</apex:page>

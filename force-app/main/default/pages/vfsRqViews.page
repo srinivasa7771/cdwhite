@@ -1,0 +1,303 @@
+<apex:page sidebar="false" controller="lstViewCntVFS" lightningStylesheets="true" readOnly="true" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+    function openNewTab(id){
+        window.open('/'+id, '_blank');
+    }
+    
+    function removeItem(){
+       
+        var selectobject= itmLst;
+        if(ctg == 'Student New'){ 
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'rt' ) { 
+                    selectobject.remove(i);
+                }
+            }
+        }
+        
+    }
+    
+    function valdt() {
+        alert('{!JSENCODE(selCatg)}');
+        if('{!JSENCODE(selCatg)}' == ''  ){
+            alert('Please select the category');
+            return false;
+        }else  if('{!JSENCODE(selItm)}' == ''  ){
+            alert('Please select the Item');
+            return false;
+        } else if('{!JSENCODE(selStat)}' == ''  ){
+            alert('Please select the Status');
+            return false;
+        }
+        
+            else return true;
+        
+    }
+    
+    function test1(a,b){
+        console.log('test1 method');
+        //alert(a);
+        //alert(b);
+        /*if(cs['items']!=null && cs['items'].value!='apt'){
+            
+            cs['sta'].style.display='none';   
+            document.getElementById('staLbl').style.display='none';
+        }else if(cs['items'].value=='apt'){
+            cs['sta'].style.display='';  
+            document.getElementById('staLbl').style.display='';
+        }*/
+        console.log('before status');
+        // cs['sta'] =document.getElementById('sta');
+        //console.log('sta' + cs['sta']);
+        //cs['sta']=getC('{!$Component.sta}');
+        // cs['status'] = cs['sta'].selectedOptions[0].label;
+        // console.log('status in mthd' + cs['status']);
+        if(a!=null && b!=null ){mthd();}
+    }
+    
+    
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            
+            <div class="slds-media slds-no-space slds-grow">
+                <div class="slds-media__figure">
+                    <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                        <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                    </svg>
+                </div>
+                <div class="slds-media__body">
+                    <p class="slds-text-title--caps slds-line-height--reset">axs Corporate</p>
+                    <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                </div>
+            </div>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+             <apex:pagemessages />
+        </head>
+        <body>
+     
+            <div class="slds-scope">  
+                <apex:form id="listForm">
+                    <apex:pageBlock id="out">
+                        <apex:pageBlockSection title="" collapsible="false">
+                            <div class="slds-grid slds-wrap">  
+                                           
+                                <table >
+                                    <tr>
+                                        <td> <div styleClass="slds-form-element__label">Category:</div>
+                                           <div styleClass="slds-form-element__control slds-input">  
+                                           <apex:selectList id="category" value="{!selCatg}" multiselect="false" size="1" >
+                                               <apex:selectOption itemLabel="Letters"  itemvalue="ltc" id="empNw2"  />
+                                               <apex:selectOption itemLabel="VFS Attestation Services"  itemvalue="vfs;002;004;078;304;021;020;040;303;001;003;028;026;081;308;015;025;027;080;307;010;189;191;193;188;190;192;050;053;313;140;141;013;312;006;311;138;139;012;310;005" id="vfsService"/>
+                                              <!-- <apex:actionFunction name="mthd" action="{!queryReq}" rerender="out1"  status="sts">-->
+                                                      <!-- <apex:param name="selectedStatus" value=""/>-->
+                                              <!-- </apex:actionFunction>-->
+                                               
+                                            </apex:selectList>  
+                                               <script type="text/javascript">
+                                               cs['CatOpt']=getC('{!$Component.CatOpt}');
+                                               cs['category']=getC('{!$Component.category}');
+                                                ctg = '{!JSENCODE(selCatg)}';
+                                               </script>
+                                               </div> 
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><div styleClass="slds-form-element__label">Item:</div>
+                                            <div styleClass="slds-form-element__control slds-input">
+                                                <apex:selectList id="items" value="{!selItm}" multiselect="false"  size="1" >
+                                                    <apex:selectOption itemvalue="0"  itemLabel="--none--"/>
+                                                    <apex:selectOption itemvalue="inb"  itemLabel="Certificate of Incumbency"/>  
+                                                    <apex:selectOption itemvalue="att"  itemLabel="True Copy Attestation"/> 
+                                                     <apex:selectOption itemvalue="vfs"  itemLabel="VFS Attestation Services"/> 
+                                                    <!--<apex:selectOption itemvalue="inl"  itemLabel="Certificate of Incumbency(GZ LLC)"/> 
+                                                    <apex:selectOption itemvalue="bdm"  itemLabel="BDM Approval"/> 
+                                                    <apex:selectOption itemvalue="hse"  itemLabel="HSE Approval"/> 
+                                                    <apex:selectOption itemvalue="sec"  itemLabel="Security Approval"/> -->
+                                                    
+                                                </apex:selectList>  
+                                                <script type="text/javascript">cs['itm']=getC('{!$Component.itm}');
+                                                cs['items']=getC('{!$Component.items}');
+                                                itmLst = '{!JSENCODE(ItmOpt)}';
+                                                </script>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><div id="staLbl" styleClass="slds-form-element__label">Status:</div>
+                                             <div styleClass="slds-form-element__control slds-input">
+                                            <apex:selectList id="sta"  value="{!selStat}" multiselect="false" size="1" onchange="executeQueryReq();">
+                                                <!--onchange="test1('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}');"-->
+                                                <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                                <apex:selectOption itemLabel="All"  itemvalue="svf,c,xc,vcc,ccc,dc,ncc,ii,mii,md,ok,rc,rcc,if,mif,n,nc,ccc"  />
+                                                <apex:selectOption itemLabel="Completed"  itemvalue="ok,okk"  />
+                                                <apex:selectOption itemLabel="In Process"  itemvalue="svf,n,dc,if,ccc,mif,ii,mii,cif"  />
+                                                <apex:selectOption itemLabel="Open"  itemvalue="rc,rcc,nc,cc"  />
+                                                <apex:selectOption itemLabel="Under Review"  itemvalue="svf,rv,pd,dr,cc,ccc,v,vcc"  />
+                                                
+                                                <!--<apex:selectOption itemLabel="Corrected By Customer"  itemvalue="cc,ccc,v,vcc"  />-->
+                                                <!-- <apex:actionSupport event="onchange" action="{!queryReq}" rerender="out1" status="sts">
+                                                    <!--<apex:param name="selectedStatus" value=""/>-->
+                                               <!-- </apex:actionSupport>-->
+                                            </apex:selectList>  
+                                                 <apex:actionFunction name="queryReq" action="{!queryReq}" reRender="out1" status="sts">  
+                                                        <apex:param name="selectedStatus" value=""/>
+                                                 </apex:actionFunction>
+                                                 <script type="text/javascript">                                                    
+                                                  function executeQueryReq(){
+                                                    console.log('entering execute'); 
+                                                    cs['sta'] = document.getElementById('{!$Component.sta}'); 
+                                                    cs['status'] = cs['sta'].selectedOptions[0].label;
+                                                    var selectedStatus = cs['status'];
+                                                    console.log('selected status' + selectedStatus);
+                                                    queryReq(selectedStatus); 
+                                                  }
+                                                 /*var statusId = document.getElementById('{!$Component.sta}');
+                                                        var selectedStatus = ' ';                                               
+                                                        statusId.onchange = function(){
+                                                            cs['status'] = statusId.selectedOptions[0].label;
+                                                            selectedStatus = cs['status'];
+                                                            console.log('onchangestatus ' + cs['status']);
+                                                            console.log('selectedStatus1' + selectedStatus);
+                                                        };*/
+                                                
+                                                 //cs['sta'] = document.getElementById('{!$Component.sta}');
+                                                 //console.log('sta' + cs['sta']);
+                                                        // cs['sta']=getC('{!$Component.sta}');
+                                                       //cs['status'] = cs['sta'].selectedOptions[0].label;  
+                                                 //var selectedStatus = cs['status']; 
+                                                 //console.log('selectedstatus' + cs['status']);
+                                                 </script>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!--<tr>
+                                        <td><div id="staLbl" styleClass="slds-form-element__label">Status:</div>
+                                             <div styleClass="slds-form-element__control slds-input">
+                                            <apex:selectList id="sta"  value="{!selStat}" multiselect="false" size="1" >
+                                                <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                                <apex:selectOption itemLabel="All"  itemvalue="rv,pd,cc,ccc,v,vcc,ok"  />
+                                                <apex:selectOption itemLabel="Under Review"  itemvalue="rv,pd,dr"  />
+                                                <apex:selectOption itemLabel="In Process"  itemvalue="rc,rcc"  />
+                                                <apex:selectOption itemLabel="Corrected By Customer"  itemvalue="cc,ccc,v,vcc"  />
+                                                <apex:actionSupport event="onchange" action="{!queryReq}" rerender="out1" status="sts" />
+                                            </apex:selectList>  
+                                                 <script type="text/javascript">cs['sta']=getC('{!$Component.sta}');
+                                                 </script>
+                                            </div>
+                                        </td>
+                                    </tr>-->
+                                    
+                                </table> 
+                            </div>                            
+                        </apex:pageBlockSection>
+
+                        
+                        
+                        <apex:pageBlockSection collapsible="false" id="out1">
+                            <div class="slds-panel__section">  
+                          <!--<legend class="slds-form-element__label slds-text-title--caps"><b>{!nameList}</b></legend> -->
+                            </div>
+                            <script type="text/javascript" charset="utf8">
+                               
+                            var oTable;var currentNumberDisplayed = 500;
+                            $(document).ready(function() {
+                                $('#load').click( function () {
+                                    var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                                oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 200}); 
+                                
+                            });
+                            </script>
+                            
+                        <apex:actionstatus id="sts">
+                                <apex:facet name="start">
+                                    <div class="slds-spinner_container">
+                                        <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                            <span class="slds-assistive-text">Loading</span>
+                                            <div class="slds-spinner__dot-a"></div>
+                                            <div class="slds-spinner__dot-b"></div>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionstatus> 
+                            <apex:dataTable value="{!finalListRqItm}" var="record" rendered="{! IF(ISBLANK(finalListRqItm), false, true) }" captionClass="testTable" styleClass="slds-table slds-table--bordered slds-table--striped" id="testTable" cellspacing="5%" columnsWidth="13%" style="width:100%;float:left;">                 
+                                <apex:column >
+                                    <apex:inputCheckbox onclick="openNewTab('{!JSENCODE(record.RQ__r.id)}');" /> 
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Request" /></apex:facet>
+                                    <a href="/{!record.RQ__c}" target="_blank">{!record.RQ__r.name}</a>
+                                    <!--<apex:outputField value="{!record.RQ__r.name}"/>-->
+                                </apex:column>
+                               <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value=" Manage Request" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.xmgr__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Request Status" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.STA__c }"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item Status" /></apex:facet>
+                                    <apex:outputField value="{!record.STA__r.Name }"/>
+                                </apex:column>
+                                 <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Date" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.Created_Date__c}"/> <!--record.rq__r.xfpdd__c-->
+                                </apex:column>
+                                 <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Service Name" /></apex:facet>
+                                    <apex:outputField value="{!record.itm__r.srvc__r.Name}"/> <!--itm__r.srvc__r.Name Service_Name__c-->
+                                </apex:column>
+                                 <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Embassy Name" /></apex:facet>
+                                    <apex:outputText value="{!mapReqItem_country[record.Id]}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Account Name" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.Account_Name__c}"/>
+                                </apex:column> 
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Business Park" /></apex:facet>
+                                    <apex:outputField value="{!record.rq__r.xbrnd__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item" /></apex:facet>
+                                    <apex:outputField value="{!record.Name}"/>
+                                </apex:column>
+                                <!--<apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item Status" /></apex:facet>
+                                    <apex:outputField value="{!record.STA__r.Name}"/> 
+                                </apex:column>-->
+                            </apex:dataTable>
+                        </apex:pageBlockSection>   
+                    </apex:pageBlock>
+                    
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

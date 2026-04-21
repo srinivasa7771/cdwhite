@@ -1,0 +1,203 @@
+<apex:page sidebar="false" controller="gctlStuAcceptance" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="false" standardStylesheets="false" >
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.AdnicPopup, '/js/jquery.cookie.js')}" />
+    
+    <script type="text/javascript">
+    
+    /* function afterAccOffer(){
+        axsAlert('Success','Thank you for accepting the offer, you will be contacted by the company soon');
+    }
+    function afterRejOffer(){
+        axsAlert('Success','Information will be shared to the company');
+    }*/
+    function accOfr(){
+        //axsAlert('Success','Thank you for accepting the offer, you will be contacted by the company soon');
+        //if($('#tANDc').prop('checked')){
+        showGLoader();
+            accOffer();
+        //}
+        /*else{
+            $('.chk').find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+            scrollToDiv($('.chk'));
+            return;
+        }*/
+        
+    }
+    function rejOfr(){
+        //
+        axsConfirmation('Please confirm','Are you sure to reject offer',false,'rejOffer');
+        //showGLoader();
+        //(); 
+    }
+    </script>
+    <apex:form >
+    <apex:actionFunction name="accOffer" action="{!accpetOffer}" oncomplete="hideGLoader();" reRender="parentId"/>
+     <apex:actionFunction name="rejOffer" action="{!rejectOffer}" oncomplete="hideGLoader();" reRender="parentId"/>
+        <apex:outputPanel >
+            <c:guheader heading="{!req.srvc__r.lbl__c}" uid="{!req.srvc__r.uid__c}"  />
+        </apex:outputPanel>
+        <body class="base">
+            <apex:outputpanel layout="none" rendered="{!isgu}" id="parentId">
+                <div id="main">
+                    <div class="container pt-2 pb-2">
+                    </div>
+                    <div class="container">
+                        <div class="base-layout">
+                            <!--left-side pannel start-->   
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <div>
+                                        <c:srvdefcmp srv="{!srv}"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="base-main">
+                                <div class="base-main-content">
+                                  <apex:outputPanel rendered="{!req.STA__c=='Under Review'}" id="accOfr">
+                                    <b><apex:pageMessages id="msg"/></b>
+                                       <h2>Congratulations {!req.con__r.name}!</h2><br/><br/>
+                                      <p>
+                                          <b>{!req.Acc__r.name}</b> would like to offer you the role of <b>{!req.action__c}</b>, with a maximum of <b>{!req.xawh__c}</b> hours a week valid until <b><apex:outputText value="{0,date,dd/MM/YYYY}"> <apex:param value="{!req.xrped__c}" /> </apex:outputText> </b><br/>
+                                          <br/>
+                                          
+                                        <!--  <b><apex:outputText value="{0,date,dd/MM/YYYY}"> <apex:param value="{!req.xrpid__c}" /> </apex:outputText> </b> to <b><apex:outputText value="{0,date,dd/MM/YYYY}"> <apex:param value="{!req.xrped__c}" /> </apex:outputText> </b> -->
+                                          Please  <b><a href=" https://axsstg-axs.cs73.force.com/servlet/servlet.FileDownload?file={!offerLetter.id}" target="_blank"><u>click here</u></a></b> to view the offer letter and "Accept" or  "Reject" the offer.
+                                      </p>
+                                      <!--p>
+                                          Please read the terms and conditions before you “Accept” or “Reject” the offer.
+                                      </p-->
+                                    <!--div class="row row-lg"> 
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <Label>Name</Label>
+                                                <apex:inputField value="{!req.con__r.name}" styleClass="requiredFld disabledApex form-control"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <Label>Company name</Label>
+                                                <apex:inputField value="{!req.Acc__r.name}" styleClass="requiredFld disabledApex form-control"/>
+                                            </div>                                                
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Offered job title</label>
+                                                <apex:inputField value="{!req.action__c}" styleClass="requiredFld disabledApex form-control"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Allowed workig hours</label>
+                                                <apex:outputText value="{!req.xawh__c}" styleClass="requiredFld disabledApex form-control"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Duration</label>
+                                                <apex:outputText value="{!req.xrped__c}" styleClass="requiredFld disabledApex form-control"/>
+                                            </div>
+                                        </div>
+                                    </div-->
+                                    <!--p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+                                        <label class="custom-checkbox mr-4">
+                                            <input id="tANDc" onchange="rmErronTC()" type="checkbox" />
+                                            <span>I have read and agreed to the <a href=" https://dda.gov.ae/wp-content/uploads/Student%20Part%20Time%20Employment%20Regulations%20-%20signed.pdf" target="_blank"><u>Terms and Conditions</u></a></span>
+                                        </label>  
+                                    </p--> 
+                                    
+                                    <apex:outputPanel styleClass="mt-4 row">
+                                        <div class="col-lg-6">
+                                            <div class="g-recaptcha" data-sitekey="{!sitekey}" style="transform:scale(0.90);" data-callback="correctCaptcha" ></div>
+                                            <script src='https://www.google.com/recaptcha/api.js'>
+                                            </script>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel id="btnid">
+                                        <div class="base-main-footer" style="text-align: right;">
+                                            <a href="#" class="btn btn-primary mr-4" onclick="accOfr()" >ACCEPT</a>
+                                            <a href="#" class="btn btn-primary mr-4" onclick="rejOfr()" >REJECT</a>
+                                            <!--apex:commandButton styleClass="btn btn-primary mr-4" Value="ACCEPT"  onclick="accOffer()" />
+                                            <apex:commandButton styleClass="btn btn-primary" Value="REJECT" onclick="rejOffer()"/-->
+                                        </div>
+                                        <!-- .base-main-footer -->
+                                    </apex:outputPanel> 
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!req.STA__c=='In Process'}" id="afterAccOfr">
+                                        <h2>
+                                          <b> You accepted the offer!</b>
+                                           <p>
+                                           Congratulations! You will be contacted by a representative of the company with more details via email. 
+                                           </p>
+                                        </h2>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!gritm.sta__r.cd__c=='gr'}" id="afterRejOfr">
+                                        <h2>
+                                        <b>You rejected the offer.</b>
+                                         <p>
+                                         We will communicate your response with the company. 
+                                           </p>
+                                        </h2>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!req.STA__c=='Cancelled'}" id="afterRvkOfr">
+                                        <h2>
+                                           <!-- Your offer has been revoked from the <b>{!req.Acc__r.name}</b>. -->
+                                             <b> Your offer has been revoked.</b>
+                                             <p>
+                                             Please contact the company for more information.   
+                                             </p>
+                                        </h2>
+                                    </apex:outputPanel>
+                                </div>
+                                <!-- .base-main -->
+                            </div>
+                            <!-- .base-layout -->
+                        </div>
+                        <!-- .container -->
+                        <!-- .site-footer-wrapper -->
+                    </div>
+                    <!-- Modal -->
+                </div>
+            </apex:outputpanel>   
+            <apex:outputpanel layout="none" rendered="{!NOT(isgu)}">
+                <br/><br/>
+                <div id="main">
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-6"></div>
+                        <div class="col-xl-4 col-lg-6">
+                            <div class="box status-box aos-init aos-animate" id="stsMsgId" style="background-color: #f4f4f4">
+                                <div class="status-box-icon">
+                                    <i class="icon-high-priority warning-icon-high-priority" style="background-color: darkred;"></i>
+                                </div>
+                                <br />
+                                <h4>
+                                    <p>
+                                        You are currently logged in as Portal User, you are not eligible to view this content.
+                                    </p> 
+                                </h4>
+                                
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6"></div>
+                    </div>
+                </div>
+            </apex:outputpanel>    
+        </body>
+        <script>
+        function rmErronTC(){
+            if($('#tANDc').is(':checked')==true)
+                $('.chk').find('.frmErrMsg').remove();
+            else{
+                var errElem = '<div class="frmErrMsg">Please accept Terms and Conditions.</div>';
+                $('.chk').append(errElem);
+            }
+        }
+        </script>
+    </apex:form>
+</apex:page>

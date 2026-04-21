@@ -1,0 +1,211 @@
+<apex:component controller="gctlqrlstr">
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+    <apex:attribute name="R" description="Request" type="g_Req__c" required="true" assignTo="{!rq}"/>
+    <apex:attribute name="pyDone" description="payDone" type="Boolean" required="true" assignTo="{!paydone}"/>
+    
+    <div id="main">
+    <apex:actionFunction name="editModeRq" action="{!editModeRq}" status="theStatus" rerender="mFrm,msgdiv,btndiv" />
+            
+           <apex:outputPanel id="OP" rendered="{!CONTAINS(rq.STA__c,'In Process')}">
+                <div class="container pt-2 pb-2">
+                    <div class="base-nav" style="font-size: 13px;color:white;" >
+                        <a href="" class="btn btn-primary base-nav-next btn-black" onclick="editModeRq();">Update Request</a>
+                    </div>
+                </div>
+            </apex:outputPanel>
+
+            <div class="container">
+                <apex:outputPanel rendered="{!CONTAINS(rq.STA__c,'In Process')}"><!-- id="mb" rendered="{!payDone}"-->
+                    <div class="balance-bar">
+                        <i class="icon-wallet"></i>
+                        <h4 class="mr-2">NEW CURRENT BALANCE:</h4>
+                        <span class="amount">{!rq.Acc__r.adb__c} <span class="curr">AED</span></span>
+                    </div>
+                </apex:outputPanel>
+                <div class="tabs accordion-tabs tabs-lg">
+                    <div class="accordion" id="app_accordion">
+                        <div class="tab-content" style="min-height: 0;">
+                            <div class="accordion-item open tab-pane fade show active" id="status_actions_tab">
+                                <apex:outputPanel id="mbase1" rendered="{!CONTAINS(rq.STA__c,'Completed')}">
+                                <!-- Request Details -->
+                                    <div class="base-main-content">
+                                    <h4>Request Details  : SR# {!rq.name}</h4>
+                                    <div class="amount-row amount-row-head mb-3">
+                                        <div class="amount-row-title">CURRENT BALANCE: {!rq.Acc__r.adb__c} AED </div>
+                                        <!--div class="amount-row-title">Top-Up Amount :{!T.A__c} AED</div-->
+                                    </div>
+                                    <div class="row">
+
+                                        <div class="col-lg-4 col-sm-6">
+                                            <div class="data-info">
+                                                <div class="data-label">Request</div>
+                                                <div class="data-value">{!rq.Name}</div>
+                                            </div>
+                                            
+                                            
+                                            <div class="data-info">
+                                                <div class="data-label">Service</div>
+                                                <div class="data-value">{rq.Service__c}</div>
+                                            </div>
+                                            <div class="data-info">
+                                                <div class="data-label">Request Status</div>
+                                                <div class="data-value">{!rq.STA__c}</div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-4 col-sm-6">
+                                            <div class="data-info">
+                                                <div class="data-label">Account Name</div>
+                                                <div class="data-value">{rq.Account_Name__c}</div>
+                                            </div>
+                                            <div class="data-info">
+                                                <div class="data-label">Created Date</div>
+                                                <div class="data-value">{rq.Created_Date__c}</div>
+                                            </div>
+                                            <div class="data-info">
+                                                <div class="data-label">Amount</div>
+                                                <div class="data-value">{!rq.Acc__r.adb__c} AED</div>
+                                            </div> 
+                                            
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-4 col-sm-6">
+
+                                        </div>
+
+                                    </div>
+                                
+                                    <!-- .row -->
+                                    <div class="mb-5"></div>
+                                   
+                                    <div class="bg-grey-light mt-4" style="height: 4px;"></div>
+                                    
+                                    
+                                    </div>
+                            
+                                </apex:outputPanel>
+                                
+                                <apex:outputPanel id="mbase2" rendered="{!CONTAINS(rq.STA__c,'Rejected')}">
+                                    Your Payement Transaction is {!rq.STA__c}.
+                                </apex:outputPanel>
+                                <apex:outputPanel id="mbase3" rendered="{!CONTAINS(rq.STA__c,'Under Review')}">
+                                    Your Payement Transaction is {!rq.STA__c}.
+                                </apex:outputPanel>
+                                <apex:outputPanel id="mbase4" rendered="{!CONTAINS(rq.STA__c,'Cancelled')}">
+                                    Your Payement Transaction is {!rq.STA__c}.
+                                </apex:outputPanel>
+                                <apex:outputPanel id="mbase5" rendered="{!CONTAINS(rq.STA__c,'On Hold')}">
+                                    Your Payement Transaction is {!rq.STA__c}.
+                                </apex:outputPanel>
+                                <apex:outputPanel id="mbase6" rendered="{!CONTAINS(rq.STA__c,'In Process')}">
+                                     <br/><br/>
+                                    <div class="right-actions text-light-2 right-actions-text">
+                                        <span>SR # <span class="text-000 font-weight-medium">{!rq.Name}</span></span>
+                                    </div> 
+                                    <apex:repeat value="{!rqtrans}" var="T1"> 
+                                        <div style="width:100%;height:800px">
+                                            <object data="apex/gtrinv?Id={!T1.Id}#toolbar=1&amp;navpanes=1&amp;scrollbar=1&amp;page=1&amp;view=FitH" type="application/pdf" width="100%" height="99%">
+                                                <p>It appears you don't have a PDF plug-in for this browser. No biggie... you can <a href="apex/gtrinv?Id={!T1.Id}">click here to download the PDF file.</a></p>
+                                            </object>
+                                        </div>
+                                    </apex:repeat>
+                                </apex:outputPanel>
+                                
+                                <div id="status_actions_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                    <div class="accordion-content-inner px-xl-5">
+                                        <apex:repeat value="{!rqtrans}" var="T"> 
+                                        <div class="status-collapse grey-collapse px-xl-5">
+                                            <div class="grey-collapse-toggle collapsed" data-toggle="collapse" data-target="#status_collapse">
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">REFERANCE #</span>
+                                                    <br/> {!T.Name}
+                                                </div>
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">CURRENT STATUS</span>
+                                                    <br/> {!T.STA__c}
+                                                </div>
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">TYPE</span>
+                                                    <br/> {!T.TP__c}
+                                                </div>
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">DATE</span> <br/> 
+                                                    <apex:outputText value="{0, date,d MMMM yyyy }"> 
+                                                        <apex:param value="{!T.dt__c}" /> 
+                                                    </apex:outputText> 
+                                                </div>
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">PAYMENT METHOD</span>
+                                                    <br/> {!T.md__c}
+                                                </div>
+                                                <div class="collapse-title px-xl-3">
+                                                    <span class="fs-14 text-light">AMOUNT</span>
+                                                    <br/> {!T.A__c} AED
+                                                </div>
+                                                <div class="ml-0 ml-md-auto mt-2 mb-2">
+                                                    <i class="icon-ok circle-icon-ok"></i>
+                                                    
+                                                    <apex:outputLink value="/{!T.Id}" target="_blank">View</apex:outputLink>
+                                                    <!--apex:outputLink value="/apex/ttd?id={!rq.Id}" target="_blank">View</apex:outputLink -->
+                                                    <apex:outputpanel layout="none" rendered="{!AND(T.TP__c='Payment',OR(T.STA__c='Completed',T.STA__c='Open'))}">
+                                                        &nbsp;|&nbsp;&nbsp;
+                                                        <apex:outputpanel rendered="{!IF(AND(T.STA__c="Completed",DATE(2017,12,31) >= T.dt__c),true,false)}" >
+                                                            <apex:outputLink value="/apex/gtrcpto?id={!T.Id}" target="_blank" rendered="{!AND(T.STA__c='Completed')}" styleclass="btn btn-outline-primary btn-outline-primary-2 ml-2" ><i class="fa fa-arrow-down"></i>Receipt Copy</apex:outputLink>
+                                                        </apex:outputpanel>
+                                                        <apex:outputpanel rendered="{!IF(AND(T.STA__c="Completed",DATE(2020,03,01) >= T.dt__c ),true,false)}" >
+                                                            <apex:outputLink value="/apex/gtrcptbv?id={!T.Id}" target="_blank" rendered="{!AND(T.STA__c='Completed')}" styleclass="btn btn-outline-primary btn-outline-primary-2 ml-2" ><i class="fa fa-arrow-down"></i>Receipt Copy</apex:outputLink>
+                                                        </apex:outputpanel>
+                                                        <apex:outputpanel rendered="{!IF(AND(T.STA__c='Completed',DATE(2020,03,02) < T.dt__c),true,false)}" >
+                                                            <apex:outputLink value="/apex/gtrcpt?id={!T.Id}" target="_blank" rendered="{!AND(T.STA__c='Completed')}" styleclass="btn btn-outline-primary btn-outline-primary-2 ml-2" ><i class="fa fa-arrow-down"></i>Receipt Copy</apex:outputLink>
+                                                        </apex:outputpanel>
+                                                        <apex:outputLink value="/apex/gtrinv?id={!T.Id}" target="_blank" rendered="{!T.STA__c='Open'}" styleclass="btn btn-outline-primary btn-outline-primary-2 ml-2" ><i class="fa fa-arrow-down"></i>Invoice Copy</apex:outputLink>                                                    
+                                                    </apex:outputpanel>
+                                                </div>
+                                                <div class="ml-5 d-none d-lg-block">
+                                                    <h5 class="fs-16 m-0">STATUS HISTORY</h5>
+                                                </div>
+                                            </div>
+                                            <div id="status_collapse" class="collapse">
+                                                <div class="collapse-content">
+                                                    <ul class="status-list">
+                                                        <apex:repeat value="{!stahis}" var="H">
+                                                            <li>
+                                                                TopUp {!H.sh.t__r.Name} &nbsp;&nbsp;&nbsp;
+                                                                <span class="text-light">
+                                                                    <apex:outputText value="    {0, date,d MMMM yyyy - HH:mm a}">
+                                                                        <apex:param value="{!H.sh.CreatedDate}" /> 
+                                                                    </apex:outputText>
+                                                                </span> 
+                                                            </li>
+                                                        </apex:repeat> 
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        </apex:repeat>
+                                        <!-- .status-collapse -->
+
+                                    </div>
+                                    <!-- .accordion-content-inner -->
+                                </div>
+                                <!-- .accordion-content -->
+                    
+                
+                            </div>
+                            <!-- #status_actions_tab -->
+                        </div>
+                        <!-- .tab-content -->
+                    </div>
+                    <!-- .accordion -->
+                </div>
+                <!-- .accordion-tabs -->
+
+            </div>
+            <!-- .container -->
+
+            <!-- .site-footer-wrapper -->
+        </div>
+
+
+</apex:component>

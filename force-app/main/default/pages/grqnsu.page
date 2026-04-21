@@ -1,0 +1,559 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="gctlReq_L"  docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false" title="{!pt}" >
+
+   
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/>
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+ 
+    <style>
+        .info-msg {color:green !important;}
+        .brad {border-top-left-radius: 0.5rem !important; border-bottom-left-radius: 0.5rem !important;}
+    </style>
+    
+    
+    <script type="text/javascript">
+    var tod;   
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={};
+    var lf='',af='',adf='',aO='',lif,aif,adif,cif,cnf,fnxPg;
+    var la2='';
+    var ctp={!IF(srv.uid__c=='ltp',true,false)}
+    
+    
+    function runOnKeypressfn(ev,id,arid){
+        var username = document.getElementById(id).value;
+        if(username.length >1){ 
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.gctlReq_L.getArabicName}',
+                username,
+                function(result, event){
+                    if (event.status) {
+                        // Get DOM IDs for HTML and Visualforce elements like this
+                        document.getElementById(arid).value = result;
+                    } else if (event.type === 'exception') {
+                        document.getElementById("responseErrors").innerHTML = 
+                            event.message + "<br/>\n<pre>" + event.where + "</pre>";
+                    } else {
+                        document.getElementById("responseErrors").innerHTML = event.message;
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+    } 
+    
+    function vfrm(nSTA){return hsSnc(nSTA)?!1:!0} 
+    
+    /*function vfrm(nSTA){
+        fnxPg = 'grqup';
+        //return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):nRefd()?(alrt("Terms & Conditions","Please read and agree to Ramadan Permit Guidelines in order to process with your application."),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):valDates()?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):!0
+        
+    }*/
+    function hsSnc(nSTA){return false;}
+    
+    function hErr(nSTA){
+        return false;
+    }
+    
+    $(document).ready(function(){
+        if(cs['xcfn__c'].value){
+            runOnKeypressfn(event,'{!$Component.xcfn__c}','{!$Component.xcfnar__c}');
+        }
+        if(cs['xcmn__c'].value){
+            runOnKeypressfn(event,'{!$Component.xcmn__c}','{!$Component.xcmnar__c}');
+        }
+        if(cs['xcln__c'].value){
+            runOnKeypressfn(event,'{!$Component.xcln__c}','{!$Component.xclnar__c}');
+        }
+        if(!Array.prototype.includes){
+            Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+        }
+        displayXla2d(getC(cs['xltr__c'].id).value);  hideXla2d(cs['xla2__c2'].value);
+    });
+    
+    function ifrm(){cs['xlt__c'].value="Non Sponsored Student";}
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+
+    function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+    
+    function uac(){var a=document.getElementById(cif),b=document.getElementById(cnf);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&void 0!=b&&""!=b.value&&""!=b.value&&(window.location.href="{!$Label.urlUA}&cid="+a.value+"&cnm="+b.value)}
+    
+    function pvc2(){window.open("/apex/gcp?id={!rq.Con__c}","gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",false);}
+    
+    function uac2(){window.location.href= "{!$Label.urlUA}&cid={!rq.Con__c}&cnm={!rq.Con__r.Name}";}
+    
+    function dftA2(){cs['xla2__c']=getC(aif);if(2==cs['xla2__c'].options.length){cs['xla2__c'].value=cs['xla2__c'].options[1].value;af=cs['xla2__c'].value;}}
+    
+    function dftA2d(){cs['xla2d__c']=getC(adif);if(2==cs['xla2d__c'].options.length){cs['xla2d__c'].value=cs['xla2d__c'].options[1].value;adf=cs['xla2d__c'].value;}}
+    
+    function letterclick(){
+        var rqId = '{!JSENCODE(rq.id)}';
+        window.open("/apex/displayLetter?id="+rqId, "_blank", "directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=950, height=600,top=50, left=200");
+    }     
+    
+    function checkFields(){
+        var brk = vflds();        
+        if(!brk){brk = !vfrm();}
+        if(!brk){showTempLoader(event.target);toggleGLoader(); afso(); }
+    }
+    
+    
+     // varibles for letterAddressedTo_2 field
+    var label2 = {"Authorities":"an authority","Banks":"a bank","Consulates":"a consulate","Government Departments":"the Government Department","Ministries":"a ministry","Others":"a language","Telecom":"a telecom","Embassies":"an embassy","Airports and Security Offices":"an airport/security office","Free Zone":"a free zone","Port":"a port","Emirate":"an emirate","RTA":"an emirate","Emirates Group":"the Emirates Group","Ministry of Labour":"a ministry"};
+    var showXla2d = ['Employment Letter', 'Entry Pass New / Renewal', 'Letter to Economic Dept (Employee)', 'Letter to Economic Dept (Licencee/Shareholder)', 'No Objection Temporary Work Permit Letter', 'Salary Certificate', 'Visa Multi Entry', 'Visa Single Entry','Bonafide student certificate'];
+    
+    function displayXla2d(ltr){
+        //var hideXla2d = ['Boat Driving License', 'Boat Registration Personal', 'Letter to Dubai Customs', 'Liquor License', 'Lost Driving License', 'Lost EIDA Card', 'Lost Passport', 'Lost Wallet', 'RTA Bike Driving License New / Renewal', 'RTA Bus Driving License New / Renewal', 'RTA Driving License New / Renewal', 'RTA Truck Driving License New / Renewal - Hide', 'Selling or Purchasing Boat']; 
+        if(showXla2d.includes(ltr) && af!=""){ 
+            getC("xla2d_l").style.display='block';$('#label_ad2').text("Select " + label2[af]); 
+            
+        }else{
+            getC("xla2d_l").style.display='none';
+        }
+        
+        var xla2  = ["Active Employees List","Letter to Dubai Police","Tax Exemption Letter","Permit for Catering Service","NOC To DED (Partake as Shareholder)","Letter to Dubai Customs"];
+        if(xla2.includes(ltr) || ltr==""){ getC("xla2_l").style.display='none';}else{getC("xla2_l").style.display='block';}
+        assignVals(ltr);
+    }
+    
+    function hideXla2d(ltr){       
+        if(getC(cs['xltr__c'].id).value=="Bonafide student certificate"){
+            var hideXla2d = ['General Directorate of Residence and Foreigners Affairs'];
+            if(hideXla2d.includes(ltr)){ 
+                getC("xla2d_l").style.display='none';
+            }else if(ltr!=""){
+                getC("xla2d_l").style.display='block';
+            }
+        }
+    }
+    
+    function assignVals(ltr){
+        if(af!=undefined && af!='' && showXla2d.includes(ltr) && af!="Others" ){
+            //cs['xla2__c'].onchange();
+            var ltraddto = (af=="Consulates")?"Consulate of " : (af=="Embassies") ? "Embassy of " : (af=="Emirates Group") ? "Emirates Group- " :"";
+            if(adf!=undefined && adf!=""){ltraddto += adf;}
+            cs['rtacn__c'].value = ltraddto;
+        }else if(af!=undefined && af!='' && af!="Others"){ 
+            cs['rtacn__c'].value = af;
+        }else if(af=="Others"){
+            cs['rtacn__c'].value = aO +'-'+adf;
+        }
+        
+         if(cs['rtacn__c'].value ==""){cs['rtacn__c'].value =af;}
+    }
+    
+    function removeLtr2Val(){
+        adf=''; if(cs['xla2d__c']!=undefined && cs['xla2d__c']!=null){cs['xla2d__c'].value ="" ; $(cs['xla2d__c']).trigger("change");}
+    }
+    
+    
+    function vflds(){
+        var brk = false;var elem = '';
+        $('.requiredFld').each(function(){
+            var v = $(this).val();
+            //if($(this).is(':visible')){         
+                if(v==''||v==null||v==undefined||v.length<1){
+                    brk=true; addValError(this,'This field is required!');
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);  }
+                
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            //}
+        });
+        return brk;
+    }
+    
+    
+    function removeValError(thiselem){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+    }
+    
+    function addValError(thiselem,message){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+        var errElem = '<div class="frmErrMsg">'+message+'</div>';
+        if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+            elem.parent().parent().append(errElem);
+        }else{
+            elem.parent().append(errElem);
+        }
+    }
+    
+    function showTempLoader(e){
+        var loader = '<span class="loader_temp">';
+        loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+        loader += '</span>';
+        $(e).find('.loader_temp').remove();
+        $(e).append(loader);
+        $('*').addClass('loadingProgress');
+    }
+    
+    function removeTempLoader(){
+        $('*').removeClass('loadingProgress');
+        $('.loader_temp').remove();
+    }    
+    
+    function salutionOnChange(){
+        var salutation = $("input[name='salutation']:checked").val();
+        $("input[name='salutation']").parent().parent().parent().find('.option-error').hide(); 
+        cs['xcslt__c'].value=salutation;
+        console.log('salutionOnChange >>'+ cs['xcslt__c'].value);
+    }
+    
+    function dformat(dt,id){
+        var d = new Date(dt); console.log(dt);
+        var m=d.getMonth()+1;
+        var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+        var mm=m>9?m:'0'+m;
+        var yy=d.getFullYear();
+        
+        getC(id).value=dd+'/'+mm+'/'+yy;
+        
+    }
+    
+    function createDepDds(){
+        setTimeout(function(){
+            $('.depDD').select2();
+            $('.ddValidation').on('change',function(){
+                //debugger;
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                showErrMsg($(this),'rqrd',true);
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    if($(this).is('select'))
+                        showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                    else
+                        showErrMsg($(this),'rqrd','invalid');
+                    return false;
+                }
+            });
+        },400);
+    }
+    </script> 
+    
+    <apex:form styleClass="pbform">
+    <apex:outputPanel rendered="{!!ispu}">
+        <c:onlyBOCss />
+    </apex:outputPanel>
+        <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                
+        <body class="base">
+            <div id="main">
+                <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript:toggle_inputs();" oncomplete="javascript:lf=cs['xltr__c'].value;ifrm();"/>
+                <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="toggleGLoader();removeTempLoader(); javascript:lf=cs['xltr__c'].value;ifrm();">
+                    <apex:param name="nextPage"  value="grqpy"/>
+                </apex:actionFunction>      
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                            SR # <span class="text-000">{!rq.Name} </span>
+                            <!-- <div class="user-title">{!rq.STA__c}</div> -->
+                        </span>
+                        <!--<a style="color:#fff;" onclick="saveReqDraft()" class="btn btn-black"> SAVE DRAFT</a>-->
+                        <c:drftCnclBtns req="{!rq}" shwCncl="true" shwDraft="false"/>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                </div>
+                        </div>
+                        
+                        <div class="base-main">
+                            <div class="base-main-content form-style">
+                                <apex:pageBlock mode="edit" id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    
+                                    <apex:pageMessages id="msg" escape="false"/>
+                                    
+                                    <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}" id="opanel">  
+                                        
+                                        <h3 class="base-main-title">Request for Non-Sponsored Student letter</h3>
+                                        
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label>Select the type of letter you want to request</label>
+                                                    <apex:inputField id="xlt__c" value="{!rq.xlt__c}" style="display:none"/>
+                                                    <apex:inputField id="xltr__c" styleClass="requiredFld form-control input-select2-flat" value="{!rq.xltr__c}" onchange="lf=this.value;af='';removeLtr2Val();displayXla2d(this.value); createDepDds();"  />
+                                                    <script type="text/javascript">
+                                                    lf='{!JSENCODE(rq.xltr__c)}';lif='{!$Component.xltr__c}';cs['xltr__c']=getC('{!$Component.xltr__c}');cs['xlt__c']=getC('{!$Component.xlt__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div  class="row">
+                                            <div id="xla2_l" class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Letter addressed to</label>
+                                                    <apex:inputField id="xla2__c" styleClass="requiredFld depDD form-control input-select2-flat" value="{!rq.xla2__c}" onchange="af=this.value;removeLtr2Val();dftA2();displayXla2d(getC(cs['xltr__c'].id).value);hideXla2d(this.value);createDepDds();"/><br/>
+                                                </div>
+                                            </div>
+                                            <div id="xla2d_l" class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label id="label_ad2"> Letter addressed to </label>
+                                                    <apex:inputField id="xla2d__c" styleClass="requiredFld depDD form-control input-select2-flat" value="{!rq.xla2d__c}" onchange="adf=this.value;dftA2d();assignVals(getC(cs['xltr__c'].id).value);"/>
+                                                    <script type="text/javascript">
+                                                    af='{!JSENCODE(rq.xla2__c)}';adf='{!JSENCODE(rq.xla2d__c)}';aif='{!$Component.xla2__c}';adif='{!$Component.xla2d__c}'; cs['xlt1']=getC('{!$Component.xlt1}');
+                                                    cs['xla2__c2']=getC('{!$Component.xla2__c}'); 
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr class="my-2"/>
+                                        <h4 class="mt-4">Applicant Info</h4>
+                                        
+                                            <!--<div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Salutation</label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xcslt__c" value="{!rq.xcslt__c}"  />
+                                                    <script type="text/javascript">
+                                                    cs['xcslt__c']=getC('{!$Component.xcslt__c}');
+                                                    </script>
+                                                </div>
+                                            </div>-->
+                                              
+                                        <apex:inputHidden id="xcslt__c" value="{!rq.xcslt__c}"  />
+                                        
+                                        <div class="form-group">
+                                            <label class="d-block">Title</label>
+                                            <div class="from-group reqRadio">
+                                                <apex:repeat value="{!Salutations}" var="title">
+                                                    <apex:outputPanel style="display:inline-block" rendered="{!title.Value == rq.xcslt__c}" styleClass="mb-4">
+                                                        <label class="custom-radio mr-5">
+                                                            <input type="radio" value="{!title.Value}" checked="true" name="salutation" onchange="salutionOnChange()" class="requiredFld"/>
+                                                            <span>{!title.Label}</span>
+                                                        </label>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel style="display:inline-block" rendered="{!title.Value != rq.xcslt__c}"  styleClass="mb-4">
+                                                        <label class="custom-radio mr-5">
+                                                            <input type="radio" value="{!title.Value}" name="salutation"  onchange="salutionOnChange()" class=""/>
+                                                            <span>{!title.Label}</span>
+                                                        </label>
+                                                    </apex:outputPanel>
+                                                </apex:repeat>
+                                                <div class="option-error frmErrMsg" style="display:none">Please select an option!</div>
+                                                <script type="text/javascript">
+                                                cs['xcslt__c']=document.getElementById('{!$Component.xcslt__c}');
+                                                </script>
+                                            </div>
+                                        </div> 
+                                        
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>First Name  </label>
+                                                    <apex:inputField onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcfnar__c}');" styleClass="form-control requiredFld alphaChar" id="xcfn__c" value="{!rq.xcfn__c}" />
+                                                    <script type="text/javascript">cs['xcfn__c']=getC('{!$Component.xcfn__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>First Name (Arabic) </label>
+                                                    <apex:inputField styleClass="form-control text-right" id="xcfnar__c" value="{!rq.xcfnar__c}" />
+                                                    <script type="text/javascript">cs['xcfnar__c']=getC('{!$Component.xcfnar__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Middle Name</label>
+                                                    <apex:inputField onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmnar__c}');" styleClass="form-control" id="xcmn__c" value="{!rq.xcmn__c}" />
+                                                    <script type="text/javascript">cs['xcmn__c']=getC('{!$Component.xcmn__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Middle Name (Arabic)</label>
+                                                    <apex:inputField styleClass="form-control text-right" id="xcmnar__c" value="{!rq.xcmnar__c}" />
+                                                    <script type="text/javascript">cs['xcmnar__c']=getC('{!$Component.xcmnar__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Last Name</label>
+                                                    <apex:inputField onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xclnar__c}');" styleClass="form-control requiredFld" id="xcln__c" value="{!rq.xcln__c}" />
+                                                    <script type="text/javascript">cs['xcln__c']=getC('{!$Component.xcln__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Last Name (Arabic)</label>
+                                                    <apex:inputField styleClass="form-control text-right"  id="xclnar__c" value="{!rq.xclnar__c}" />
+                                                    <script type="text/javascript">cs['xclnar__c']=getC('{!$Component.xclnar__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            
+                                            <!--<div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Father's Name</label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xcfan__c" value="{!rq.xcfan__c}" />
+                                                    <script type="text/javascript">cs['xcfan__c']=getC('{!$Component.xcfan__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Mother's Name</label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xcmon__c" value="{!rq.xcmon__c}" />
+                                                    <script type="text/javascript">cs['xcmon__c']=getC('{!$Component.xcmon__c}');
+                                                    </script>
+                                                </div>
+                                            </div>-->
+                                        </div>
+                                        
+                                        <!-- <c:passportdetails req="{!rq}" id="ppdCmp"/> -->
+                                        
+                                        <div class="slds-align_absolute-center">
+                                            <div class="base-collapse">
+                                                <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                                   data-target="#passport_details">
+                                                    <div class="collapse-title">Passport details</div>
+                                                </a>
+                                                <div id="passport_details" class="collapse show">
+                                                    <div class="collapse-content">
+                                                        <div class="row">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Passport number</label>
+                                                                    <apex:inputField styleClass="forDraft requiredFld form-control" value="{!rq.xcp__c}" id="xcp__c"/>
+                                                                    <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcp__c']=document.getElementById('{!$Component.xcp__c}');
+                                                                    cs["xadh__c"]=document.getElementById("{!$Component.xadh__c}");
+                                                                    $(cs['xcp__c']).attr('maxlength','20');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Current nationality</label>
+                                                                    <apex:inputField value="{!rq.xcnc__c}" styleClass="forDraft requiredFld form-control dum input-select2-flat"
+                                                                                     id="xcnc__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcnc__c']=document.getElementById('{!$Component.xcnc__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Issue date</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <apex:inputHidden id="xcpid" value="{!rq.xcpid__c}" />
+                                                                        <input type="text" class="requiredFld form-control input-datepicker brad" id="xcpid__c"
+                                                                               data-toggle="datetimepicker" data-target="#xcpid__c" value="{!rq.xcpid__c}"
+                                                                               onchange = "assignfldVal(this.value,'xcpid'); checkDate(this,'pid')" oncomplete="updateIDate()" validationname="pid" />
+                                                                        <script type="text/javascript">
+                                                                        cs['xcpid__c']=document.getElementById('xcpid__c');
+                                                                        dformat('{!JSENCODE(rq.xcpid__c)}','xcpid__c');
+                                                                        cs['xcpid']=getC('{!$Component.xcpid}');
+                                                                        </script>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcpid__c">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                        
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Expiry date</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <apex:inputHidden id="xcped" value="{!rq.xcped__c}" />
+                                                                        <input type="text" class="requiredFld form-control input-datepicker brad" id="xcped__c"
+                                                                               data-toggle="datetimepicker" data-target="#xcped__c" value="{!rq.xcped__c}"
+                                                                               onchange = "assignfldVal(this.value,'xcped');checkDate(this,'ped')" />
+                                                                        <!--onchange="checkIssueAndExpiryDate(this,document.getElementById('xcped__c'))"/>-->
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped__c">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcped__c']=document.getElementById('xcped__c');
+                                                                    dformat('{!JSENCODE(rq.xcped__c)}','xcped__c');
+                                                                    cs['xcped']=getC('{!$Component.xcped}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Passport Issuing Country</label>
+                                                                    <apex:inputField styleClass="requiredFld form-control input-select2-flat" value="{!rq.xcpic__c}" id="xcpic__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcpic__c']=document.getElementById('{!$Component.xcpic__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Passport Place of Issue</label>
+                                                                    <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!rq.xcpip__c}" id="xcpip__c" />
+                                                                    <script type="text/javascript">
+                                                                    cs['xcpip__c']=document.getElementById('{!$Component.xcpip__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>    
+                                                        </div>
+                                                        <!-- .row -->
+                                                    </div>
+                                                    <div class="pb-4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                                                                
+                                        <div class="base-main-footer">
+                                            <div class="base-nav">
+                                                <a onClick="checkFields();" href="#" class="btn btn-primary base-nav-next">
+                                                    CONTINUE TO PAYMENT 
+                                                </a>
+                                            </div>
+                                        </div>
+                                        
+                                        <apex:inputHidden value="{!rq.rtacn__c}"  id="rtacn__c"/>
+                                        <script type="text/javascript">            
+                                        cs['rtacn__c']=getC('{!$Component.rtacn__c}');
+                                        </script>   
+                                    </apex:outputPanel>           
+                                    <script type="text/javascript">
+                                    la2='{!JSENCODE(rq.xla2__c)}';
+                                    if({!md.isView}){lf='{!JSENCODE(rq.xltr__c)}'; }
+                                    ifrm(); 
+                                    </script>
+                                </apex:pageBlock>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </apex:form>  
+</apex:page>

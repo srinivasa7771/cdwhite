@@ -1,0 +1,660 @@
+<apex:page cache="false" controller="gctlCon" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="People & Visas" >
+    <html>
+        <head>
+            <style>
+                
+                
+                @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) { /*For IE */
+                    #conTable td {
+                    max-width:3em !important;
+                    }
+                }
+                @media (max-width: 767.98px){
+                    .table-people .people-property span.people-property-label {
+                        width: 100px;
+                        -ms-flex: 0 0 100px;
+                        flex: 0 0 100px;
+                    }
+                }
+                span.people-property-label {
+                text-transform: capitalize;
+                }
+                .action-dropdown.dropdown.show {
+                z-index: 1;
+                }
+                .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link{
+                background-color: #fff !important;
+                }
+                .alphabet > span:first-child {
+                width: 51px !important;
+                border-radius: 1rem !important;
+                }
+                #conTable th, #conTable td {
+                min-width: 155px !important;
+                }
+                .action-dropdown .dropdown-menu {
+                width: 300px !important;
+                /* right: 0px; */
+                }
+                .action-dropdown .dropdown-menu a {
+                text-transform: uppercase !important;
+                }
+                .table-people tr td:nth-of-type(2)::before{
+                border-radius : 0 !important;
+                }
+                .table-people tr td:nth-of-type(2) {
+                padding-top: 1em;
+                }
+                td:nth-of-type(2)::before {
+                display: none !important;
+                }
+                td:nth-of-type(2) {
+                background-color: #ffffff !important;
+                }
+                .table-people .people-name-wrapper {
+                /*padding-left: 0px !important;*/
+                }
+                /************** datatble css starts **************/
+                /******* Alphbet search *******/
+                div.alphabet {
+                position: relative;
+                display: flex;
+                width: 100%;
+                margin-bottom: 1em;
+                overflow-x: auto;
+                overflow-y: hidden;
+                }
+                
+                div.alphabet span {
+                display: table-cell;
+                color: #3174c7;
+                cursor: pointer;
+                text-align: center;
+                width: 3.5%
+                }
+                
+                div.alphabet span:hover {
+                background: rgba(103, 72, 108, 0.2) !important;
+                }
+                
+                div.alphabet span.empty {
+                background-color : #ccc !important;
+                cursor: not-allowed !important;
+                /*pointer-events :none !important;*/
+                }
+                
+                div.alphabet span.active {
+                background-color: #000 !important;
+                color: #fff !important;
+                }
+                
+                div.alphabetInfo {
+                display: block;
+                position: absolute;
+                background-color: #111;
+                border-radius: 3px;
+                color: white;
+                top: 2em;
+                height: 1.8em;
+                padding-top: 0.4em;
+                text-align: center;
+                z-index: 1;
+                }
+                div.alphabet span {
+                display: inline-block;
+                flex: 0 0 auto;
+                margin-right: 6px;
+                margin-bottom: 6px;
+                width: 34px;
+                height: 34px;
+                line-height: 34px;
+                border-radius: 50%;
+                text-align: center;
+                background-color: #fff;
+                color: #000;
+                transition: all 0.3s;
+                }
+                div#conTable_length, #conTable_filter {
+                display: none !important;
+                }
+                /******* Alphbet search *******/
+                /************** datatble css ends **************/
+            </style>
+            <title>AXS</title>
+            <link rel="icon" href="./favicon.ico" />
+            <!-- vendors -->
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.axs2MandateCss)}" />
+            <!-- icons -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+            <!-- main css -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+            <!--U--- {!U}
+A--- {!U.Account}-->
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Media City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Internet City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dic.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai International Academic City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dia.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Knowledge Park'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dkp.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Outsource City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-doc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Studio City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Design District'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-ddd.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Production City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dpc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!con.Account.Prk__c == 'Dubai Science Park'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsp.css') }" />
+            </apex:outputPanel>
+            <!-- {! IF(A.Prk__c == "Dubai Studio City", "URLFOR($Resource.assets_NUI, '/css/theme.css?v=1.0.0-6')") }  <link rel="stylesheet" href="./assets/css/theme.css?v=1.0.0-6" />-->
+            <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js">
+            </script>
+            <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+            </script>
+            <script>
+            
+            function imgError(elem,g){
+                elem.onerror = "";
+                var gen = (g=="Female")?g:"Male";
+                elem.src = "./resource/assets_NUI/images/"+gen+"-Default.png";
+                return true;
+            }
+            </script>
+        </head>
+        <body>
+            <apex:form >
+                <apex:actionFunction name="roleFilter1" action="{!roleFilter}" rerender="tid,tid1" oncomplete="formTable(document.getElementById('{!$Component.cStr}').value,'#conTable');">
+                    <apex:param name="role" value=""/>
+                </apex:actionFunction>
+                <div id="main">
+                    <!-- .site-header-wrapper -->
+                    <div id="page_content">
+                        <div class="container">
+                            <div class="page-header">
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li>
+                                    <li class="breadcrumb-item">People &amp; Visas</li>
+                                </ul>
+                                <!-- .breadcrumb -->
+                                <div class="d-md-flex flex-wrap align-items-center">
+                                    <h1 class="page-title mr-auto">PEOPLE &amp; VISAS</h1>
+                                    <apex:outputPanel id="tid">
+                                        <div class="table-form-wrapper mb-4">
+                                            <!-- search field  -->
+                                            <div class="table-form-col col-6">
+                                                <div class="search-field mb-0">
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" placeholder="Search" id="p" onkeyup='srch4prsn(this,event);' />
+                                                        <div class="input-group-append srchDiv">
+                                                            <button class="btn" type="button">
+                                                                <div class="icon-search"  onclick='srch4prsn()'></div>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- dropdown filter -->
+                                            <apex:outputText rendered="{!U.account.vcspst__c>0}">
+                                                <div class="table-form-col col-6">
+                                                    <div class="">
+                                                        <select class=" form-control input-select2-flat" id="roleid" onchange='statusFilter1(this,6)'>
+                                                            <option value="">Everyone</option>
+                                                            <option selected="true" value="Employee">Sponsored Employees</option>
+                                                            <option value="Non Sponsored">Non-sponsored Employees</option>
+                                                            <option value="Student">Students</option>
+                                                            <option value="Spouse">Spouse</option>
+                                                            <option value="Child">Child</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!U.account.vcspst__c<=0}">
+                                                <div class="table-form-col col-6">
+                                                    <div class="">
+                                                        <select class="dropdown-filter form-control input-select2-flat" id="roleid" onchange='statusFilter1(this,6)'>
+                                                            <option value="">Everyone</option>
+                                                            <option selected="true" value="Employee">Sponsored Employees</option>
+                                                            <option value="Non Sponsored">Non-sponsored Employees</option>
+                                                            <option value="Spouse">Spouse</option>
+                                                            <option value="Child">Child</option>
+                                                            <!--<option value="Dependent">Dependents</option>
+<option value="Draft">Draft</option>-->
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </apex:outputText>
+                                            <div class="table-form-col col-6">
+                                                <div class="">
+                                                    <select class="dropdown-filter form-control input-select2-flat" id="stsId" onchange='statusFilter(this,2)'>
+                                                        <option value="">All</option>
+                                                        <option value="Active">Active</option>
+                                                        <option value="Under Activation">Under Activation</option>
+                                                        <option value="Under Deactivation">Under Deactivation</option>
+                                                        <option value="Inactive">InActive</option>
+                                                        <!--<option value="Draft">Draft</option>-->
+                                                    </select>
+                                                </div>
+                                                <!-- end .dropdown filter -->
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <!-- .table-form-wrapper -->
+                                </div>
+                                <!--<c:dataTable ls="{!ContactString}" />-->
+                                <div class="table-responsive table-responsive-lg table-people">
+                                    <apex:outputPanel id="tid1">
+                                        <table class="table" id="conTable" width="100%">
+                                            <thead>
+                                                <tr>
+                                                    <th field="forAlpha" width="20%" style="display:none !important;">STATUS</th>
+                                                    <th field="name" width="40%"><span>NAME / JOB TITLE</span></th>
+                                                    <th field="rol__c" width="20%">ROLE</th>
+                                                    <!--<th field="custRol" style="display:none !important;" width="20%" >Custom Role</th>  -->
+                                                    <th field="STA__c" width="20%">STATUS</th>
+                                                    <th field="nc__c" width="20%">NATIONALITY</th>
+                                                    <th field="p__c" width="20%">PASSPORT</th>
+                                                    <th field="eidid__c">EMIRATES ID</th>
+                                                    <th field="rp__c" width="20%">RESIDENCE VISA</th>
+                                                    <th field="actions"  width="20%" class="actions"></th>
+                                                    <th style="display:none;" field="dummy" ></th>
+                                                    <th style="display:none !important;"></th>
+                                                </tr>
+                                            </thead>
+                                                <apex:inputHidden value="{!ContactString}" id="cStr" />
+                                                <tbody>
+                                                    <apex:repeat value="{!ContactList}" var="c">
+                                                        <tr>
+                                                            <td>{!c.FirstName}</td>
+                                                            <td>{!c.rol__c}</td>
+                                                            <td>{!c.STA__c}</td>
+                                                            <td>{!c.nc__c}</td>
+                                                            <td>{!c.p__c}</td>
+                                                            <td>{!c.eidid__c}</td>
+                                                            <td>{!c.rp__c}</td>
+                                                        </tr>
+                                                    </apex:repeat>
+                                                </tbody>
+                                        </table>
+                                        <script>
+                                        $(document).ready(function(){
+                                            $('.fa.fa-ellipsis-v').parent().on('click',function(e){
+                                                $(this).unbind();
+                                            });
+                                            $('.fa.fa-ellipsis-v').parent().trigger('click');
+                                            $('body').trigger('click');
+                                        });
+                                        </script>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                var str = '';
+                //var str1 = document.getElementById('{!$Component.cStr}').value;
+                $(document).ready(function(){
+                    if(!Array.prototype.includes){
+                        Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+                    }
+                    if (!String.prototype.includes) {
+                        String.prototype.includes = function() {
+                            return String.prototype.indexOf.apply(this, arguments) !== -1;
+                        };
+                    }
+                    str = document.getElementById('{!$Component.cStr}').value;
+                    //str = '{!JSENCODE(ContactString)}';
+                    str = str.split('\\').join('\\\\');
+                    //formTable(str,'#conTable');
+                     var table = $('#conTable').DataTable({});
+                    $('#conTable th').each(function(){
+                        $(this).css('cursor','pointer').attr('title','Click to sort').append('<i class="fa text-primary">');
+                    });
+                    $('#conTable th').click(function(){
+                        var c = $(this).attr('class');
+                        $('#conTable th').find('i').hide();
+                        $(this).find('i').show();
+                        if(c.includes('desc')){
+                            $(this).find('i').removeClass('fa-arrow-up').addClass('fa-arrow-down');
+                        }
+                        else{
+                            $(this).find('i').removeClass('fa-arrow-down').addClass('fa-arrow-up');
+                        }
+                    });
+                });
+                function srch4prsn(){
+                    var p = document.getElementById('p').value;
+                    dataTableSearch('#conTable',p);
+                   
+                }
+                /*function statusFilter(){
+                    var p = document.getElementById('p').value;
+                    var roleid = (document.getElementById('roleid')!=null)?document.getElementById('roleid').value:'';
+                    var stsId = (document.getElementById('stsId')!=null)?document.getElementById('stsId').value:'';
+                    if(roleid == 'Everyone')
+                        roleid = '';
+                    if(stsId == 'Status')
+                        stsId = '';
+                    if(p=='')
+                        p = $('a.active').text();
+                    statusSearch(roleid,stsId,p);
+                }*/
+                function getalphaSearch1(e){
+                    $('.alphabet-filter a').removeClass('active');
+                    $(e).addClass('active');
+                    alphaSearch($(e).text());
+                }
+                function nextpg(){
+                    //alert('hi');
+                    nxt();
+                }
+                /*function dateFilter(d){
+               dateSrch(d);
+               }*/
+                function statusFilter(s,colInd){
+                    var p = $(s).val();
+                    var ST = (p&&p!='Everyone'&&p!='All')?p:'';
+                    dataTableSearchByCol('#conTable',colInd,ST);
+                    //dataTableSearch('#conTable',ST);
+                }
+                function statusFilter1(s,colInd){
+                    var p = $(s).val();
+                    var ST = (p&&p!='Everyone'&&p!='All')?p:'';
+                    roleFilter1(ST);
+                    //dataTableSearch('#conTable',ST);
+                }
+                
+                
+                /******* Datatable code starts -- VMKR *******/
+                
+                //for alphabet search
+                
+                (function(){
+                    
+                    
+                    // Search function
+                    $.fn.dataTable.Api.register( 'alphabetSearch()', function ( searchTerm ) {
+                        this.iterator( 'table', function ( context ) {
+                            context.alphabetSearch = searchTerm;
+                        } );
+                        
+                        return this;
+                    } );
+                    
+                    // Recalculate the alphabet display for updated data
+                    $.fn.dataTable.Api.register( 'alphabetSearch.recalc()', function ( searchTerm ) {
+                        this.iterator( 'table', function ( context ) {
+                            draw(
+                                new $.fn.dataTable.Api( context ),
+                                $('div.alphabet', this.table().container())
+                            );
+                        } );
+                        
+                        return this;
+                    } );
+                    
+                    
+                    // Search plug-in
+                    $.fn.dataTable.ext.search.push( function ( context, searchData ) {
+                        // Ensure that there is a search applied to this table before running it
+                        if ( ! context.alphabetSearch ) {
+                            return true;
+                        }
+                        
+                        if ( searchData[0].charAt(0) === context.alphabetSearch ) {
+                            return true;
+                        }
+                        
+                        return false;
+                    } );
+                    
+                    
+                    // Private support methods
+                    function bin ( data ) {
+                        //debugger;
+                        var letter, bins = {};
+                        
+                        for ( var i=0, ien=data.length ; i<ien ; i++ ) {
+                            letter = data[i].charAt(0).toUpperCase();
+                            
+                            if ( bins[letter] ) {
+                                bins[letter]++;
+                            }
+                            else {
+                                bins[letter] = 1;
+                            }
+                        }
+                        
+                        return bins;
+                    }
+                    
+                    function draw ( table, alphabet )
+                    {
+                        alphabet.empty();
+                        alphabet.append( '' );
+                        
+                        var columnData = getText4Cols('#conTable');
+                        var bins = bin( columnData );
+                        
+                        $('<span class="clear active"/>')
+                        .data( 'letter', '' )
+                        .data( 'match-count', columnData.length )
+                        .html( 'All' )
+                        .appendTo( alphabet );
+                        
+                        for ( var i=0 ; i<26 ; i++ ) {
+                            var letter = String.fromCharCode( 65 + i );
+                            
+                            $('<span/>')
+                            .data( 'letter', letter )
+                            .data( 'match-count', bins[letter] || 0 )
+                            .addClass( ! bins[letter] ? 'empty' : '' )
+                            .html( letter )
+                            .attr('title',! bins[letter] ? 'Contacts not available' : '')
+                            .appendTo( alphabet );
+                        }
+                        
+                        $('<div class="alphabetInfo"></div>')
+                        .appendTo( alphabet );
+                    }
+                    
+                    
+                    $.fn.dataTable.AlphabetSearch = function ( context ) {
+                        var table = new $.fn.dataTable.Api( context );
+                        var alphabet = $('<div class="alphabet"/>');
+                        
+                        draw( table, alphabet );
+                        
+                        // Trigger a search
+                        alphabet.on( 'click', 'span', function () {
+                            if($(this).hasClass( 'empty' ))
+                                return;
+                            alphabet.find( '.active' ).removeClass( 'active' );
+                            $(this).addClass( 'active' );
+                            
+                            table
+                            .alphabetSearch( $(this).data('letter') )
+                            .draw();
+                        } );
+                        
+                        // Mouse events to show helper information
+                        alphabet
+                        .on( 'mouseenter', 'span', function () {
+                            alphabet
+                            .find('div.alphabetInfo')
+                            .css( {
+                                opacity: 0, // change this to 1, to show the results count as tag
+                                left: $(this).position().left,
+                                width: $(this).width()
+                            } )
+                            .html( $(this).data('match-count') );
+                        } )
+                        .on( 'mouseleave', 'span', function () {
+                            alphabet
+                            .find('div.alphabetInfo')
+                            .css('opacity', 0);
+                        } );
+                        
+                        // API method to get the alphabet container node
+                        this.node = function () {
+                            return alphabet;
+                        };
+                    };
+                    
+                    $.fn.DataTable.AlphabetSearch = $.fn.dataTable.AlphabetSearch;
+                    
+                    
+                    // Register a search plug-in
+                    $.fn.dataTable.ext.feature.push( {
+                        fnInit: function ( settings ) {
+                            var search = new $.fn.dataTable.AlphabetSearch( settings );
+                            return search.node();
+                        },
+                        cFeature: 'A'
+                    } );
+                    
+                    
+                    function getText4Cols(id){
+                        var d = [];
+                        $(id).find('.people-name1').each(function(){
+                            d.push($(this).text().trim());
+                        });
+                        return d;
+                    }
+                }());
+                function dataTableSearchByCol(tableId,columnIndex,srchCrt){ // to search each column(colIndex have to be given)
+                    //$(tableId).dataTable().api().columns(columnIndex).data().search('^'+srchCrt+'$',true,true,true).draw();  // for Case Insesitive
+                    //$(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt,false,true,false).draw();  // for Case Sesitive
+                    $(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt).draw();  // for Case In Sesitive
+                }
+                function dataTableSearch(tableId,srchCrt){ // to search entire table
+                	$(tableId).DataTable().data().search(srchCrt).draw();
+                }
+                var actionLinks = {"Employee":{"ren":"a231s0000005LNG","can":"a231s0000005LTXAA2","ame":"a231s0000005LUBAA2","let":"a231s0000005LOt"},"Student":{"ren":"a231s0000005LNV","can":"a231s0000005LTNAA2","ame":"a231s0000005LUCAA2","let":"a231s0000005LOrAAM"},"Spouse":{"ren":"a231s0000005LN1","can":"a231s0000005LUZAA2","ame":"a231s0000005LUAAA2","let":""},"Child":{"ren":"a231s0000005LN1","can":"a231s0000005LUZAA2","ame":"a231s0000005LUAAA2","let":""}};
+                var roles = {"Employee":"All Employees","Non Sponsored":"All Employees","Spouse":"All Dependents","Child":"All Dependents"};
+                function formTable(dataStr, tableId) {
+                    /* code to fix Search icon rerender issue starts */
+                    $('.srchDiv button').next().find('button').remove();
+                    var x = $('.srchDiv button').next();
+                    $('.srchDiv button').next().remove();
+                    $('.srchDiv button').append(x);
+                    $('select').select2();
+                    /* code to fix Search icon rerender issue ends */
+                    $(tableId).find('tbody').html('');
+                    $(tableId).DataTable().destroy()
+                    var data = JSON.parse(dataStr);
+                    var tableData = '';
+                    //for ([ind, val]  of data.entries()) {
+                    for (var ind=0;ind<data.length;ind++) {
+                        var val = data[ind];
+                        var tr = '<tr>';
+                        var subActions = '';
+                        var cRole = (val.rol__c=='Spouse' || val.rol__c=='Child')?'Dependent':val.rol__c;
+                        if (Object.keys(actionLinks).includes(val.rol__c)) {
+                            if (val.STA__c != 'Inactive') {
+                                subActions = ((val.STA__c != 'Draft') ? '<a style="'+(actionLinks[val.rol__c]['let']?'':'display:none;')+'" class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["let"]+'">REQUEST FOR '+cRole+' LETTER</a>' : '');
+                                subActions += (val.RP_Sts__c) ? ((val.RP_Sts__c.includes('EXPIRED') || val.RP_Sts__c.includes('EXP: IN')) ? '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["ren"]+'">RENEW '+cRole+' VISA</a>' : '') : '';
+                                subActions += '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["ame"]+'">AMEND '+cRole+' VISA</a> ';
+                                subActions += ((val.STA__c != 'Draft') ? '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["can"]+'">CANCEL '+cRole+' VISA</a>' : '');
+                                
+                                actions += '<div class="action-dropdown dropdown"> <div type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown"> <val class="fa fa-ellipsis-v"></val> </div> <div class="dropdown-menu"> <h4 class="dropdown-header dropdown-header bg-primary text-light">ACTIONS</h4> ' + subActions + ' </div> </div>';
+                                
+                            }   
+                        }
+                        var td1= '<td class="table-people-mobile-start"><div class="action-dropdown dropdown">'+
+                        '<button type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown">'+
+                        '<i class="fa fa-ellipsis-v"></i></button>'+
+                        '<div class="dropdown-menu dropdown-menu-right"><h4 class="dropdown-header bg-primary">ACTIONS</h4>'+subActions+'</div></div></td>';
+                        //tr += td1;
+                        $(tableId).find('th').each(function() {
+                            var j = $(this).attr('field');
+                            var n = $(this).text();
+                            n = (n=='NAME / JOB TITLE'?'':n);
+                            var v = val[j] ? val[j] : 'NA';
+                            var subText = '';
+                            if (j == 'actions' || j == 'dummy' ||!j) return;
+                            else if (j == 'STA__c') {
+                                v = (v == 'Draft') ? 'Under Activation' : v;
+                            } else if (j == 'name') {// <img src="/servlet/servlet.FileDownload?file=' + val.Photo_ID__c + '" onerror="imgError(this,val.Gender__c);" alt="" /> 
+                                 v = '<div class="people-name-wrapper" gend="'+val.Gender__c+'" index="'+ind+'">  <div class="people-name"> <a href="./gConInfo?id=' + val.Id + '" target="_blank" class="row-link"></a> ' + val.FirstName + ' </div>';
+                                // v = '<div class="people-name-wrapper" gend="'+val.Gender__c+'" index="'+ind+'"> <div class="avatar"><img loading="lazy" src="/servlet/servlet.FileDownload?file=' + val.Photo_ID__c + '" onerror="imgError(this,\''+val.Gender__c+'\');" alt="" /> </div> <div class="people-name"> <a href="./gConInfo?id=' + val.Id + '" target="_blank" class="row-link"></a> ' + val.FirstName + ' </div>';
+                                if (val.Job_Title_Formula__c) {
+                                    v += '<div class="people-job">' + val.Job_Title_Formula__c + '</div>';
+                                }
+                                v += '</div>';
+                            } else if (j == 'p__c') {
+                                subText = (((val.Passport_Status__c).includes('Expires') || (val.Passport_Status__c).includes('EXPIRED')) ? '<span class="text-danger">' + val.Passport_Status__c + '</span>' : (val.Passport_Status__c).includes('Valid') ? '<span class="text-grey">' + val.Passport_Status__c + '</span>' : '');
+                                v = '<div class="people-property-flex"> <div class="mr-2">' + val.p__c + '</div> ' + subText + ' </div>';
+                            } else if (j == 'rp__c') {
+                                subText = (val.RP_Sts__c) ? ((val.RP_Sts__c).includes('EXPIRED') ? '<span class="badge-status badge-status-urgent">EXPIRED</span>' : (val.RP_Sts__c).includes('MISSING') ? 'N/A' : (val.RP_Sts__c).includes('EXP: IN') ? '<span class="badge-status badge-status-process">' + val.RP_Sts__c + '</span>' : (val.RP_Sts__c).includes('Valid Till') ? '<span class="text-grey">' + val.RP_Sts__c + '</span>' : '') : 'N/A';
+                                v = '<div class="people-property-flex"> <div class="mr-2">' + (val[j] ? val[j] : '') + '</div> ' + subText + ' </div>';
+                            } else {
+                                //v = '<div class="people-property"> <span class="people-property-label">' + j + '</span> ' + (val[j] ? val[j] : 'NA') + ' </div>';
+                                v = (val[j] ? val[j] : 'N/A');
+                            }
+                            if(j == 'forAlpha'){
+                                tr += '<td style="display:none" class="people-name1">' + val.FirstName + '</td>';
+                            }
+                            else if(j == 'custRol')
+                                tr += '<td >' + roles[val['rol__c']] + '</td>';/*style="display:none !important"*/
+                            else{
+                                if(n)
+                                    tr += '<td><div class="people-property"><span class="people-property-label">'+n.toLowerCase()+'</span>' + v + '</div></td>';
+                                else
+                                    tr += '<td>' + v + '</td>';
+                                }
+                            });
+                        var actions = '<td class="actions">';
+                        if (Object.keys(actionLinks).includes(val.rol__c)) {
+                            if (val.STA__c != 'Inactive') {
+                                subActions = ((val.STA__c != 'Draft') ? '<a style="'+(actionLinks[val.rol__c]['let']?'':'display:none;')+'" class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["let"]+'">REQUEST FOR '+cRole+' LETTER</a>' : '');
+                                subActions += (val.RP_Sts__c) ? ((val.RP_Sts__c.includes('EXPIRED') || val.RP_Sts__c.includes('EXP: IN')) ? '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["ren"]+'">RENEW '+cRole+' VISA</a>' : '') : '';
+                                subActions += '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["ame"]+'">AMEND '+cRole+' VISA</a> ';
+                                subActions += ((val.STA__c != 'Draft') ? '<a class="dropdown-item" href="/grqn1?sid='+actionLinks[val.rol__c]["can"]+'">CANCEL '+cRole+' VISA</a>' : '');
+                                
+                                actions += '<div class="action-dropdown dropdown"> <div type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown"> <val class="fa fa-ellipsis-v"></val> </div> <div class="dropdown-menu"> <h4 class="dropdown-header dropdown-header bg-primary text-light">ACTIONS</h4> ' + subActions + ' </div> </div>';
+                                
+                            }
+                        }
+                        var dumTD = '<td style="display:none !important">dummy</td>';
+                        actions += '</td>';
+                        tr += actions + dumTD+'<td class="table-people-mobile-end"></td></tr>';
+                        tableData += tr;
+                    }
+                    $(tableId).find('tbody').html(tableData);
+                    var table = $(tableId).DataTable({
+                        dom: 'Alfrtip',
+                        language: {
+                            'paginate': {
+                                'previous': '<i class="fa fa-long-arrow-left"></i><span> PREV</span>',
+                                'next': '<span>NEXT </span><i class="fa fa-long-arrow-right"></i>'
+                            }
+                        }
+                    });
+                }
+                
+                
+                function alert() {
+                    console.log(Object.values(arguments).join())
+                    console.log('From --- '+new Error().stack);
+                };
+                /******* Datatable code ends -- VMKR *******/
+                </script>
+          </apex:form>
+       </body>
+    </html>
+</apex:page>

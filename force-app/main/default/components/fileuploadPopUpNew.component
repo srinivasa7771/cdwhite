@@ -1,0 +1,837 @@
+<apex:component selfClosing="true">
+       
+        <div id="default-popup" class="avgrund-popup" style="margin-top: 15px;">        
+        <input type="hidden" id="TotalImage" value="" />
+        <input type="hidden" id="CurrentImage" value="" />
+        <input type="hidden" id="CurrentImageURL" value="" />
+        <div id="emessage" style="display:none" ></div>
+        <!-- Left column -->
+        <div class=" two_third">
+        <h3>Scan / Upload Attachment</h3>
+        <!-- scan start -->    
+<div id="divBlank" style="height:20px">
+<ul>
+    <li></li>
+</ul>
+</div>
+        <div id="dwtcontrolContainer" style="width:580px"></div>
+<div id="DWTNonInstallContainerID" style="width:580px"></div>
+<div id="DWTemessageContainer" style="margin-left:50px;width:580px"></div>
+
+
+
+<script type="text/javascript" language="javascript"> 
+ var WebTWAIN;
+var _divDWTSourceContainerID = "source"; 
+var seed;
+var _bInIE;               // If it is in IE
+var _bInWindows;          // If it is in Windows OS
+var _bInWindowsX86;       // If it is in X86 platform
+var _divMessageContainer;   // For message display
+var _strTempStr = "";       // Store the temp string for display
+var objEmessage;
+var re;
+var strre;
+var  _iLeft, _iTop, _iRight, _iBottom;
+     Dynamsoft.WebTwainEnv.RegisterEvent('OnWebTwainReady', Dynamsoft_OnReady); // Register OnWebTwainReady event. This event fires as soon as Dynamic Web TWAIN is initialized and ready to be used
+
+     var DWObject, blankField = "", extrFieldsCount = 0, upload_returnSth = true;
+var CurrentPathName = unescape(location.pathname);
+var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);
+var strHTTPServer = location.hostname;
+var strActionPage;
+
+            
+        function Dynamsoft_OnReady() {
+            WebTWAIN = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer'); // Get the Dynamic Web TWAIN object that is embeded in the div with id 'dwtcontrolContainer'
+          
+            // dwtcontrolContainer
+            if (WebTWAIN) {
+              
+                 var count = WebTWAIN.SourceCount;
+                for (var i = 0; i < count; i++)
+                    document.getElementById("source").options.add(new Option(WebTWAIN.GetSourceNameItems(i), i));
+               
+    
+               
+            }
+             WebTWAIN.RegisterEvent("OnPostTransfer", Dynamsoft_OnPostTransfer);
+            WebTWAIN.RegisterEvent("OnPostLoad", Dynamsoft_OnPostLoadfunction);
+            WebTWAIN.RegisterEvent("OnPostAllTransfers", Dynamsoft_OnPostAllTransfers);
+            WebTWAIN.RegisterEvent("OnMouseClick", Dynamsoft_OnMouseClick);            
+            WebTWAIN.RegisterEvent("OnImageAreaSelected", Dynamsoft_OnImageAreaSelected);
+            WebTWAIN.RegisterEvent("OnImageAreaDeSelected", Dynamsoft_OnImageAreaDeselected);
+            WebTWAIN.RegisterEvent("OnTopImageInTheViewChanged", Dynamsoft_OnTopImageInTheViewChanged);
+            
+            
+
+        }
+    
+      function LoadImage() { 
+           WebTWAIN = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer'); 
+            if (WebTWAIN) {
+                WebTWAIN.IfShowFileDialog = true; // Open the system's file dialog to load image
+                WebTWAIN.LoadImageEx("", EnumDWT_ImageType.IT_ALL, OnSuccess, OnFailure); // Load images in all supported formats (.bmp, .jpg, .tif, .png, .pdf). OnSuccess or OnFailure will be called after the operation
+            }
+        }
+    function OnSuccess() {
+            console.log('successful');
+        }
+
+        function OnFailure(errorCode, errorString) {
+            alert(errorString);
+        }           
+            
+
+
+function source_onchange() {
+    //document.getElementById("divTwainType").style.display = "";
+    //document.getElementById("btnScan").value = "Scan";
+}
+
+function Simple_AcquireImage() {
+ var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+ if(DWObject) {
+ DWObject.BrokerProcessType = 1; /* use a separate process for document scanning */
+ DWObject.SelectSource();
+ DWObject.CloseSource();
+ DWObject.OpenSource();
+ DWObject.IfShowUI = false;
+ DWObject.AcquireImage();     
+ }
+}
+
+function UpdatePageInfo(){
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    document.getElementById("TotalImage").value = DWObject.HowManyImagesInBuffer;
+    document.getElementById("CurrentImage").value = DWObject.CurrentImageIndexInBuffer + 1;
+}
+
+
+
+
+
+function btnLoad_onclick1() {
+ var  DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    DWObject.IfShowFileDialog = true;
+    DWObject.LoadImageEx("", 5);
+    if (checkErrorString()) {
+        appendMessage("Loaded an image successfully.");
+    }
+}
+
+    function btnLoad_onclick() {
+
+    DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (DWObject) {
+        //test
+        if(!Dynamsoft.Lib.env.bMac){
+
+         var OnPDFSuccess = function() {
+            appendMessage("Loaded an image successfully.<br/>");
+            updatePageInfo();
+      };
+
+      var OnPDFFailure = function(errorCode, errorString) {
+            //checkErrorStringWithErrorCode(errorCode, errorString);
+      };
+
+                
+                     var OnSuccess = function () {  
+                        DWObject.IfShowFileDialog = true;
+                        DWObject.Addon.PDF.SetResolution(300);
+                        DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+                        DWObject.LoadImageEx("", EnumDWT_ImageType.IT_PDF, OnPDFSuccess, OnPDFFailure);
+
+                    };
+
+    var OnFailure = function(errorCode, errorString) {
+        appendMessage(errorString);
+    };
+ 
+    if(Dynamsoft.Lib.env.bMac)
+    {
+        DWObject.IfShowFileDialog = true;
+        DWObject.Addon.PDF.SetResolution(300);
+        DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+        DWObject.LoadImageEx("", EnumDWT_ImageType.IT_PDF, OnPDFSuccess, OnPDFFailure);
+    }
+    else
+    {
+        DWObject.Addon.PDF.Download("https://c.cs6.visual.force.com/resource/1489508905000/Pdf", OnSuccess, OnFailure); 
+    }  
+       
+        //test
+        var nCount = 0, nCountLoaded = 0, aryFilePaths = [];
+        DWObject.IfShowFileDialog = false;
+        function ds_load_pdfa(bSave, filesCount, index, path, filename) {
+            nCount = filesCount;
+            if (nCount == -1) {
+                Dynamsoft.Lib.detect.hideMask();
+                return;
+            }
+            var filePath = path + "\\" + filename, _oFile = {};
+            _oFile._filePath = filePath;
+            _oFile._fileIsPDF = false;
+            if ((filename.substr(filename.lastIndexOf('.') + 1)).toLowerCase() == 'pdf') {
+                _oFile._fileIsPDF = true;
+				
+            }
+            aryFilePaths.push(_oFile);
+            if (aryFilePaths.length == nCount) {
+                var i = 0;
+                function loadFileOneByOne() {
+                    if (aryFilePaths[i]._fileIsPDF) {
+                        DWObject.Addon.PDF.SetResolution(200);
+                        DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+                    }
+                    DWObject.LoadImage(aryFilePaths[i]._filePath,
+                        function () {
+                            console.log('Load Image:' + aryFilePaths[i]._filePath + ' -- successful');
+                            i++;
+                            if (i != nCount)
+                                loadFileOneByOne();
+                        },
+                        function (errorCode, errorString) {
+                            Dynamsoft.Lib.detect.hideMask();
+                            alert('Load Image:' + aryFilePaths[i]._filePath + errorString);
+                        }
+                    );
+                }
+                loadFileOneByOne();
+            }
+        }
+        DWObject.RegisterEvent('OnGetFilePath', ds_load_pdfa);
+        DWObject.RegisterEvent('OnPostLoad', function (path, name, type) {
+            nCountLoaded++;
+            console.log('load' + nCountLoaded);
+            if (nCountLoaded == nCount) {
+                DWObject.UnregisterEvent('OnGetFilePath', ds_load_pdfa);
+                Dynamsoft.Lib.detect.hideMask();
+            }
+        });
+        DWObject.ShowFileDialog(false, "BMP, JPG, PNG, PDF and TIF | *.bmp;*.jpg;*.png;*.pdf;*.tif;*.tiff", 0, "", "", true, true, 0)
+        Dynamsoft.Lib.detect.showMask();
+    }
+    else{
+
+         DWObject.IfShowFileDialog = true;
+ //   DWObject.LoadImageEx("", 5);
+DWObject.LoadImageEx("", EnumDWT_ImageType.IT_ALL);    
+if (checkErrorString()) {
+        appendMessage("Loaded an image successfully.");
+    }
+            }
+        }
+}
+
+function initDllForChangeImageSize() {
+
+    var vInterpolationMethod = document.getElementById("InterpolationMethod");
+    vInterpolationMethod.options.length = 0;
+    vInterpolationMethod.options.add(new Option("NearestNeighbor", 1));
+    vInterpolationMethod.options.add(new Option("Bilinear", 2));
+    vInterpolationMethod.options.add(new Option("Bicubic", 3));
+
+}
+
+function checkIfImagesInBuffer() {
+    var  DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (DWObject.HowManyImagesInBuffer == 0) {
+        //appendMessage("There is no image in buffer.")
+        return false;
+    }
+    else
+        return true;
+}
+
+
+function checkErrorString() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (DWObject.ErrorCode == 0) {
+        //appendMessage("<span style='color:#cE5E04'><b>" + DWObject.ErrorString + "</b></span><br />");
+
+        return true;
+    }
+    if (DWObject.ErrorCode == -2115) //Cancel file dialog
+        return true;
+    else {
+        if (DWObject.ErrorCode == -2003) {
+            var ErrorMessageWin = window.open("", "ErrorMessage", "height=900,width=850,top=0,left=0,toolbar=no,menubar=no,scrollbars=no, resizable=no,location=no, status=no");
+            ErrorMessageWin.document.writeln(DWObject.HTTPPostResponseString);
+        }
+        appendMessage("<span style='color:#cE5E04'><b>" + DWObject.ErrorString + "</b></span><br />");
+        return false;
+    }
+}
+
+function CheckIfImagesInBuffer() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (DWObject.HowManyImagesInBuffer == 0) {
+        alert('There is no image in buffer.');        
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+
+function btnShowImageEditor_onclick() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+        return;
+    }
+    DWObject.ShowImageEditor();
+}
+
+function btnRotateRight_onclick() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+        return;
+    }
+    DWObject.RotateRight(DWObject.CurrentImageIndexInBuffer);
+}
+function btnRotateLeft_onclick() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+        return;
+    }
+    DWObject.RotateLeft(DWObject.CurrentImageIndexInBuffer);
+}
+
+function btnRemoveCurrentImage_onclick() {
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+        return;
+    }
+    DWObject.RemoveAllImages();
+    document.getElementById("TotalImage").value = "0";
+    document.getElementById("CurrentImage").value = "";
+}
+
+
+
+
+function appendMessage(strMessage) {
+    
+}
+function btnScan_onclick() {
+   
+    var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    DWObject.SelectSourceByIndex(document.getElementById("source").selectedIndex);  
+    var width,height,resolution=0;    
+    width=document.getElementById("width").value;
+    height=document.getElementById("height").value;
+    resolution=document.getElementById("resolution").value;       
+  
+DWObject.CloseSource();
+DWObject.OpenSource();
+
+
+
+    DWObject.IfShowUI = false;//document.getElementById("ShowUI").checked;
+    var i;  
+    DWObject.PixelType ='2';//color
+    DWObject.Resolution ='175';// document.getElementById("Resolution").value;
+    
+    
+    var attName=document.getElementById("currentImage").value;
+if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+else{width="872";height="1232";resolution="175";}
+    DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+    
+    
+    //DWObject.IfFeederEnabled = true;//document.getElementById("ADF").checked ;
+    //DWObject.IfDuplexEnabled = false;//document.getElementById("Duplex").checked ;   
+   
+    //DWObject.IfDisableSourceAfterAcquire = true;
+    //alert('IfDisableSourceAfterAcquire');
+    DWObject.AcquireImage();
+
+    DWObject.ChangeImageSize(
+            DWObject.CurrentImageIndexInBuffer,
+            width,
+            height,
+            2
+        );   
+    document.getElementById("uploaded_count").value=1;
+}
+
+   
+            
+function btnCrop_onclick() {
+   
+    var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!checkIfImagesInBuffer()) {
+        return;
+    }
+    
+    if (_iLeft != 0 || _iTop != 0 || _iRight != 0 || _iBottom != 0) {
+        DWObject.Crop(
+            DWObject.CurrentImageIndexInBuffer,
+            _iLeft, _iTop, _iRight, _iBottom
+        );
+        _iLeft = 0;
+        _iTop = 0;
+        _iRight = 0;
+        _iBottom = 0;
+        
+        if (checkErrorString()) {
+            return;
+        }
+        return;
+    }
+   
+    DWObject.ChangeImageSize(
+            DWObject.CurrentImageIndexInBuffer,
+            width,
+            height,
+            2
+        );
+    
+    /*switch (document.getElementById("Crop").style.visibility) {
+        case "visible": document.getElementById("Crop").style.visibility = "hidden"; break;
+        case "hidden": document.getElementById("Crop").style.visibility = "visible"; break;
+        default: break;
+    }
+    document.getElementById("Crop").style.top = ds_gettop(document.getElementById("btnCrop")) + document.getElementById("btnCrop").offsetHeight + "px";
+    document.getElementById("Crop").style.left = ds_getleft(document.getElementById("btnCrop")) - 80 + "px";*/
+    
+    
+    
+}
+
+function btnUpload_onclick(reqNo,width,height,resolution) {
+    var bSave;
+     var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+    alert("Please scan a document."); 
+        return 1;
+    }
+    
+    
+     if(DWObject.IsBlankImage(DWObject.CurrentImageIndexInBuffer)){
+        //alert('Please scan or upload an image.');
+        //return flase;
+    }
+
+    if(DWObject.GetImageXResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+    //alert('Image resolution is not matching with specified resolution.');
+       // return flase;
+    }
+    
+    if(DWObject.GetImageYResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+       //alert('Image resolution is not matching with specified resolution.');
+       // return flase;
+    }
+    
+    
+ 
+    if(DWObject.GetImageBitDepth(DWObject.CurrentImageIndexInBuffer)<24){
+    alert('Image is not clear.');
+    return flase;
+    }
+    
+    var CurrentPathName = unescape(location.pathname);    
+
+   var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);  
+      
+        
+        var OnSuccess = function() {
+        appendMessage('<b>Save Image: </b>');
+       // checkErrorStringWithErrorCode(0, "Successful.");
+    };
+
+    
+     var OnFailure = function(errorCode, errorString) {
+       // checkErrorStringWithErrorCode(errorCode, errorString);
+    };
+    
+        
+        
+    var width,height,resolution=0;
+    width=document.getElementById("width").value;
+    height=document.getElementById("height").value;
+    resolution=document.getElementById("resolution").value;
+    
+    
+var attName=document.getElementById("currentImage").value; 
+if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+else{width="872";height="1232";resolution="175";}
+        var count = DWObject.HowManyImagesInBuffer;
+        DWObject.SelectedImagesCount = count;
+        for (var i = 0; i < count; i++) {
+            DWObject.SetSelectedImageIndex(i, i);
+        } 
+   if((attName.toLowerCase().indexOf('contract')!=-1)|| (attName.toLowerCase().indexOf('form')!=-1)){ 
+    DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_PDF);
+        var uploadfilename=document.getElementById("currentImage").value+".pdf";
+   }else{
+       
+       DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+    
+    DWObject.ChangeImageSize(
+        DWObject.CurrentImageIndexInBuffer,
+        width,
+        height,
+        2
+    );
+    
+       
+       DWObject.GetSelectedImagesSize(1);
+       var uploadfilename=document.getElementById("currentImage").value+".jpg";
+      
+   }
+        var imgData = DWObject.SaveSelectedImagesToBase64Binary();     
+       
+         var attType=document.getElementById("currentImage").value
+         var count=parseInt(document.getElementById(attType+"_cur").value);
+    count=count+1;
+    document.getElementById(attType+"_cur").value=count;
+    imageBase64.value=imgData;  
+    reqDocId.value=document.getElementById(attType+"_Id").value;    
+    docName.value=uploadfilename;   
+    btnRemoveCurrentImage_onclick();
+  
+    Dynamsoft.WebTwainEnv.Unload();
+    
+}
+
+function btnUpload_onclick1(reqNo,width,height,resolution){
+ var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    if (!CheckIfImagesInBuffer()) {
+    alert("Please scan a document."); 
+        return 1;
+    }
+    
+    
+     if(DWObject.IsBlankImage(DWObject.CurrentImageIndexInBuffer)){
+        //alert('Please scan or upload an image.');
+        //return flase;
+    }
+
+    if(DWObject.GetImageXResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+    //alert('Image resolution is not matching with specified resolution.');
+       // return flase;
+    }
+    
+    if(DWObject.GetImageYResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+       //alert('Image resolution is not matching with specified resolution.');
+       // return flase;
+    }
+    
+    
+ 
+    if(DWObject.GetImageBitDepth(DWObject.CurrentImageIndexInBuffer)<24){
+    alert('Image is not clear.');
+    return flase;
+    }
+    
+    
+    
+    /*if(DWObject.GetImageWidth(DWObject.CurrentImageIndexInBuffer)<300){
+    alert('Image width is less than specified dimensions, rescan or upload image with minimum width and height of 300 px.');
+    return flase;
+    }
+    
+    if(DWObject.GetImageHeight(DWObject.CurrentImageIndexInBuffer)<300){
+    alert('Image width is less than specified dimensions, rescan or upload image with minimum width and height of 300 px');
+    return flase;
+    }
+    
+    if(DWObject.GetImageWidth(DWObject.CurrentImageIndexInBuffer)>300){
+    var flg=confirm('Image width is not as per specified dimensions, click on OK to autoresize or click CANCEL and choose edit image to resize image with width 300 px and height 300 px.');
+    if(!flg){
+    return flase;
+    }
+    }
+    
+    if(DWObject.GetImageHeight(DWObject.CurrentImageIndexInBuffer)>300){
+    var flg=confirm('Image width is not as per specified dimensions, click on OK to autoresize or click CANCEL and choose edit image to resize image with width 300 px and height 300 px.');
+    if(!flg){
+    return flase;
+    }
+    }*/
+    
+
+    
+    var i, strHTTPServer, strActionPage, strImageType;
+    document.getElementById("txt_fileName").className = "";
+
+    
+    var uploadfilename=document.getElementById("currentImage").value+".jpg";
+    var fieldId=document.getElementById("htempfieldname").value;
+      var CurrentPathName = unescape(location.pathname);    
+   
+   var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);            
+    
+
+    
+    strImageType=1;
+ 
+    var width,height,resolution=0;
+    width=document.getElementById("width").value;
+    height=document.getElementById("height").value;
+    resolution=document.getElementById("resolution").value;
+    
+    
+    var attName=document.getElementById("currentImage").value;
+if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+else{width="872";height="1232";resolution="175";}
+DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+    
+    DWObject.ChangeImageSize(
+        DWObject.CurrentImageIndexInBuffer,
+        width,
+        height,
+        2
+    )
+    
+    DWObject.GetSelectedImagesSize(1); //jpeg
+    var imgData = DWObject.SaveSelectedImagesToBase64Binary();  //DWObject.CurrentImageIndexInBuffer;
+    
+    var attType=document.getElementById("currentImage").value
+    var count=parseInt(document.getElementById(attType+"_cur").value);
+    count=count+1;
+    document.getElementById(attType+"_cur").value=count;
+    imageBase64.value=imgData;  
+    reqDocId.value=document.getElementById(attType+"_Id").value;    
+    docName.value=uploadfilename;   
+    btnRemoveCurrentImage_onclick();
+    Dynamsoft.WebTwainEnv.Unload();
+}
+
+
+
+
+String.prototype.trim = function() {
+      return this.replace(/^\s+|\s+$/g,'');
+     }
+
+
+
+
+
+function Dynamsoft_OnPostTransfer() {
+    updatePageInfo();
+}
+
+function Dynamsoft_OnPostLoadfunction(path, name, type) {
+    updatePageInfo();
+}
+
+function Dynamsoft_OnPostAllTransfers() {
+    updatePageInfo();
+    checkErrorString();
+}
+
+function Dynamsoft_OnMouseClick(index) {
+    updatePageInfo();
+}
+
+function Dynamsoft_OnMouseRightClick(index) {
+    // To add
+}
+
+
+function Dynamsoft_OnImageAreaSelected(index, left, top, right, bottom) {
+    _iLeft = left;
+    _iTop = top;
+    _iRight = right;
+    _iBottom = bottom;
+}
+
+function Dynamsoft_OnImageAreaDeselected(index) {
+    _iLeft = 0;
+    _iTop = 0;
+    _iRight = 0;
+    _iBottom = 0;
+}
+
+function Dynamsoft_OnMouseDoubleClick() {
+    return;
+}
+
+
+function Dynamsoft_OnTopImageInTheViewChanged(index) {
+    _iLeft = 0;
+    _iTop = 0;
+    _iRight = 0;
+    _iBottom = 0;
+    DWObject.CurrentImageIndexInBuffer = index;
+    updatePageInfo();
+}
+
+function Dynamsoft_OnGetFilePath(bSave, count, index, path, name) {
+}
+
+
+function btnChangeImageSize_onclick(){
+document.getElementById('ImgSizeEditor').style.visibility='';
+}
+function btnCancelChange_onclick(){
+document.getElementById('ImgSizeEditor').style.visibility='hidden';
+}
+
+
+function btnChangeImageSizeOK_onclick() {
+var re= new RegExp('^[0-9]*$');
+var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+    document.getElementById("img_height").className = "";
+    document.getElementById("img_width").className = "";
+    if (document.getElementById("img_height").value=='' && !re.test(document.getElementById("img_height").value)) {
+        document.getElementById("img_height").className += " invalid";
+        document.getElementById("img_height").focus();
+        alert("Please input a valid height.");
+        return;
+    }
+    if (document.getElementById("img_width").value=='' && !re.test(document.getElementById("img_width").value)) {
+        document.getElementById("img_width").className += " invalid";
+        document.getElementById("img_width").focus();
+        alert("Please input a valid width.");
+        return;
+    }
+    DWObject.ChangeImageSize(
+        DWObject.CurrentImageIndexInBuffer,
+        document.getElementById("img_width").value,
+        document.getElementById("img_height").value,
+        2
+    );
+    
+    if (checkErrorString()) {
+        document.getElementById("ImgSizeEditor").style.visibility = "hidden";
+        return;
+    }
+}
+            
+            function updatePageInfo() {
+                // document.getElementById("DW_TotalImage").value = DWObject.HowManyImagesInBuffer;
+                //document.getElementById("DW_CurrentImage").value = DWObject.CurrentImageIndexInBuffer + 1;
+} 
+</script>
+       
+       
+        <!--- scan end--->  
+        
+        
+        
+                          
+        </div>
+        <!-- /Left Columnt -->
+        <!-- Right column -->
+        <div class=" one_third_right">
+        <input type="hidden" id="InterpolationMethod" value="2"/>
+        <!-- Table - Scan --------------------------------------------->
+        <table class="gridtable">
+        <tr>
+        <td>
+        <label for="title">Select Scanner</label>
+        <select id="source" name="title" class="dropdownbox" style="width:165px">           
+        </select>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">
+        <input type="button" value="Scan" class="btn" onclick ="btnScan_onclick();"/>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">        
+        <input type="button" value="Load an existing image" class="btn" onclick="return btnLoad_onclick()"/>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">        
+        <input type="button" value=" Save " class="btn" onclick="javascript:btnUpload_onclick('123','300','355','96');closeDialog();sv()"/></td>
+        </tr>
+        
+        </table>
+        <!-- Table - Edit Image '175','300','189' --------------------------------------------->
+        <table class="gridtable">
+        <tr>
+        <th>Edit Image</th>
+        </tr>
+        <tr>
+        <td class="edit-button">
+        <a class="hint--bottom" data-hint="Crop" href="#" onclick="btnCrop_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/icon-crop.svg')}"  styleClass="responsiveimagenoborder"/>      
+        </a>
+        <a class="hint--bottom" data-hint="Rotate Left" onclick="btnRotateLeft_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/icon-left.svg')}"  styleClass="responsiveimagenoborder"/>
+        </a>
+        <a class="hint--bottom" data-hint="Rotate Right" onclick="btnRotateRight_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/icon-right.svg')}"  styleClass="responsiveimagenoborder"/>
+        </a>
+        <a class="hint--bottom" data-hint="Change Image Size" id="btnChangeImageSize" onclick="btnChangeImageSize_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/tools.svg')}"  styleClass="responsiveimagenoborder" style="width:1.786em;height:2.5em"/>
+        </a>
+        <a class="hint--bottom" data-hint="Delete Image" href="#" onclick="btnRemoveCurrentImage_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/icon-delete.svg')}"  styleClass="responsiveimagenoborder" />
+        </a>
+        </td>
+        </tr>
+<tr id="ImgSizeEditor" style="visibility:hidden;">
+<td>
+<!--
+<div id="ImgSizeEditor" style="visibility:hidden; text-align:left;width:250px;height:150px;">   
+-->
+<ul>
+    <li><label for="img_height"><b>Height :</b>
+        <input type="text" id="img_height" style="width:50%;" size="10"/>px</label></li>
+    <li><label for="img_width"><b>Width :</b>&nbsp;
+        <input type="text" id="img_width" style="width:50%;" size="10"/>px</label></li>    
+    <li style="text-align:center;">
+        <input type="button" value="   OK   "  class="btn" id="btnChangeImageSizeOK" onclick ="return btnChangeImageSizeOK_onclick();"/>
+        <input type="button" value=" Cancel "  class="btn" id="btnCancelChange" onclick ="return btnCancelChange_onclick();"/></li>
+</ul>
+<!--
+</div>
+-->
+
+</td>
+</tr>  
+
+     
+        </table>
+        <!-- Save Button -->
+        <div align="center">
+        
+        </div>
+        </div>
+        <!-- /Right Column -->
+        <div class="one_third">
+        <!-- <apex:image url="{!URLFOR($Resource.gso_fileuploadNew9, '/images/passport.woman.cm.svg')}"  id="fimageid" styleClass="responsiveimagenoborder"/> -->
+        <img alt="" src="" id='fimageid'  class="responsiveimagenoborder"/>
+        </div>
+        
+        
+        <div class="two_third_right">
+        <br/><br/>
+        <h4> Instructions</h4>
+        <P><b>Note: -<font  color="red"> To avoid rejection of your application, ensure the scan or uploaded images are in color and the orientation of the image is as shown in sample image.</font></b></p>
+        <p>Scan or upload the image then use the edit tools to crop and rotate. When finished click the &acute;Save&acute; button to attach the image to the Application.</p>
+        
+        <p><a href="../resource/1415872993000/HelpManualforAttachments">Help Manual</a></p>
+        </div>
+        
+        
+        <div class="avgrund-close hint--left" data-hint="Close" onclick="javascript:closeDialog();"></div> <!-- Close button -->
+        </div>
+        <div id="second-popup" class="avgrund-popup">
+        <h2>That's a completely different popup</h2>
+        <p>
+        You can hit ESC or click outside to close the modal. Give it a go to see the reverse transition.
+        </p>
+        <button onclick="javascript:closeDialog();">Close</button>
+        </div>
+        
+
+        
+        </apex:component>

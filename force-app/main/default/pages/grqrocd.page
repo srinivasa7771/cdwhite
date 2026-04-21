@@ -1,0 +1,471 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="{!ispu}"  standardStylesheets="false" title="{!srv.lbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        
+        <script type="text/javascript" >
+        var cs = {}; var jsonAllVals ={}; var reqDocs = {"aoa":"Articles of Association;","cocn":"Certificate of Company Name Change;"}; 
+        
+        $(document).ready(function() {
+            $(".jsnfld" ).change(function() { assignFldValue($(this));});
+            
+            dr(); hr();  mr(); checkdocs();
+            var getid = getUrlParameter('id');
+            jsonAllVals["xtcdl__c"] = '{!JSENCODE(req.xtcdl__c)}';
+            cs["dummyadh"].value  = jsonAllVals["xtcdl__c"];
+            
+            if(getid!=null && getid!="" && (jsonAllVals["xtcdl__c"].includes(reqDocs["aoa"]) || jsonAllVals["xtcdl__c"].includes(reqDocs["cocn"]))){
+                
+                if(jsonAllVals["xtcdl__c"].includes(reqDocs["aoa"])){ $("#aoa").prop("checked",'true'); }
+                if(jsonAllVals["xtcdl__c"].includes(reqDocs["cocn"])){ $("#cocn").prop("checked",'true'); }
+                
+                $("#pcc").show(); //$("#y").trigger('click');
+            }
+            
+            //toggleConInfo(); 
+            
+
+            $('.alphaChar').bind('keyup', function(e) {   
+                $(this).val($(this).val().replace(/[^a-zA-Z]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+        });
+        
+        
+        function assignFldValue(element){
+            $(element).each(function(){ 
+                var val = $(this).val();
+                var eid = $(this).attr('id');
+                var a = eid.split(':'); eid = a[a.length-1]; eid = eid.replace('__c','');
+                jsonAllVals[eid+'__c'] = val;
+            });
+            cs["dummyadh"].value = JSON.stringify(jsonAllVals);
+        }
+        
+        //Add validation error
+        function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(errElem);
+            }else{
+                elem.parent().append(errElem);
+            }
+        }
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                $(elem).parent().find('.frmErrMsg').remove();
+                $(elem).parent().parent().find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+                $(elem).parent().parent().append(errElem);
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        
+        // checking values and assigning values on reload
+        function checkdocs(){
+            var reissuranceItms = cs['xtcdl__c'].value;
+            if(reissuranceItms !='' && reissuranceItms !=null){
+                var lstItms = reissuranceItms.split(';');
+                for(var i=0; i<lstItms.length;i++){
+                    var truedocs = lstItms[i];truedocs=truedocs.replace(/\s+/g, "");
+                    console.log('truedocs'+truedocs);
+                    if(getC(truedocs)!=null){
+                        getC(truedocs).checked = true;
+                    }
+                }
+            }
+        }
+        
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        
+        function updateADHOC(itmCd,chk){ // item value
+            var adhcItms = cs['xtcdl__c'].value;
+            if(chk.checked){ 
+                if (cs['xtcdl__c'] != null){var adh = cs['xtcdl__c'].value;if (!adh.includes(itmCd+';')){cs['xtcdl__c'].value += itmCd+';';}}
+            }else{
+                if(cs['xtcdl__c'] != null) { var adh = cs['xtcdl__c'].value;if(adh.includes(itmCd+';')){ cs['xtcdl__c'].value = adh.replace(itmCd+';', '');}}
+            }
+            
+            jsonAllVals["xtcdl__c"] = cs['xtcdl__c'].value; 
+            cs["dummyadh"].value = JSON.stringify(jsonAllVals);
+            //toggleConInfo();
+        }
+        
+        //Validate Data on click of next button
+        function validateData(){
+            var fullVal=''; var elem = ''; var validated  = true;
+            
+            if((jsonAllVals['xtcdl__c'].includes(reqDocs["aoa"]) || jsonAllVals['xtcdl__c'].includes(reqDocs["cocn"])) && !$('.upload-list').text().includes(".jpg")){ //('{!JSENCODE(req.id)}'==null || '{!JSENCODE(req.id)}'=='')
+                validated = false; $('#docErr').fadeIn();
+            }else{ $('#docErr').hide(); }
+            
+            if(cs["xtcdl__c"].value=="" || cs["xtcdl__c"].value==null){
+                $('#attestErr').fadeIn(); scrollToDiv($('#attestErr')); validated = false;
+            }else{ $('#attestErr').hide();}
+            
+            
+            $('.requiredFld').each(function(){
+                var v = $(this).val();
+                if($(this).is(':visible')){    
+                    if(v==''||v==null||v==undefined||v.lenght<1){
+                        addValError(this,'**This field is required!');
+                        validated=false;
+                        if(elem=='') elem = $(this);
+                    }else{ removeValError(this);}
+                }
+            });
+            
+            //if(cs['xceml__c']!=null && $(cs['xceml__c']).is(':visible') && checkEmail(cs['xceml__c'])){ validated = false;} 
+            //if(!$(cs['xceml__c']).is(':visible')){cs['xceml__c'].value='';}
+            
+            if($('.frmErrMsg').is(':visible')){ scrollToDiv($('.frmErrMsg').eq(0).parent()); validated = false;}
+            
+            if($('.frmErrMsg1').is(':visible')){ scrollToDiv($('.frmErrMsg1').eq(0).parent()); validated = false;}
+            
+            if(elem!=''){scrollToDiv(elem);}
+            
+            if(validated == true){
+                showTempLoader(event.target);toggleGLoader();    next();
+            }
+        }
+        
+        function moveNext(){
+            showTempLoader(event.target); toggleGLoader(); next();
+        }
+        
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1(); toggleGLoader();
+        }
+        function showDraftAlert1(){
+            var rqNum = '{!JSENCODE(req.Name)}';
+            $('#modal_alert_global').remove(); 
+            var cBlock = '<div class="modal fade modal-base" id="modal_alert_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body text-center pt-5 pb-5"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <div class="mb-3 fs-24" style="text-align:center;">Your Request has been saved!</div><div class="mb-3 fs-24">SR # <b>'+rqNum+'</b></div> <p style="text-align: center;">You can continue with this request from \'Drafts\' tab on your Dashboard<p class="col-xl-12 col-lg-12" style="font-size: 0.8em;text-align: center;"> <div class="col-xl-4"></div> <button class="col-xl-4 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" id="gDash">GO TO DASHBOARD</button> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_alert_global').modal('show');
+            $('#gDash').on('click',function(){
+                window.open('/gpm','_self');
+            });
+        }
+        
+        function toggleFieldEdit(){
+            $('#upld').hide(); $('#op2').hide();
+            
+            /*if($('#y').prop('checked')==true){
+                $('#upld').show();
+            }else if($('#n').prop('checked')==true){
+                $('#op2').show();
+            }*/
+        } 
+        
+        function togglePcc(e){
+            if($(e).prop('checked')==true){ 
+                $("#pcc").show();
+            }else if(!jsonAllVals['xtcdl__c'].includes(reqDocs["cocn"]) && !jsonAllVals['xtcdl__c'].includes(reqDocs["aoa"])){
+                $("#pcc").hide();
+                //$('#y').prop('checked',''); $('#y').trigger('change');
+                //o$('#n').prop('checked',''); $('#y').trigger('change');
+            }
+        } 
+        
+        function toggleConInfo(){
+            if(jsonAllVals['xtcdl__c'].length>0){
+                if(jsonAllVals['xtcdl__c'].includes(reqDocs["cocn"]) || jsonAllVals['xtcdl__c'].includes(reqDocs["aoa"])){
+                    $("#econdet").hide(); cs['xceml__c'].value = ''; //cs['xcmob__c'].value = ''; 
+                }else {
+                    $("#econdet").show(); 
+                }
+            }
+        }
+        
+        function getUrlParameter(key){
+            var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+            return (res==undefined)?'':res[1];
+        }
+        
+        function checkEmail(elem){
+            var e = $(elem);
+            var email = e.val();
+            var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+            var r = (regex.test(email))?true:'invalid';
+            showErrMsg(e,'mail',r);
+            if(r!=true){
+                e.focus(); r=false;
+            }
+            return !r;
+        }
+        </script>
+
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        
+        <apex:form id="mainForm" styleClass="form-style">
+            
+            <apex:pageBlock id="pbMain"> 
+                <apex:outputPanel id="saveRq"></apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();" />
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert1();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+                <apex:inputHidden id="xtcdl__c" value="{!req.xtcdl__c}"/>
+                
+                <script>
+                    cs["xadh__c"]=document.getElementById("{!$Component.xadh__c}"); 
+                    cs["xtcdl__c"]=document.getElementById("{!$Component.xtcdl__c}");
+                	cs["xadh__c"].value='md;';
+                </script>
+                <body class="base">
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                     SR # <span class="text-000">{!req.Name} </span>
+                                </span>
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+
+                            </div>
+                        </div>
+                        
+                        <div class="container">
+                            <div class="base-layout">
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <c:srvdefcmp srv="{!srv}"/>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                
+                                <div class="base-main">    
+                                    <div class="base-main-content">
+                                        <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                        <apex:pageMessages id="msg"  />
+                                        <div class="form-group">
+                                            <label class="fs-18 mb-3">Select documents for reissuance</label>
+                                            <p class="fs-18 mb-3" id="attestErr" style="color:#E62D38;display:none;">Please select atleast one document for attestation.</p>
+                                            <div class="row row-lg">
+                                                <!--<div class="col-lg-6">
+                                                    <label class="box-check mb-0">
+                                                        <input id="CertificateofIncorporation" name="document_type" type="checkbox" onclick="updateADHOC('Certificate of Incorporation',this);"/>
+                                                        <div class="truecopy box box-center box-padding box-hover" style="min-height: 70px;">
+                                                            <div class="box-title font-weight-medium mt-1">
+                                                                <p>Certificate of Incorporation</p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>-->
+                                                
+                                                <div class="col-lg-6">
+                                                    <label class="box-check mb-0">
+                                                        <input  id="aoa" name="document_type" type="checkbox" onclick="updateADHOC('Articles of Association',this);togglePcc(this);"/>
+                                                        <div class="truecopy box box-center box-padding box-hover" style="min-height: 70px;">
+                                                            <div class="box-title font-weight-medium mt-1">
+                                                                <p>Articles of Association</p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="col-lg-6">    
+                                                    <label class="box-check mb-0">
+                                                        <input id="cocn" name="document_type" type="checkbox" onclick="updateADHOC('Certificate of Company Name Change',this);togglePcc(this);"/>
+                                                        <div class="truecopy box box-center box-padding box-hover" style="min-height: 70px;">
+                                                            <div class="box-title font-weight-medium mt-1">
+                                                                <p>Certificate of Company Name Change</p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                
+                                                <!--<div class="col-lg-6">
+                                                    <label class="box-check mb-0">
+                                                        <input id="CompanyExtract" name="document_type" type="checkbox" onclick="updateADHOC('Company Extract',this);"/>
+                                                        <div class="truecopy box box-center box-padding box-hover" style="min-height: 70px;">
+                                                            <div class="box-title font-weight-medium mt-1">
+                                                                <p>Freelancer Permit</p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="col-lg-6">
+                                                    <label class="box-check mb-0">
+                                                        <input id="BoardResolution" name="document_type" type="checkbox" onclick="updateADHOC('Board Resolution',this);"/>
+                                                        <div class="truecopy box box-center box-padding box-hover" style="min-height: 70px;">
+                                                            <div class="box-title font-weight-medium mt-1">
+                                                                <p>Certificate of Branch Registration</p>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div> -->
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="pcc" style="display:none;">
+                                            
+                                            <apex:outputPanel id="dummy">
+                                                <input type="Hidden" value="{!reqId}" id="reqId"/>   
+                                            </apex:outputPanel>
+                                            <div id="sal_doc" >
+                                                <div class="base-collapse">
+                                                    <div class="collapse-title mb-3">Please upload required documents below</div>
+                                                    <c:grqsupd id="uploadcmp" Dim="SH"  req="{!req}" PayDone="false"  SDocs="Police clearance certificate:Police clearance certificate;" onlyDoc="true"/>
+                                                    <p class="fs-18 mb-3" id="docErr" style="color:#E62D38;display:none;">Please upload the required document</p>
+                                                    <label class="fs-18 mb-3">If you do not have the police clearance certificate with you, <a href="/grql?sid=a0L2000000YpO5lEAF" target="_blank" class="base-nav-next"><u>click here to apply.</u></a></label>
+                                                </div>
+                                            </div>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        <div style="width: fit-content; font-size: 0.8rem;">
+                                                            <i class="icon-info-circle text-primary" style="font-size: 0.8rem;"></i>
+                                                            Some of the documents you have selected need to be delivered physically via a courier service.
+                                                        </div> 
+                                                        <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp" cmpTitle="Delivery Information"/>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            
+                                             <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                        </div>
+                                        
+                                        <!--<div id="econdet" style="Display:none;">
+                                            <div class="collapse show">
+                                                <div class="collapse-content">
+                                                    <div class="form-style" id="app_details_form" action="">
+                                                        <c:eContactInfo req="{!req}" id="conInfoCmp" cmpTitle="Contact Details"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="base-main-footer">
+                                                <div class="base-nav">
+                                                    <a href="#" onClick="validateData()" class="btn btn-primary base-nav-next">
+                                                        NEXT
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>-->
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                <c:fileuploadpopupnew13 R="{!req}"  />
+                
+            </apex:pageBlock>
+            <!-- <apex:actionFunction name="refreshuploadcmp" rerender="upld,upld2,uploadcmp" oncomplete="alert('12233456');"/> -->
+        </apex:form>
+    </html>    
+    
+    
+</apex:page>

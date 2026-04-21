@@ -1,0 +1,232 @@
+<apex:page sidebar="false" showHeader="false" controller="ObTmplCtl" action="{!fetchMembers}" applyBodyTag="false"  renderAs="pdf">
+    <head>
+        <style>
+            @page {
+            margin: 1.8cm 1cm;
+            size: A4;
+            padding: 10px;
+            @top-left {content: element(header);}
+            @bottom-left {content: element(footer);}
+            }
+            div.header{
+            position: running(header);
+            padding:5px 10px;
+            }
+            body { font-family: 'Arial Unicode MS'; }
+            .imgContainer img {
+            width: 100%;
+            }
+            
+            .empVals div {
+            margin: 2px 0 0 0;
+            position: relative;
+            padding-top: 11px;
+            min-height:13px;
+            /*margin: 4px 0 0 0;*/
+            }
+            
+            .container{
+            position:absolute;
+            margin-top: 20px;
+            }
+            .sign{
+            height:38px;
+            width:100%;
+            }
+            .pgHead{
+            color:blue;
+            font-weight:bold;
+            border-bottom: 1px solid black;
+            }
+            p,li,.directors,.fsz-12{
+            font-size:12px;
+            }
+            .fst-i{
+            font-style: italic;
+            }
+            ol { counter-reset: item }
+            li { display: block;padding:6px 0 6px 0; }
+            li:before { content: counters(item, ".") ") "; counter-increment: item; }
+            tr { page-break-inside: avoid !important; }
+            ul {
+            list-style-type: circle;
+            }
+        </style> 
+    </head>
+    <body>
+        <apex:outputText rendered="false">
+            
+        </apex:outputText>
+        <apex:outputText rendered="true">
+            
+            <div class="container">
+                
+                <div class="firstPage">
+                    
+                    
+                    <div class="terms">
+                        
+                        <p style="text-align: center;">
+                            <b> {!rq.acc__r.name}</b><br />
+                            (the “Company”) 
+                        </p>
+                        <p style="text-align: center;">
+                            <b> Company Registration No:{!rq.acc__r.lc__c} </b>
+                        </p>
+                        <p style="text-align: center;">
+                            <span style="font-family: sans-serif; font-weight:bold;">Members Resolution Regarding Removing / Appointing Director(s)</span>
+                        </p>
+                        
+                        <p>In accordance with the Dubai Development Authority Private Companies Regulations 2016, and its amendments and subject to the provisions of the Company’s Articles of Association, I/we being all the members of 
+                            <span style="font-family: sans-serif; font-weight:bold;">{!rq.acc__r.name}
+                            </span>,a company limited by shares organized and existing under the laws of Dubai Development Authority, hereby issue this Resolution this day of  <span style="font-family: sans-serif; font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.createddate}" /></apex:outputText></span> <span style="font-family: sans-serif; font-weight:bold;">(“
+                            Resolution”).</span> 
+                        </p>
+                        <apex:repeat value="{!adhoc3Data.serviceRequests}" var="a">
+                            <ol>
+                                <apex:outputText rendered="{!IF((dir_remove.size>0),true,false)}">
+                                    
+                                    <li>
+                                        <span style="font-family: sans-serif; font-weight:bold;">THAT</span> we accept the resignation of the Company's director, whose details are set out below, with effect from   <span style="font-family: sans-serif; font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.createddate}" /></apex:outputText></span>
+                                        <br />  
+                                        <p style="font-family: sans-serif; font-weight:bold;text-decoration:underline;">
+                                            Current Director(s)
+                                        </p>
+                                        
+                                        
+                                        <apex:repeat value="{!dir_remove}" var="rD">   
+                                            <div>
+                                                <span style="font-family: sans-serif;  font-size:12px;"> Name: <b>{!rD.salutation} {!rD.firstName}&nbsp; {!rD.lastName}</b></span>
+                                            </div>
+                                            <div>
+                                                <span style="font-family: sans-serif;  font-size:12px;"> Holding Passport No: <b>{!rD.passports[0].docNo}</b></span>
+                                            </div>
+                                            <div>
+                                                <span style="font-family: sans-serif;  font-size:12px;"> Nationality: <b>{!rD.nationality}</b></span>
+                                            </div>
+                                            <br/> 
+                                        </apex:repeat>
+                                    </li>
+                                </apex:outputText>
+                                <apex:outputText rendered="{!IF((dir_add.size>0),true,false)}">
+                                    <li>
+                                        <span style="font-family: sans-serif; font-weight:bold;">THAT</span> the following be appointed as a Director(s) of the Company, with effect from  <span style="font-family: sans-serif; font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.createddate}" /></apex:outputText></span>
+                                        <br/>
+                                        <p style="font-family: sans-serif; font-weight:bold;text-decoration:underline;">
+                                            New Director(s)
+                                        </p>
+                                        
+                                        <apex:repeat value="{!dir_add}" var="aD">
+                                            
+                                            <div>
+                                                <span style="font-family: sans-serif;  font-size:12px;"> Name:<b>{!aD.salutation} {!aD.firstName}&nbsp; {!aD.lastName}</b></span>
+                                            </div>
+                                            <div>
+                                                <span style="font-family: sans-serif; font-size:12px;"> Holding Passport No: <b>{!aD.passports[0].docNo}</b></span>
+                                            </div>
+                                            <div>
+                                                <span style="font-family: sans-serif;  font-size:12px;">Nationality: <b>{!aD.nationality}</b></span>
+                                            </div>
+                                             <br/> 
+                                        </apex:repeat>
+                                    </li>
+                                </apex:outputText>
+                                
+                                <li>
+                                    <span style="font-family: sans-serif; font-weight:bold;">THAT</span> the terms and conditions of appointment and the remuneration of the Director shall be determined by the Board of Directors of the Company
+                                </li>
+                                <li>
+                                    <span style="font-family: sans-serif; font-weight:bold;">RESOLVED</span>, that pursuant to the requirements of the Dubai Development Authority Private Companies Regulations of 2016, the Company Secretary or the General Manager will promptly file necessary documents with the Dubai Development Authority Registrar of Companies in order to update records on the Company with said Registrar.
+                                </li>
+                            </ol>
+                        </apex:repeat>
+                    </div>
+                    <div class="signBlocks" style="margin-top:50px;">
+                        <span style="font-family: sans-serif;  font-size:12px;">For and behalf of</span>
+                        <div class="signBlock" style="margin-top:10px">
+                            <table style=" border-collapse: collapse; -fs-table-paginate: paginate;" width="694">
+                                <tbody>
+                                    <apex:repeat value="{!allMembers}" var="mem">
+                                        <apex:outputText rendered="{!CONTAINS(mem.positions,'Individual Shareholder')}"><!--rendered="{!CONTAINS(mem.positions,'Individual Shareholder')}"-->
+                                            <tr style="height: 26.55pt;">
+                                                <td style="width: 56.65pt; border: solid #BEBEBE 0.5pt; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 24.55pt;" width="76">
+                                                    <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;">Name:</span></strong></p>
+                                                </td>
+                                                <apex:outputText rendered="{!CONTAINS(mem.positions,'Individual Shareholder')}">
+                                                    <td style="width: 247.6pt; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="330">
+                                                        <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memName">{!mem.firstName}&nbsp;{!mem.lastName}</elem></span></strong></p>
+                                                    </td>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!CONTAINS(mem.positions,'Corporate Shareholder')}">
+                                                    <td style="width: 247.6pt; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="330">
+                                                        <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memName">{!mem.operatingName}</elem></span></strong></p>
+                                                    </td>
+                                                </apex:outputText>
+                                                <td style="width: 1.25in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="120">
+                                                    <p style="punctuation-wrap: simple; margin: 4.95pt 0in .0001pt 6.8pt;"><strong><span style="font-size: 9.0pt; color: black;">Position:</span></strong></p>
+                                                </td>
+                                                <apex:outputText rendered="{!CONTAINS(mem.positions,'Individual Shareholder')}">
+                                                    <td style="width: 1.75in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="168">
+                                                        <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memPos">Individual Shareholder</elem></span></strong></p><!--{!mem.positions}-->
+                                                    </td>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!NOT(CONTAINS(mem.positions,'Individual Shareholder'))}">
+                                                    <td style="width: 1.75in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="168">
+                                                        <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memPos">{!mem.positions}</elem></span></strong></p><!--{!mem.positions}-->
+                                                    </td>
+                                                </apex:outputText>
+                                            </tr>
+                                            <tr style="height: 86.35pt;">
+                                                <td style="width: 520.25pt; border: solid #BEBEBE 0.5pt; border-top: none; padding: 0in 0in 0in 0in; height: 86.35pt;" colspan="4" width="694">
+                                                    <p style="margin-top: .6pt; punctuation-wrap: simple;"><strong><span style="font-size: 8.5pt;">&nbsp;</span></strong></p>
+                                                    <p style="margin-left: 6.8pt; punctuation-wrap: simple;"><strong><span style="font-size: 9.0pt;">Signature:</span></strong></p>
+                                                </td>
+                                            </tr>
+                                        </apex:outputText>
+                                    </apex:repeat>
+                                </tbody>
+                                <tbody>
+                                    <apex:repeat value="{!allMembers}" var="mem">
+                                        <apex:outputText rendered="{!CONTAINS(mem.positions,'Corporate Shareholder')}"><!--rendered="{!CONTAINS(mem.positions,'Individual Shareholder')}"-->
+                                            <tr style="height: 26.55pt;">
+                                                <td style="width: 56.65pt; border: solid #BEBEBE 0.5pt; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 24.55pt;" width="76">
+                                                    <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;">Name:</span></strong></p>
+                                                </td>
+                                                <td style="width: 247.6pt; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="330">
+                                                    <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memName">{!mem.operatingName}</elem></span></strong></p>
+                                                </td>
+                                                <td style="width: 1.25in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="120">
+                                                    <p style="punctuation-wrap: simple; margin: 4.95pt 0in .0001pt 6.8pt;"><strong><span style="font-size: 9.0pt; color: black;">Position:</span></strong></p>
+                                                </td>
+                                                
+                                                    <td style="width: 1.75in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="168">
+                                                        <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;"><elem id="memPos">Corporate Shareholder</elem></span></strong></p><!--{!mem.positions}-->
+                                                    </td>
+                                            </tr>
+                                            <tr style="height: 86.35pt;">
+                                                <td style="width: 520.25pt; border: solid #BEBEBE 0.5pt; border-top: none; padding: 0in 0in 0in 0in; height: 86.35pt;" colspan="4" width="694">
+                                                    <p style="margin-top: .6pt; punctuation-wrap: simple;"><strong><span style="font-size: 8.5pt;">&nbsp;</span></strong></p>
+                                                    <p style="margin-left: 6.8pt; punctuation-wrap: simple;"><strong><span style="font-size: 9.0pt;">Signature:</span></strong></p>
+                                                </td>
+                                            </tr>
+                                        </apex:outputText>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <br/><br/>
+                    <u class="fsz-12 fst-i">Important Notes: </u>
+                    <ol>
+                        <li>This Board Resolution must be printed on the Company’s letterhead.</li>
+                        <li>This Board Resolution must be notarized and legalized.</li>
+                        <li>The Board Resolution has to be Two Original Copies.</li>
+                    </ol>
+                    
+                </div>
+                <div class="secondPage">
+                </div>
+            </div>
+        </apex:outputText>
+    </body>
+</apex:page>

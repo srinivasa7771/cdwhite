@@ -1,0 +1,685 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!req.srvc__r.lbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+        
+        
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <script type="text/javascript">
+        var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+        var cs = {};
+        var changecodes = {};
+        function checkPassportnumber(passportId){
+            
+            
+            //  addValError(passportId,'Please make sure you re-upload your passport');
+            addWarningMsg(passportId,'Please make sure you re-upload your passport')
+            
+        }
+        
+        $(document).ready(function() {
+            $('#serachVal').removeClass('requiredFld');
+            $('#appMobile').html('Applicant&#180;s mobile');
+            /*$(".calsalary").change(function(){ isChangeInSalary();});*/
+            changecodes = {'cr':'xcrlg__c','dbc':'xcbd__c','nc':'xcfn__c,xcmn__c,xcln__c','ntc':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c,xcnc__c','np':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c','pc':'xcmbs__c,xcma__c,xcmta__c,xcmoa__c','msc':'xcms__c'};
+            let flds = [cs['xcmonar__c'],cs['xeidav__c'],cs['xcnp__c'],cs['xcbp__c'],'#spokenLng','#serachVal']; //cs['xcfan__c'],cs['xcfanar__c'],
+            flds.forEach(function(i){ 
+                //$(i).val()!=null && $(i).val()!='' && $(i).val()!==void 0?$(i).attr('disabled',true):'';
+                if($(i).val())
+                    $(i).attr('disabled',true);
+            });
+            let flds1 = [cs['xeidav__c']];  
+            flds1.forEach(function(i){   
+                $(i).parent().parent().hide();   
+            }); 
+            
+            $('.rorenwl').each(function(i){ 
+                ($(this).val())?$(this).attr('disabled',true):$(this).removeAttr('disabled');
+            });
+            
+            
+            hr();
+            mr();
+            $(cs['xcp__c']).attr('onchange','checkPassportnumber(this)');
+            /*$('.requiredFld').on('change',function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'This field is required !!');
+                }else{
+                    removeValError(this);  
+                }
+            });*/
+            
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z ]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+            var val = cs['xadh__c'].value;
+            var codes = val.split(";");
+            console.log('codes::::'+codes);
+            
+            //codes='nc';
+            //c/onsole.log('codes::::'+codes);
+            
+            $('#jd').attr('data-target','');
+            //Disable all input field
+            //$('#passport_details').find('input,select').attr('disabled',true);
+            //$('#personalDetail').find('input,select').attr('disabled',true);
+            //$('#jobDetail').find('input,select').attr('disabled',true);
+            //$('#collDeliveryInfo').find('input,select,textarea').attr('disabled',true);
+            
+            // $('#passport_details').removeClass('show');
+            $('#collDeliveryInfo').addClass('show');
+            $(cs['rmob__c']).removeAttr("disabled");
+            
+            setTimeout(function(){
+                console.log('i----->'+85);
+                for(i of codes){
+                    //console.log('i----->'+i);
+                    if(Object.keys(changecodes).includes(i)){
+                        for(j of changecodes[i].split(',')){
+                            console.log('j----->'+j);
+                            $(cs[j]).addClass('focusStyle').removeAttr("disabled");
+                            if($(cs[j]).is('select'))
+                                $(cs[j]).next().addClass('focusStyle');
+                            //if($(cs[j]).is('input:radio'))
+                            //   $(cs[j]).next().addClass('focusStyle').removeAttr("disabled");
+                        } 
+                    }
+                }          
+            },8000);
+            
+            //Job title change
+            if(codes.includes('pc') ){
+                console.log('Job Title::::::::::::');
+                $('#ContactInfo').addClass('show');
+                $('#jobDetail').addClass('show');
+                
+                $('#jobDetail').find('input,select').removeAttr('disabled');
+                
+                $('#serachVal').parent().addClass('focusStyle');
+                $(cs['xcmbs__c']).addClass('focusStyle');
+                $(cs['xcma__c']).addClass('focusStyle');
+                $(cs['xcmta__c']).addClass('focusStyle');
+                $(cs['xcmoa__c']).addClass('focusStyle');
+            }
+            if(codes.includes('msc')){
+                console.log('Marriage status::::::::::::');
+                $('#ContactInfo').addClass('show');
+                $('#personalDetail').addClass('show');
+                
+                $("input[name='martialStatus']").parent().parent().parent().addClass('focusStyle');
+                
+                $("input[name='martialStatus']").removeAttr("disabled");
+            }
+            setTimeout(function(){
+                $('.ddValidation').on('change',function(){
+                    $('select').on('change',function(){
+                        var v = $(this).val();
+                        if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                            removeValError($(this));
+                    });
+                });
+                $('select').on('change',function(){
+                    var v = $(this).val();
+                    if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                        removeValError($(this));
+                });
+            },3000);
+        });
+        
+        //check whether date is valid or not
+        function checkValidDate(thisElement){
+            console.log('validDate:::');
+            var date = $(thisElement).val();
+            console.log('date:::'+date);
+            var date_regex =/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/;
+            var r = (date_regex.test(date))?true:'invalid';
+            console.log('r::::'+r);
+            if(r == 'invalid'){
+                removeWarningMsg(thisElement);
+                removeValError(thisElement);  
+                addValError(thisElement,'Invalid date format');
+                return false;   
+            }else{
+                removeValError(thisElement);  
+                return r;
+            }
+        }
+        
+        
+        /*
+        * save the request to enable disable the employment contract document 
+        * if there's change in current salary by 25%
+        */
+        function isChangeInSalary(){
+            var changeInSalary = false;
+            if('{!JSENCODE(req.srvc__r.uid__c)}'=='016'){
+                var conTotalSal = parseFloat(cs['rmsg'].value);
+                var editedRqSalary = (cs['rtacn__c'].value!=null && cs['rtacn__c'].value!='') ? parseFloat(cs['rtacn__c'].value.replace(',','')) : conTotalSal;
+                
+                var rqBasic = parseFloat(cs['xcmbs__c'].value.replace(',',''));
+                var rqAcmdt = parseFloat(cs['xcma__c'].value.replace(',',''));
+                var rqTrvl = parseFloat(cs['xcmta__c'].value.replace(',',''));
+                var rqMnth = parseFloat(cs['xcmoa__c'].value.replace(',',''));
+                
+                var tDiff = (((rqBasic + rqAcmdt + rqTrvl + rqMnth )- conTotalSal)/(conTotalSal));  
+                
+                var changeInSal = ((editedRqSalary-conTotalSal)/conTotalSal);
+                
+                if((changeInSal <0.25 && tDiff>0.25) || (changeInSal>0.25 && tDiff<0.25)){        
+                    
+                    cs['rtacn__c'].value = rqBasic + rqAcmdt + rqTrvl + rqMnth;
+                    //save request
+                    toggleGLoader(); saveReqDraft1();
+                    //changeInSalary = true;
+                }
+            }
+            
+            //return changeInSalary;
+        }
+        
+        //Validate Basic salary
+        function validateBasicSalary(thiselem){
+            var sal = $(thiselem).val();
+            if(sal < 500){ 
+                addValError(thiselem,'Minimum basic salary should be AED 500.','salVal');
+                return false;
+            }else{
+                // $(thiselem).parent().find('.frmErrMsg').remove();
+                removeValError(thiselem);
+            }
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Valid Alpha
+        function validAlphaOnly(e){ /**Ex: <input type="text" onkeyup="validAlphaOnly(this)" />**/
+            let n = $(e);
+            n.val(n.val().replace(/[^a-zA-Z]*$/, ''));
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+            //elem.parent().find('.warningMsg').remove();
+        }
+        //Validation for current Nationality if it is syria
+        function validateCurrenNationality(thisElement){
+            var curNat = $(thisElement).val();
+            if(curNat == 'Syria'){
+                //addValError(thisElement,'Applicants should be in country, salary should be above 10,000 AED, and job title should be Manager or Above.');
+                //return false;
+            }else{
+                removeValError(thisElement);     
+            }
+            
+            $('.names i,.lnOptional,.PPNote').hide();
+            if(['India','Nepal','Pakistan','Philippines'].includes(curNat)){
+                $('.PPNote, i.'+curNat).show();
+                 if(curNat == 'India' || curNat =='Pakistan'){
+                    $('.lnOptional').show();
+                }
+            }
+        }
+        
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            
+            if($("#optionallnm").is(':checked')){
+                cs["xcln__c"].value = cs["xcfan__c"].value; 
+            }
+            
+            var val = cs['xadh__c'].value;
+            var codes = val.split(";");
+            $('.requiredFld').each(function(){
+                if(!$(this).is(':visible'))
+                    return;
+                var v = $(this).val();
+                if(!v||v=='--None--'||v.lenght<1){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            if(codes.includes('ntc')){
+                if(cs['Nationality'].value == cs['xcnc__c'].value){
+                    validated = false;
+                    addValError(cs["xcnc__c"],'Old and new Nationality should not be same.');
+                    //    addValError($('#xcnc__c').parent(),'Old and new Nationality should not be same.');
+                }
+                if(cs['ppNo'].value == cs['xcp__c'].value){
+                    validated = false;
+                    addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                }
+            }
+            if(codes.includes('np')){
+                if(cs['ppNo'].value == cs['xcp__c'].value){
+                    validated = false;
+                    addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                }
+            }
+            console.log('validateData2:::::'+validated);
+            if(codes.includes('cr')){
+                if(cs['religion'].value == cs['xcrlg__c'].value){
+                    validated = false;
+                    addValError(cs["xcrlg__c"],'Old and new Religion should not be same.');
+                }       
+            }
+            if(codes.includes('dbc')){
+                if(getFormattedDate(cs['dob'].value) == cs['xcbd__c'].value){
+                    validated = false;
+                    addValError($("#xcbd__c"),'Corrected Date of Birth should not be same as old value.');
+                }       
+            }
+            console.log('validateData3:::::'+validated);
+            if(codes.includes('msc')){
+                if(cs['marSta'].value == cs['xcms__c'].value){
+                    validated = false;
+                    $("input[name='martialStatus']").parent().parent().parent().find('.option-error').html('Corrected Martial status should not be same').show();
+                }       
+            }
+            console.log('validateData4:::::'+validated);
+            if(codes.includes('nc')){
+                if((cs['fName'].value == cs['xcfn__c'].value) && (cs['mName'].value == cs['xcmn__c'].value) && (cs['lName'].value == cs['xcln__c'].value)){
+                    validated = false;
+                    addValError(cs["xcfn__c"],'Correction of Name should not be same as old value');
+                }       
+            }
+            console.log('validateData5:::::'+validated);
+            if(codes.includes('pc')){
+                if(cs['JbId'].value == cs['xcjb__c'].value){
+                    validated = true;
+                    //addValError($('#serachVal').parent(),'Corrected Job title should not be same as old value.');
+                }
+            }
+            
+            var salutation = $("input[name='salutation']:checked").val();
+            var martialStatus = $("input[name='martialStatus']:checked").val();
+            if(salutation == undefined){
+                //alert('Please select salutation');
+                $("input[name='salutation']").parent().parent().parent().find('.option-error').show();
+                validated =false;
+            }
+            //alert('salutation v:'+validated);
+            if(martialStatus == undefined){
+                $("input[name='martialStatus']").parent().parent().parent().find('.option-error').show();
+                //alert('Please select martial status');
+                validated =false;
+            }//alert('martialStatus v:'+validated);
+            if(validateBasicSalary( cs['xcmbs__c']) == false){   
+                validated =false;
+            }//alert('Basic salary v:'+validated);
+            if('{!JSENCODE(req.acc__r.Legal_Framework__c)}'=='Freelancer'){
+                var sal = parseFloat($(cs['xcmbs__c']).val().replace(',',''));
+                if($(cs['xcma__c']).val())
+                    sal =  sal + parseFloat($(cs['xcma__c']).val().replace(',',''));
+                if($(cs['xcmta__c']).val())
+                    sal =  sal + parseFloat($(cs['xcmta__c']).val().replace(',',''));
+                if($(cs['xcmoa__c']).val())
+                    sal =  sal + parseFloat($(cs['xcmoa__c']).val().replace(',',''));
+               if(sal > 10000){
+                    validated =false;
+                 axsAlert('Alert','Freelancer total Salary should NOT be more than AED 10,000');   
+                    
+                    }
+            }
+            if(validateCurrenNationality(cs['xcnc__c']) == false){
+                validated =false;
+            }//alert('current Nationality v'+validated);
+            
+            if(!validateEmiratesId(cs['xceidid__c'].value)){
+                validated =false;
+                addValError(cs["xceidid__c"],'Invalid Emirates id!');
+                scrollToDiv($(cs["xcnc__c"]));
+            }
+            if(GCC_Nations.includes(cs["xcnc__c"].value)){
+                validated =false;
+                addValError(cs["xcnc__c"],'GCC nationals are not allowed !!');
+                scrollToDiv($(cs["xcnc__c"]));
+            }
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                console.log('note:::'+cs['xcma__c'].value);
+                console.log('Issue Date:::'+cs['xcpid__c'].value);
+                //console.log('Expiry Date:::'+cs['xcped__c'].value);
+                //console.log('DOB:::'+cs['xcbd__c'].value);
+                next();
+                //alert("Req Updated::::::::::"); 
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        
+        
+        function svRDrft(){
+            if($("#optionallnm").is(':checked')){
+                cs["xcln__c"].value = cs["xcfan__c"].value; 
+            }
+            svRDrft2();
+        }
+        
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+            <apex:inputHidden id="xadtx1__c" value="{!req.xadtx1__c}"/>
+            <input type="hidden" id="msg" value="{!req.con__r.mgs__c}"/>
+            <input type="hidden" id="Nationality" value="{!req.con__r.nc__c}"/>
+            <input type="hidden" id="ppNo" value="{!req.con__r.p__c}"/>
+            <input type="hidden" id="religion" value="{!req.con__r.rlg__c}"/>
+            <!--<apex:inputHidden id="dob" value="{!req.xcbd__c}"/> -->
+            <input type="hidden" id="dob" value="{!req.con__r.Birthdate}"/> 
+            <input type="hidden" id="marSta" value="{!req.con__r.ms__c}"/>
+            <input type="hidden" id="fName" value="{!req.con__r.firstName}"/>
+            <input type="hidden" id="mName" value="{!req.con__r.middleName}"/>
+            <input type="hidden" id="lName" value="{!req.con__r.lastName}"/>
+            <input type="hidden" id="JbId" value="{!req.con__r.jb__c}"/>
+            <input type="hidden" id="xcjb__c" value="{!req.xcjb__c}"/>
+            <input type="hidden" id="rtacn__c" value="{!req.rtacn__c}"/>
+            <input type="hidden" id="xcmbs__c" value="{!req.xcmbs__c}"/>
+            <input type="hidden" id="xcma__c" value="{!req.xcma__c}"/>
+            <input type="hidden" id="xcmta__c" value="{!req.xcmta__c}"/>
+            <input type="hidden" id="xcmoa__c" value="{!req.xcmoa__c}"/>
+            <script>
+            cs['xcjb__c']=document.getElementById('xcjb__c');
+            cs['xadh__c']=document.getElementById('{!$Component.xadh__c}');
+            cs['xadtx1__c']=document.getElementById('{!$Component.xadtx1__c}');
+            cs['rtacn__c']=document.getElementById('rtacn__c');
+            cs['xcmbs__c']=document.getElementById('xcmbs__c');
+            cs['xcma__c']=document.getElementById('xcma__c');
+            cs['xcmta__c']=document.getElementById('xcmta__c');
+            cs['xcmoa__c']=document.getElementById('xcmoa__c');
+            cs['rmsg']=document.getElementById('msg');
+            cs['Nationality']=document.getElementById('Nationality');
+            cs['ppNo']=document.getElementById('ppNo');
+            cs['religion']=document.getElementById('religion');
+            //cs['dob']=document.getElementById('{!$Component.dob}');
+            cs['dob']=document.getElementById('dob');
+            
+            
+            cs['marSta']=document.getElementById('marSta');
+            cs['fName']=document.getElementById('fName');
+            cs['mName']=document.getElementById('mName');
+            cs['lName']=document.getElementById('lName');
+            cs['JbId']=document.getElementById('JbId');
+            
+            
+            </script>
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="saveReqDraft3" action="{!saveDraft}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="btnid,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideTempLoader_input();" />
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft2" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                    <!-- <div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                                <!--<a href="#" onclick="saveReqDraft()" class="btn btn-black">
+SAVE DRAFT
+</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+                                
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" id="comp"/>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        <c:grqbrdcrumbs req="{!req}" applicant="active" addon="" payment=""/> 
+                                        <div class="steps steps-mobile">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        <b><apex:pageMessages id="msg"  />
+                                        </b>
+                                        
+                                        <!-- help page -->
+                                         <div class="text-right" style="color:tomato;">
+                                            <a contenteditable="false" onclick="helpDoc('{!JSENCODE(req.xadh__c)}','{!JSENCODE(req.srvc__r.uid__c)}')" style="cursor: pointer;">
+                                                <u class="blinkAny">Help on this service</u>
+                                                <i class="fa fa-question-circle "></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <c:passportdetails req="{!req}" id="ppdCmp"/>
+                                        <c:emiratesidinfo req="{!req}" id="EinfoCmp"/>
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                               data-target="#personalDetail">
+                                                <div class="collapse-title">Personal details</div>
+                                            </a>
+                                            <div id="personalDetail">
+                                                <div class="collapse-content">
+                                                    
+                                                     <c:personaldetailsBO req="{!req}"  rendered="{!!ispu}"   
+                                                                      Salutations="{!salutations}"  
+                                                                      MartialStatus="{!MartialStatus}" 
+                                                                      SpokenLanguages="{!spokenLanguages}" id="perDetailBO" shwspousenm="true"/>
+                                                    
+                                                    <c:personaldetail req="{!req}" rendered="{!ispu}"    
+                                                                      Salutations="{!salutations}"  
+                                                                      MartialStatus="{!MartialStatus}" 
+                                                                      SpokenLanguages="{!spokenLanguages}" id="perDetail" shwspousenm="true"/>
+                                                    
+                                                    <div class="pb-4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <c:contactinformation req="{!req}" id="conInfoCmp"/>
+                                        
+                                        
+                                        
+                                        <apex:outputPanel >
+                                            <div class="base-collapse">
+                                                <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                                   data-target="#jobDetail">
+                                                    <div class="collapse-title"></div>
+                                                </a>
+                                                <div id="jobDetail">
+                                                    <div class="collapse-content">
+                                                        <c:jobofferdetails req="{!req}" id="jobOffCmp"/>
+                                                        <div class="pb-4"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <c:educationqualification req="{!req}" id="qualificationCmp"/>
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                               data-target="#collDeliveryInfo">
+                                                <div class="collapse-title"></div>
+                                            </a>
+                                            <div id="collDeliveryInfo">
+                                                <div class="collapse-content">
+                                                    <c:collectionanddeliveryinfo req="{!req}" cmpTitle="Collection and Delivery Information" id="collDelcmp"/> 
+                                                    <div class="pb-4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                        
+                                    </div>
+                                    <!-- .base-main -->
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+            
+        </apex:form>
+        <script>
+        function helpDoc(itmCode,srvCode){
+            openHelpDoc('015Ii000000kU1f');
+        }
+        </script>
+    </html>    
+</apex:page>

@@ -1,0 +1,309 @@
+<apex:page standardController="Case" standardStylesheets="false" readOnly="false" showHeader="true" sidebar="false" title="Ticket" extensions="TicketCaseExtension">
+    <html>
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.eiJS}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <head>
+            <title>Ticket</title>
+        </head>
+        <script type="text/javascript">
+        function displaySelectReq(str)
+        {
+            console.log(str);
+            myFun(str);
+        }
+        function redirectToMyCase() {
+            console.log('inside redirectToMyCase');
+            showCaseNum();
+            showConfirmation();
+        }
+        function showConfirmation(){
+            console.log('inside showConfirmation');
+            $('#modal_ticket_created').modal('show');
+        }
+        function navtoDash(){
+            window.open('./gpm','_self')
+        }
+        function validateData(){
+            console.log('validateData:::');
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                var v = $(this).val();
+                console.log('id:::::'+$(this).attr("id"));
+                console.log('v:::::'+v);
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    console.log('$$$$$$$$$$$$$$$$$$');
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            console.log('validated1::::'+validated);
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            console.log('validated1::::'+validated);
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated2::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            console.log('validated3::::'+validated);
+            if(validated == true){
+                //showTempLoader(event.target);
+                toggleGLoader();
+                next();
+            }
+        }
+        function startsearch(srchVal){
+            console.log('inside startsearch'+srchVal);
+            searchStart(srchVal);
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+            .messageTable {
+            padding: 1em !important;
+            margin: 2em 2em !important;
+            border-radius: 10px !important;
+            background-color: #F7EDED !important;
+            border: 1px solid;
+            border-color: #D0011B;
+            color: #000 !important;
+            position: relative !important;
+            display: flex !important;
+            -ms-flex-wrap: wrap !important;
+            flex-wrap: wrap !important;
+            }
+            .text-light {
+            color: #9B9B9B !important;
+            }
+            .fieldColor{
+            background-color: #F5F5F5 !important;
+            border: #DCDDDE !important;
+            }
+        </style>
+        <apex:form id="frm">
+            <apex:actionFunction name="myFun" action="{!loadSelectedReq}" reRender="RequestDiv">
+                <apex:param id="selId" name="selId" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="next"  action="{!save}" status="theStatus"  reRender="caseNumberDiv,btnid,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideTempLoader_input();redirectToMyCase();" onbeforedomupdate="javascript: toggle_inputs();">
+            </apex:actionFunction>
+            <apex:actionFunction name="showCaseNum" reRender="caseNumberDiv"/>
+            <apex:actionFunction name="searchStart" reRender="one" action="{!onkeyupAction}">
+                <apex:param id="srchWrd" name="srchWrd" value="" />
+            </apex:actionFunction>
+            
+            <body class="base">
+                
+                <div id="main">
+                    
+                    <div class="pt-3">
+                        <div class="container">
+                            <div class="page-header">
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li>
+                                    <li class="breadcrumb-item"><a href="/Mycases">My Tickets</a></li>
+                                    <li class="breadcrumb-item">New Ticket</li>
+                                </ul>
+                                <!-- .breadcrumb -->
+                                
+                                <h1 class="page-title mr-auto">NEW TICKET</h1>
+                                
+                                <div class="panel">
+                                    <div class="panel-body">
+                                        
+                                        <form class="form-style">
+                                            <apex:pageMessages id="msg"/>
+                                            <div class="row row-lg">
+                                                <div class="col-lg-6 col-xl-4">
+                                                </div>
+                                                <!-- .col -->
+                                                <div class="col-lg-6 col-xl-4 ml-auto text-right">
+                                                    <div class="d-inline-block text-left">
+                                                        <div class="data-info ticket-status">
+                                                            <div class="data-label">Status</div>
+                                                            <div class="data-value"><span class="badge-status">OPEN</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- .col -->
+                                                <div class="col-12"></div>
+                                                <div class="col-lg-6 col-xl-4">
+                                                    <div class="form-group">
+                                                        <label>Subject</label>
+                                                        <apex:inputField id="Subject" value="{!caseObject.Subject}" styleClass="form-control fieldColor requiredFld"/>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6 col-xl-4">
+                                                    <div class="form-group">
+                                                        <label>Ticket type</label>
+                                                        <!--<apex:inputField id="Type" value="{!caseObject.Type}" styleClass="form-control input-select2-flat fieldColor requiredFld"/> --> 
+                                                    <apex:selectList value="{!caseObject.Type}" id="Type" size="1" styleClass="form-control input-select2-flat fieldColor requiredFld">
+                                                                                <apex:selectOptions value="{!items}"/>
+                                                                            </apex:selectList></div>
+                                                </div>
+                                                <div class="col-lg-6 col-xl-4">
+                                                    <div class="form-group">
+                                                        <label>SR number</label>
+                                                        <div class="input-group input-group-transparent fieldColor" data-toggle="modal" data-target="#modal_ticket_requests">
+                                                            <apex:outputText styleClass="form-control" value="{!selectedRequest}" id="RequestDiv"/>
+                                                            <!--<input type="text" class="form-control" readonly="readonly" value="{!selectedRequest}" id="RequestDiv"/>-->
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text">
+                                                                    <i class="icon-request-preference text-primary"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-group">
+                                                        <label>Description</label>
+                                                        <apex:inputField id="Description" value="{!caseObject.Description}" styleClass="form-control requiredFld fieldColor" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-lg-6 col-xl-4">
+                                                    <div class="form-group">
+                                                        <label>Email Id</label>
+                                                        <apex:inputField id="Secondary_Email_Id__c" value="{!caseObject.Secondary_Email_Id__c}" styleClass="form-control requiredFld fieldColor" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-lg-6 col-xl-4">
+                                                    <div class="form-group">
+                                                        <label>Mobile number</label>
+                                                        <div class="d-flex">
+                                                            <input type="text" class="form-control mr-3" value="+971" style="flex-basis: 80px;width: 80px;" disabled="true"/>
+                                                            <apex:inputField id="Secondary_Phone_Number__c" value="{!caseObject.Secondary_Phone_Number__c}" styleClass="form-control requiredFld fieldColor numOnly" onchange=" isUAEMobNum(this);"/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                            <!-- .row -->
+                                            
+                                            <div class="text-right mt-3">
+                                                <apex:commandButton value="CANCEL" action="{!Cancel}" styleClass="btn btn-secondary mr-2"/>
+                                                <!--<apex:commandButton value="POST COMMENT" action="{!save}" styleClass="btn btn-primary" oncomplete="redirectToMyCase();" onclick="event.preventDefault();" reRender="modal_ticket_created"/>-->
+                                                <a href="#" onClick="event.preventDefault();validateData();"  oncomplete="$('#preloader').fadeOut();hideTempLoader_input();redirectToMyCase();" class="btn btn-primary">SUBMIT</a>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                <!-- .panel -->
+                                
+                            </div>
+                            <!-- .page-header -->
+                        </div>
+                        <!-- .container -->
+                    </div>
+                    <!-- #page_content -->
+                    <!-- Modal -->
+                    <div class="modal fade modal-base" id="modal_ticket_created" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+                        <div class="modal-dialog" role="document" style="width: 500px;">
+                            <div class="modal-content">
+                                <div class="modal-body text-center pt-5 pb-5">
+                                    <h3 class="modal-title">Your ticket has been created</h3>
+                                    
+                                    <div class="mt-3 mb-2" style="font-size: 1.875rem;">
+                                        <span class="text-light">REF#</span> <span class="text-000"><apex:outputText value="{!caseNum}" id="caseNumberDiv"/></span>
+                                    </div>
+                                    
+                                    <p>
+                                        Visit the "Connect" link at the bottom of this page to view all your tickets and their status.
+                                    </p>
+                                    
+                                    <button class="btn btn-primary" data-dismiss="modal" onclick="navtoDash();">GO TO DASHBOARD</button>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal -->
+                    <div class="modal fade modal-base" id="modal_ticket_requests" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document" style="width: 990px;">
+                            <div class="modal-content">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <i class="icon-close"></i>
+                                </button>
+                                <div class="modal-body pt-5 pb-5">
+                                    <div class="mb-4 d-flex">
+                                        <h3 class="modal-title">REQUESTS</h3>
+                                        
+                                        <div class="search-field mb-0 ml-5" style="width: 337px;">
+                                            <div class="input-group">
+                                                <!--<apex:inputText value="{!searchvalue}" styleClass="form-control">
+                                                    <apex:actionSupport event="onkeyup" action="{!onkeyupAction}" reRender="one"/>
+                                                    <apex:actionSupport event="onchange" action="{!onkeyupAction}" reRender="one"/>
+                                                </apex:inputText>-->
+                                                <input type="text" class="form-control" value="{!searchvalue}" placeholder="Search for Request Number" onkeyup="startsearch(this.value);" onchange="startsearch(this.value);"/>
+                                                <div class="input-group-append">
+                                                    <button class="btn" type="button">
+                                                        <div class="icon-search"></div>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <apex:pageBlock id="one">
+                                    <apex:variable value="{!0}" var="rowNum"/>
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>REFERENCE</th>
+                                                <th>SERVICE</th>
+                                                <th>NAME</th>
+                                                <th>PASSPORT</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <apex:repeat value="{!reqList}" var="req" id="theRepeat1">
+                                                <tr data-dismiss="modal" style="cursor: pointer;" onclick="displaySelectReq({!rowNum})">
+                                                    <td>{!req.Name}</td>
+                                                    <td>{!req.strsrvc__c}</td>
+                                                    <td>{!req.Con__r.Name}</td>
+                                                    <td>{!req.Con__r.p__c}</td>
+                                                </tr>
+                                                <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+                                            </apex:repeat>
+                                        </tbody>
+                                    </table>
+                                   </apex:pageBlock> 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+            </body>
+        </apex:form>
+    </html>
+</apex:page>

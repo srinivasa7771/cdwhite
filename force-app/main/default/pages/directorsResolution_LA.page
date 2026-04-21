@@ -1,0 +1,238 @@
+<apex:page sidebar="false" showHeader="false" controller="ObTmplCtl" action="{!fetchMembers}" applyBodyTag="false" renderAs="pdf">
+    <head>
+        <style>
+            @page {
+            margin: 1.8cm 1cm;
+            size: A4;
+            padding: 10px;
+            @top-left {content: element(header);}
+            @bottom-left {content: element(footer);}
+            }
+            div.header{
+            position: running(header);
+            padding:5px 10px;
+            }
+            body { font-family: 'Arial Unicode MS'; }
+            .imgContainer img {
+            width: 100%;
+            }
+           
+            .empVals div {
+            margin: 2px 0 0 0;
+            position: relative;
+            padding-top: 11px;
+            min-height:13px;
+            /*margin: 4px 0 0 0;*/
+            }
+            
+            .container{
+                position:absolute;
+                margin-top: 20px;
+            }
+            .sign{
+            height:38px;
+            width:100%;
+            }
+            .pgHead{
+            color:blue;
+            font-weight:bold;
+            border-bottom: 1px solid black;
+            }
+            p,li,.directors,.fsz-12{
+            font-size:12px;
+            }
+            .fst-i{
+                font-style: italic;
+            }
+            ol { counter-reset: item }
+            li { display: block;padding:6px 0 6px 0; }
+            li:before { content: counters(item, ".") ") "; counter-increment: item; }
+        </style> 
+    </head>
+    <body>
+        <apex:outputText rendered="false">
+           
+        </apex:outputText>
+        <apex:outputText rendered="true">
+            <!--<div class="header" >
+                <div style="float:left">
+                    <img width='120' src="{!URLFOR($Resource.DubaiGovLogo)}" />
+                </div>
+                <div style="float:right">
+                    <img width='200' src="{!URLFOR($Resource.DDA_Logo)}" />
+                </div>
+            </div>-->
+            
+              
+               
+            <div class="container">
+                  
+                <div class="firstPage">
+               
+                                   
+                    <div class="terms">
+                        
+                        <p style="text-align: center;">
+                            <b> {!rq.acc__r.name}</b><br />
+                            (the “Company”) 
+                        </p>
+                        <p style="text-align: center;">
+                            <b> Company Registration No:{!rq.acc__r.lc__c} </b>
+                        </p>
+                        <apex:outputText rendered="{!AND(rq.xcamc__c!='Appointment of Auditor',rq.xcamc__c!='Add Segment',rq.xcamc__c!='Remove Segment')}">
+                        <p style="text-align: center;">
+                            <span style="font-family: sans-serif; font-weight:bold;"> Board of Directors’ Resolution Approving Change of {!role}
+                                <apex:outputText rendered="{!CONTAINS(rq.acc__r.Legal_Framework__c,'Branch')}">&nbsp;of a Branch</apex:outputText>
+                            </span>
+                        </p>
+                        </apex:outputText>
+                        <!--start new section-->
+                        <apex:outputText rendered="{!OR(rq.xcamc__c=='Add Segment',rq.xcamc__c=='Remove Segment')}">
+                        <p style="text-align: center;">
+                            <span style="font-family: sans-serif; font-weight:bold;"> Board of Directors’ Resolution Approving Change of Company Segments / Activities 
+                            </span>
+                        </p>
+                        </apex:outputText>
+                        <!-- end new section -->
+                        <apex:outputText rendered="{!rq.xcamc__c=='Appointment of Auditor'}">
+                        <p style="text-align: center;">
+                            <span style="font-family: sans-serif; font-weight:bold;"> Board of Directors’ Resolution Approving Appointment of Auditor
+                                <apex:outputText rendered="{!CONTAINS(rq.acc__r.Legal_Framework__c,'Branch')}">&nbsp;of a Branch</apex:outputText>
+                            </span>
+                        </p>
+                            </apex:outputText>
+                        <!--NEW SECTION ADDED-->
+                        <apex:outputText rendered="{!OR(rq.xcamc__c=='Add Segment',rq.xcamc__c=='Remove Segment')}">
+                            <p><span style="font-family: sans-serif; font-weight:bold;">IT IS RESOLVED</span> That the Board of Directors of the Company hereby approves to Add / Remove the Segment /Activities on the Commercial License as follows :</p>
+                        </apex:outputText>
+                        
+                        <!--add/remove segment section-->
+                        <apex:outputText rendered="{!OR(rq.xcamc__c=='Add Segment',rq.xcamc__c=='Remove Segment')}">
+                            <apex:outputText rendered="{!rq.xcamc__c=='Add Segment'}"><p><span style="font-family: sans-serif; font-weight:bold;">Add</span></p></apex:outputText>
+                            <apex:outputText rendered="{!rq.xcamc__c=='Remove Segment'}"><p><span style="font-family: sans-serif; font-weight:bold;">Remove</span></p></apex:outputText>
+                            <p><span style="font-family: sans-serif; text-decoration: underline;">Segments:</span></p>
+                            <!--list of segments and activities-->
+                            <ol>
+                                <apex:repeat value="{!listSegments}" var="segment">
+                                    <li>{!segment}</li>
+                                </apex:repeat>
+                            </ol>
+                            <p><span style="font-family: sans-serif; text-decoration: underline;">Activities:</span></p>  
+                             <ol>
+                                <apex:repeat value="{!listActivities}" var="activity">
+                                    <li>{!activity}</li>
+                                </apex:repeat>
+                            </ol>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!OR(rq.xcamc__c=='Add Segment',rq.xcamc__c=='Remove Segment')}">
+                            <br/>
+                            <p>THAT this Resolution is in conformity with the provisions of the Company’s Articles of Association, the Dubai Development Authority Private Companies Regulations 2016, and the Licensing Regulations and its amendments.</p>
+                        </apex:outputText>
+                        <!--end NEW SECTION ADDED-->
+                        <apex:outputText rendered="{!AND(CONTAINS(rq.acc__r.Legal_Framework__c,'Free Zone Limited Liability company'),rq.xcamc__c!='Add Segment',rq.xcamc__c!='Remove Segment')}">
+                            <p>In accordance with the Dubai Development Authority Private Companies Regulations 2016, and its amendments and subject to the provisions of the Company’s Articles of Association, the Board of Directors of the Company, hereby <span style="font-family: sans-serif; font-weight:bold;">RESOLVES</span> as follows:</p>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!AND(CONTAINS(rq.acc__r.Legal_Framework__c,'Branch'),rq.xcamc__c!='Add Segment',rq.xcamc__c!='Remove Segment')}">
+                            <p>The Board of Directors <span style="font-family: sans-serif; font-weight:bold;">{!companyInfo.parentCompanyName}</span> (Parent Company name) duly formed and registered in <span style="font-family: sans-serif; font-weight:bold;">{!companyInfo.parentCompanyNationality}</span> under Registration No.<span style="font-family: sans-serif; font-weight:bold;">{!companyInfo.parentCompanyRegistrationNo}</span>, having its registered office at <span style="font-family: sans-serif; font-weight:bold;">{!companyInfo.parentCompanyPermanentAddress}</span> has met on <span style="font-family: sans-serif; font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.createddate}" /></apex:outputText></span>, and has agreed and resolved the following:</p>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!AND(rq.xcamc__c!='Appointment of Auditor',rq.xcamc__c!='Add Segment',rq.xcamc__c!='Remove Segment')}">
+                            <ol>
+                                <li>THAT {!memInfo.salutation} <span style="font-family: sans-serif; font-weight:bold;">{!memInfo.firstName} {!memInfo.lastName}</span> of <span style="font-family: sans-serif; font-weight:bold;">{!memInfo.nationality}</span> nationality and holding Passport No. <span style="font-family: sans-serif; font-weight:bold;">{!memInfo.passports[0].docNo}</span> be appointed as the Company’s {!role} (the “New {!role}”) with effect from <span style="font-family: sans-serif; font-weight:bold;"><apex:outputText value="{0,date,dd/MM/yyyy}"><apex:param value="{!rq.createddate}" /></apex:outputText></span> (the “Effective Date”).</li>
+                                <apex:outputText >
+                                    <li>THAT the New {!role} shall replace the existing {!role} {!memInfo.salutation} 
+                                       
+                                        <span style="font-family: sans-serif; font-weight:bold;">{!currentGM.firstName} {!currentGM.lastName}</span> of <span style="font-family: sans-serif; font-weight:bold;">{!currentGM.nationality}</span> nationality
+                                        and holding Passport No. <span style="font-family: sans-serif; font-weight:bold;">{!currentGM.passports[0].docNo}</span> (the “Previous {!role}”) with effect from the Effective Date.
+                                    </li>
+                                    
+                                    <li>THAT the all powers granted to the previous {!role} are revoked in full with effect from the Effective Date.</li>
+                                </apex:outputText>
+                            </ol>
+                        </apex:outputText> 
+                        <apex:outputText rendered="{!rq.xcamc__c=='Appointment of Auditor'}">
+                            <ol>
+                              <li>RESOLVES to approve the appointment of {!auditorName}, {!lcNo} as the Company’s Auditor for the approved Financial year.</li>  
+                            </ol>
+                        </apex:outputText>
+                    </div>
+                    <apex:outputText rendered="{!AND(CONTAINS(rq.acc__r.Legal_Framework__c,'Branch'),rq.xcamc__c!='Add Segment',rq.xcamc__c!='Remove Segment')}">
+                        <br/>
+                        <p style="text-align:left;font-size:12px;">For and behalf of <span style="font-family: sans-serif; font-weight:bold;">{!companyInfo.LicenseeName}</span></p>
+                        <br/>
+                        ________________________
+                       <p> Authorized signatory <br/>
+                        Date : <apex:outputText value="{0,date,dd/MM/yyyy}"> <apex:param value="{!rq.createddate}" /></apex:outputText>
+                        </p>
+                    
+                    </apex:outputText>
+                        <!--<div style="margin:5px 0px 0px 0px">
+                        For and behalf of<br />
+                        <apex:repeat value="{!mdList[0].DirectersIdentityInfo}" var="mem">
+                            <div class="directors">
+                                ______________________________<br />
+                                {!mem.identityName}<br />
+                                Director<br />
+                                <apex:outputText value="{0, date,  dd/MM/yyyy}">
+                                    <apex:param value="{!NOW()}" /> 
+                                </apex:outputText>
+                            </div><br />
+                        </apex:repeat>
+                    </div>-->
+                   <apex:outputText rendered="{!AND(CONTAINS(rq.acc__r.Legal_Framework__c,'Free Zone Limited Liability company'))}">
+                    <div class="signBlocks" style="margin-top:50px;">
+                        <p style="text-align:left;font-size:12px;">
+                            For and behalf of
+                        </p>
+                        <div class="signBlock" style="margin-top:10px">
+                            <table style=" border-collapse: collapse; -fs-table-paginate: paginate;" width="694">
+                                <tbody>
+                                    <apex:repeat value="{!allMembers}" var="mem">
+                                         <apex:outputText rendered="{!CONTAINS(mem.positions,'Director')}">
+                                        <tr style="height: 26.55pt;">
+                                            <td style="width: 56.65pt; border: solid #BEBEBE 0.5pt; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="76">
+                                                <p style="punctuation-wrap: simple; margin: 6.65pt 0in .0001pt 7.4pt;"><strong><span style="font-size: 9.0pt;">Name:</span></strong></p>
+                                            </td>
+                                            <td style="width: 247.6pt; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="330">
+                                                <p style="punctuation-wrap: simple; margin: 4.95pt 0in .0001pt 6.8pt;"><strong><span style="font-size: 9.0pt; color: black;"><elem id="memName">{!mem.firstName} {!mem.lastName}</elem></span></strong></p>
+                                            </td>
+                                            <td style="width: 1.25in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="120">
+                                                <p style="punctuation-wrap: simple; margin: 4.95pt 0in .0001pt 6.8pt;"><strong><span style="font-size: 9.0pt; color: black;">Position:</span></strong></p>
+                                            </td>
+                                            <td style="width: 1.75in; border: solid #BEBEBE 0.5pt; border-left: none; background: #E7E6E6; padding: 0in 0in 0in 0in; height: 21.55pt;" width="168">
+                                               <p style="punctuation-wrap: simple; margin: 4.95pt 0in .0001pt 6.8pt;"><strong><span style="font-size: 9.0pt; color: black;"><elem id="memPos">Director</elem></span></strong></p>
+                                            </td>
+                                        </tr>
+                                        <tr style="height: 86.35pt;">
+                                            <td style="width: 520.25pt; border: solid #BEBEBE 0.5pt; border-top: none; padding: 0in 0in 0in 0in; height: 86.35pt;" colspan="4" width="694">
+                                                <p style="margin-top: .6pt; punctuation-wrap: simple;"><strong><span style="font-size: 8.5pt;">&nbsp;</span></strong></p>
+                                                <p style="margin-left: 6.8pt; punctuation-wrap: simple;"><strong><span style="font-size: 9.0pt;">Signature:</span></strong></p>
+                                            </td>
+                                        </tr>
+                                            </apex:outputText>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    </apex:outputText>
+                    <apex:outputText rendered="{!rq.xcamc__c!='Appointment of Auditor'}">
+                    <u class="fsz-12 fst-i">Important Notes: </u>
+                        <ol>
+                            <li>This Board Resolution must be printed on the Company’s letterhead.</li>
+                            <li>This Board Resolution must be notarized and legalized.</li>
+                        </ol>
+                    </apex:outputText>
+                    <apex:outputText rendered="{!rq.xcamc__c=='Appointment of Auditor'}">
+                    <u class="fsz-12 fst-i">Notes: </u>
+                        <ol>
+                            <li>Board Resolution must be printed on the Company’s letterhead, and to be notarised and legalized</li>
+                           
+                        </ol>
+                    </apex:outputText>
+                </div>
+                <div class="secondPage">
+                </div>
+            </div>
+        </apex:outputText>
+    </body>
+</apex:page>

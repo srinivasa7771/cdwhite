@@ -1,0 +1,376 @@
+<apex:component controller="ApplicantDetailController" >
+    <style>
+        .actions i{
+        font-size: 3em !important;
+        cursor:pointer;
+        }
+        #removeAct{
+        display:none;
+        }
+        .newMemNames{
+        text-transform: capitalize !important;
+        }
+        .newMemHead, .addedMem {
+        font-family: "Helvetica Neue Cond", "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        color: #4a4a4a;
+        vertical-align: bottom !important;
+        letter-spacing: 0.75px;
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dcdcdc;
+        }
+        .licAmdDir{
+        display:none;
+        }
+        .newMemHead{
+        font-weight: 500;
+        background-color: #f5f5f5;
+        text-transform: uppercase;
+        }
+    </style>
+    <apex:attribute name="mdList" type="DDAMembersWrapper" description="Existing members" />
+    <!-- <apex:attribute name="mmWrp" type="MembersWrapper" description="Existing members" />-->
+    <div class="row licAmdDir">
+        <div class="form-group col-12">
+            
+                <span class="fs-24 mr-2 text-primary">Adding Directors</span>
+                
+            <div class="fs-18 my-2 locSection">You can appoint a director from either existing shareholders or the general manager, depending on the company's articles of association and the decision of the board or shareholders.</div><br/>
+            <div id="exMemLst" style="width:100%;">
+                
+                <div class="existDirSec" style="display:none;">
+                    <apex:outputPanel id="exMemListDir">
+                        <div class="form-group">
+                            <h5>Choose Members to add as directors</h5>
+                            <table class="table table-align-middle" id="table-exMem" data-page-length='25'>
+                                <thead>
+                                    <tr>
+                                        <th>SELECT<i class="fa text-primary"></i></th>
+                                        <th>NAME<i class="fa text-primary"></i></th>
+                                        <th>ROLE<i class="fa text-primary"></i></th>
+                                        <th>PASSPORT#<i class="fa text-primary"></i></th>
+                                        <!--<th>EXPIRY DATE<i class="fa text-primary"></i></th>-->
+                                    </tr>
+                                </thead>
+                                
+                                <tbody>
+                                    <apex:repeat value="{!mdList.nonDrWrp}" var="m">
+                                        <tr rowTitle="{!m.positions}">
+                                            <apex:repeat value="{!m.passports}" var="mm">
+                                                <td>
+                                                    <label class="custom-checkbox mt-2">
+                                                        <input ppNum='{!mm.docNo}' name='exMember' type="checkbox" role="{!m.positions}" onchange="settoFld(this)" class="cards exmemClass"/>
+                                                        <span>&nbsp;</span>
+                                                    </label>
+                                                </td>
+                                                <td>{!m.firstName} {!m.lastName}</td>
+                                                <td>{!m.positions}</td>
+                                                <td attr="ppNum">{!mm.docNo}</td>
+                                            </apex:repeat>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                            
+                        </div>
+                    </apex:outputPanel>
+                </div>
+            </div>
+            <div>
+                <i class="icon-info-circle text-primary"></i>
+                <span class="ml-2">Enter the details <b> as per the passport</b> and click on + to add a new director</span>
+            </div><br/>
+            <div class="newDirSec">
+                <div class="newDirSubSec">
+                    <div class="mb-3 row col-12">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>First name</label>
+                                <input type="text" maxlength="35" attr="newMemFN" class="alphaChar form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-">
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" maxlength="35" attr="newMemLN" class="alphaChar form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Passport</label>
+                                     <input type="text" id="ppnum" attr="newMemPPN" class="alphaNumWOSpc form-control" />
+                                    <script>
+                                    $('#ppnum').keyup(function() {                  
+                                        this.value = this.value.toLocaleUpperCase();    
+                                        removeValError(this);          
+                                    });
+                                    </script>
+                                </div>
+                            </div>
+                        <div class="col-md-3 row actions" id="addAct">
+                            <div class="form-group col-md-6">
+                                <label>Add</label>
+                                <div><i class="fa fa-plus-circle fs-24 text-primary" onclick="addNewMem(this);"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="newMems mb-4 mt-4" id="addedMems">
+                    <div class="row newMemHead col-12" style="display:none;">
+                        <div class="col-3">First name</div>
+                        <div class="col-3">Last name</div>
+                        <div class="col-3">Passport Number</div>
+                        <div class="col-3">Actions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    <script>
+    var adhoc3Proto = '{"serviceRequests":[{"serviceId":"","axsRefNo":"","licenseNo":"","isPaid":false,"members":[{"positions":"Manager","perMobile":"","isMobilePhoneVerified":"","mobilePhoneVerificationDatetime":"","perEmail":"","isEmailVerified":"","emailVerificationDatetime":"","nationality":"","lastName":"","gender":"","firstName":"","ddaId":"","birthDate":"","dateOfIncorporation":"","countryOfIncorporation":"","operatingName":"","registrationNo":"","proposedNumberOfShares":"","currentNumberOfShares":"","registrationDate":"","cessationDate":"","passports":[{"countryOfIssuance":"","placeOfIssuance":"","issueDate":"","expiryDate":"","docNo":""}],"emiratesId":{"issueDate":"","expiryDate":"","docNo":""},"addresses":[{"type":"HOME","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""},{"type":"UAE","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""}],"actionType":"ADD"}]}]}';
+    var adhoc4Proto = '[{"Salutation":"","Given_Name":"","Surname":"","MR_Gender":"","Date_of_Birth":"","Place_of_Issue":"","undefined":"","Passport_No":"","Date_of_Issue2":"","Date_of_Expiry2":"","country":"","Place_of_Birth":"","eid":"","InOrOut":"","AttachmentId":""}]';
+    var selectedJSON = [];
+    var members = [];
+    var mem = {},xuvdetVal = {};
+    var memMaxLimit  = 8;
+    $(document).ready(function(){
+        $('.alphaChar').unbind('keyup').bind('keyup', function(e) {
+            let f = $(this).attr('for');
+            if(f=='allowSingleQuote')
+                $(this).val($(this).val().replace(/[^a-zA-Z\' ]/g, ''));
+            else
+                $(this).val($(this).val().replace(/[^a-zA-Z' ]/g, ''));
+            $(this).val(($(this).val()));
+        });
+        if('{!req.id}'!=''){
+            if(cs['xadtx2__c']&&cs['xadtx2__c'].value){
+                exNewMems = JSON.parse(cs['xadtx2__c'].value);
+                //cs['xcddocs__c'].value = '';
+                for(v of exNewMems){
+                    loadExisNewMems(v.firstName,v.lastName,v.ppNum)
+                }
+            }
+            
+            
+        }
+    });
+    
+    function settoFld(e) {
+        let addMemsLength = $('.addedMem').length+($('[name="exMember"]:checked').length);
+        if($(e).is(':checked') && addMemsLength>memMaxLimit){
+            $(e).prop('checked',false);
+            axsAlert('Error','Maximum number of directors already selected, remove one to select new director');
+        }
+        let ppNum = $(e).attr("ppNum");
+        let type = $(e).attr('type');
+        let ppName= '';
+        let choosenMems  = (cs['xadtx3__c'].value)?JSON.parse(cs['xadtx3__c'].value):'';
+        for (let i of JSON.parse(cs['existingMemDetail'].value).licenseInfos[0].members) {
+            if (Array.isArray(i.passports) && i.passports.length>0 && i.type != 'Corporate'){
+                if (ppNum == i.passports[0].docNo) {
+                    
+                   //ppName= 'Passport Copy - '+i.firstName+' '+i.lastName+';'+'RIC Form - '+i.firstName+' '+i.lastName;
+                    if (type == 'checkbox')
+                        if(!$(e).is(':checked')){
+                            let u = i.firstName+i.lastName+'_11';
+                            let passportName = 'Passport Copy - '+i.firstName+' '+i.lastName;
+                            let ricName = 'RIC Form - '+i.firstName+' '+i.lastName;
+                            removeAdded(ppNum,passportName,ricName);
+                            //cs['xcddocs__c'].value = cs['xcddocs__c'].value.replace(ppName+';','');
+                            if('{req.id}'!='' &&  cs['xcddocs__c']&& cs['xcddocs__c'].value){
+                               
+                                // deleteRQDocJS(ppName);     /*US APD3911*/         
+                            }
+                            choosenMems = (cs['xadtx3__c'].value)?JSON.parse(cs['xadtx3__c'].value):'';
+                            if(choosenMems){
+                                for(let m in choosenMems.serviceRequests[0].members){
+                                    if(i.ddaId == choosenMems.serviceRequests[0].members[m].ddaId){
+                                        choosenMems.serviceRequests[0].members.splice(m,1);
+                                    }
+                                }
+                            }
+                            for([j,v] of selectedJSON.entries()){
+                                if(v.passports[0].docNo==i.passports[0].docNo)
+                                    selectedJSON.splice(j,1);
+                            }
+                        }
+                        else{
+                            cs['isMobilePhoneVerified']= i.isMobilePhoneVerified; 
+                            cs['isEmailVerified']= i.isEmailVerified; 
+                            let ppAdded = false;
+                            $('.addedMem').each(function(){
+                                let addedPP = $(this).attr('ppnum');
+                                if(addedPP==ppNum){
+                                    ppAdded = true;
+                                }
+                            });
+                            if(!ppAdded){
+                                 $('.newDirSec').find('#addedMems').append(createNewAddRow(i.firstName,i.lastName,ppNum));
+                                $('.newMemHead').show();
+                            }
+                               
+                            //cs['xcddocs__c'].value +=ppName+';'
+                            i.axsDocName = 'Passport Copy - '+i.firstName+' '+i.lastName;
+                            selectedJSON.push(i);
+                        }
+                    else{
+                        selectedJSON = [];
+                        selectedJSON[0] = i;
+                    }
+                }
+                
+            }
+        }
+        //cs['xuvdet__c'].value = '{"'+selectedJSON.passportInfo.passportNumber+'":"'+selectedJSON.identityId+'"}';
+        cs['xuvdet__c'].value = JSON.stringify(selectedJSON);
+        //checkMemberChange();
+        cs['xadtx3__c'].value = JSON.stringify(choosenMems);
+        
+        showNext();
+    }
+    function showNext(){
+        
+        
+        $('.base-nav-next').hide();
+        let addMemsLength = $('.addedMem').length+($('[name="exMember"]:checked').length);
+        
+        if(addMemsLength>=memMaxLimit){
+            $('.newDirSubSec,#exMemOpt').hide();
+            $('.base-nav-next').show();
+        }else if(addMemsLength>0){
+            $('.base-nav-next').show();
+        }else{
+            $('.newDirSubSec,#exMemOpt').show();
+        }
+        //deleteRQDocJS(ppName+';'+ricName);
+    }
+    /*function checkMemberChange(){
+        if(JSON.parse(adhoc3Data).serviceRequests[0].members.length!=selectedJSON.length)
+    }*/
+    function loadExisNewMems(fn,ln,pn){
+        $('.newDirSec').find('#addedMems').append(createNewAddRow(fn,ln,pn));
+        $('.newMemHead').show();
+        showNext();
+    }
+    var dupPassport;
+    function addNewMem(e){
+        let fnEl = $(e).parents('.newDirSec').find('[attr="newMemFN"]');
+        let lnEl = $(e).parents('.newDirSec').find('[attr="newMemLN"]');
+        let passportN = $(e).parents('.newDirSec').find('[attr="newMemPPN"]');
+        let newPPnum='';
+         dupPassport=false;
+        console.log('ppval'+passportN.val());
+        $('.addedMem').each(function(){
+            newPPnum = $(this).attr('ppnum');
+            console.log('--newPPnum--'+newPPnum);
+            if(passportN.val()==newPPnum){
+                axsAlert('Error','Given passport number <elem class="text-primary">'+ newPPnum + '</elem> already added');
+                dupPassport=true;
+                return;
+            }
+            
+        })
+        if(dupPassport)
+            return;
+        for (i of JSON.parse(cs['existingMemDetail'].value).licenseInfos[0].members) {
+            if(Array.isArray(i.passports) && i.passports.length>0 && i.type != 'Corporate' && passportN.val() == i.passports[0].docNo){
+                axsAlert('Error','Given passport number <elem class="text-primary">'+i.passports[0].docNo+ '</elem> already exist in the system');
+                dupPassport=true;
+                return;
+            }
+        }
+        if(!fnEl.val() || !passportN.val()){
+            axsAlert('Error','First name and passport are mandatory');
+            return;
+        }
+        if(passportN.val().length<6||passportN.val().length>12){
+            addValError(passportN,'Passport Number must be 6-12 characters long!');
+            return;
+        }
+        $(e).parents('.newDirSec').find('#addedMems').append(createNewAddRow(fnEl.val().trim(),lnEl.val().trim(),passportN.val()));
+        fnEl.val('');
+        lnEl.val('');
+        passportN.val('');
+        $('.newMemHead').show();
+        showNext();
+        
+        
+    }
+    function createNewAddRow(fn,ln,pn){
+        let mebCnt = $('.addedMem').length+($('[name="exMember"]:checked').length);
+        let ppName= 'Passport Copy - '+fn+' '+ln.trim();
+        let ricName= 'RIC Form - '+fn+' '+ln.trim();
+        let u = pn?pn:fn+''+ln+'_11';
+        //let u = fn+''+ln+'_11';
+     
+        var h = '<div class="row col-12 addedMem" action="add" for="'+u+'" ppnum="'+pn+'">';
+        h +='<div class="col-3 newMemNames frstName">'+fn+'</div><div class="col-3 newMemNames lstName">'+ln+'</div><div class="col-3 newMemNames passportNumber">'+pn+'</div><div class="col-3"><elem class="btn" onclick="removeAdded(\''+u+'\',\''+ppName+'\',\''+ricName+'\')" style="color: #bf0000;padding:0px;">Remove</elem></div></div>';
+
+        //cs['xcddocs__c'].value +=ppName+';';
+        //cs['xcddocs__c'].value +=ricName+';';
+        return h;
+    }
+    let ad2Val='',ad3Val='',ad4Val='';
+    
+    function removeAdded(ppNum,ppname,ricName){
+        $('[for="'+ppNum+'"]').remove();
+        $('[name="exMember"][ppnum="'+ppNum+'"]').prop('checked',false);
+        for(let [j,v] of selectedJSON.entries()){
+            if(v.passports[0].docNo==ppNum)
+                selectedJSON.splice(j,1);
+        }
+       /* let rqDocs = cs['xcddocs__c'].value.split(';');
+        let allDocs = '';
+        for([i,v] of rqDocs.entries()){
+            if(ppname!=v&&ricName!=v){
+                allDocs = allDocs+';'+v;
+            }
+        }
+
+        cs['xcddocs__c'].value = allDocs;
+        if('{!req.id}'!=''){
+            console.log('===docs=='+ppname+';'+ricName);
+            deleteRQDocJS(ppname+';'+ricName);
+        }*/
+        ad2Val = (cs['xadtx2__c']&&cs['xadtx2__c'].value)?JSON.parse(cs['xadtx2__c'].value):'';
+        ad3Val = (cs["xadtx3__c"]&&cs["xadtx3__c"].value&&JSON.parse(cs["xadtx3__c"].value))?JSON.parse(cs["xadtx3__c"].value):JSON.parse(adhoc3Proto);
+        ad4Val = (cs["xadtx4__c"]&&cs["xadtx4__c"].value)?JSON.parse(cs["xadtx4__c"].value):JSON.parse(adhoc4Proto);
+        if(ad2Val){
+            for(let [i,v] of ad2Val.entries()){
+                ppNum=ppNum.toUpperCase();
+                let nPPnumber=v.ppNum.toUpperCase();
+                if(ppNum == nPPnumber){
+                    ad2Val.splice(i,1);
+                }
+            }
+        }
+        if(ad3Val){
+            for(let [i,v] of ad3Val.serviceRequests[0].members.entries()){
+                ppNum=ppNum.toUpperCase();
+                let nPPnumber=v.passports[0].docNo.toUpperCase();
+                if(ppNum == nPPnumber){
+                    ad3Val.serviceRequests[0].members.splice(i,1);
+                }
+            }
+        }
+        if(ad4Val){
+            for(i of ad4Val){
+                ppNum=ppNum.toUpperCase();
+                let nPPnumber=i.Passport_No.toUpperCase();;
+                if(ppNum == nPPnumber){
+                    ad4Val.splice(i,1);
+                }
+            }
+        }
+        cs['xadtx2__c'].value = JSON.stringify(ad2Val);
+        cs['xadtx3__c'].value = JSON.stringify(ad3Val);
+        cs['xadtx4__c'].value = JSON.stringify(ad4Val);
+        cs['xcddocs__c'].value = allDocs;
+        if($('.addedMem').length<1)
+            $('.newMemHead').hide();
+        showNext();
+    }
+    </script>
+</apex:component>

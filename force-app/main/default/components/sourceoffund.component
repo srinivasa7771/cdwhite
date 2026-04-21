@@ -1,0 +1,193 @@
+<!--**************************************************************************************************
+@Version History
+ * Version      Date            Name                        Description
+ * 1.0         19-09-2024      Prateek Jangir              Initial Draft, Component to capture details of source of fund on OnBaording and UBO service.
+**************************************************************************************************-->
+<apex:component >
+
+<apex:attribute name="tableJSONData" description="Account Id" type="String"/>
+
+    <script>
+    
+    let sourceofwealth = [];
+
+    function validData(incomeSource,detail,incomeCountry,action,isOnSubmit){
+        sourceofwealth =[];
+        incomeSource = $('[id$="incomeSource"]').val();
+        let isDuplicatedetail= false;
+        let result = true;
+        if(incomeSource && detail && incomeCountry){
+
+            sourceofwealth = cs['sourceoffunds'].value &&  cs['sourceoffunds'].value != '' ? JSON.parse(cs['sourceoffunds'].value) : sourceofwealth;
+            console.log('sourceofwealth '+sourceofwealth);
+            if(sourceofwealth.length > 0){
+                sourceofwealth.forEach(source => {
+                        if(source.incomeSource == incomeSource && source.incomeCountry == incomeCountry){
+                            isDuplicatedetail=true;
+                        }
+                    });
+                }
+            if(isDuplicatedetail){
+                result =false;
+                let incomeSource = $('[id$="incomeSource"]');
+                addValError(incomeSource,'Duplicate fund detail. Please add valid fund details !'); 
+            }
+            else{
+                let fundJSON={};
+                let key = incomeSource+'-'+incomeCountry;
+                var newRow = '<tr id="'+key+'"><td class="text-black">' + incomeSource + '</td><td class="text-black">' + detail + '</td><td class="text-black">' + incomeCountry + '</td><td><elem class="btn" onclick="removeAdded(\''+key+'\',\''+incomeSource+'\',\''+detail+'\',\''+incomeCountry+'\')" style="color: #bf0000;padding:0px;">Remove</elem></td></tr>';
+                
+                fundJSON['incomeSource']=incomeSource;
+                fundJSON['detail']=detail;
+                fundJSON['incomeCountry']=incomeCountry;
+                sourceofwealth.push(fundJSON);
+                console.log('sourceofwealth :'+sourceofwealth);
+                cs['sourceoffunds'].value = JSON.stringify(sourceofwealth);
+                
+                // Append the new row to the table body
+                document.getElementById('tableBody').innerHTML += newRow;
+                $('#incomeSourcetable').show();
+                $('[id$="incomeSource"]').val('');
+                $('[id$="incomeSource"]').trigger('change');
+                $('#detail').val('');
+                $('[id$="incomeCountry"]').val('');
+                $('[id$="incomeCountry"]').trigger('change');
+                result = true;
+                console.log('## sourceoffunds value ## '+cs['sourceoffunds'].value);
+            }
+        
+        }
+        else if(((incomeSource || detail || incomeCountry) && isOnSubmit) || (!isOnSubmit) ){
+           let incomeSource = $('[id$="incomeSource"]');
+           result=false;
+           addValError(incomeSource,'Please enter all details!'); 
+        }
+        return result;
+    }
+
+
+   function removeAdded(keyValue,incomeSource,detail,incomeCountry){
+    if(keyValue){
+        document.getElementById(keyValue).remove();
+        sourceofwealth =sourceofwealth.filter(row => row.incomeSource+'-'+row.incomeCountry !=incomeSource+'-'+incomeCountry );
+        console.log('JSON.stringify(sourceofwealth) after remove :'+JSON.stringify(sourceofwealth));
+        cs['sourceoffunds'].value = JSON.stringify(sourceofwealth);
+        if(sourceofwealth.length == 0){
+            $('#incomeSourcetable').hide(); 
+        }
+        
+    }
+   }   
+   
+   function addTableData(data){
+        
+        if(data){
+            let cleandata = data.replace(/\\"/g, '"');
+            cleandata = cleandata.slice(1, -1);
+           
+            let tableData = JSON.parse(cleandata);
+            console.log('tableData :'+tableData);
+            tableData.forEach(element => {
+                let fundJSON={};
+                let key = element.incomeSource+'-'+element.incomeCountry;
+                let newRow = '<tr id="'+key+'"><td class="text-black">' + element.incomeSource + '</td><td class="text-black">' + element.detail + '</td><td class="text-black">' + element.incomeCountry + '</td><td><elem class="btn" onclick="removeAdded(\''+key+'\',\''+element.incomeSource+'\',\''+element.detail+'\',\''+element.incomeCountry+'\')" style="color: #bf0000;padding:0px;">Remove</elem></td></tr>';
+                fundJSON['incomeSource']=element.incomeSource;
+                fundJSON['detail']=element.detail;
+                fundJSON['incomeCountry']=element.incomeCountry;
+                sourceofwealth.push(fundJSON);
+                document.getElementById('tableBody').innerHTML += newRow;
+            });
+            cs['sourceoffunds'].value = JSON.stringify(sourceofwealth);
+        }
+   }
+
+    </script>
+    <body>
+       
+        <div class="form-group">
+            <b><label>Source of Funds and Wealth</label></b>
+            <br></br>
+            <div class="exMembersSubSec" id="addMemSubSec"><!--If you are a politically exposed person and/or the Beneficial Owner of a Legal Entity, -->
+                <label>Please specify the source of property and assets which are, or will be the subject of the relevant legal entity and click + to add source of fund:</label>
+            </div>
+            <br></br>
+            <div class="newDirSec">
+                
+                <div class="exMembersSec">
+                </div>
+                <div class="newDirSubSec">
+                    <div class="mb-3 row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Income Source</label>
+                                <apex:selectList html-for="pepAssociation" id="incomeSource" multiselect="false" size="1" styleclass="form-control input-select2-flat forEdit" html-fldname="sourceOfwealth">
+                                    <apex:selectOption itemLabel=""  itemValue=""></apex:selectOption>    
+                                    <apex:selectOption itemLabel="Salary and Earnings"  itemValue="Salary and Earnings"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Sales of real estate"  itemValue="Sales of real estate"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Sales of financial assets"  itemValue="Sales of financial assets"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Investment proceeds"  itemValue="Investment proceeds"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Trust"  itemValue="Trust"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Loan"  itemValue="Loan"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Savings"  itemValue="Savings"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Return from Capital from abroad"  itemValue="Return from Capital from abroad"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Damages/Compensation"  itemValue="Damages/Compensation"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Inheritance"  itemValue="Inheritance"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Royal family stipend"  itemValue="Royal family stipend"></apex:selectOption>
+                                    <apex:selectOption itemLabel="Others"  itemValue="Others"></apex:selectOption>
+                                </apex:selectList>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Details</label>
+                                <input type="text" id="detail" maxlength="250" attr="newMemLN" class="alphaChar form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Income Country</label>
+                                <div class="d-flex">
+                                    <div style="flex-basis: 100%;max-width:220px;">
+                                        <div style="flex-basis: 100%;">
+                                            <select class="form-control countryNames" id="incomeCountry">
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 row actions" id="addAct">
+                            <div class="form-group col-md-6">
+                                <label>Add</label>
+                                <div><i class="fa fa-plus-circle" style="font-size: 3em !important;"  onclick="validData($('#incomeSource').val(),$('#detail').val(),$('#incomeCountry').val(),'Add',false);"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-12">
+            <div class="newMems mb-4 mt-4" id="addedMems">
+                <table  class="table table-hover table-responsive-sticky table-list m-0" id="incomeSourcetable" >
+                    <thead>
+                        <tr>
+                            <th>Income Source</th>
+                            <th>Details</th>
+                            <th>Income Country</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rows will be added here dynamically -->
+                    </tbody>
+                </table>
+                <script type="text/javascript">
+                    
+                    let data = '{!tableJSONData}';
+                    if(data)
+                        addTableData(JSON.stringify(data));
+                </script>
+            </div>
+        </div>
+        </div>
+    </body>
+</apex:component>

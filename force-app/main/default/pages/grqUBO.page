@@ -1,0 +1,388 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="gctlUBO" label="DDA Declaration Form(s)" title="DDA Declaration Form(s)"  docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+
+    <script type="text/javascript">
+    var cs={};
+    </script>
+    
+    <!--<apex:outputPanel rendered="{!rq.id==null}">
+        <c:pgHeader id="sH" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="DDA Forms" subtitle="DDA Declaration Form(s)" description=""/>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.id!=null}">
+        <c:pgHeader id="sH1" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="UBO Form" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="Filling and Uploading UBO From" STA="{!rq.STA__c}"/>
+    </apex:outputPanel>-->
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main">     
+                <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+                <apex:outputPanel id="pbMain">
+                    <!--<apex:pageBlockButtons id="pbBtn" rendered="{!OR(rq.id=null,attachdocs.size<1)}">
+                        <a href="" onClick="handleFileSelect()" class="btnSave" style="float: right;position:relative;">Save &amp; Refresh</a>
+                    </apex:pageBlockButtons>
+                    <apex:pageBlockButtons id="pbBtn1" rendered="{!AND(rq.id!=null,attachdocs.size>0)}">
+                        <apex:outputPanel rendered="{!AND(rq.STA__c!='Completed',!ispu)}">
+                            <a href="" onClick="markComplete()" class="btnSave" style="float: right;position:relative;">Complete</a>
+                        </apex:outputPanel>
+                    </apex:pageBlockButtons>-->
+                    
+                    <apex:actionFunction name="uploadDoc" action="{!uploadDocToRQ}" />
+                    <apex:actionFunction name="delDoc" action="{!delDocFromRQ}"  />
+                    <apex:actionFunction name="mComp" action="{!completeReq}"  />
+                    <apex:outputPanel id="dummy"></apex:outputPanel>
+                    <apex:actionStatus id="theStatus" startText="Loading... Please wait.">
+                        <apex:facet name="start"><apex:outputPanel >
+                            <div class="divWait"><table  border="0" bordercolor="red"  width="100%" height="100%">
+                                <tr><td valign="center" align="center"> <img alt="Loading... Please wait." src="{!URLFOR($Resource.axsRS, '/images/PROGRESS.gif')}" /></td></tr>
+                                </table>  </div>
+                            </apex:outputPanel>
+                        </apex:facet>
+                    </apex:actionStatus>
+                    
+                    <apex:variable var="index" value="{!0}"/>
+                    <div class="divWait" style="display:none;">
+                        <table  border="0" bordercolor="red"  width="100%" height="100%">
+                            <tr><td valign="center" align="center"> <img alt="Loading... Please wait." src="{!URLFOR($Resource.axsRS, '/images/PROGRESS.gif')}" /></td></tr>
+                        </table> 
+                    </div>
+                    
+                    <div class="container">
+                        <div class="base-layout">
+                            <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                     <apex:outputPanel rendered="{!IF(rq.id!='',false,true)}">
+                                        <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                        <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                            <div class="collapse-content">
+                                                <p class="text-000">
+                                                   <!--UBO form--> 
+                                                </p>
+                                                <p class="text-000 mb-0">
+                                                    It is mandatory for the BP to upload valid filled UBO form                                                </p>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel id="compupload" rendered="{!IF(rq.id!='',true,false)}">
+                                        <c:grqupd Dim="V" PayDone="{!if(rq.AP__c>0,true,false)}"/>  
+                                    </apex:outputPanel>
+                                    
+                                </div>
+                            </div>
+                            </div>
+                            
+                            
+                            <div class="base-main">
+                                <div class="base-main-content">
+                                    <h3 class="base-main-title">{!IF(rq.id==null, 'DDA Declaration Form(s)', 'UBO Form')}</h3>
+                                    <h4 class="mt-4"> Company Details</h4>
+                                    
+                                    <div  class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <label>Licence number</label>
+                                                <label class="form-control" id="van__c"> {!acc.lc__c}</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <label>Company Name</label>
+                                                <label  class="form-control" id="Name"> {!acc.Name}</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- <apex:outputLabel value="Licence number"/><apex:outputField id="van__c" value="{!acc.lc__c}"/>-->
+                                        <!-- <apex:outputLabel value="Company Name"/> <apex:outputField id="Name" value="{!acc.Name}"/>-->
+                                        
+                                    </div>
+                                    
+                                    <apex:outputPanel rendered="{!OR(rq.id=null,attachdocs.size<1)}">
+                                        <apex:outputPanel > Upload File(s)
+                                        </apex:outputPanel>  
+                                        
+                                        <apex:outputPanel rendered="{!acc.UBO_Flag__c}">
+                                            <apex:outputPanel >  Ultimate Beneficial Owner Details (UBO)
+                                                <table class="uptable">
+                                                    <tr>
+                                                        <td class="upText">
+                                                            <span style="display:block !important;" id="dText">Please download UBO form to fill &amp; upload the form.<br/>
+                                                                <a title="To learn more about the requirement of UBO, please refer to the UBO circular (…Link to the circular………)" style="cursor:pointer;color: blue">(Click hear to learn more)</a>
+                                                            </span>
+                                                        </td>
+                                                        
+                                                        <td><span href="{!URLFOR($Resource.UBO_Form)}" id="download" class="btnSave">Download File</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="upText"><span>Upload Your File Here</span></td>
+                                                        <td><span class="btnSave" id="choose">Choose File</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="upText"><span id='docName'></span></td>
+                                                        <td><span id="instr" style="font-weight: 200; display: none;position: relative;top: 8px;">Please Click on <b>Save &amp; Refresh</b> to proceed.</span></td>
+                                                    </tr>
+                                                </table>
+                                            </apex:outputPanel> 
+                                        </apex:outputPanel>
+                                        
+                                        <apex:outputPanel rendered="{!acc.Is_UBO_required__c}">
+                                            <apex:outputPanel >  "Economic Substance Regulations Form
+                                                <table class="uptable1">
+                                                    <tr>
+                                                        <td class="upText1"><span style="display:block !important;" id="dText1">Please download the Economic Substance form and refer to Relevant Activities guidelines in the sheet to fill &amp; upload the form.<br/><a title="To learn more about the requirement of ESR, please refer to the ESR circular (…Link to the circular………)" style="cursor:pointer;color: blue">(Click hear to learn more)</a></span></td>
+                                                        <td><span href="{!URLFOR($Resource.ESR_Form)}" id="download1" class="btnSave1">Download File</span></td>
+                                                    </tr>
+                                                    <tr></tr><tr></tr><tr></tr><tr></tr>
+                                                    <tr>
+                                                        <td class="upText1"><span>Upload Your File Here</span></td>
+                                                        <td><span style="width:30px" class="btnSave1" id="choose1">Choose File</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="upText1"><span id='docName1'></span></td>
+                                                        <td><span id="instr1" style="font-weight: 200; display: none;position: relative;top: 8px;">Please Click on <b>Save &amp; Refresh</b> to proceed.</span></td>
+                                                    </tr>
+                                                </table>
+                                            </apex:outputPanel> 
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel rendered="{!AND(rq.id!=null,attachdocs.size>0)}">
+                                        <apex:outputPanel >Attachment Details
+                                            <apex:outputPanel >
+                                                <apex:outputLabel value="Request Number"/>
+                                                <apex:outputField value="{!rq.name}" />
+                                            </apex:outputPanel>
+                                            <apex:outputPanel >
+                                                <apex:outputLabel value="Attachment"/>
+                                                <apex:outputPanel >
+                                                    <apex:repeat value="{!attachdocs}" var="att">
+                                                        <apex:outputPanel >
+                                                            <apex:outputLink target="_blank" rel="{!att.name}" value="/servlet/servlet.FileDownload?file={!att.id}" >{!att.name}
+                                                                <span class="helpButton" id="att-_help">
+                                                                    <label for="forAtt"></label>
+                                                                    <img src="/s.gif" alt="" class="helpOrb" title=""/>
+                                                                    <script type="text/javascript">
+                                                                    sfdcPage.setHelp('att', '<center>Click here to see the Attachment</center>');
+                                                                    </script>
+                                                                </span>
+                                                            </apex:outputLink>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel >
+                                                            <span class="btnSave" onclick="deleteAtt();" id="attDel">Delete</span>
+                                                        </apex:outputPanel>
+                                                    </apex:repeat>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                
+                <apex:inputHidden >
+                    <apex:inputFile fileName="{!docname}" id="myfile" value="{!imageBase64}" onchange="showPrview(this)" style="display:none;"></apex:inputFile>
+                    <!--<input type="file" onchange="showPrview(this)" id="myfile" name="myfile" style="display:none;" />-->
+                </apex:inputHidden>
+                {!docname}
+                <apex:inputHidden >
+                    <apex:inputFile fileName="{!docname1}" id="myfile1" value="{!imageBase641}" onchange="showPrview1(this)" style="display:none;"></apex:inputFile>
+                    <!--<input type="file" onchange="showPrview(this)" id="myfile" name="myfile" style="display:none;" />-->
+                </apex:inputHidden>
+                {!docname1}
+                <script>
+                
+                cs["myfile"] = document.getElementById("{!$Component.myfile}");
+                $(document).ready(function(){
+                    $('.upText span').eq(0).show();
+                });
+                cs["myfile1"] = document.getElementById("{!$Component.myfile1}");
+                $(document).ready(function(){
+                    $('.upText1 span').eq(0).show();
+                });
+                </script>
+                <script>
+                
+                function handleFileSelect(){
+                    if((cs["myfile"].value==''||cs["myfile"].value==null)&& (cs["myfile1"].value==''||cs["myfile1"].value==null)){
+                        alert("Please uplaod the filled UBO Form and click on Save!")
+                    }
+                    
+                    else{
+                        var r = confirm("Are you sure you want to upload");
+                        if (r == true) {
+                            $('.divWait').show();
+                            $('body').css('pointer-events','none;');
+                            uploadDoc();
+                        }
+                        
+                        else{
+                            alert("Please click on Choose File, if you wish to Re-Upload the UBO form!");
+                        }
+                        
+                    }
+                }   
+                </script>
+                <apex:outputPanel rendered="{!acc.UBO_Flag__c}"> 
+                    
+                    <script>
+                    $(document).ready(function(){
+                        $('#btnDivs div').eq(1).unbind().bind('click',function(){
+                            var d = $(this).attr('href');
+                            window.open(d,'_blank');
+                            $('#btnDivs div').eq(2).show();
+                        });
+                        $('span.btnSave').on('click',function(){
+                            var t = $(this).attr('id');
+                            var i = $(this).index();
+                            if(t.includes('download')){
+                                var d = $(this).attr('href');
+                                window.open(d,'_blank');
+                                $('.upText span').eq(i+1).show();
+                                $('span.btnSave').eq(i+1).show();
+                            }
+                            else if(t.includes('choose')){
+                                $('.upText span').eq(2).hide();
+                                $('span.btnSave').eq(2).hide();
+                                $('#instr').hide();
+                                $(cs["myfile"]).trigger('click');
+                            }
+                                else if(t.includes('upload')){
+                                    if (window.File && window.FileReader && window.FileList && window.Blob) {
+                                        handleFileSelect();
+                                    } else {
+                                        alert('The File APIs are not fully supported in this browser.');
+                                    }
+                                }
+                        });
+                    });
+                    function showPrview(elem) {
+                        if (elem.files && elem.files[0]) {
+                            var f = cs['myfile'].files[0];
+                            //var f = document.getElementById('myfile').files[0];
+                            var reader = new FileReader();
+                            reader.onload = function(e) {
+                                //cs["imageBase64"].value = window.btoa(e.target.result);//window.btoa(unescape(encodeURIComponent(e.target.result)))
+                                //cs["docname"].value = f.name;
+                                $('#docName').text(f.name);
+                                $('.upText span').eq(2).show();
+                                $('span.btnSave').eq(2).show();
+                                $('#instr').show();
+                                //$('#prvw img').attr('src', e.target.result);
+                            }
+                            reader.readAsDataURL(elem.files[0]);
+                        }
+                    }
+                    
+                    function deleteAtt(){
+                        var r = confirm("Are you sure you want to delete the UBO form uploaded previously?");
+                        if (r == true) {
+                            $('.divWait').show();
+                            $('body').css('pointer-events','none;');
+                            delDoc();
+                        }
+                    }
+                    function markComplete(){
+                        $('.divWait').show();
+                        var r = confirm("Are you sure you want to complete the request?");
+                        if (r == true) {
+                            mComp();
+                        }
+                    }
+                    </script>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!acc.Is_UBO_required__c}">
+                    <script>
+                    $(document).ready(function(){
+                        $('#btnDivs1 div').eq(1).unbind().bind('click',function(){
+                            var d = $(this).attr('href');
+                            window.open(d,'_blank');
+                            $('#btnDivs1 div').eq(2).show();
+                        });
+                        $('span.btnSave1').on('click',function(){
+                            var t = $(this).attr('id');
+                            var i = $(this).index();
+                            if(t.includes('download1')){
+                                var d = $(this).attr('href');
+                                window.open(d,'_blank');
+                                $('.upText1 span').eq(i+1).show();
+                                $('span.btnSave1').eq(i+1).show();
+                            }
+                            else if(t.includes('choose1')){
+                                $('.upText1 span').eq(2).hide();
+                                $('span.btnSave1').eq(2).hide();
+                                $('#instr1').hide();
+                                $(cs["myfile1"]).trigger('click');
+                            }
+                                else if(t.includes('upload')){
+                                    if (window.File && window.FileReader && window.FileList && window.Blob) {
+                                        handleFileSelect();
+                                    } else {
+                                        alert('The File APIs are not fully supported in this browser.');
+                                    }
+                                }
+                        });
+                    });
+                    function showPrview1(elem) {
+                        if (elem.files && elem.files[0]) {
+                            var f = cs['myfile1'].files[0];
+                            //var f = document.getElementById('myfile').files[0];
+                            var reader = new FileReader();
+                            reader.onload = function(e) {
+                                //cs["imageBase64"].value = window.btoa(e.target.result);//window.btoa(unescape(encodeURIComponent(e.target.result)))
+                                //cs["docname"].value = f.name;
+                                $('#docName1').text(f.name);
+                                $('.upText1 span').eq(2).show();
+                                $('span.btnSave1').eq(2).show();
+                                $('#instr1').show();
+                                //$('#prvw img').attr('src', e.target.result);
+                            }
+                            reader.readAsDataURL(elem.files[0]);
+                        }
+                    }
+                    function deleteAtt(){
+                        var r = confirm("Are you sure you want to delete the UBO form uploaded previously?");
+                        if (r == true) {
+                            $('.divWait').show();
+                            $('body').css('pointer-events','none;');
+                            delDoc();
+                        }
+                    }
+                    function markComplete(){
+                        $('.divWait').show();
+                        var r = confirm("Are you sure you want to complete the request?");
+                        if (r == true) {
+                            mComp();
+                        }
+                    }
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </body>
+    </apex:form>
+    
+    
+    
+    
+    <style type="text/css" media="screen">
+        .lookupInput {display: inline;white-space: nowrap;vertical-align: middle;display: -webkit-box;}
+        .btnAdd {color:black !important;background:#83b7e8 !important;}
+        .btnAdd:hover {color:white !important;background:#83b7e8 !important;}
+        .btnSave{color:black !important;background:#83b7e8 !important;}
+        .btnSave:hover {color:white !important;background:#83b7e8 !important;}
+        .btnSave1{color:black !important;background:#83b7e8 !important;}
+        .btnSave1:hover {color:white !important;background:#83b7e8 !important;}
+        .pbSubsection p {color:#898989; font-size:12px; font-family:arial; margin:0; padding:0;}
+    </style>
+    
+</apex:page>

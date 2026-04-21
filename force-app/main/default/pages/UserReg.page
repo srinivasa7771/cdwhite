@@ -1,0 +1,713 @@
+<apex:page id="main" showheader="false" action="{!checkValidEmail}" controller="SiteLoginController">
+    <html>
+        <head>
+            <title>axs</title>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+            <link rel="icon" href="./favicon.ico"/>
+            
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.css')}" /> 
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+            <!-- main css -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+            
+            <link id="brandCss" href="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc.css')}" rel="stylesheet" type="text/css" />
+            
+            <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+            <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+            
+            <!--  
+var code;
+function createCaptcha() {
+//clear the contents of captcha div first 
+document.getElementById('captcha').innerHTML = "";
+var charsArray = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#$%^&*";
+var lengthOtp = 6;
+var captcha = [];
+for (var i = 0; i < lengthOtp; i++) {
+//below code will not allow Repetition of Characters
+var index = Math.floor(Math.random() * charsArray.length + 1); //get the next character from the array
+if (captcha.indexOf(charsArray[index]) == -1)
+captcha.push(charsArray[index]);
+else i--;
+}
+var canv = document.createElement("canvas");
+canv.id = "captcha";
+canv.width = 100;
+canv.height = 50;
+var ctx = canv.getContext("2d");
+ctx.font = "25px Georgia";
+ctx.strokeText(captcha.join(""), 0, 30);
+//storing captcha so that can validate you can save it somewhere else according to your specific requirements
+code = captcha.join("");
+document.getElementById("captcha").appendChild(canv); // adds the canvas to the body element
+}
+function validateCaptcha() {
+event.preventDefault();
+debugger
+if (document.getElementById("cpatchaTextBox").value == code) {
+alert("Valid Captcha")
+}else{
+alert("Invalid Captcha. try Again");
+createCaptcha();
+}
+}
+-->        
+            
+        </head>
+        <style>
+            .ie10Err{
+            margin:7em 10em;
+            color:tomato;
+            }
+            .noTouch{
+            pointer-events: none;
+            }
+            .invalidLink,.invalidLink1 {
+            margin: auto;
+            text-align: center;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            font-weight: bold;
+            left: 40%;
+            transform: translate(-50%, -50%);
+            }
+            .invalidLink{
+            color: #ad1b22;
+            }
+            
+            .frmErrMsg {
+            color: #E62D38;
+            font-size: 0.7rem !important;
+            font-weight: 500;
+            }
+            .showonOTP{
+            display:none;
+            }
+            
+            
+            @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            #main_login .site-main-content {
+            /*min-height: 85vh;*/
+            min-height: calc(100vh - 136px);
+            }
+            #main_login .site-main-content1 {
+            min-height: calc(100vh - 56px);
+            }
+            .site-footer-wrapper{
+            position:relative;
+            bottom:0px;
+            height:90% !important;
+            }
+            }
+            
+            /* VMKR - 24th Dec */
+            .footer-images img {
+            margin: 0px 1.6em;
+            width: 6em;
+            }
+            .footer-images {
+            text-align: left;
+            padding: 0 1em;
+            }
+            @media (min-width: 576px){
+            
+            /* VMKR - 12th Jan */
+            .panel.panel-login1 {
+            border-radius: 3rem;
+            margin-left: 40%;
+            width: 56% !important;
+            }
+            .site-footer {
+            padding:1rem !important;
+            }
+            .panel-login {
+            width: 70% !important;
+            }
+            .login-brand{width:70% !important;}
+            }
+            /* For Status Check */
+            
+            .nav-tabs .nav-link {
+            background-color: #52c3ef;
+            font-size: 2.2em;
+            /* padding: 1px 12px; */
+            }
+            
+            .nav-tabs .nav-link:nth-child(0) {
+            padding: 1px 45px !important;
+            }
+            
+            .login-brand-shadow {
+            height: 262px !important;
+            }
+            .nav-item a:hover, .nav-item a:focus {
+            color: white;
+            }
+            #resendBtn {
+            cursor: pointer;
+            }
+            
+            .disabledBtn {
+            color: #ccc !important;
+            pointer-events: none;
+            }
+            
+        </style>
+        
+        <!-- Global site tag (gtag.js) - Google Analytics Starts-->
+        <script src="https://www.googletagmanager.com/gtag/js?id=UA-153383501-1">
+        </script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        
+        gtag('config', 'UA-153383501-1');
+        </script>
+        <!--- Google Analytics ends-->
+        
+        <apex:form rendered="{!!invalidEmail}">
+            <script type="text/javascript">
+            const resendTime = 45;/* in seconds */
+            var tempValue ='';
+            tempValue = '{!JSENCODE(pk)}';
+            var brands = ['diac','dic','dic2','dkp','dmc','doc','dpc','dsp','dsc','ddd','dia'];
+            var brandLogoSrc="{!URLFOR($Resource.assets_NUI, '/images/brands/diac.jpg')}";
+            var images = [];
+            var websites = {'dmc':'https://dmc.ae/','dsc':'https://www.dsc.gov.ae/','dia':'https://www.diadubai.com/','dic':'https://dic.ae/','dic2':'https://dubaiindustrialcity.ae/','doc':'https://dubaioutsourcecity.ae/','dpc':'https://dpc.ae/','dkp':'https://dkp.ae/','ddd':'https://www.dubaidesigndistrict.com/','dsp':'https://dsp.ae/','in5':'https://infive.ae/'};
+            function timer1(){
+                let t = resendTime;
+                $('#resendBtn').addClass('disabledBtn');
+                $('#timerText').show();
+                $('#timer').text(t);
+                var int = setInterval(function(){
+                    t--;
+                    $('#timer').text(t);
+                    console.log(t);
+                    if (t == 0) {
+                        clearInterval(int);
+                        $('#resendBtn').removeClass('disabledBtn');
+                        $('#timerText').hide();
+                    }
+                }, 1000);
+            }
+            function loginClick(e){
+                var bg = $(e).css('background-image');
+                if(tempValue=='')
+                    return;// not clicking for common page
+                window.open(websites[tempValue],'_blank');
+            }
+            function preload() {
+                for (i =0; i<preload.arguments.length; i++) {
+                    images[i] = new Image();
+                    images[i].src = preload.arguments[i];
+                }
+            }
+            $("link.user").each(function(){
+                var h = $(this).attr('href').toLowerCase();
+                if(h.indexOf('style')<0 && h.indexOf('axs2mandate')<0)
+                    $(this).attr('disabled','disabled');
+            });
+            if(!tempValue)
+                tempValue = 'axs';
+            var cssLink = $('#brandCss').attr('href').replace('brand-dmc','brand-'+tempValue);
+            $('#brandCss').attr('href',cssLink);
+            var cs={};
+            $(document).ready(function(){
+                if (!String.prototype.includes) {
+                    String.prototype.includes = function() {
+                        return String.prototype.indexOf.apply(this, arguments) !== -1;
+                    };
+                }
+                if(navigator.appVersion.includes('MSIE 7.0') || navigator.appVersion.includes('MSIE 8.0')|| navigator.appVersion.includes('MSIE 9.0')|| navigator.appVersion.includes('MSIE 5.0')){
+                    $('body').html('').html('<div style="margin: 40vh 75vh;"><h1 style="color: tomato;">We are sorry.</h1><p>Your browser cannot run our content.<br>Please upgrade the browser or use a different browser.</p></div>');
+                }
+                else{
+                    
+                }
+                
+                $('.rFld').on('change',function(e){
+                    var val = $(this).val();
+                    if(!val){
+                        addValError(this,'This field is required!');
+                    }
+                    else
+                        removeValError(this);
+                });
+                
+                //tempValue = '{!JSENCODE(pk)}';
+                var url;
+                var logUrl;
+                if(tempValue!=''){
+                    //brandLogoSrc = ['ddd','dsc','dia'].includes(tempValue)?"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".png')}":"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".jpg')}";
+                    if(tempValue!='dmc')
+                        url= "url('"+"{!URLFOR($Resource.assets_NUI, '/images/brands/header/"+tempValue+"headerbg.jpg')}"+"')";
+                    //else
+                    //  url= "url('"+"{!URLFOR($Resource.assets_NUI, '/images/full-bg.jpg')}"+"')";
+                    logUrl = "url('"+"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".png')}"+"')";
+                    //$('#main_login').css('background-image',url);
+                    $('.login-brand').css('background-image',logUrl);
+                }
+            });
+            function getUrlParameter(key){
+                var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+                return (res==undefined)?'':res[1];
+            }
+            function search1(){
+                search2();
+            }
+            var otpAttem = 0;
+            function sendOtp(e){
+                var validate = true; 
+                /*$('.rFld').each(function(i,v){
+                var val = $(v).val();
+                if(!val){
+                    addValError(v,'This field is required!');
+                    validate = false;
+                }else{
+                    removeValError(v);
+                }
+            });*/
+            if(!cs['password'].value){
+                $('.info').addClass('text-danger font-weight-bold fs-14').removeClass('text-black-50');
+                $('.info').fadeOut().fadeIn().fadeOut().fadeIn();
+                validate = false;
+            }
+            
+            if(validate && !cs['cPassword'].value){
+                addValError($(cs['cPassword']),'Password doesn\'t match.!');
+                validate = false;
+            }
+            //$(e).parents('.otpParent').hide();
+            if(validate){
+                otpAttem++;
+                $('#resendText').hide();
+                $(cs['otp']).removeAttr('disabled').removeClass('noTouch');
+                $('.showonOTP,#mobText,#timerText').show();
+                timer1();
+                generateOTP();
+                $(cs['otp']).show();
+                if(otpAttem>1){
+                    $('#mobText span span').eq(0).text('A new ');
+                }
+            }
+        }
+            function validateFld1(e){
+                //if($(e).val().length>=8){
+                $(cs['cPassword']).val('');
+                validateFld(e);
+                //}
+            }
+            function validateFld(e){
+                //var test=new RegExp("^[0-9A-Za-z_.]+$");
+                var regex = new RegExp($(e).attr('regex'));
+                var nextFld = $(e).attr('nextFld');
+                var res = regex.test($(e).val());
+                var infoElem = $(e).parents('.form-group').find('.info');
+                if(!res){
+                    infoElem.addClass('text-danger font-weight-bold fs-14').removeClass('text-black-50');
+                    //infoElem.fadeOut().fadeIn().fadeOut().fadeIn();
+                    $(e).focus();
+                }
+                else if($(e).val().length>=8){
+                    infoElem.removeClass('text-danger font-weight-bold fs-14').addClass('text-black-50');
+                    if(nextFld){
+                        $(cs[nextFld]).removeAttr('disabled');
+                    }
+                    if($(e).attr('id').includes('username')){
+                        //isUsernameAvailable(e);
+                    }
+                }
+                // cs['pgpass'].value = $(e).val();
+                
+            }
+            
+            function assignOtp(e){
+                cs["otpfrmPg"].value = $(e).val().trim();
+            }
+            
+            function checkCpwd(e){
+                var pVal = cs["password"].value;
+                if($(e).val().length==pVal.length && $(e).val() != pVal){
+                    addValError(e,'Password doesn\'t match.!');
+                }
+                else if($(e).val().length==pVal.length && $(e).val() == pVal){
+                    removeValError(e);
+                    $('#g_recaptcha').show();
+                }
+            }
+            
+            function isUsernameAvailable(e){
+                
+                var uName = cs['username'].value + '{!JSENCODE("@"+pk+".axs")}';
+                
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.SiteLoginController.isUsernameAvailable}',
+                    uName, 
+                    function(result, event){
+                        if (event.status) {
+                            // alert(':' + result);
+                            if(result==true){
+                                $("#userUnavailable").hide();
+                            }else{
+                                $("#userUnavailable").show();
+                            }
+                            
+                        } else if (event.type === 'exception') {
+                            console.log('Exception' + event.message);
+                        } else {
+                            console.log('dont know' + event.message);
+                        }
+                    }, 
+                    {escape: true}
+                );
+            }
+            
+            function createDataJS(){
+                if(cs["otpfrmPg"]){
+                    if(cs["otpfrmPg"].value){
+                        showTempLoader_input(cs['otp']);
+                        createData();
+                    }
+                    else{
+                        axsAlert('Error','Please enter OTP');
+                    }
+                }
+            }
+            
+            function showErrorMsg(type,result,otpValMsg){
+                if(type=='otp'){
+                    hideTempLoader_input(cs['otp']);
+                    if(result){
+                        if(otpValMsg){$('.showonOTP,#mobText').hide();}
+                        
+                        addValError(cs['otp'],otpValMsg);//OTP validation failed, regenerate the OTP and verify.//Entered OTP is invalid, please check.<br>Alternatively you can re-generate the OTP.
+                        $(cs['otp']).addClass('is-invalid');//notouch
+                        //$('.showonOTP').hide();
+                    }
+                }
+            }
+            var onCaptchExpired = function(response){
+                console.log('response::::'+response);
+                $('#resendText').parents('.col-12').hide();
+                $('#mobText,.base-nav-next').hide();
+            }
+            var correctCaptcha = function(response) {
+                console.log('correctCaptcha::::');
+                console.log('response::::'+response);
+                if (response.length == 0) {
+                    $('#recaptcha-error').show();
+                    $('#recaptcha-error').focus();
+                    //capNotChecked= true;
+                }else if(response.length > 0){
+                    //$('#g_recaptcha').hide();
+                    sendOtp($('#resendText'));
+                    $('#resendText').parents('.col-12').show();
+                    capNotChecked= true;
+                }else {
+                    $('#recaptcha-error').hide();
+                    capNotChecked = false;
+                }
+                
+                return capNotChecked;
+            };
+            function afterValidateCaptcha(res){
+                axsAlert('Result',res);
+            }
+            </script>
+            <apex:actionFunction name="search2" action="{!search}" />
+            <apex:actionFunction name="generateOTP" action="{!generateOtp}" reRender="gpm" oncomplete="showErrorMsg('otp','{!JSENCODE(inValidOtp)}','{!JSENCODE(otpValMsg)}');"/> 
+            <apex:actionFunction name="createData" action="{!createData}" reRender="gpm,msg" oncomplete="showErrorMsg('otp','{!JSENCODE(inValidOtp)}','{!JSENCODE(otpValMsg)}');" /> 
+            
+            <body>
+                <div id="main_login" style="background-image:url({!URLFOR($Resource.assets_NUI, '/images/brands/header/'+pk+'headerbg.jpg')})">
+                    <div class="site-main-content {!IF(pk!='','site-main-content1','')}">
+                        <div class="container">
+                            
+                            
+                            
+                            <div class="panel panel-login {!IF(pk='','panel-login1','')}">
+                                <div class="panel-body accordion" id="app_accordion">
+                                    <div class="tab-content">
+                                        <div class="accordion-item open tab-pane fade active show" id="login_tab">
+                                            <div class="accordion-toggle">
+                                                <!--<a href="#" class="collapsed" data-toggle="collapse" data-target="#login_collapse">
+STATUS &amp; ACTIONS
+<i class="fa fa-angle-down"></i>
+</a>-->
+                                            </div>
+                                            <div id="login_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                <div class="row">
+                                                    
+                                                    
+                                                    <div class="col-md-4">
+                                                        <div class="login-left">
+                                                            <div class="login-brand" style="{!IF(pk!='','cursor:pointer;','display:none;')} background-image:url({!URLFOR($Resource.axs2_login_logo)})" onclick="loginClick(this)"></div>
+                                                            <div class="login-brand" style="{!IF(pk!='','display:none;','')} background-image:url({!URLFOR($Resource.axs2_login_logo)});" ></div>
+                                                            <div class="login-brand-shadow"></div>
+                                                            <div class="login-brand-2" style="{!IF(pk!='','','display: none;')}">
+                                                                <div class="mb-2">POWERED BY</div>
+                                                                <!--<img src="../assets/images/logo-axs.png" alt=""/>-->
+                                                                <img src="{!URLFOR($Resource.assets_NUI, '/images/logo-axs.png')}"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    
+                                                    
+                                                    <div class="col-md-8">
+                                                        <apex:outputPanel rendered="true">
+                                                            <script>
+                                                            function checkValues(){
+                                                                console.log('ispu -- '+'{!ispu}');
+                                                                console.log('showUsereg -- '+'{!JSENCODE(showUsereg)}');
+                                                            }
+                                                            </script>
+                                                            <div class="form-group row" style="{!IF(AND(ispu==false,showUsereg==true),'display:none;','display:block;')}min-height: 20em;">
+                                                                <div class="invalidLink">
+                                                                    <div style="padding-bottom: 2.5em;">
+                                                                        <i class="fs-16 icon-cancel-filled" style="font-size: 3rem !important;"></i>
+                                                                    </div>
+                                                                    <div style="{!IF(ispu==true,'display:block;','display:none;')}">
+                                                                        Seems you have logged into our portal with other user.<br />Please click <a class="" href="/secur/logout.jsp">here</a> to logout or use another browser.
+                                                                    </div>
+                                                                    <div style="{!IF(ispu==false,'display:block;','display:none;')}">
+                                                                        This link is no longer valid!<br />
+                                                                        Please click <a class="" href="/axslogin">here</a> to login.
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                                <!--<label style="margin: 50% auto;">Link expired or user has already been created.</label> -->
+                                                            </div>
+                                                            <div class="px-2" style="{!IF(AND(ispu==false,showUsereg==true),'display:block','display:none')}">
+                                                                <div class="form-group row">
+                                                                    <label class="font-weight-bold">Username</label>
+                                                                    <apex:inputText disabled="true" styleClass=" form-control input-login input-login-username text-primary rFld disabledApex" html-regex="/^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|ntt|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/"
+                                                                                    html-regex1="^[0-9A-Za-z_.]+$" onchange="validateFld(this);" style="font-size: 1.2em;font-weight: bold;color:#171717 !important;" value="{!username}" id="username"/>
+                                                                    <!--<div class="error text-danger fs-12" id="userUnavailable" style="display:none"> this name is already in use.</div>
+<div>{!username}</div>-->
+                                                                </div>
+                                                                <!-- .form-group -->
+                                                                <div class="form-group row">
+                                                                    <div class="col-6 form-group pl-0">
+                                                                        <label>Set your password</label>
+                                                                        <apex:inputSecret maxlength="20" html-nextFld="cPassword" id="password" onkeyup="validateFld1(this)" html-regex="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$" style="color: #000 !important;" value="{!password}" styleClass="rFld form-control input-login input-login-passwword"/>
+                                                                    </div>
+                                                                    <div class="col-6 form-group pr-0">
+                                                                        <label>Confirm password</label>
+                                                                        <apex:inputSecret maxlength="20" disabled="true" id="cPassword" onkeyup="checkCpwd(this)" style="color: #000 !important;" value="{!cPassword}" styleClass="form-control input-login input-login-passwword"/>
+                                                                    </div>
+                                                                    <div class="info text-black-50 font-italic fs-12">Password should be a minimum 8 characters with a mix of letters, numbers &amp; symbols</div>
+                                                                </div>
+                                                                <apex:outputPanel styleClass="row" rendered="true">
+                                                                    <div class="col-lg-6" id="g_recaptcha" style="display:none">
+                                                                        <div class="g-recaptcha" data-sitekey="{!sitekey}" style="transform:scale(0.90);" data-callback="correctCaptcha" data-expired-callback='onCaptchExpired' ></div>
+                                                                        <script src='https://www.google.com/recaptcha/api.js'>
+                                                                        </script>
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                                <div class="form-group row" >
+                                                                    <div class="col-12 form-group px-0" style="display:none;">
+                                                                        <label>
+                                                                            <button class="btn btn-black" id="resendText" onclick="sendOtp(this);return false;">GENERATE OTP</button>
+                                                                        </label>
+                                                                        <apex:inputText onkeypress="$(this).removeClass('is-invalid');$('.showonOTP').show();" onchange="assignOtp(this);" disabled="true" id="otp" style="color: #000 !important;display:none;" value="{!otp}" styleClass="form-control input-login input-login-passwword"/>
+                                                                    </div>
+                                                                    <!--<div class="col-6">
+<div style="margin-top: 2em;">
+<span class="badge-status badge-status-process" onclick="sendOtp(this);" style="cursor:pointer">Click here</span> 
+<span id="resendText">to send one time password(OTP) </span>to your registered mobile number 
+<span class="user-mobnum text-black-50 font-italic">(+4455XXXXX007)</span>
+
+
+</div>
+</div>-->
+                                                                    <span id="mobText" style="display:none">
+                                                                        <span class="text-black-50 font-italic fs-12"><span></span>OTP has been sent to your registered mobile number <!--<span>{!cCode}-</span>--></span>
+                                                                        <apex:outputText styleclass="text-black-50 font-italic fs-12" value="XXXXXX-{!RIGHT(mobNum,3)}"></apex:outputText>
+                                                                        <span class="ml-1 text-black-50 font-italic fs-12"><b id="resendBtn" onclick="sendOtp()" class="text-primary disabledBtn">Resend</b><elem id='timerText'> in <elem id="timer">45</elem> seconds</elem></span>
+                                                                    </span>
+                                                                    
+                                                                </div>
+                                                                <apex:inputHidden value="{!mobNum}" id="mobNum" /> 
+                                                                <apex:inputHidden value="{!cCode}" id="cCode" />
+                                                                <apex:inputHidden value="{!otpfrmPg}" id="otpfrmPg" />
+                                                                <script>
+                                                                cs['cPassword'] = document.getElementById('{!$Component.cPassword}');
+                                                                cs['password']=document.getElementById('{!$Component.password}');
+                                                                cs['otpfrmPg']=document.getElementById('{!$Component.otpfrmPg}');
+                                                                cs['otp']=document.getElementById('{!$Component.otp}');
+                                                                cs['username']=document.getElementById('{!$Component.username}');
+                                                                </script>
+                                                                <!-- .form-group -->
+                                                                
+                                                                <apex:outputPanel id="gpm">
+                                                                    <apex:inputHidden id="inValidOtp" value="{!inValidOtp}"/>
+                                                                    <apex:pageMessages rendered="false" id="msg"/>
+                                                                    <script>
+                                                                    cs['inValidOtp'] = document.getElementById('{!$Component.inValidOtp}');
+                                                                    </script>
+                                                                </apex:outputPanel>
+                                                                
+                                                                <div class="row base-nav">
+                                                                    <!--<a class="fff-Font btn btn-primary" href="#" onclick="sendOtp(this)">SEND OTP</a>-->
+                                                                    <apex:commandButton onclick="createDataJS();return false;" value="SUBMIT" style="{!IF(pk=='','background-color: #434b7f;border-color:#434b7f;','')} " styleClass="showonOTP btn btn-primary base-nav-next" />
+                                                                </div>
+                                                                <!-- .form-group -->
+                                                            </div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="false">
+                                                            <div class="form-group row" style="min-height: 20em;">
+                                                                <div class="invalidLink1 text-primary fs-17">
+                                                                    <div style="padding-bottom: 2.5em;">
+                                                                        <i class="fs-16 icon-vfs" style="font-size: 6rem !important;"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        We are currently down for maintanance.
+                                                                    </div>
+                                                                    <div>
+                                                                        We will be back on 17<sup>th</sup> July.
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                                <!--<label style="margin: 50% auto;">Link expired or user has already been created.</label> -->
+                                                            </div>
+                                                        </apex:outputPanel>
+                                                        <!-- .col -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item open tab-pane fade" id="status_tab">
+                                            <div class="accordion-toggle">
+                                                <!--<a href="#" class="collapsed" data-toggle="collapse" data-target="#status_collapse">
+STATUS &amp; ACTIONS
+<i class="fa fa-angle-down"></i>
+</a>-->
+                                            </div>
+                                            <div id="status_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="login-left">
+                                                            <div class="login-brand" style="{!IF(pk!='','cursor:pointer;','display:none;')} background-image:url({!URLFOR($Resource.axs2_login_logo)})" onclick="loginClick(this)"></div>
+                                                            <div class="login-brand" style="{!IF(pk!='','display:none;','')} background-image:url({!URLFOR($Resource.axs2_login_logo)});" ></div>
+                                                            <div class="login-brand-shadow"></div>
+                                                            <div class="login-brand-2" style="{!IF(pk!='','','display: none;')}">
+                                                                <div class="mb-2">POWERED BY</div>
+                                                                <!--<img src="../assets/images/logo-axs.png" alt=""/>-->
+                                                                <img src="{!URLFOR($Resource.assets_NUI, '/images/logo-axs.png')}"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    
+                                                    <div class="col-md-8">
+                                                        <div class="form-group">
+                                                            <label>For visa applications, enter your service request or passport number</label>
+                                                            
+                                                            <div class="form-group">
+                                                                <apex:inputText value="{!searchstring}" label="Input"  styleClass="form-control input-search"   />
+                                                            </div>
+                                                            <div>
+                                                                <apex:outputText rendered="{!codeCheck==false}" >
+                                                                    <div class="g-recaptcha mb-3" data-sitekey="{!sitekey}" ></div><!--style="transform:scale(0.90);"-->
+                                                                    <script src='https://www.google.com/recaptcha/api.js'>
+                                                                    </script>
+                                                                </apex:outputText>
+                                                            </div>
+                                                            <input type="button" value="SEARCH" onclick="search1();" class="btn btn-primary" style="background-color: #434b7f;border-color:#434b7f;{!IF(codeCheck==false,'','display:none;')}"  />
+                                                            <!--<apex:commandButton value="SEARCH" action="{!search}" styleClass="btn btn-primary" style="background-color: #434b7f;border-color:#434b7f;" rendered="{! codeCheck==false }"    />-->
+                                                        </div>
+                                                        <!-- .form-group -->
+                                                    </div>
+                                                    <!-- .col -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- .panel-body -->
+                            </div>
+                            <!-- .panel-login -->
+                        </div>
+                        <!-- .container -->
+                    </div>
+                    
+                    <div class="site-footer-wrapper">
+                        <div class="container">
+                            <div class="site-footer {!IF(pk='','site-footer1','')}"> 
+                                <div class="footerImg d-none d-lg-block d-xl-block" style="{!IF(pk!='','display:none !important;','')}">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                    <img src="{!URLFOR($Resource.axs2_loginFooter)}" />
+                                </div>
+                                <!--<div class="footer-images d-none d-lg-block d-xl-block" style="{!IF(pk!='','display:none !important;','')}">
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dic.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/doc.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dmc.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dsc.png')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dpc.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dkp.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/diac.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dsp.jpg')}" />
+<img src="{!URLFOR($Resource.assets_NUI, '/images/brands/ddd.png')}" />
+</div>-->
+                                <div class="footer-links">
+                                    <apex:outputText rendered="{!!invalidPK}">
+                                        <a href="/grqerAboutUS?i={!$CurrentPage.parameters.i}" target="_blank">ABOUT axs</a> |
+                                        <a href="/grqerContactUs?i={!$CurrentPage.parameters.i}" target="_blank">CONTACT US</a> |
+                                        <a href="/grqerTerms?i={!$CurrentPage.parameters.i}" target="_blank">TERMS OF USAGE </a> |
+                                        <a href="/grqerPolicy?i={!$CurrentPage.parameters.i}" target="_blank">PRIVACY POLICY</a>    
+                                    </apex:outputText>
+                                    
+                                    <apex:outputText rendered="{!invalidPK}">  
+                                        <a href="/grqerAboutUS" target="_blank">ABOUT axs</a> |
+                                        <a href="/grqerContactUs" target="_blank">CONTACT US</a> |
+                                        <a href="/grqerTerms" target="_blank">TERMS OF USAGE </a> |
+                                        <a href="/grqerPolicy" target="_blank">PRIVACY POLICY</a> 
+                                    </apex:outputText>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .site-footer-wrapper -->
+                </div>
+                <!-- Vendor js -->
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/moment/min/moment.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/js/select2.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/jquery.easy-autocomplete.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tablesorter/dist/js/jquery.tablesorter.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery.scrollto/jquery.scrollTo.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/kinetic.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.min.js')}"  />
+                
+                <!-- main js -->
+                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js?v=2.0.13')}"  />
+                
+            </body>
+        </apex:form>
+        <script>
+        </script>
+    </html>
+</apex:page>

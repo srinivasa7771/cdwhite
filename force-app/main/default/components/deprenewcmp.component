@@ -1,0 +1,127 @@
+<apex:component >
+    <apex:attribute name="rq" description="Request" type="g_Req__c"  required="true"/>
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="rqSave" description="Service Type Label" type="Boolean"  />
+    <apex:attribute name="srvTp" description="Service Type" type="String" />
+    
+    <div>
+        
+        
+        <div class="form-group mb-3 mt-4 pt-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <c:gsponlookup saveRq="true" id="spnlookup" Request="{!rq}" role="Employee" accId="{!rq.Acc__c}" sta="Active" heading="Select the employee to view registered dependents or to add a new dependent" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="deplist form-group"  style="display:none;">
+            <label class="fs-18">Select or add a new dependent</label>
+            <div class="row form-style mb-2">
+                <div class="col-xl-6 col-lg-8">
+                    <select class="form-control input-select2-flat" id="depSelId" onchange="depSelect(this)" placeholder="Select">
+                        <option value="">Select</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <p>If the dependent is not available in the list, procceed to upload documents to add a new dependent</p>
+        <div class="depSrv" style="display:none;">
+            <div class="form-group" style="{! If((srvLst.size > 1)  ,'display: block;','display: none;') }">
+                
+                <label class="mb-3 fs-18">{!srvLbl} </label>
+                
+                <div class="row">
+                <p><b>
+                    GDRFA (General Directorate of Residency and Foreigners Affairs) has stopped issuing 3 years of residence visas. Henceforth, GDRFA will issue either 1-year or 2 years residence visas only.
+                    </b>
+                    </p>
+                    <apex:repeat value="{!srvLst}" var="sr">
+                         <apex:outputText rendered="{!NOT(CONTAINS(sr.Name,'3 Years'))}"> 
+                        <div class="v{!sr.kstp__c} col-lg-3 col-sm-6">
+                            <label class="box-check">
+                             <!--   
+                              <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,false)}"> 
+                                <input type="radio" att1="{!sr.kstp__c}" class="serRadio service_id" disabled="true" name="service_id" value="{!sr.id}"/>
+                                
+                                <div class="box box-center box-padding box-hover" style="background-color:#a29b9b;min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        {!sr.Service_Type__c}<br/>
+                                        <span class="text-000">{!sr.Short_Label__c}</span>
+                                    </span>
+                                </div>
+                               </apex:outputText>  
+                                -->
+                             
+                                <input type="radio" att1="{!sr.kstp__c}" class="serRadio service_id"  name="service_id" value="{!sr.id}"/>
+                                
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">
+                                        {!sr.Service_Type__c}<br/>
+                                        <span class="text-000">{!sr.Short_Label__c}</span>
+                                    </span>
+                                </div>
+                              
+                                <script>
+                                if('{!srvLst.size}' ==1){
+                                    $('.service_id').eq(0).attr('checked','true');
+                                }
+                                </script>
+                            </label>
+                        </div>
+                              </apex:outputText> 
+                    </apex:repeat>
+                    <div class="serErr">Please select the duration of visa.</div>
+                    
+                    
+                   
+              
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <!-- .form-group -->
+        <!--  <label class="custom-checkbox custom-checkbox-sm mb-4" id="copyDocs" >
+<input type="checkbox" name="copydocs"/>
+<span>Copy Documents from existing service.</span>
+</label> -->
+        
+    </div>
+    <!-- .base-main-content -->
+    <apex:outputPanel id="errMsgId">
+        <script>
+        $('.service_id').prop('checked',false);
+        </script>
+    </apex:outputPanel>
+    <script>
+       cs["xeidav__c"].value = 'Yes';
+    
+     function updateCorItm(itmCode){
+       
+        if($('#'+itmCode).prop("checked")){
+            // cs['xadh__c'].value += itmCode+';';
+        }else{
+            cs['xadh__c'].value = cs['xadh__c'].value.replace(itmCode+';','');
+        }
+
+    }
+    
+    function setCorItm(){
+        var cds = ['np;', 'rt;', 'pc;', 'ntc;', 'nc;','ef;','msc;','dbc;','cr;'];
+        for(var i=0; i<cds.length;i++){
+            var adhk = cs['xadh__c'].value; 
+            if(adhk.includes(cds[i])){
+                var eID = cds[i].replace(';',''); 
+                $('#'+eID).prop("checked",true);
+            }
+        }
+    }
+    
+    
+      </script>
+    
+</apex:component>

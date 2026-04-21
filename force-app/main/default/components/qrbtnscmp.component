@@ -1,0 +1,49 @@
+<apex:component >
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+    <apex:attribute name="isgu" description="is guest user" type="Boolean" />
+    <apex:attribute name="R" description="Request" type="g_Req__c" required="true"/>
+    
+    <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(isgu))}">
+        <apex:outputPanel layout="none">
+            <script type="text/javascript">
+            function cr(){confirm("Are you sure you want to cancel Request? This action cannot be undone")&&"function"==typeof afcr&&(afcr())}
+            function gotoitems(){setNav();window.location.href="/apex/grqei?id={!R.Id}&retURL=%2Fapex%2FgrqStatus%3Fid%3D{!R.Id}"}
+            //function gotoInsurPage(){setNav();window.location.href="/apex/grqaddon?id={!R.Id}&retURL=%2Fapex%2FgrqStatus%3Fid%3D{!R.Id}"}
+            </script>
+            
+            <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(OR(R.STA__c='Completed',R.STA__c='Open',R.STA__c='Draft')))}">
+                <a href="" class="btn btn-primary ml-3" onClick="approveDet();"><span class="largeScreensOnly"> Approve</span></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(OR(R.STA__c='Open',R.STA__c='Draft')))}">
+                <a href="" class="btn btn-primary ml-3" onClick="window.open('/apex/grbrcd?id={!R.Id}'), '_blank'"><i class="fa fa-print" ></i><span class="largeScreensOnly"> Print Sticker</span></a>
+            </apex:outputPanel>
+            
+            <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(OR(R.STA__c='Open',R.STA__c='Draft')))}">
+                <a href="" class="btn btn-primary ml-3" onClick="enablePhoto()"><span class="largeScreensOnly">Enable Photo</span></a>
+            </apex:outputPanel>
+            <!--Redirect  to  insurance  page-->
+            <!--<apex:outputText rendered="{!R.InsChk__c == false}">-->
+            <apex:outputText rendered="{!AND(OR(R.STA__c='In Process',R.STA__c='Under Review'),contains(R.srvc__r.AddOnSrv__c,'inr;'),(R.InsChk__c == false))}">
+                <a href="" onClick="window.open('/apex/grqaddon?id={!R.Id}&m=edit', '', 'top=100,left=25,width='+(window.innerWidth*0.99)+',height='+window.innerHeight*0.99);" class="btn btn-primary ml-3">
+                    <span class="largeScreensOnly">Add Insurance </span><i class="fas fa-chevron-right fs-12"></i>
+                </a>
+            </apex:outputText>
+            <!--</apex:outputText>-->
+            <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(isgu),(r.srvc__r.sdg__r.skpsd__c == false),NOT(OR(R.STA__c='Cancelled',R.STA__c='Rejected',R.STA__c='Completed')))}">
+                <apex:outputPanel layout="none">
+                    <a href="" class="btn btn-primary ml-3"
+                       onClick="window.open('/apex/{!R.srvc__r.stg__r.pg__c}?id={!R.Id}&m=edit', '', 'top=100,left=25,width='+(window.innerWidth*0.99)+',height='+window.innerHeight*0.99);">
+                        <i class="fa fa-print" ></i><span class="largeScreensOnly">&nbsp;Edit Details</span>
+                    </a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputText rendered="{!OR(R.AP__c==0,$Profile.Name=='System Administrator',$Profile.Name=='M2')}">
+                <apex:outputText rendered="{!NOT(OR(R.STA__c = 'Completed',R.STA__c = 'Cancelled'))}">
+                    <a href="" onClick="cr();" class="btn btn-primary ml-3"><i class="fas fa-ban"></i><span class="largeScreensOnly"> Cancel Request</span></a>
+                </apex:outputText>
+            </apex:outputText>
+            <a href="" onClick="gotoitems();" class="btn btn-primary ml-3"><span class="largeScreensOnly">Continue </span><i class="fas fa-chevron-right fs-12"></i></a>
+        </apex:outputPanel>  
+    </apex:outputPanel>
+    
+</apex:component>

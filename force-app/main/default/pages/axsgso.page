@@ -1,0 +1,390 @@
+<apex:page sidebar="false" controller="gsoViewCntrl" lightningStylesheets="true" readOnly="true" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    <style type="text/css" media="screen">
+        #testTable_filter{
+            display:contents;
+        }
+        .dataTables_paginate {
+        display: none;
+        }
+        
+        div#testTable_paginate {
+        display: block;
+        }
+        
+        #testTable_paginate a {
+        padding: 0.75rem;
+        }
+        .slds-table th,.slds-table td {
+        padding: 1rem !important;
+        width:auto !important;
+        }
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+        .dataTables_filter {
+        float: left !important;
+        }
+        table.dataTable tbody tr:nth-child(odd){
+            background-color: white;
+        }
+        table.dataTable tbody tr:nth-child(even){
+            background-color: #f3f3f3;
+        }
+        .dataTables_filter input[type=search]{
+        padding-top: 0;
+        padding-right: 1rem;
+        padding-bottom: 0;
+        padding-left: .75rem;
+        min-height: calc(1.875rem + (1px * 2));
+        line-height: 1.875rem;
+        border: 1px solid var(--slds-g-color-border-base-4, rgb(201, 201, 201));
+        border-radius: .25rem;
+        background-color: var(--slds-g-color-neutral-base-100, rgb(255, 255, 255));
+        color: var(--slds-c-input-text-color, var(--sds-c-input-text-color));
+        box-shadow: var(--slds-c-input-shadow, var(--sds-c-input-shadow));
+        transition: border .1s linear,background-color .1s linear;
+        display: inline-block
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+    function openNewTab(id){
+        window.open('/'+id, '_blank');
+    }
+    function resetSTA(){
+        cs['status'].value='';
+    }
+    function removeItem(){
+        // if(typeof(cs['CatOpt'] )!='undefined'  ){alert(cs['CatOpt'].value) }
+        //alert(ctg);
+        
+        var selectobject= itmLst;
+        //'{!JSENCODE(ItmOpt)}'
+        // alert(selectobject);
+        //alert(selectobject.length);
+        if(ctg == 'Student New'){ //alert(1);
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'rt' ) { 
+                    selectobject.remove(i);
+                }
+            }
+        }
+        
+    }
+    
+    function valdt() {
+        alert('{!JSENCODE(selCatg)}');
+        if('{!JSENCODE(selCatg)}' == ''  ){
+            alert('Please select the Service');
+            return false;
+        }else  if('{!JSENCODE(selItm)}' == ''  ){
+            alert('Please select the Item');
+            return false;
+        } else if('{!JSENCODE(selStat)}' == ''  ){
+            alert('Please select the Status');
+            return false;
+        }
+        
+            else return true;
+        
+    }
+    
+    function test1(a,b,c){
+        if(a!='' && b!='' && c!='' ){mthd();}
+    }
+    function getItms(a,b,c){
+        if(a!='' && b!='' && c!='' ){getItmOpt();}
+    }
+    
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+            <apex:pagemessages />
+        </head>
+        <body>
+            <div class="slds-builder-header_container">
+                <header class="slds-global-header_container slds-border_bottem slds-page-header">
+                    <div class="slds-media slds-no-space slds-grow">
+                        <div class="slds-media__figure">
+                            <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                                <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                            </svg>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-text-title--caps slds-line-height--reset">axs gso</p>
+                            <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                        </div>
+                    </div>
+                </header>
+            </div>
+            
+            <div class="slds-scope" style="margin-top:4rem;">  
+                <apex:form id="listForm">
+                    <div class="slds-grid slds-wrap slds-m-around_small">  
+                        <div class="slds-col slds-grid">
+                            <div class="slds-form-element__label">Service:</div>
+                            <div class="slds-col slds-form-element__control">
+                                <apex:selectList id="category" value="{!selCatg}" multiselect="false" size="1" onchange="getItms('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}','{!JSENCODE(selStat)}');">
+                                    <apex:selectOption itemLabel="--None--"  itemvalue=""  />
+                                    <apex:selectOption itemLabel="New Employee Visa"  itemvalue="001,601,002,003,603,004,021,078,304,040,640,020,620,303,903"  />
+                                    <apex:selectOption itemLabel="Employee Visa Renewal"  itemvalue="105,106,306,016,616,305,905"  />
+                                    <apex:selectOption itemLabel="Emirates ID (EIDA)"  itemvalue="EID"  />
+                                    <apex:selectOption itemLabel="Visa Cancellation"  itemvalue="076,093,309"  />
+                                    <apex:selectOption itemLabel="Release Signed Out"  itemvalue="063,111,108"  />
+                                    <apex:selectOption itemLabel="Employee Visa Transfer"  itemvalue="028,026,015,081,308,025,625,027,627,010,610,080,680,307,907"  />
+                                    <apex:selectOption itemLabel="Employee Visa Transfer(TECOM free zone)"  itemvalue="103,121,188,788,189,191,193,190,790,192,792"  />
+                                    <apex:selectOption itemLabel="Employee Contract Attestation"  itemvalue="061"  />
+                                    <apex:selectOption itemLabel="Residence Permit Correction"  itemvalue="050,054,051,053,052,085"  />
+                                    <apex:selectOption itemLabel="Lost Passport Re stamping"  itemvalue="032,031,034,033,035,036"  />
+                                    <apex:selectOption itemLabel="Visit Visa,On Arrival"  itemvalue="114,075,107,104,110,097,096,074,058,180"  />
+                                    <apex:selectOption itemLabel="Multi Entry"  itemvalue="180"  />
+                                    <apex:selectOption itemLabel="Absconder Declaration"  itemvalue="037,038,039,083"  />
+                                    <apex:selectOption itemLabel="Absconder Withdrawal"  itemvalue="041,042,083,039"  />
+                                    <apex:selectOption itemLabel="Non sponsored  Card"  itemvalue="064,124,065,067,123,069,070,071,068"  />
+                                    <apex:selectOption itemLabel="Representative"  itemvalue="143,142"  />
+                                    <apex:selectOption itemLabel="Temporary ID Card"  itemvalue="087,088"  />
+                                    <apex:selectOption itemLabel="New Student Visa "  itemvalue="011"  />
+                                    <apex:selectOption itemLabel="Student Visa Renewal"  itemvalue="048,044,082"  />
+                                    <apex:selectOption itemLabel="Student Visa Cancellation"  itemvalue="092"  />
+                                    <apex:selectOption itemLabel="Student Visa (Short Term)"  itemvalue="113"  />
+                                    <apex:selectOption itemLabel="Student Part Time Employment  permt"  itemvalue="136"  />
+                                    <apex:selectOption itemLabel="Establishment Card New"  itemvalue="086,137,144,744,145,745"  />
+                                    <apex:selectOption itemLabel="Establishment Card Renewal"  itemvalue="073,146,746"  />
+                                    <apex:selectOption itemLabel="Establishment Card (Company Name Change)"  itemvalue="112"  />
+                                    <apex:selectOption itemLabel="Establishment Card Cancellation"  itemvalue="210,923"  />
+                                    <apex:selectOption itemLabel="Update Attributes"  itemvalue="uae"  />
+                                    <apex:selectOption itemLabel="PO Box (New)"  itemvalue="116"  />
+                                    <apex:selectOption itemLabel="PO Box (Renewal)"  itemvalue="122"  />
+                                    <apex:selectOption itemLabel="PO Box (Cancellation)"  itemvalue="133"  />
+                                    <apex:selectOption itemLabel="PO Box (Amendment)"  itemvalue="213"  />
+                                    <apex:selectOption itemLabel="Immigration Printout"  itemvalue="060"  />
+                                    <apex:selectOption itemLabel="New Child Visa"  itemvalue="140,313,006,606,013,613,312,912"  />
+                                    <apex:selectOption itemLabel="New Spouse Visa"  itemvalue="005,605,012,612,138,139,141,310,910,311"  />
+                                    <apex:selectOption itemLabel="Newborn Visa"  itemvalue="009,609,014,614,321,921"  />
+                                    <apex:selectOption itemLabel="Child Visa Renewal"  itemvalue="120,046,646,057,657,316,916"  />
+                                    <apex:selectOption itemLabel="Spouse Visa Renewal"  itemvalue="119,147,315,045,645,056,656,314,914"  />
+                                    <apex:selectOption itemLabel="Dependent Family Visa Renewal"  itemvalue="120,046,646,057,657,316,916,119,147,315,045,645,056,656,314,914,DFV"  />
+                                    <apex:selectOption itemLabel="Dependent Visa Cancellation"  itemvalue="090,318,091"  />
+                                    <apex:selectOption itemLabel="Mission Visa"  itemvalue="301"  />
+                                    
+                                    <apex:actionSupport event="onchange" action="{!getItms}"  rerender="listForm" status="sts" />                                               
+                                </apex:selectList>  
+                                <script type="text/javascript">
+                                cs['CatOpt']=getC('{!$Component.CatOpt}');
+                                cs['category']=getC('{!$Component.category}');
+                                ctg = '{!JSENCODE(selCatg)}';
+                                </script>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-grid">
+                            <div class="slds-form-element__label">Item:</div>
+                            <div class="slds-col slds-form-element__control">
+                                <apex:selectList id="items2" value="{!selItm}" multiselect="false"  size="1" onchange="resetSTA();" >
+                                    <apex:selectOptions value="{!itemOptions}"/>
+                                </apex:selectList>
+                                <script type="text/javascript">cs['itm']=getC('{!$Component.itm}');
+                                cs['items']=getC('{!$Component.items}');
+                                itmLst = '{!JSENCODE(ItmOpt)}';
+                                </script>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-grid">
+                            <div class="slds-form-element__label">Status:</div>
+                            <div class="slds-col slds-form-element__control">
+                                <apex:selectList value="{!selStat}" multiselect="false" size="1" id="status" >
+                                    <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                    <apex:selectOption itemLabel="Under Review"  itemvalue="rv,pd,dr,v,n,svc,sip,sac,pp,sd"  />
+                                    <apex:selectOption itemLabel="Corrected By Customer"  itemvalue="cc,ccc,v,vcc"  />
+                                    <apex:selectOption itemLabel="Awating Customer Correction"  itemvalue="rc,rcc"  />
+                                    <apex:selectOption itemLabel="Requires DNRD Correction"  itemvalue="ic"  />
+                                    <apex:selectOption itemLabel="Sent to DNRD/EMPOST"  itemvalue="if,cif"  />
+                                    <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm" status="sts" />
+                                    
+                                </apex:selectList> 
+                                <script type="text/javascript">
+                                cs['status']=getC('{!$Component.status}');
+                                
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                    <script type="text/javascript" charset="utf8">
+                    var oTable;var currentNumberDisplayed = 500;
+                    $(document).ready(function() {
+                        $('#load').click( function () {
+                            var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                        oTable = $('[id$=testTable]').DataTable({"iDisplayLength": 20,"autoWidth": false}); 
+                        
+                        $("#testTable_info").detach().prependTo('#testTable_wrapper');
+                        $("#testTable_paginate").detach().prependTo('#testTable_wrapper');
+                        //$('#testTable').parent().prepend($('#testTable_info'));
+                        //$('#testTable').parent().prepend($('#testTable_paginate'));
+                    });
+                    </script>
+                    
+                    <apex:actionstatus id="sts">
+                        <apex:facet name="start">
+                            <div class="slds-spinner_container">
+                                <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                    <span class="slds-assistive-text">Loading</span>
+                                    <div class="slds-spinner__dot-a"></div>
+                                    <div class="slds-spinner__dot-b"></div>
+                                </div>
+                            </div>
+                        </apex:facet>
+                    </apex:actionstatus> 
+                    <apex:outputPanel rendered="{! IF(ISBLANK(finalListRqItm), false, true) }">
+                        <table id="testTable" class="slds-table slds-table_fixed-layout slds-table_bordered slds-table--header-fixed" aria-label="">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Request">Request</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Manage Request">Manage Request</div>
+                                    </th>
+                                    <apex:outputText rendered="{! IF(srvcName ==  'DFV', true, false) }">
+                                        <th class="" scope="col">
+                                            <div class="slds-truncate" title="Sponser Name">Sponser Name</div>
+                                        </th>
+                                    </apex:outputText>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Service Name">Service Name</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Priority">Priority</div>
+                                    </th>
+                                    <apex:outputText rendered="{! IF(srvcName ==  'EID', true, false) }">
+                                        <th class="" scope="col">
+                                            <div class="slds-truncate" title="Medical Fit Date">Medical Fit Date</div>
+                                        </th>
+                                    </apex:outputText>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Priority">Account Name</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Applicant Name">Applicant Name</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Passport#">Passport#</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Nationality">Nationality</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Payment Date">Payment Date</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Date of Action">Date of Action</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="SLA Status">SLA Status</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Remarks">Remarks</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <apex:repeat value="{!finalListRqItm}" var="record">
+                                    <tr class="slds-hint-parent">
+                                        <td data-label="Request" scope="row">
+                                            <div class="slds-truncate" title="{!record.ri.RQ__r.name}">
+                                                <a href="/{!record.ri.RQ__c}" target="_blank">{!record.ri.RQ__r.name}=={!record.ri.STA__r.Name}</a>
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="Manage Request">
+                                                <apex:outputField value="{!record.ri.RQ__r.xmgr__c}"/>
+                                            </div>
+                                        </td>
+                                        <apex:outputText rendered="{! IF(srvcName ==  'DFV', true, false) }">
+                                            <td data-label="">
+                                                <div class="slds-truncate" title="Sponser Name">{!record.ri.RQ__r.Sponser_Name_Auto__c}</div>
+                                            </td>
+                                        </apex:outputText>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="Service Name">{!record.ri.itm__r.srvc__r.Name}</div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Priority">{!record.ri.RQ__r.prio__c}</div>
+                                        </td>
+                                        <apex:outputText rendered="{! IF(srvcName ==  'EID', true, false) }">
+                                            <td class="" scope="col">
+                                                <div class="slds-truncate" title="Medical Fit Date">
+                                                    <apex:outputText value="{0,date,dd-MM-yyyy}">
+                                                        <apex:param value="{!record.ri.Medical_Fit_Date__c}" />
+                                                    </apex:outputText>
+                                                </div>
+                                            </td>
+                                        </apex:outputText>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Account Name">
+                                                {!IF(record.ri.RQ__r.Account_Name__c=='test identity 1', 'DED Account',record.ri.RQ__r.Account_Name__c)}
+                                            </div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Applicant Name">{!record.ri.RQ__r.Full_Name__c}</div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Passport#">{!record.ri.RQ__r.xcp__c}</div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Nationality">{!record.ri.RQ__r.xcnc__c}</div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Payment Date">{!record.ri.First_Payment__c}</div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Date of Action">
+                                                <apex:outputText value="{0,date,dd-MM-yyyy}">
+                                                    <apex:param value="{!record.dateofAction}" />
+                                                </apex:outputText>
+                                            </div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="SLA Status">
+                                                <apex:outputText rendered="{!OR(AND(NOT(record.ri.RQ__r.expflg__c), record.duration > 9),AND(record.ri.RQ__r.expflg__c,record.duration > 4))}">
+                                                    <apex:outputText value="Outside SLA"/>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!OR(AND(NOT(record.ri.RQ__r.expflg__c), record.duration > 6,record.duration < 9))}">
+                                                    <apex:outputText value="About to Expire"/>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!OR(AND(NOT(record.ri.RQ__r.expflg__c), record.duration <= 6),AND(record.ri.RQ__r.expflg__c,record.duration <= 5))}">
+                                                    <apex:outputText value="Within SLA"/>
+                                                </apex:outputText>
+                                            </div>
+                                        </td>
+                                        <td class="" scope="col">
+                                            <div class="slds-truncate" title="Remarks">{!record.ri.nt__c}</div>
+                                        </td>
+                                        
+                                    </tr>
+                                </apex:repeat>
+                            </tbody>
+                        </table>
+                    </apex:outputPanel>
+                    
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

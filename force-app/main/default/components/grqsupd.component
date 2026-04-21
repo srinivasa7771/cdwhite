@@ -1,0 +1,808 @@
+<apex:component controller="gctlRequ" allowDML="true" >
+    <apex:attribute name="Dim" description="layout: S-Selected, V-Verticle, H-Horizontal" type="String" assignTo="{!Dm}" required="false"/>
+    <apex:attribute name="req" description="" type="g_Req__c" assignTo="{!rq}"  required="true"/>
+    <apex:attribute name="PayDone" description="" type="Boolean" required="false"/>
+    <apex:attribute name="SDocs" description="selected document Upload" type="String" assignTo="{!sDocName}" required="false"/>
+    <apex:attribute name="onlyDoc" description="Only Docs Required" type="Boolean" required="false" default="false"/>
+    <apex:attribute name="cmpTitle" description="title" type="String" required="false"  default="DOCUMENT UPLOADS"/>
+    
+    <apex:actionFunction name="updatePriority"  action="{!updatePrirityItm}"  rerender="fid,adhid" oncomplete="updateAdhoc2();removeEmptyLables();$('#preloader').fadeOut();">
+        <apex:param name="prType" value=""/>
+    </apex:actionFunction>
+    <apex:actionFunction name="updateInc"  action="{!updateIncItm}"  rerender="fid" oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+        <apex:param name="incType" value=""/>
+    </apex:actionFunction>
+    <apex:actionFunction name="updateOffl"  action="{!updateOfflItm}"  rerender="fid"  oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+        <apex:param name="offType" value=""/>
+    </apex:actionFunction>
+    <apex:actionFunction name="reloadDocDiv" action="{!resetDoc}" status="theStatus" rerender="opDocV,opDocH,opDocSH,opDocS,opDocL"  oncomplete="resetprTypeVal();javascript:stopLoader();"/>
+    <apex:actionFunction name="afdltAtt" action="{!deleteAttachment2}" status="theStatus" rerender="opDocV,opDocH,opDocSH,opDocS,opDocL"  oncomplete="resetprTypeVal();javascript:stopLoader();"  />
+    
+    <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+    <apex:InputHidden value="{!reqDocId2}" id="reqDocId2"/>
+    <apex:InputHidden value="{!docName}" id="docName"/>
+    <apex:InputHidden value="{!fileSrc}" id="fileSrc"/>
+    <style>
+        .whiteDiv{
+        padding: 12px 15px;     
+        background-color: #fff;
+        border: 1px solid #E1E1E1;
+        }
+    </style>
+    <script type="text/javascript">
+    function popupDocModel(lbl,typ,seq){
+        
+        //startLoader(typ);
+        currentDoc = lbl;
+        console.log('In popupDocModel() DocLabel >> '+'lbl');  
+        document.getElementById("udDocType").value = typ;//dname;
+        document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
+        document.getElementById("udDocLabel").innerHTML = lbl;
+        $('#modal_fileuploadPopUp').modal('show');
+    }
+    function closeDialog() {
+        // startLoader();
+        $('#modal_fileuploadPopUp').modal('hide');
+    }
+    
+    function dltAtt(a){
+        reqDocId2=document.getElementById("{!$Component.reqDocId2}");
+        reqDocId2.value=a;
+        afdltAtt();
+        reloadDocDiv();
+    };
+    
+    function spnChange(){
+        console.log('Change in reloadDocDivJS');
+        reloadDocDiv();
+        
+    }
+    
+    </script>
+    <script>
+    /* (function ($) {
+          $(function () {
+              
+              $('#inc').change(function () { 
+                  var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                  if(isIncountryChecked)
+                      $('#ofl').show(); 
+                  else
+                      $('#ofl').hide();
+              });
+              
+          });
+      }(jQuery));*/
+    </script>
+    <apex:outputPanel id="adhid">
+        <script>
+        function updateAdhoc2(){
+            cs["xadh__c"].value = '{!rq.xadh__c}';              
+        }
+        function prTypeChange(){
+            let prVal = document.getElementById("prTypeId").value;
+            if(prVal != '{!priorityType}'){
+                axsConfirmation('Confirm','Do you want to change the priority?',true,'updatePriority',prVal,'resetprTypeVal');
+                //$('#prTypeId').val('{!priorityType}').trigger('change');
+            }
+            // updatePriority(prVal);
+        }
+        
+        function resetprTypeVal(){
+            $('#prTypeId').val('{!priorityType}').trigger('change');
+        }
+        </script>
+    </apex:outputPanel>
+    <apex:outputPanel id="opDoc">
+        <!-- Vertical Look: START -->
+        <apex:outputPanel rendered="{!if(Dim=='V',true,false)}">
+            <apex:outputPanel id="opDocV">
+                <apex:outputPanel rendered="{!NOT(onlyDoc)}">
+                    <div>
+                        <h2 class="text-primary mb-5">
+                            {!rq.srvc__r.name}
+                        </h2>
+                        <apex:outputPanel rendered="{!OR(rqPtype='',rq.srvc__r.uid__c='ltc',rq.srvc__r.uid__c='lts',rq.srvc__r.uid__c='ltp')}">
+                            <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                <div class="collapse-content">
+                                    <p>{!rq.srvc__r.dsc__c}</p>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!AND(OR(rq.AP__c==0,ISBLANK(rq.AP__c)),rqPtype!='',rq.srvc__r.uid__c!='ltc',rq.srvc__r.uid__c!='ltp')}">
+                            <div>
+                                <apex:outputText rendered="{!rqPtype!=''}">
+                                    <h3 class="text-primary d-md-block d-none">PRIORITY TYPE</h3>
+                                    <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                       data-target="#base_side_content_2">
+                                        <h3 class="text-primary">PRIORITY TYPE</h3>
+                                    </a>
+                                </apex:outputText>
+                                <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                    <div class="collapse-content">
+                                        <apex:outputText rendered="{!rqPtype!=''}">
+                                            <div class="form-group form-style">
+                                                <select class="form-control input-select2-flat" id="prTypeId" value="{!priorityType}" onchange="prTypeChange();">
+                                                    <option value="nf" >Normal ( 10 days )</option>
+                                                    <option value="ef" >Express ( 3 days )</option>
+                                                    <option value="pf" >Platinum ( 1 day )</option>
+                                                </select>
+                                            </div>
+                                        </apex:outputText>
+                                        
+                                    </div>
+                                    <!-- .collapse-content -->
+                                </div>
+                                <!-- .collapse-content-wrapper -->
+                            </div>
+                        </apex:outputPanel>
+                        <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                            <div class="collapse-content"></div>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <div>
+                    <apex:outputPanel rendered="{! hasRq && Docs.size>0}">
+                        <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                            <div class="collapse-content">
+                                <h3 class="text-primary d-md-block d-none">{!cmpTitle}</h3>
+                                <div class="document-uploads">
+                                    <apex:repeat id="vr0" value="{!Docs}" var="D">
+                                        <apex:outputPanel rendered="{!AND(OR(D.doUp,AND(D.doc.ats__c=0,D.doc.Req__c)),D.Ats.size=0)}" >
+                                            <div class="document-upload-field box {!if(D.doUp,'box-danger','')} box-block" style="{!if(D.doUp,'border: 1px solid;border-color: #D0011B;','')}">
+                                                <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                    <label class="fs-18">{!D.Doc.Name}</label>
+                                                    <span class="loader_img" style="float:right;display:none">
+                                                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                    </span>
+                                                </div>
+                                                <div class="upload-field d-flex">
+                                                    <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                        <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                        <span id="dropB{!D.Doc.id}{!Dim}" >Choose File to Upload</span>
+                                                    </div>
+                                                    <div>
+                                                        <button class="btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">BROWSE</button>
+                                                    </div>
+                                                </div>
+                                                <!-- .upload-field -->
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!D.Ats.size>0}">
+                                            <div class="document-upload">
+                                                <table style="width: 100%;margin-bottom: inherit;">
+                                                    <tr >
+                                                        <td>
+                                                            <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                                <label class="fs-18 text-light-2">{!D.Doc.Name}</label>
+                                                                <span class="loader_img" style="float:right;display:none">
+                                                                    <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-outline-primary btn-outline-primary-3" style="{!IF( NOT(D.cnUp), 'display:none', 'display:block')}" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">Do you want UPLOAD MORE</button>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <div class="upload-list">
+                                                    <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <i class="fa fa-check-circle text-success"></i>
+                                                            <a  class="upload-item-title text-li" onclick="filePreview('{!D.Doc.Name}','/servlet/servlet.FileDownload?file={!A.A.Id}');" >
+                                                                <u>{!A.A.Name}</u>
+                                                            </a>
+                                                            <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!A.A.Id}');};" style="{!if(rq.AP__c>0,'Display:none;','')}" >
+                                                                <i class="fa fa-close"></i>
+                                                            </a>
+                                                        </div>
+                                                    </apex:repeat>
+                                                </div>
+                                                <!--div class="mt-2">Uploaded: {!A.A.CreatedDate} </div-->
+                                            </div>
+                                        </apex:outputPanel>
+                                    </apex:repeat>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!NOT(hasRq) && docList.size>0}">
+                        <apex:repeat value="{!docList}" var="doc">
+                            <div class="col-lg-6">
+                                <apex:outputLabel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                    <div class="box box-block attBox">
+                                        <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                            <label class="fs-18">{!doc.DocName}</label>
+                                            <span class="loader_img" style="float:right;display:none">
+                                                <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                            </span>
+                                        </div>
+                                        <apex:outputPanel rendered="{!doc.attId == ''}">
+                                            <div class="upload-field d-flex">
+                                                <div
+                                                     class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                    
+                                                    <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                    <span id="dropB{!doc.DocName}{!Dim}">
+                                                        Choose File to Upload<!--&nbsp;<span class="loader_img"></span>-->
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                        <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                    </apex:outputtext>
+                                                    <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                        <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                    </apex:outputtext>
+                                                    <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <!-- .upload-list -->
+                                    </div>
+                                </apex:outputLabel>
+                                
+                            </div>
+                        </apex:repeat>
+                    </apex:outputPanel>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Vertical Look : END -->
+        <!-- Horizontal2 Look : START -->
+        <apex:outputPanel rendered="{!if(Dim=='H',true,false)}">
+            
+            <apex:outputPanel id="opDocH">
+                <apex:outputPanel rendered="{! NOT(onlyDoc)}">
+                    <b><apex:pageMessages id="msg" /></b>
+                    <div class="accordion-content-inner px-xl-5">
+                        <div class="text-right mb-4">
+                            <apex:outputText rendered="{!AND(ispu,docMsgLst.size == 0)}">
+                                <a onclick="nextPage();$('#preloader').fadeIn();" href="#" class="btn btn-primary base-nav-next">Next </a>
+                                <br/>
+                            </apex:outputText>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <!--class="accordion-item tab-pane"-->
+                <div id="documents_collapse" class="accordion-content collapse1" data-parent="#app_accordion">
+                    <div class="accordion-content-inner px-xl-5"> 
+                        <div class="pt-4"></div>
+                        <apex:outputPanel rendered="{! NOT(onlyDoc) && docMsgLst.size>0}">
+                            <div class="box box-danger box-padding mb-lg-5 mb-4">
+                                <apex:repeat value="{!docMsgLst}" var="M">
+                                    Please Upload 
+                                    <strong>'{!M}'</strong>
+                                    <br/>
+                                </apex:repeat>
+                            </div>
+                        </apex:outputPanel>
+                        <div class="row row-lg">
+                            <apex:repeat id="hr02" value="{!dasLst}" var="das" >
+                                <apex:outputPanel rendered="{!das.upload}" styleClass="col-xl-4 col-lg-6">
+                                    <div class="box {!if(das.d.doUp,'box-danger','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                        <div class="document-upload">
+                                            <!--<label class="fs-18">{!das.d.doc.Name}</label>-->
+                                            <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                <label class="fs-18">{!das.d.doc.Name}</label>
+                                                <span class="loader_img" style="float:right;display:none">
+                                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                </span>
+                                            </div>
+                                            <!-- -{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)} -->
+                                            <div class="upload-list">
+                                                <div class="upload-list-item box box-white box-padding">
+                                                    <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                        
+                                                        <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                        <span id="dropB{!das.d.Doc.id}{!Dim}">
+                                                            Choose File to Upload
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <button class="btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">{!if(das.minAttDon,'DO YOU WANT TO UPLOAD MORE','UPLOAD')}</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!NOT(das.upload)}" styleClass="col-xl-4 col-lg-6">
+                                    <div class="box box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                        <div class="document-upload">
+                                            <label class="fs-18">{!das.d.doc.Name}</label>
+                                            <!---{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)}-->
+                                            <div class="upload-list">
+                                                <div class="upload-list-item box box-white box-padding">
+                                                    <i class="fa fa-check-circle text-success"></i>
+                                                    <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/servlet/servlet.FileDownload?file={!das.A.Id}');" >
+                                                        <u>{!das.A.Name}</u>
+                                                    </a>
+                                                    <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(rq.AP__c>0,'Display:None;','')}" >
+                                                        <i class="fa fa-close"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">Uploaded: {!das.A.createdDate} </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:repeat>
+                            
+                            <apex:outputPanel rendered="{!docList.size>0 && !hasRq}">
+                                <apex:repeat value="{!docList}" var="doc">
+                                    <div class="col-lg-6">
+                                        <apex:outputLabel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                            <div class="box box-block attBox">
+                                                <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                                    <label class="fs-18">{!doc.DocName}</label>
+                                                    <span class="loader_img" style="float:right;display:none">
+                                                        <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                    </span>
+                                                </div>
+                                                <apex:outputPanel rendered="{!doc.attId == ''}">
+                                                    <div class="upload-field d-flex">
+                                                        <div
+                                                             class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                            <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                            <span id="dropB{!doc.DocName}{!Dim}">
+                                                                Choose File to Upload<!--&nbsp;<span class="loader_img"></span>-->
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                                <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                            </apex:outputtext>
+                                                            <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                                <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                            </apex:outputtext>
+                                                            <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <!-- .upload-list -->
+                                            </div>
+                                        </apex:outputLabel>
+                                        
+                                    </div>
+                                </apex:repeat>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Horizontal2 Look : END -->
+        <!-- Horizontal3 Look : START -->
+        <apex:outputPanel rendered="{!if(Dim='L',true,false)}">
+            
+            <apex:outputPanel id="opDocL">
+                
+                <div ><!--class="accordion-item tab-pane"-->
+                    <div id="documents_collapse" class="accordion-content collapse1" data-parent="#app_accordion">
+                        <div class="accordion-content-inner">
+                            <div class="pt-4"></div>
+                            
+                            <div class="row row-lg">
+                                
+                                <apex:repeat id="hr03" value="{!dasLst}" var="das" >
+                                    <apex:outputPanel rendered="{!das.upload}"> 
+                                        <div class="col-lg-6">
+                                            <div class="box box-block attBox">
+                                                
+                                                <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                    <label class="fs-18">{!das.d.doc.Name}</label>
+                                                    <span class="loader_img" style="float:right;display:none">
+                                                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                    </span>
+                                                </div>
+                                                <!-- -{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)} -->
+                                                <div class="upload-field d-flex">
+                                                    <div
+                                                         class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                        <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                    </div>
+                                                    <div>
+                                                        
+                                                        <a onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                        
+                                                    </div>
+                                                </div>
+                                                
+                                                
+                                            </div>
+                                            
+                                        </div>
+                                        
+                                    </apex:outputPanel> 
+                                    
+                                    <apex:outputPanel rendered="{!NOT(das.upload)}" > 
+                                        <div class="col-lg-6">
+                                            
+                                            <div class="box box-block attBox">
+                                                <label class="fs-18">{!das.d.doc.Name}</label><!---{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)}-->
+                                                <div class="upload-list">
+                                                    <div class="upload-list-item box box-white box-padding">
+                                                        <i class="fa fa-check-circle text-success"></i>
+                                                        <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/servlet/servlet.FileDownload?file={!das.A.Id}');" ><u>{!das.A.Name}</u></a>
+                                                        <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(PayDone,'Display:None;','')}" ><i class="fa fa-close"></i></a>
+                                                        
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        
+                                    </apex:outputPanel>
+                                    
+                                </apex:repeat>
+                            </div>    
+                        </div>    
+                    </div>    
+                </div>    
+                
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Horizontal3 Look : END --> 
+        <!-- Selected Look : START -->
+        <apex:outputPanel rendered="{!if(Dim=='S',true,false)}">
+            <apex:outputPanel id="opDocS">
+                <apex:outputPanel rendered="{!Docs.size>0 && seqFlag}">
+                    <div  style="margin-left:20px">
+                        <div class="mb-0 vid" >
+                            <apex:outputPanel rendered="{!hasRq}">
+                                <div class="srvNew row" style="margin-left:20px">
+                                    <apex:repeat id="sr0" value="{!Docs}" var="D">
+                                        <div class="col-lg-6">
+                                            <apex:outputPanel rendered="{!AND(OR(D.doUp,AND(D.doc.ats__c=0,D.doc.Req__c)),D.Ats.size=0)}" >
+                                                <div class="document-upload-field box {!if(D.doUp,'box-danger','')} box-block" style="{!if(D.doUp,'border: 1px solid;border-color: #D0011B;','')}">
+                                                    <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                        <label class="fs-18">{!D.Doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <div class="upload-field d-flex">
+                                                        <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                            <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                            <span id="dropB{!D.Doc.id}{!Dim}" >Choose File to Upload</span>
+                                                        </div>
+                                                        <div>
+                                                            <button class="btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">BROWSE</button>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .upload-field -->
+                                                </div>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!D.Ats.size>0}">
+                                                <div class="document-upload">
+                                                    <table style="width: 100%;margin-bottom: inherit;">
+                                                        <tr >
+                                                            <td>
+                                                                <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                                    <label class="fs-18 text-light-2">{!D.Doc.Name}</label>
+                                                                    <span class="loader_img" style="float:right;display:none">
+                                                                        <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-outline-primary btn-outline-primary-3" style="{!IF( NOT(D.cnUp), 'display:none', 'display:block')}" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">Do you want UPLOAD MORE</button>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                    <div class="upload-list">
+                                                        <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                                            <div class="upload-list-item box box-white box-padding">
+                                                                <i class="fa fa-check-circle text-success"></i>
+                                                                <a  class="upload-item-title text-li" onclick="filePreview('{!D.Doc.Name}','/servlet/servlet.FileDownload?file={!A.A.Id}');" >
+                                                                    <u>{!A.A.Name}</u>
+                                                                </a>
+                                                                <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!A.A.Id}');};" style="{!if(rq.AP__c>0,'Display:none;','')}" >
+                                                                    <i class="fa fa-close"></i>
+                                                                </a>
+                                                            </div>
+                                                        </apex:repeat>
+                                                    </div>
+                                                    <!--div class="mt-2">Uploaded: {!A.A.CreatedDate} </div-->
+                                                </div>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </apex:repeat>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!seqFlag}">
+                    <apex:repeat value="{!docList}" var="doc">
+                        <div class="col-lg-6">
+                            <apex:outputLabel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                <div class="box box-block attBox">
+                                    <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                        <label class="fs-18">{!doc.DocName}</label>
+                                        <span class="loader_img" style="float:right;display:none">
+                                            <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                        </span>
+                                    </div>
+                                    <apex:outputPanel rendered="{!doc.attId == ''}">
+                                        <div class="upload-field d-flex">
+                                            <div
+                                                 class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                <span id="dropB{!doc.DocName}{!Dim}">
+                                                    Choose File to Upload<!--&nbsp;<span class="loader_img"></span>-->
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                    <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                </apex:outputtext>
+                                                <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                    <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                </apex:outputtext>
+                                                <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <!-- .upload-list -->
+                                </div>
+                            </apex:outputLabel>
+                            <apex:outputtext rendered="{!OR(doc.tmpltId != '')}">
+                                <a href="/servlet/servlet.FileDownload?file={!doc.tmpltId}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                            </apex:outputtext>
+                            <!-- .box -->
+                        </div>
+                    </apex:repeat>
+                </apex:outputPanel>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Selected Look : END -->
+        
+        
+        <!-- Sequencial Horizontal Look : START -->
+        <apex:outputPanel rendered="{!if(Dim=='SH',true,false)}">
+            <apex:outputPanel id="opDocSH">
+                <!--class="accordion-item tab-pane"-->
+                <div id="documents_collapse" class="accordion-content collapse1" data-parent="#app_accordion">
+                    <div class="accordion-content-inner px-xl-2">
+                        <!--<div class="pt-4"></div>-->
+                        <apex:outputPanel rendered="{! NOT(onlyDoc) && docMsgLst.size>0}">
+                            <div class="box box-danger box-padding mb-lg-5 mb-4">
+                                <p class="fs-18">Upload Documents</p>
+                                <apex:repeat value="{!docMsgLst}" var="M">
+                                    Please Upload 
+                                    <strong>'{!M}'</strong>
+                                    <br/>
+                                </apex:repeat>
+                            </div>
+                        </apex:outputPanel>
+                        <div class="row row-lg">
+                            <apex:repeat id="shr02" value="{!dasLst}" var="das" >
+                                <apex:outputPanel rendered="{!das.upload}" styleClass="col-xl-6 col-lg-6">
+                                    <div class="box {!if(das.d.doUp,'box-danger','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                        <div class="document-upload">
+                                            <!--<label class="fs-18">{!das.d.doc.Name}</label>-->
+                                            <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                <label class="fs-18">{!das.d.doc.Name}</label>
+                                                <span class="loader_img" style="float:right;display:none">
+                                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                </span>
+                                            </div>
+                                            <!-- -{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)} upload-list-item box box-white box-padding-->
+                                            <div class="upload-list">
+                                                <div class="box box-block mb-lg-4 box-border-dashed">
+                                                    <div class="upload-field d-flex">
+                                                        <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                            
+                                                            <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                            <span id="dropB{!das.d.Doc.id}{!Dim}" >Choose File to Upload</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <button class="btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">{!if(das.minAttDon,'DO YOU WANT TO UPLOAD MORE','UPLOAD')}</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!NOT(das.upload)}" styleClass="col-xl-6 col-lg-6">
+                                    <div class="box box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                        <div class="document-upload">
+                                            <label class="fs-18">{!das.d.doc.Name}</label>
+                                            <!---{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)}-->
+                                            <div class="upload-list">
+                                                <div class="upload-list-item box box-white box-padding">
+                                                    <i class="fa fa-check-circle text-success"></i>
+                                                    <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/servlet/servlet.FileDownload?file={!das.A.Id}');" >
+                                                        <u>{!das.A.Name}</u>
+                                                    </a>
+                                                    <a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(rq.AP__c>0,'Display:None;','')}" >
+                                                        <i class="fa fa-close"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">Uploaded: {!das.A.createdDate} </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:repeat>
+                            
+                            <apex:outputPanel rendered="{!docList.size>0 && !hasRq}">
+                                <apex:repeat value="{!docList}" var="doc">
+                                    <div class="col-lg-6">
+                                        <apex:outputpanel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                            <div class="box box-block attBox">
+                                                <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                                    <label class="fs-18">{!doc.DocName}</label>
+                                                    <span class="loader_img" style="float:right;display:none">
+                                                        <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                    </span>
+                                                </div>
+                                                <apex:outputPanel rendered="{!doc.attId == ''}">
+                                                    <div class="upload-field d-flex">
+                                                        <div
+                                                             class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                            
+                                                            <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                            <span id="dropB{!doc.DocName}{!Dim}">
+                                                                Choose File to Upload<!--&nbsp;<span class="loader_img"></span>-->
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                                <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                            </apex:outputtext>
+                                                            <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                                <a onclick="popupDocModel('{!doc.DocName}','{!doc.DocName}','{!doc.DocName}{!Dim}');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                            </apex:outputtext>
+                                                            <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <!-- .upload-list -->
+                                            </div>
+                                        </apex:outputpanel>
+                                        
+                                    </div>
+                                </apex:repeat>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <!-- Sequencial Horizontal Look : END -->
+        
+        
+    </apex:outputPanel>
+    <!-- Modal -->
+    <div class="modal fade modal-base" id="modal_vfs" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <h2 class="modal-title" style="margin-left: 1.8rem;" >
+                    <u>
+                        <label id="mdHeader">File Preview</label>
+                    </u>
+                </h2>
+                <!--
+<button type="button" class="btn btn-primary btn-icon mb-4" data-dismiss="modal"  onclick="printFile();" ><i class="icon icon-print"></i></button> -->
+                <button type="button" class="close" onclick="printFile();" style="margin-right:40px;">
+                    <i class="icon icon-print" />
+                </button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body" style="padding: 0px 30px 30px;">
+                    <div class="mb-3"></div>
+                    <img src="{!fileSrc}" id='previewDiv' />
+                </div>
+                <!--a href="#"  onclick="printFile();" style="align-self: flex-end;margin: 0px 30px 5px;"><u>Print</u></a-->
+            </div>
+        </div>
+    </div>
+    <!-- Loader -->
+    <script type="text/javascript">
+    $( document ).ready(function() {
+        $('#preloader').fadeOut();
+        $('#prTypeId').val('{!priorityType}').change();
+        
+        '{!incType}'=='true'? $("#incountryId").prop( "checked", true ): $("#incountryId").prop( "checked", false );
+        '{!incType}'=='true'? $("#ofl").show():$("ofl").hide();
+        '{!incType}'=='true' && '{!offType}'=='true'? $("#offerleterId").prop( "checked", true ): $("#offerleterId").prop( "checked", false );
+        if('{!DocType}'!=''){console.log('calling Reload');spnChange(); }
+        
+        $(document).ready(function() {
+            $("#modal_vfs").modal({
+                show: false,
+                backdrop: 'static'
+            });
+        });
+        
+        reloadDocDiv();
+        
+    });
+    
+    function incChange(){
+        
+        var incVal = document.getElementById("incountryId").value;
+        
+        //if(incVal != '{!priorityType}'){
+        if($('#incountryId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to add applicant as InCountry?',true,'updateInc','true');
+            $("#incountryId").prop("checked", false);
+        }else if(!$('#incountryId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to remove applicant as InCountry?',true,'updateInc','false');
+            $("#incountryId").prop("checked", true);
+            $("#offerleterId").prop( "checked", false ); 
+        }
+        $('#incountryId').val('{!incType}').trigger('change');
+        //}
+        // updatePriority(prVal);
+    } 
+    function offChange(){
+        
+        let offVal = document.getElementById("offerleterId").value;
+        if($('#offerleterId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to opt for offer letter?',true,'updateOffl','true');
+            $("#offerleterId").prop( "checked", false); 
+        }else if(!$('#offerleterId').is(':checked')){
+            axsConfirmation('Confirm','Do you want to remove offer letter?',true,'updateOffl','false');
+            $("#offerleterId").prop( "checked", true);
+        }  
+        $('#offerleterId').val('{!offType}').trigger('change');
+        //}
+        // updatePriority(prVal);
+    }
+    function filePreview(fName,src){
+        console.log('In filePreview>>'+fName);
+        fileSrc=document.getElementById("{!$Component.fileSrc}");
+        fileSrc.value=src;
+        document.getElementById("mdHeader").innerHTML = fName;
+        document.getElementById("previewDiv").src = src;
+        //$('#modal_vfs').modal('show');
+        window.open(src, '_blank');
+    }
+    function printFile(){
+        console.log('Print Image');
+        fileSrc=document.getElementById("{!$Component.fileSrc}");
+        var src=fileSrc.value;
+        console.log('fil Src>>'+ src);
+        
+        var html  = "<html><head>" +"</head>" +"<body  style ='-webkit-print-color-adjust:exact;'>"+
+            "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+            "</body>";
+        var win = window.open("about:blank","_blank");
+        win.document.write(html);
+        
+    }
+    
+    
+    
+    </script>
+    <script type="text/javascript">
+    var currentDoc = "";
+    function startLoader(typ){
+        currentDoc = typ;//document.getElementById("udDocType").value;
+        console.log('in startLoader!!! >> '+ currentDoc);
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+    }   
+    function stopLoader(){
+        
+        currentDoc = document.getElementById("udDocType").value;
+        console.log('in startLoader!!! >> '+ currentDoc);
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').hide();
+        $('*').removeClass('loadingProgress');
+    }
+    </script>
+    
+</apex:component>

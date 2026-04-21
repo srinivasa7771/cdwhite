@@ -1,0 +1,485 @@
+<apex:component >
+    <style>
+        .disabledEvents{
+            pointer-events: none !important;
+        }
+    </style>
+<apex:attribute name="isNew" description="Is New Request" type="Boolean" required="true" />
+<apex:attribute name="isEdit" description="Is Edit Mode" type="Boolean" required="true"/>
+<apex:attribute name="isView" description="Is View Mode" type="Boolean" required="true"/>
+<apex:attribute name="pgHide" description="Is Read Only Access" type="Boolean" required="true"/>
+<apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+<apex:attribute name="R" description="Request" type="g_Req__c" required="true"/>
+<apex:attribute name="A" description="Account" type="Account" required="true"/>    
+<apex:attribute name="T" description="Transaction" type="g_Tran__c"/>    
+<apex:attribute name="pg" description="Page Name" type="String" required="true"/>
+<apex:attribute name="nxtPg" description="Next Page" type="String" default="grqei"/>
+<apex:attribute name="Stp" description="Which Step" type="Integer" default="1"/>
+<apex:attribute name="showEI" description="Display Buttons to Manage Details" type="Boolean" default="true"/>
+<apex:attribute name="showInfo" description="Show Warnings" type="Boolean" default="true"/>
+<apex:attribute name="addInfo" description="Additional Warnings" type="String"/>
+<apex:variable var="sW" value="{!IF(A.lcsnc__c,true,false)}" />
+<apex:variable var="sW" value="{!IF(A.psasnc__c,true,sW)}" />
+<apex:variable var="sW" value="{!IF(A.ecsnc__c,true,sW)}" />
+<apex:variable var="sW" value="{!IF(A.cosnc__c,true,sW)}" />
+<apex:variable var="sW" value="{!IF(NOT(ISBLANK(A.snc__c)),true,sW)}" />
+<apex:variable var="sW" value="{!IF(NOT(ISBLANK(A.info__c)),true,sW)}" />
+<apex:variable var="sW" value="{!IF(NOT(ISNULL(addInfo)),true,sW)}" />
+<apex:variable var="rCls" value="{!IF(AND(R.STA__c<>"Completed",R.STA__c<>"Rejected",R.STA__c<>"Cancelled"),false,true)}" />
+<apex:variable var="AD" value="{!0}" />
+<apex:variable var="nC" value="{!IF(true,false,false)}" />
+<apex:repeat value="{!R.Items__r}" var="i"><apex:variable var="AD" value="{!AD+i.AD__c}" /><apex:variable var="nC" value="{!IF(OR(i.nc__c,AND(i.vSTA__c='Requires Verification',NOT(ispu))),true,nC)}" /></apex:repeat>
+<apex:variable var="sW" value="{!IF(AND(NOT(rCls),OR(AND(AD>0,Stp<4),nC)),true,sW)}" />
+<apex:variable var="AO" value="{!0}" /><apex:repeat value="{!R.Transactions__r}" var="t"><apex:variable var="AO" value="{!IF(AND(t.STA__c='Open',t.TP__c='Payment'),AO+t.A__c,AO)}" /></apex:repeat>
+<apex:variable var="sW" value="{!IF(AND(NOT(rCls),AND(AO>0,Stp<4)),true,sW)}" />
+<div class="mgtBtn">
+    <apex:outputPanel layout="none" rendered="{!OR(NOT(sW),NOT(showInfo))}"></apex:outputPanel>
+    <apex:outputPanel layout="none" rendered="{!AND(sW,showInfo)}">
+        <div id="pw" >      
+            <div class="message infoM3"  style="font-size: 11px;background-color:#f5fcff;border-color:#bee6ff;">
+                <table class="messageTable" border="0" cellpadding="0" cellspacing="0" style="font-size:11px;">
+                    <tbody>
+                        <tr>
+                            <td style="vertical-align: top;width:1%;white-space:nowrap;"><br/><img src="/s.gif" alt="Attention needed!!" class="msgIcon" title="Attention needed!!"/></td>
+                            <td class="messageCell" style="padding-right:10px;">
+                                <div class="messageText">
+                                    <ul style="padding-left:25px;">
+                                        <apex:outputPanel layout="none" rendered="{!A.lcsnc__c}"><li>{!A.lcsncnt__c}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!A.psasnc__c}"><li>{!A.psasncnt__c}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!A.ecsnc__c}"><li>{!A.ecsncnt__c}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!A.cosnc__c}"><li>{!A.cosncnt__c}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(A.snc__c))}"><li>{!$Label.msgSanc}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(A.info__c))}"><li>{!A.info__c}</li></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!NOT(ISNULL(addInfo))}"><apex:OutputText value="{!addInfo}" escape="false" /></apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!NOT(rCls)}">
+                                            <apex:repeat value="{!R.Items__r}" var="i">
+                                                <apex:outputPanel layout="none" rendered="{!OR(i.nc__c,AND(i.vSTA__c='Requires Verification',NOT(ispu)))}">
+                                                    <li>{!IF(ispu,i.itm__r.lbl__c,i.itm__r.name)+ IF(i.nc__c,'- needs corrections','')+IF(AND(i.vSTA__c='Requires Verification',NOT(ispu)),IF(i.nc__c,' and verification','- needs verification'),'')}
+                                                        <apex:outputPanel layout="none" rendered="{!IF(Stp=2,false,true)}">
+                                                            <a href="/apex/grqei?id={!R.Id}">click to view</a>
+                                                        </apex:outputPanel>
+                                                    </li>
+                                                </apex:outputPanel>
+                                            </apex:repeat>
+                                            <apex:outputPanel layout="none" rendered="{!IF(AND(AD>0,Stp<4),true,false)}">
+                                                <li>Payment of AED&nbsp;<apex:outputText value="{0,number,###,##0.00}"><apex:param value="{!AD}" /></apex:outputText>&nbsp;is required</li>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel layout="none" rendered="{!IF(AND(AO>0,Stp<4),true,false)}">
+                                                <li>There are incomplete payments of total AED&nbsp;<apex:outputText value="{0,number,###,##0.00}"><apex:param value="{!AO}" /></apex:outputText>&nbsp;needs to be processed</li>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div> 
+        <script type="text/javascript">$("#pw").dialog({title:"Requires Attention!!",autoOpen: false,show: {effect: "drop",duration: 200},hide: {effect: "explode",duration: 400}});</script> 
+        <a style="cursor: pointer;" href="" onclick="$('#pw').dialog({width:400,modal: true});$('#pw').dialog('open');"><img src="{!URLFOR($Resource.axsRS, '/images/info.gif')}" style="width:28px;height:28px;vertical-align: middle;" title="Information" /></a>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none"  rendered="{!IF(Stp=1,true,false)}">
+        <script type="text/javascript">
+         //<![CDATA[
+            function sd(){"function"==typeof afsd&&"function"==typeof vfrm&&vfrm("Draft")&&(toggle_inputs(),setNav(),afsd())}
+            function so(){"function"==typeof afso&&"function"==typeof vfrm&&vfrm("Open")&&(toggle_inputs(),setNav(),typeof fnxPg!='undefined'?afso(fnxPg):afso())}
+            function sv(){"function"==typeof afs&&"function"==typeof vfrm&&vfrm("{!R.STA__c}")&&(toggle_inputs(),setNav(),afs())}
+            function cr(){confirm("Are you sure you want to cancel Request? This action cannot be undone")&&"function"==typeof afcr&&(toggle_inputs(),setNav(),afcr())}
+            function em(){setNav();window.location.href='/apex/{!pg}?id={!R.Id}&m=e';}
+            function vm(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/{!pg}?id={!R.Id}&m=v")}
+            function ei(){ setNav();window.location.href='/apex/{!nxtPg}?id={!R.Id}'; }
+        function eii(){ setNav();window.location.href='/apex/grqei?id={!R.Id}'; }
+            function eiims(){ setNav();window.location.href='/apex/grqei?id={!R.Id}'; }
+            function goBack(){setNav();window.location.href={!ispu}?'/apex/gpm':'/home/home.jsp';}
+           
+            function srh(sr){window.open('https://emea.salesforce.com/00O20000006bT0l?pv0='+sr);}
+            function gotoDocs(){setNav();window.location.href="/apex/grqup?id={!R.Id}&retURL=%2Fapex%2F{!pg}%3Fid%3D{!R.Id}"}
+            function createissueold(reqid,reqname){window.location.href='/a0c/e?CF00N20000009QV4R_lkid='+reqid+'&CF00N20000009QV4R='+reqname+'&cancelURL='+reqid;}
+            function createissue(reqid,reqname){window.location.href='/500/e?CF00N2800000JraV3_lkid='+reqid+'&CF00N2800000JraV3='+reqname+'&cancelURL='+reqid;}
+         
+         
+         //]]> 
+         </script>      
+        <apex:outputPanel layout="none">
+        <a href="" onClick="createissue('{!R.Id}','{!r.name}')" class="btnNrm">Connect</a>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!R.rDocs__r.size>0}">
+        <a href="" onclick="gotoDocs();" class="btnLnk">Review Docs</a>
+        </apex:outputPanel>
+          
+          <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(OR(R.STA__c='Open',R.STA__c='Draft')))}">
+         <a href="" class="btnNrm" onClick="window.open('/apex/grbrcd?id={!R.Id}'), '_blank'">Print Sticker</a> 
+          </apex:outputPanel>
+          <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),NOT(OR(R.STA__c='Open',R.STA__c='Draft')))}">
+                    <a href="" onClick="eiims();" class="btnNrm">Manage Request <b>&gt;</b></a>
+                </apex:outputPanel>          
+        <apex:outputPanel layout="none" rendered="{!AND(isNew,NOT(pgHide))}">
+            <a href="" onClick="goBack();" class="btnCncl"><b>&lt;</b> Cancel </a>
+            <a href="" onClick="sd();" class="btnNrm">Save Draft</a>
+            <a href="" onClick="so();" class="btnSave">Save &amp; Continue <b>&gt;</b></a>
+        </apex:outputPanel>
+         <apex:outputPanel layout="none" rendered="{!AND(isNew,pgHide)}">
+            <a href="" onClick="goBack();" class="btnCncl"><b>&lt;</b> Cancel</a>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!AND(isView,NOT(pgHide))}">
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Draft',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!IF(R.AP__c<=0,true,false)}">
+                    <a href="" onClick="cr();" class="btnNrm">Cancel Request</a>
+                </apex:outputPanel>
+                <a href="" onClick="em();" class="btnSave">Continue <b>&gt;</b></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Open',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!IF(R.AP__c<=0,true,false)}">
+                    <a href="" onClick="cr();" class="btnNrm">Cancel Request</a>
+                </apex:outputPanel>
+                <a href="" onClick="em();" class="btnNrm">Edit</a>
+                <apex:outputPanel layout="none" rendered="{!IF(R.srvc__r.uid__c == '208',true,false)}">
+                    <a href="" onClick="em();" class="btnSave">Continue<b>&gt;</b></a>
+                </apex:outputPanel> 
+                <apex:outputPanel layout="none" rendered="{!IF(R.srvc__r.uid__c != '208',true,false)}">
+                    <a href="" onClick="ei();" class="btnSave">Continue<b>&gt;</b></a>
+                </apex:outputPanel> 
+            </apex:outputPanel>  
+            <apex:outputPanel layout="none" rendered="{!IF(AND(R.STA__c='In Process',ispu),true,false)}">
+                <apex:outputPanel layout="none" rendered="{!IF(AND(R.AP__c<=0,R.AOP__c<=0),true,false)}">
+                    <a href="" onClick="cr();" class="btnNrm">Cancel Request</a>
+                </apex:outputPanel>                
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!AND(OR($Profile.Name=='M',$Profile.Name=='M2',$Profile.Name=='System Administrator'),NOT(ispu),!rCls)}">
+                <apex:outputPanel layout="none">
+                    <a href="" onClick="cr();" class="btnNrm">Cancel Request (BO)</a>
+                </apex:outputPanel>                
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Under Review',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="em();" class="btnNrm">Edit</a>
+                    <a href="" onClick="ei();" class="btnSave">Continue</a>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!ispu}">
+                    <a href="" onClick="ei();" class="btnNrm">Manage Request <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='In Process',true,false)}">          
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="em();" class="btnNrm">Edit</a>
+                    <a href="" onClick="ei();" class="btnSave">Continue <b>&gt;</b></a>
+                </apex:outputPanel>         
+                <apex:outputPanel layout="none" rendered="{!ispu}">
+                    <a href="" onClick="ei();" class="btnSave">Manage Request <b>&gt;</b></a> 
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Completed',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>             
+            </apex:outputPanel>
+             <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Rejected',true,false)}" >
+                 <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>             
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='On Hold',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="em();" class="btnSave">Reopen</a>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnNrm">Details <b>&gt;</b></a>
+                </apex:outputPanel>                             
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Cancelled',true,false)}" >
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>             
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!AND(isView,pgHide)}">
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Draft',true,false)}">            
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Open',true,false)}">
+               <a href="" onClick="ei();" class="btnSave">Continue <b>&gt;</b></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Under Review',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">               
+                    <a href="" onClick="ei();" class="btnSave">Continue <b>&gt;</b></a>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!ispu}">
+                    <a href="" onClick="ei();" class="btnNrm">Manage Request <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='In Process',true,false)}">          
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="ei();" class="btnSave">Continue <b>&gt;</b></a>
+                </apex:outputPanel>         
+                <apex:outputPanel layout="none" rendered="{!ispu}">
+                    <a href="" onClick="ei();" class="btnSave">Manage Request <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Completed',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Rejected',true,false)}" >
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>         
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='On Hold',true,false)}">
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>             
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Cancelled',true,false)}" >
+                <apex:outputPanel layout="none" rendered="{!showEI}">
+                    <a href="" onClick="ei();" class="btnSave">Details <b>&gt;</b></a>
+                </apex:outputPanel>         
+            </apex:outputPanel>
+        </apex:outputPanel> 
+        <apex:outputPanel layout="none" rendered="{!AND(isEdit,pgHide)}">
+            <a href="" onClick="vm();" class="btnCncl"><b>&lt;</b> Close</a>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!AND(isEdit,NOT(pgHide))}">
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Draft',true,false)}">           
+                <a href="" onClick="vm();" class="btnCncl"><b>&lt;</b> Back</a>
+                <a href="" onClick="sd();" class="btnNrm">Save Draft</a>
+                <a href="" onClick="so();" class="btnSave">Next <b>&gt;</b></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Open',true,false)}">
+                <a href="" onClick="vm();" class="btnCncl"><b>&lt;</b> Back</a>
+                <a href="" onClick="so();" class="btnSave">Continue <b>&gt;</b></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Under Review',true,false)}">
+                <a href="" onClick="vm();" class="btnSave"><b>&lt;</b> Back</a>
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="sv();" class="btnSave">Continue <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='In Process',true,false)}">
+                <a href="" onClick="vm();" class="btnNrm"><b>&lt;</b>Back</a>
+                <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                    <a href="" onClick="sv();" class="btnSave">Continue <b>&gt;</b></a>
+                </apex:outputPanel>
+            </apex:outputPanel>                 
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Completed',true,false)}">
+                <a href="" onClick="vm();" class="btnNrm"><b>&lt;</b> Close</a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Rejected',true,false)}">
+                <a href="" onClick="vm();" class="btnNrm"><b>&lt;</b> Close</a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='Cancelled',true,false)}">
+                <a href="" onClick="vm();" class="btnNrm"><b>&lt;</b> Close</a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!IF(R.STA__c='On Hold',true,false)}">         
+                <a href="" onClick="vm();" class="btnNrm"><b>&lt;</b> Close</a>
+            </apex:outputPanel>
+        </apex:outputPanel>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none"  rendered="{!IF(Stp=2,true,false)}">
+        <script type="text/javascript">
+         //<![CDATA[
+            function vldFrm(){return vrqXFs()&&xevOS()?!0:!1}           
+            function sv(){vldFrm()&&"function"==typeof afs&&(toggle_inputs(),setNav(),afs())}
+            function svcls(){vldFrm()&&"function"==typeof afsvcls&&(toggle_inputs(),setNav(),afsvcls())}
+            var cnfCorr = false;
+            function svc(){
+                if(vldFrm()){
+                    if(cnfCorr){
+                        if(typeof afsvc=='function'){
+                            if(confirm('There are one or more items needs your correction. Please make sure all required corrections are completed before submission. Do you want to continue?')){
+                                toggle_inputs();
+                                setNav();
+                                afsvc();
+                            }
+                        }
+                    }
+                    else{
+                        if(typeof afsvc=='function'){
+                            toggle_inputs();
+                            setNav();
+                            afsvc();
+                        }
+                    }
+                }
+            }
+            function cnt(){"function"==typeof afcnt&&(toggle_inputs(),setNav(),afcnt())}
+            function rld(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/{!pg}?id={!R.Id}")}
+            function goBack(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&xevOC()&&setNav()&&(window.location.href="/{!R.Id}")}
+            function gotoDocs(){setNav();window.location.href="/apex/grqup?id={!R.Id}&retURL=%2Fapex%2F{!pg}%3Fid%3D{!R.Id}"}   
+         
+         //]]> 
+         </script> 
+         <a href="" onClick="goBack();" class="btnCncl"><b>&lt;</b> Previous</a>
+         <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}">
+            <a href="" onClick="rld();" class="btnCncl">Refresh</a>
+             <apex:outputPanel rendered="{!OR(R.srvc__r.uid__c == '208',R.srvc__r.uid__c == '216',R.srvc__r.uid__c == '220')}">
+               <a href="" class="btnNrm" onClick="window.open('/apex/PMSLeaseValidate?rid={!R.Id}'), '_blank'">Validate Lease</a>  
+             </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!AND(NOT(ispu),!rCls)}">
+                 <a href="" onClick="svcls();" class="btnCncl">Save &amp; Close</a>
+                 <a href="" onClick="sv();" class="btnNrm">Save</a> 
+                 <a href="" class="btnNrm" onClick="window.open('/apex/grbrcd?id={!R.Id}'), '_blank'">Print Sticker</a> 
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!showInfo}">
+                <a href="" id="lnkshOpt" class="btnLnk"  onClick="shOpt?this.innerHTML='Show Options':this.innerHTML='Hide Options';shOpts(!shOpt);" title="Show or Hide optional items">Show Options</a>
+                <apex:outputPanel layout="none" rendered="{!R.rDocs__r.size>0}"><a href="" onclick="gotoDocs();" class="btnLnk">Review Docs</a></apex:outputPanel>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!!rCls}">
+            <a href="" onClick="svc();" class="btnSave">{!IF(nC,'Submit','Continue')} <b>&gt;</b></a>
+            </apex:outputPanel>
+             
+         </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!pgHide}">
+            <apex:outputPanel rendered="{!showInfo}">
+                <a href="" id="lnkshOpt" class="btnLnk"  onClick="shOpt?this.innerHTML='Show Options':this.innerHTML='Hide Options';shOpts(!shOpt);" title="Show or Hide optional items">Show Options</a>
+                <apex:outputPanel layout="none" rendered="{!R.rDocs__r.size>0}"><a href="" onclick="gotoDocs();" class="btnLnk">Review Docs</a></apex:outputPanel>
+            </apex:outputPanel>
+            <a href="" onClick="cnt();" class="btnSave">Continue <b>&gt;</b></a>
+        </apex:outputPanel>
+    </apex:outputPanel>
+     <apex:outputPanel layout="none"  rendered="{!IF(Stp=1,true,false)}">
+        <script type="text/javascript">
+         //<![CDATA[
+            function sv(){"function"==typeof afs&&(toggle_inputs(),setNav(),afs())}
+            function svc(){"function"==typeof afsvc&&(toggle_inputs(),setNav(),afsvc())};
+            function cnt(){"function"==typeof afcnt&&(toggle_inputs(),setNav(),afcnt())}
+            function g2r(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/{!R.Id}")}
+            function rld(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/grqup?id={!R.Id}")}
+            function goBack(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/grqei?id={!R.Id}")}
+            function dltA(a){"function"==typeof afdltA&&(reqDocId.value=a,toggle_inputs(),setNav(),afdltA())};
+            function openDialog(attName, attURL){ 
+                var max= parseInt(document.getElementById(attName+'_max').value); 
+                var cur= parseInt(document.getElementById(attName+'_cur').value);
+                if(cur<max){ 
+                    document.getElementById("currentImage").value=attName;
+                    attURL=document.getElementById("currentImageURL").value+attURL ;
+                    if(attName.toLowerCase().indexOf('photo')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/passport-UK.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('passport')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/passport.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('eida')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/eida.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/visa.jpg')}';}
+                    else{document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/gos_paperstack.png')}';}
+                    Avgrund.show( "#default-popup" ); 
+                }
+                else{ alert("You have uploaded Maximum number of attachments."); closeDialog(); } 
+            }
+            function openSecondDialog(){Avgrund.show( "#second-popup" );}
+            function closeDialog(){Avgrund.hide();}
+            function setAttachment(){closeDialog();Pageonload(); var currentimage=document.getElementById("currentImage").value; var currentIndex=document.getElementById(currentimage+"_cur").value; var cur= parseInt(document.getElementById(currentimage+'_cur').value); document.getElementById(currentimage+'_cur').value=cur; var attchId=document.getElementById("attchId").value; document.getElementById(currentimage+"_hid"+cur).value=attchId; document.getElementById(currentimage+cur).style.display='block'; document.getElementById(currentimage+"_href"+cur).href='../servlet/servlet.FileDownload?file='+attchId+"&isdtp=vw"; document.getElementById(currentimage+"_img"+cur).src='../servlet/servlet.FileDownload?file='+attchId; }
+            function resetAttchmentCount(){Pageonload();var currentimage=document.getElementById("currentImage").value;var currentIndex=document.getElementById(currentimage+"_cur").value; var cur=parseInt(document.getElementById(currentimage+'_cur').value); document.getElementById(currentimage+cur).style.display='none'; document.getElementById(currentimage+"_href"+cur).href='#'; document.getElementById(currentimage+"_img"+cur).src='#'; if(cur>0){cur=cur-1;} document.getElementById(currentimage+'_cur').value=cur; document.getElementById(currentimage+cur).style.display='none'; document.getElementById(currentimage+"_href"+cur).href='#'; document.getElementById(currentimage+"_img"+cur).src='#'; }
+            // use load event on window to start the script        
+         //]]> 
+         </script> 
+     </apex:outputPanel>
+    <apex:outputPanel layout="none"  rendered="{!IF(Stp=3,true,false)}">
+        <script type="text/javascript">
+         //<![CDATA[
+            function sv(){"function"==typeof afs&&(toggle_inputs(),setNav(),afs())}
+            function svc(){"function"==typeof afsvc&&(toggle_inputs(),setNav(),afsvc())};
+            function cnt(){"function"==typeof afcnt&&(toggle_inputs(),setNav(),afcnt())}
+            function g2r(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/{!R.Id}")}
+            function rld(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/grqup?id={!R.Id}")}
+            function goBack(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/grqei?id={!R.Id}")}
+            function svGoBack(){setNav()&&(window.location.href="/apex/grqei?id={!R.Id}")}
+            function dltA(a){"function"==typeof afdltA&&(reqDocId.value=a,toggle_inputs(),setNav(),afdltA())};
+            function openDialog(attName, attURL){ 
+                var max= parseInt(document.getElementById(attName+'_max').value); 
+                var cur= parseInt(document.getElementById(attName+'_cur').value);
+                if(cur<max){ 
+                    document.getElementById("currentImage").value=attName;
+                    attURL=document.getElementById("currentImageURL").value+attURL ;
+                    if(attName.toLowerCase().indexOf('photo')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/passport-UK.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('passport')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/passport.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('eida')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/eida.jpg')}';}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/visa.jpg')}';}
+                    else{document.getElementById("fimageid").src='{!URLFOR($Resource.gso_fileuploadNew, '/images/gos_paperstack.png')}';}
+                    Avgrund.show( "#default-popup" ); 
+                }
+                else{ alert("You have uploaded Maximum number of attachments."); closeDialog(); } 
+            }
+            function openSecondDialog(){Avgrund.show( "#second-popup" );}
+            function closeDialog(){Avgrund.hide();}
+            function setAttachment(){closeDialog();Pageonload(); var currentimage=document.getElementById("currentImage").value; var currentIndex=document.getElementById(currentimage+"_cur").value; var cur= parseInt(document.getElementById(currentimage+'_cur').value); document.getElementById(currentimage+'_cur').value=cur; var attchId=document.getElementById("attchId").value; document.getElementById(currentimage+"_hid"+cur).value=attchId; document.getElementById(currentimage+cur).style.display='block'; document.getElementById(currentimage+"_href"+cur).href='../servlet/servlet.FileDownload?file='+attchId+"&isdtp=vw"; document.getElementById(currentimage+"_img"+cur).src='../servlet/servlet.FileDownload?file='+attchId; }
+            function resetAttchmentCount(){Pageonload();var currentimage=document.getElementById("currentImage").value;var currentIndex=document.getElementById(currentimage+"_cur").value; var cur=parseInt(document.getElementById(currentimage+'_cur').value); document.getElementById(currentimage+cur).style.display='none'; document.getElementById(currentimage+"_href"+cur).href='#'; document.getElementById(currentimage+"_img"+cur).src='#'; if(cur>0){cur=cur-1;} document.getElementById(currentimage+'_cur').value=cur; document.getElementById(currentimage+cur).style.display='none'; document.getElementById(currentimage+"_href"+cur).href='#'; document.getElementById(currentimage+"_img"+cur).src='#'; }
+            // use load event on window to start the script        
+         //]]> 
+         </script> 
+        <a href="" onClick="goBack();" class="btnCncl"><b>&lt;</b> Previous</a>
+        <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+          <a href="" onClick="svGoBack();" class="btnCncl">Save &amp; ManageItems </a>
+        </apex:outputPanel>        
+        <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}">
+            <a href="" onClick="rld();" class="btnNrm">Refresh</a>
+            <a href="" onClick="svc();" class="btnSave">Continue <b>&gt;</b></a>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!AND(pgHide,!rCls)}">
+            <a href="" onClick="cnt();" class="btnSave">Continue <b>&gt;</b></a>
+        </apex:outputPanel>
+        <a href="" onClick="g2r();" class="btnCncl">Close</a>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none"  rendered="{!IF(OR(Stp=4,Stp=5),true,false)}">
+        <script type="text/javascript">
+             //<![CDATA[
+                function sv(){
+                  if('{!R.srvc__r.uid__c}' == '016' || '{!R.srvc__r.uid__c}' == '105' || '{!R.srvc__r.uid__c}' == '001' || '{!R.srvc__r.uid__c}' == '002' || '{!R.srvc__r.uid__c}' == '020' || '{!R.srvc__r.uid__c}' == '021' || '{!R.srvc__r.uid__c}' == '040' || '{!R.srvc__r.uid__c}' == '078' ){
+                      confirm("I have reviewed the information and the uploaded documents against this service request. By submission, I take full responsibility for the contents of the form plus documents uploaded and attest that the information on this form and uploaded documents are free of errors. In case of errors, I agree to bear all costs required to rectify any such errors or mistakes.")&&"function"==typeof afs&&(toggle_inputs(),setNav(),afs())
+                     }
+                      else
+                       confirm("Proceeding Next will initiate a Payment Transaction. Do you want to continue?")&&"function"==typeof afs&&(toggle_inputs(),setNav(),afs())
+                }
+                function g2r(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/{!R.Id}")}
+                function g2r2(){setNav();window.location.href="/{!R.Id}";}
+                function rld(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href="/apex/grqpy?id={!R.Id}")}
+                function goBack(){confirm("Any changes you have made will be discarded. Do you want to continue?")&&setNav()&&(window.location.href=document.referrer)}
+             //]]> 
+        </script> 
+        <apex:outputPanel layout="none"  rendered="{!IF(Stp=4,true,false)}">
+            <a href="" onClick="goBack();" class="btnCncl"><b>&lt;</b> Previous</a>
+            <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}">
+                <a href="" onClick="sv();" class="btnSave">Proceed with Payment <b>&gt;</b></a>
+            </apex:outputPanel>
+            <a href="" onClick="g2r();" class="btnCncl">Close</a>           
+        </apex:outputPanel>
+        <apex:outputPanel layout="none"  rendered="{!IF(Stp=5,true,false)}">
+            <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}">
+                <a href="" onClick="g2r2();" class="btnSave">Finish <b>&gt;</b></a>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!pgHide}">
+                <a href="" onClick="g2r2();" class="btnCncl">Close</a>
+            </apex:outputPanel>
+        </apex:outputPanel>
+    </apex:outputPanel>
+    <apex:outputPanel layout="none"  rendered="{!IF(Stp=6,true,false)}">
+         <script type="text/javascript">
+             //<![CDATA[
+                function g2r(){setNav();window.location.href=null=={!ISNULL(T)}?"/a0F/o":"/{!R.Id}"}
+                function sv(){"function"==typeof afs&&"function"==typeof vfrm&&vfrm()&&(toggle_inputs(),setNav(),afs())}
+                function semli(){document.getElementById(seml).value=true;}
+             //]]> 
+        </script>
+        <apex:variable var="cnSv" value="{!AND(T.STA__c ='Open',OR(NOT(ispu),AND(ispu,T.TP__c='Payment',T.md__c!='Customer Deposit',T.md__c!='Credit / Debit Card')))}"/>
+       <apex:variable var="seml" value="{!AND(T.STA__c ='Open',AND(NOT(ispu),T.TP__c='Refund'))}"/>
+       <apex:outputPanel layout="none" rendered="{!seml}">          
+            <a href="" onClick="semli();sv();" class="btnSave">Resend email </a>
+        </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!AND(T.STA__c ='Open',T.md__c == 'Wire Transfer')}">
+            <a href="/apex/grqtwt?id={!T.id}"  class="btnSave">Convert Customer Deposit</a>
+        </apex:outputPanel>
+        <a href="" onClick="g2r();" class="btnCncl"><b>&lt;</b> Close</a>
+        <apex:outputPanel layout="none" rendered="{!cnSv}">
+            <a href="" onClick="sv();" class="btnSave">Save <b>&gt;</b></a>
+        </apex:outputPanel>
+    </apex:outputPanel>
+</div>
+<script>
+    $('.btnSave,.btnCncl').on('click',function(){
+        $('*').addClass('disabledEvents');
+    });
+    
+    function toggle_inputs() {
+        // doToggle(document.getElementsByTagName('input'));
+        //  doHide(document.getElementsByTagName('a'));
+        //doToggle(document.getElementsByTagName('select'));    
+        $('*').removeClass('disabledEvents');
+    }
+</script>
+</apex:component>

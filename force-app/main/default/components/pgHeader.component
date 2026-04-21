@@ -1,0 +1,47 @@
+<apex:component layout="block"  >  
+    <apex:attribute name="entityId" description="Record ID" type="Id" />  
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" default="true"/> 
+    <apex:attribute name="isgu" description="is a guest user" type="Boolean" /> 
+    <apex:attribute name="tabName" description="The name of the tab in the header to be marked as selected" type="String" default="Request"/>
+    <apex:attribute name="iconURL" description="Page Icon" type="String" default="/s.gif"/>    
+    <apex:attribute name="title" description="The text displayed at the top of the colored title bar." type="String" />
+    <apex:attribute name="subtitle" description="The text displayed just under the main title in the colored title bar.  " type="String"/>
+    <apex:attribute name="Description" description="Descriptive text for the page that displays just under the colored title bar." type="String"/>
+    <apex:attribute name="STA" description="Request Status" type="String"/>
+    <apex:stylesheet value="{!URLFOR($Resource.JQ, '/css/redmond/jquery-ui-1.10.4.custom.min.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JQ, '/js/jquery-ui-1.10.4.custom.min.js')}"/>
+    <div id="abx"><div id="adt"></div></div>
+    <script type="text/javascript">
+        $("#abx").dialog({autoOpen: false,show: {effect: "drop",duration: 200},hide: {effect: "explode",duration: 400}});
+        function alrt(a,b){document.getElementById("adt").innerHTML="<br/>"+b;$("#abx").dialog({width:300,modal:!0});$("#abx").dialog("option","title",a);$("#abx").dialog("open")}
+    </script> 
+    <apex:outputPanel rendered="{!OR(ispu,isgu)}" layout="none">     
+        <div class="header-info">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td class="icon-img"><div><img src="{!iconURL}" /></div></td>
+                    <td class="header-content">
+                        <apex:outputPanel layout="none" rendered="{!NOT(ISNULL(title))}"><h1>{!title}<br/><small>{!subtitle}</small></h1></apex:outputPanel>
+                         <apex:outputPanel layout="none" rendered="{!NOT(ISNULL(Description))}">{!Description}</apex:outputPanel>                                            
+                    </td>
+                    <td class="page-status"><apex:outputPanel layout="none" rendered="{!NOT(ISNULL(STA))}">                     
+                    <span class="label">{!STA}</span></apex:outputPanel>
+                    </td>
+                </tr>
+                 
+            </tbody>
+        </table>
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}" styleClass="bPageTitle">
+        <div class="ptBody">
+            <div class="content">
+                <img src="/s.gif" class="pageTitleIcon" />
+                <h1 class="pageType">{!title}<span class="titleSeparatingColon">:</span></h1>
+                <h2 class="pageDescription">{!subtitle} - {!STA}</h2>
+                <div class="blank">&nbsp;</div>
+            </div>
+        </div>  
+    </apex:outputPanel>
+</apex:component>

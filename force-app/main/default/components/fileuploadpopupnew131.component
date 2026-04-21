@@ -1,0 +1,2019 @@
+<apex:component controller="gctlRequ" allowDML="true">
+    <!-- Rerendeing start-->
+    <apex:attribute name="keyAssigned"
+                    type="String"
+                    assignTo="{!key}"
+                    description="The key given to this component so the page can easliy get access to it." />
+    
+    <apex:attribute name="PageControllerBaseCalling" 
+                    type="pgBsCtrl" 
+                    assignTo="{!pageController}" 
+                    description="The controller for the page." />
+    <apex:attribute name="rerender" description="Hand over a list of additional element ids to rerender" type="String" required="false"/>
+    <!-- Rerendeing end-->    
+    <apex:attribute name="R" description=" " type="g_Req__c" assignTo="{!rq}" required="true"  />
+    <apex:attribute name="cv" description="Component view" type="String"  />
+    <!--userAgent  -- {!userAgent}<br />
+isMobile  -- {!isMobile}-->
+    <apex:outputText rendered="true"><!--{!!isMobile}-->
+        <!-- 
+<apex:attribute name="dctype" description=" " type="String" assignTo="{!docType}" required="false"  />
+<apex:attribute name="dcno" description=" " type="String" assignTo="{!srNo}" required="false"  />
+-->
+        <style>
+            i.icon-close {
+            color: #9B9B9B !important;
+            font-size: 0.75rem !important;
+            }
+            /*CSS for iPad starts*/
+            /*CSS for portrait orientation starts*/
+            @media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:portrait) {
+            .iaPrnt, .image-area, .dwtcontrolContainer, .DWT_imageEditor{
+            width: 320px !important;
+            }
+            }
+            /*CSS for portrait orientation ends*/
+            /*CSS for landscape orientation starts*/
+            @media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
+            .iaPrnt, .image-area, .dwtcontrolContainer, .DWT_imageEditor{
+            width: 400px !important;
+            }
+            }
+            /*CSS for landscape orientation ends*/
+            /*CSS for iPad ends*/
+            
+            /*CSS for iPhone starts*/
+            @media (max-width:480px){
+            .iaPrnt, .image-area, .dwtcontrolContainer, .DWT_imageEditor{
+            width:300px !important;
+            }
+            #modal_fileuploadPopUp h2 {
+            font-size: 1em !important;
+            }
+            input.input-datepicker {
+            padding: 1em 0.5em !important;
+            }
+            }
+            .avgrund-popup {
+            width: 890px !important;
+            height: 700px !important;
+            }
+            #dialogProgress{
+            z-index:20 !important;
+            }
+            .ds-dwt-container{
+            background-color: #fff !important;
+            }
+            .DVS_Thumbnail {
+            background: #fff !important;
+            }
+            .dynamsoft-dwt-dialogProgress .loader1{margin-auto;}
+            .dynamsoft-dwt-dlg-button {
+            border-radius: 20px !important;
+            background: #3e528a !important;
+            }
+            /*to replace default loader on DW Object loads */
+            .dynamsoft-loadingMsg div{
+            margin: 6px 23px !important;
+            }
+            .loading-dwt{
+            width: 200px !important;
+            height: 50px !important;
+            }
+            .dynamsoft-loadingMsg{
+            width:20% !important;
+            height: auto !important;
+            }
+            .dynamsoft-loadingMsg .loading-dwt{
+            background-repeat: no-repeat;
+            background-image: url(/resource/assets_NUI/images/loader_ddd.gif) !important;
+            }
+            /*to replace default loader on DW Object loads */
+        </style>
+        <!-- old js css Start -->
+        <apex:stylesheet value="{!$Resource.gCss}"/>
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AxsWebTwain12_part2}"/>
+        <!--
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'jquery-1.8.0.min.js')}"  />
+-->     
+        <apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'avgrund.js')}"  />
+        <script type="text/javascript" src="https://unpkg.com/dwt@16.1.4/dist/dynamsoft.webtwain.min.js"/>    
+        <!--   
+            <apex:includeScript value="{!URLFOR($Resource.AxsWebTwain16, 'dynamsoft.webtwain.config.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.AxsWebTwain16, 'dynamsoft.webtwain.initiate.js')}"  />
+                    <apex:includeScript value="{!URLFOR($Resource.AxsWebTwain16, 'dynamsoft.webtwain.addon.pdf.js')}"  />
+                        <apex:includeScript value="{!URLFOR($Resource.AxsWebTwain16, 'dynamsoft.upload.js')}"  />
+                            -->
+                            
+                            
+                            <!--<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> -->
+                                <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+                                    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+                                        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+                                            <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+                                                
+                                                
+                                                <!-- old js css End-->
+                                                    <!-- from btn cmp Start-->
+                                                        
+                                                        <!--<script src="/resource/0/AXS1X/assets/plugins/jquery.min.js"></script>-->
+        <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+        <script src="/resource/AXS1X/assets/plugins/multiSelect/jquery.lwMultiSelect.min.js"></script>
+        <script src="/resource/AXS1X/assets/plugins/jquery-mask/jquery.inputmask.bundle.js"></script>
+        
+        
+        <script src="/resource/AXS1X/assets/plugins/popper.min.js"></script>
+        <script src="/resource/AXS1X/assets/plugins/bootstrap-4.1.3/js/bootstrap.min.js"></script>
+        <script src="/resource/AXS1X/assets/plugins/jBox049/jBox.min.js" type="text/javascript"></script>
+        <script src="/resource/AXS1X/assets/plugins/DataTables/datatables.min.js" type="text/javascript"></script>
+        <script src="/resource/1/AXS1X/assets/js/scripts.js"></script>
+        
+        <apex:actionFunction name="afs" action="{!saveAttachment}" status="theStatus" rerender="opd,msg,{!rerender}" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:stopLoaderThis();javascript:spnChange();javascript:setAttachment();hideGLoader();"/>
+            <apex:actionFunction name="afdltA" action="{!deleteAttachment}" status="theStatus" rerender="opd" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount();javascript:stopLoaderThis();" />
+                <apex:actionFunction name="afsvc" action="{!saveContinue}" status="theStatus" rerender="opd" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount();javascript:stopLoaderThis();" />
+                    <apex:actionFunction name="afcnt" action="{!nextPage}" status="theStatus" rerender="opd" onbeforedomupdate="javascript: toggle_inputs();"/>
+                        
+                        <!--
+                        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.docq__c}" rendered="false" />
+                            -->
+                            
+                            <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+                                <apex:InputHidden value="{!reqDocId}" id="reqDocId"/>
+                                    <apex:InputHidden value="{!docName}" id="docName"/>
+                                        
+                                        <!--  dummy Filed for single upload doc-->
+                                            
+                                            <apex:inputHidden id="dummyadh" value="{!dummyadh}"/>             
+                                            <script>cs["dummyadh"]=document.getElementById("{!$Component.dummyadh}");</script>
+        <!-- end-->
+        <!-- from btn cmp End-->
+        
+        <script type="text/javascript">
+        function startLoaderThis(){
+            var currentDoc = document.getElementById("udDocType").value;
+            console.log('in startLoader!!! >> '+ currentDoc);
+            $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+            $('*').addClass('loadingProgress');
+        }   
+        
+        function stopLoaderThis(){
+            currentDoc = document.getElementById("udDocType").value;
+            console.log('in stopLoaderThis!!! >> '+ currentDoc);
+            $('[forLoad="'+currentDoc+'"]').find('.loader_img').hide();
+            $('*').removeClass('loadingProgress');
+        }
+        </script>
+        
+        <script type="text/javascript" language="javascript">
+        
+        var thisFilePath="Uploaded File URL";
+        function handleBrowseClick(){
+            var fileinput = document.getElementById("files");
+            //alert('fileinput1 >>'+JSON.stringify(fileinput));
+            fileinput.click();
+            //alert('fileinput2 >>'+JSON.stringify(fileinput));
+        }
+        
+        function saveAttachment(elem) {
+            alert('saveAttachment');
+            if($(elem).hasClass('disabled')) return;
+            $('.attVals').each(function(){
+                let val = $(this).val();
+                if($('#files').val() == val) alert('passport already uploaded!');
+            });
+            if (window.File && window.FileReader && window.FileList && window.Blob) {
+                alert('window.File>>'+ JSON.stringify(window.File));
+                handleFileSelect();
+                //document.getElementById('files').addEventListener('change', handleFileSelect, false);
+                
+            } else {
+                alert('The File APIs are not fully supported in this browser.');
+            }
+        }
+        
+        </script>
+        
+        <script type="text/javascript" language="javascript">
+        
+        var WebTWAIN;
+        var _divDWTSourceContainerID = "source";
+        var seed;
+        var _bInIE;               // If it is in IE
+        var _bInWindows;          // If it is in Windows OS
+        var _bInWindowsX86;       // If it is in X86 platform
+        var _divMessageContainer;   // For message display
+        var _strTempStr = "";       // Store the temp string for display
+        var objEmessage;
+        var re;
+        var strre;
+        var  _iLeft, _iTop, _iRight, _iBottom;
+        Dynamsoft.WebTwainEnv.AutoLoad = true;
+        /* Dynamsoft.WebTwainEnv.UseLocalService = true;
+        //Dynamsoft.WebTwainEnv.ProductKey ='f0068fQAAAFv2N4PoGfUvV/FmYJkW4+kYDnrcwVh1uinEiTpGnWqwAG7BXUKuSU9XG+ovINK1yrX2b7nA7IzsAwHxFEPHWdE=';
+        
+        Dynamsoft.WebTwainEnv.ProductKey ='f0068fQAAAFv2N4PoGfUvV/FmYJkW4+kYDnrcwVh1uinEiTpGnWqwAG7BXUKuSU9XG+ovINK1yrX2b7nA7IzsAwHxFEPHWdE=;f0068WQAAAHcus58hi/2W0v26krtpgOe4cz02mG8OFhP9X2Vyf6G0Wcrj4lRZo2pVACvybNLJZ/qllQsTj96/vdKWhHYI2/k=;f0068oQAAAIquJcPMm1mkR4KmBis/sD5idp00jo2zMmP1hYaXv83rTfN9CRk/6MK21mHE3pFjZsaaKaQPxgWUmUmPLgrXHBQ=';
+        */
+        Dynamsoft.WebTwainEnv.ResourcesPath = "https://unpkg.com/dwt@16.1.4/dist/";
+        Dynamsoft.WebTwainEnv.UseLocalService = false;
+        Dynamsoft.WebTwainEnv.ProductKey ='f0068fQAAAFv2N4PoGfUvV/FmYJkW4+kYDnrcwVh1uinEiTpGnWqwAG7BXUKuSU9XG+ovINK1yrX2b7nA7IzsAwHxFEPHWdE=;f0068WQAAAHcus58hi/2W0v26krtpgOe4cz02mG8OFhP9X2Vyf6G0Wcrj4lRZo2pVACvybNLJZ/qllQsTj96/vdKWhHYI2/k=;f0068oQAAAIquJcPMm1mkR4KmBis/sD5idp00jo2zMmP1hYaXv83rTfN9CRk/6MK21mHE3pFjZsaaKaQPxgWUmUmPLgrXHBQ=';
+        
+        
+        //Dynamsoft.WebTwainEnv.ResourcesPath = '/resource/1611502139000/AxsWebTwain16';
+        //Dynamsoft.WebTwainEnv.ResourcesPath = 'https://demo.dynamsoft.com/DWT/DWTResources';
+        Dynamsoft.WebTwainEnv.ResourcesPath = "https://unpkg.com/dwt@16.1.4/dist";
+        Dynamsoft.WebTwainEnv.Containers = [{ ContainerId: 'dwtcontrolContainer', Width: '400px', Height: '350px' }];
+        
+        Dynamsoft.WebTwainEnv.RegisterEvent('OnWebTwainReady', Dynamsoft_OnReady); // Register OnWebTwainReady event. This event fires as soon as Dynamic Web TWAIN is initialized and ready to be used
+        
+        var DWObject,WebTWAIN, blankField = "", extrFieldsCount = 0, upload_returnSth = true;
+        var CurrentPathName = unescape(location.pathname);
+        var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);
+        var strHTTPServer = location.hostname;
+        var strActionPage;
+        var  dsUploadManager, blankField = "";
+        var extrFieldsCount = 0, upload_returnSth = true;
+        
+        
+        
+        function processImage() {
+            // **********************************************
+            // *** Update or verify the following values. ***
+            // **********************************************
+            /* alert(1);
+
+
+            var imgData = DWObject.SaveSelectedImagesToBase64Binary();
+            var byteArray = Base64Binary.decodeArrayBuffer(imgData);
+            var arrayBuffer = byteArray;
+            var array = new Uint8Array(arrayBuffer);
+            var subscriptionKey ="4da4d622858a4f54a60c3967673d9524";
+            var uriBase = "https://eastasia.api.cognitive.microsoft.com/vision/v2.0/analyze";
+
+            
+            // Request parameters.
+            var params = {
+                "visualFeatures": "Categories,Description,Color",
+                "details": "",
+                "language": "en",
+            };
+
+            // Display the image.
+            //r sourceImageUrl = document.getElementById("inputImage").value;
+            //cument.querySelector("#sourceImage").src = sourceImageUrl;
+
+            // Make the REST API call.
+            $.ajax({
+            url: uriBase + "?" + $.param(params),
+
+            beforeSend: function(jqXHR) {
+                jqXHR.setRequestHeader("Content-Type", "application/octet-stream");
+                jqXHR.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+            },
+
+            type: "POST",
+            processData: false,
+            data: arrayBuffer
+            })
+            .done(function(data, textStatus, jqXHR) {
+
+
+                setTimeout(function() {
+                    // The "Operation-Location" in the response contains the URI to retrieve the recognized text.
+                    var operationLocation = jqXHR.getResponseHeader("Operation-Location");
+
+                    $.ajax({
+                      url: operationLocation,
+                      beforeSend: function(jqXHR) {
+                        jqXHR.setRequestHeader("Content-Type", "application/json");
+                        jqXHR.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+                      },
+                      type: "GET",
+                    })
+
+                    .done(function(data) {
+
+                     alert(data);
+                    })
+
+                    .fail(function(jqXHR, textStatus, errorThrown) {
+                      // Display error message.
+                      var errorString = (errorThrown === "") ? "Error11. " : errorThrown + " (" + jqXHR.status + "): ";
+                      errorString += (jqXHR.responseText === "") ? "" : (jQuery.parseJSON(jqXHR.responseText).message) ?
+                        jQuery.parseJSON(jqXHR.responseText).message : jQuery.parseJSON(jqXHR.responseText).error.message;
+                      alert(errorString);
+                    });
+                }, 5000);
+            })
+
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                // Display error message.
+                var errorString = (errorThrown === "") ? "Error22. " :
+                errorThrown + " (" + jqXHR.status + "): ";
+                errorString += (jqXHR.responseText === "") ? "" :
+                jQuery.parseJSON(jqXHR.responseText).message;
+                alert(errorString);
+            });
+    */
+            
+            
+        }
+        
+        
+        function CheckIfImagesInBuffer() {
+            console.log('In CheckIfImagesInBuffer');
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            console.log('DWObject.HowManyImagesInBuffer >>'+ DWObject.HowManyImagesInBuffer);
+            if (DWObject.HowManyImagesInBuffer == 0) {
+                alert('There is no image in buffer.');
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+        
+        
+        function Dynamsoft_OnReady() {
+            WebTWAIN = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer'); // Get the Dynamic Web TWAIN object that is embeded in the div with id 'dwtcontrolContainer'
+            //console.log('1 WebTWAIN >>'+ JSON.stringify(WebTWAIN));
+            // dwtcontrolContainer
+            if (WebTWAIN) {
+                // to auto crop trailing white spaces
+                //WebTWAIN._AutoCropMethod= 1;
+                var count = WebTWAIN.SourceCount;
+                for (var i = 0; i < count; i++)
+                    document.getElementById("source").options.add(new Option(WebTWAIN.GetSourceNameItems(i), i));
+                
+                var l = '<div class="loader1"></div>';
+                $('.dynamsoft-dwt-dialogProgress').html(l);
+                
+            }
+            
+            WebTWAIN.RegisterEvent("OnPostTransfer", Dynamsoft_OnPostTransfer);
+            WebTWAIN.RegisterEvent("OnPostLoad", Dynamsoft_OnPostLoadfunction);
+            WebTWAIN.RegisterEvent("OnPostAllTransfers", Dynamsoft_OnPostAllTransfers);
+            WebTWAIN.RegisterEvent("OnMouseClick", Dynamsoft_OnMouseClick);
+            WebTWAIN.RegisterEvent("OnImageAreaSelected", Dynamsoft_OnImageAreaSelected);
+            WebTWAIN.RegisterEvent("OnImageAreaDeSelected", Dynamsoft_OnImageAreaDeselected);
+            WebTWAIN.RegisterEvent("OnTopImageInTheViewChanged", Dynamsoft_OnTopImageInTheViewChanged);
+            
+            // console.log('2 WebTWAIN >>'+ JSON.stringify(WebTWAIN));
+            
+        }
+        
+        function LoadImage() {
+            WebTWAIN = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (WebTWAIN) {
+                WebTWAIN.IfShowFileDialog = true; // Open the system's file dialog to load image
+                WebTWAIN.LoadImageEx("", EnumDWT_ImageType.IT_ALL, OnSuccess, OnFailure); // Load images in all supported formats (.bmp, .jpg, .tif, .png, .pdf). OnSuccess or OnFailure will be called after the operation
+            }
+        }
+        function OnSuccess() {
+            console.log('successful');
+        }
+        
+        function OnFailure(errorCode, errorString) {
+            alert(errorString);
+        }
+        
+        function source_onchange() {
+            //document.getElementById("divTwainType").style.display = "";
+            //document.getElementById("btnScan").value = "Scan";
+        }
+        
+        function Simple_AcquireImage() {
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if(DWObject) {
+                DWObject.BrokerProcessType = 1; /* use a separate process for document scanning */
+                DWObject.SelectSource();
+                DWObject.CloseSource();
+                DWObject.OpenSource();
+                DWObject.IfShowUI = false;
+                DWObject.AcquireImage();
+            }
+        }
+        
+        function UpdatePageInfo(){
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            document.getElementById("TotalImage").value = DWObject.HowManyImagesInBuffer;
+            document.getElementById("CurrentImage").value = DWObject.CurrentImageIndexInBuffer + 1;
+            console.log('1 CurrentImage >>>'+ document.getElementById("CurrentImage").value);
+        }
+        
+        function btnLoad_onclick() {
+            var docFor = document.getElementById("udDocType").value;
+            console.log('docFor>>>'+ docFor);
+            document.getElementById("currentImage").value = docFor;
+            console.log('now Filename  >>'+ document.getElementById("currentImage").value);
+           $('#saveAtt').removeClass('disabled'); 
+            DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            console.log('DWObject >>'+ DWObject);
+            console.dir(DWObject);
+            //DWObject.IfShowCancelDialogWhenImageTransfer = true;
+            //alert(DWObject.ProductKey);
+            
+            if (DWObject) {
+                if(!Dynamsoft.Lib.env.bMac){
+                    var OnPDFSuccess = function() {
+                        appendMessage("Loaded an image successfully.<br/>");
+                        updatePageInfo();
+                    };
+                    
+                    var OnPDFFailure = function(errorCode, errorString) {
+                        //checkErrorStringWithErrorCode(errorCode, errorString);
+                    };
+                    
+                    var OnSuccess = function () {
+                        DWObject.IfShowFileDialog = true;
+                        DWObject.Addon.PDF.SetResolution(300);
+                        DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+                        DWObject.LoadImageEx("", EnumDWT_ImageType.IT_PDF, OnPDFSuccess, OnPDFFailure);
+                        
+                    };
+                    
+                    var OnFailure = function(errorCode, errorString) {
+                        appendMessage(errorString);
+                    };
+                    
+                    if(Dynamsoft.Lib.env.bMac)
+                    {
+                        DWObject.IfShowFileDialog = true;
+                        DWObject.Addon.PDF.SetResolution(300);
+                        DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+                        DWObject.LoadImageEx("", EnumDWT_ImageType.IT_PDF, OnPDFSuccess, OnPDFFailure);
+                    }
+                    else
+                    {
+                        DWObject.Addon.PDF.Download("../resource/1489508905000/Pdf", OnSuccess, OnFailure);
+                    }
+                    
+                    //test
+                    var nCount = 0, nCountLoaded = 0, aryFilePaths = [];
+                    DWObject.IfShowFileDialog = false;
+                    function ds_load_pdfa(bSave, filesCount, index, path, filename) {
+                        //alert(path);alert(filename);
+                        // path='C:\\Users\\srinivasa.varanasi\\Desktop\\AXS-2.0';
+                        //filename='Passport Copy.jpg';
+                        nCount = filesCount;
+                        if (nCount == -1) {
+                            Dynamsoft.Lib.detect.hideMask();
+                            return;
+                        }
+                        var filePath = path + "\\" + filename, _oFile = {};
+                        
+                        // var filepath='C:\\Users\\srinivasa.varanasi\\Desktop\\AXS-2.0\\Passport Copy.jpg';
+                        //alert(filePath);
+                        _oFile._filePath = filePath;
+                        _oFile._fileIsPDF = false;
+                        if ((filename.substr(filename.lastIndexOf('.') + 1)).toLowerCase() == 'pdf') {
+                            _oFile._fileIsPDF = true;
+                            
+                        }
+                        //alert(filePath);
+                        aryFilePaths.push(_oFile);
+                        
+                        if (aryFilePaths.length == nCount) {
+                            var i = 0;
+                            function loadFileOneByOne() {
+                                if (aryFilePaths[i]._fileIsPDF) {
+                                    DWObject.Addon.PDF.SetResolution(200);
+                                    DWObject.Addon.PDF.SetConvertMode(EnumDWT_ConverMode.CM_RENDERALL);
+                                }
+                                DWObject.LoadImage(aryFilePaths[i]._filePath,
+                                                   function () {
+                                                       
+                                                       thisFilePath = aryFilePaths[i]._filePath;
+                                                       console.log('Load Image:' + aryFilePaths[i]._filePath + ' -- successful');
+                                                       $('#saveAtt').removeClass('disabled');
+                                                       i++;
+                                                       if (i != nCount)
+                                                           loadFileOneByOne();
+                                                   },
+                                                   function (errorCode, errorString) {
+                                                       Dynamsoft.Lib.detect.hideMask();
+                                                       alert('error Load Image:' + aryFilePaths[i]._filePath + errorString);
+                                                       thisFilePath = aryFilePaths[i]._filePath;
+                                                   }
+                                                  );
+                            }
+                            loadFileOneByOne();
+                        }
+                    }
+                    DWObject.RegisterEvent('OnGetFilePath', ds_load_pdfa);
+                    DWObject.RegisterEvent('OnPostLoad', function (path, name, type) {
+                        nCountLoaded++;
+                        console.log('load' + nCountLoaded);
+                        if (nCountLoaded == nCount) {
+                            DWObject.UnregisterEvent('OnGetFilePath', ds_load_pdfa);
+                            Dynamsoft.Lib.detect.hideMask();
+                        }
+                    });
+                    DWObject.ShowFileDialog(false, "BMP, JPG, PNG, PDF and TIF | *.bmp;*.jpg;*.jpeg;*.png;*.pdf;*.tif;*.tiff", 0, "", "", true, true, 0)
+                    Dynamsoft.Lib.detect.showMask();
+                }
+                else{
+                    
+                    DWObject.IfShowFileDialog = true;
+                    //   DWObject.LoadImageEx("", 5);
+                    DWObject.LoadImageEx("", EnumDWT_ImageType.IT_ALL);
+                    if (checkErrorString()) {
+                        appendMessage("Loaded an image successfully.");
+                    }
+                }
+            }
+        }
+        
+        function btnLoad_onclick() { // to override previous method in ver-12  -- VMKR
+            var docFor = document.getElementById("udDocType").value;
+            console.log('docFor>>>'+ docFor);
+            document.getElementById("currentImage").value = docFor;
+            console.log('now Filename  >>'+ document.getElementById("currentImage").value);
+            //$('#saveAtt').removeClass('disabled');
+            DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            bUpload = false;
+            DWObject.IfShowFileDialog = true;
+            DWObject.LoadImageEx('', 5,
+                                 function () {
+                                 },
+                                 function (errorCode, errorString) {
+                                     alert('Load Image:' + errorString);
+                                 }
+                                );
+        }
+        
+        function initDllForChangeImageSize() {
+            
+            var vInterpolationMethod = document.getElementById("InterpolationMethod");
+            vInterpolationMethod.options.length = 0;
+            vInterpolationMethod.options.add(new Option("NearestNeighbor", 1));
+            vInterpolationMethod.options.add(new Option("Bilinear", 2));
+            vInterpolationMethod.options.add(new Option("Bicubic", 3));
+            
+        }
+        
+        function checkIfImagesInBuffer() {
+            var  DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (DWObject.HowManyImagesInBuffer == 0) {
+                //appendMessage("There is no image in buffer.")
+                return false;
+            }
+            else
+                return true;
+        }
+        
+        function checkErrorString() {
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (DWObject.ErrorCode == 0) {
+                //appendMessage("<span style='color:#cE5E04'><b>" + DWObject.ErrorString + "</b></span><br />");
+                
+                return true;
+            }
+            if (DWObject.ErrorCode == -2115) //Cancel file dialog
+                return true;
+            else {
+                if (DWObject.ErrorCode == -2003) {
+                    var ErrorMessageWin = window.open("", "ErrorMessage", "height=900,width=850,top=0,left=0,toolbar=no,menubar=no,scrollbars=no, resizable=no,location=no, status=no");
+                    ErrorMessageWin.document.writeln(DWObject.HTTPPostResponseString);
+                }
+                appendMessage("<span style='color:#cE5E04'><b>" + DWObject.ErrorString + "</b></span><br />");
+                return false;
+            }
+        }
+        
+        
+        function btnShowImageEditor_onclick() {
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                return;
+            }
+            DWObject.ShowImageEditor();
+        }
+        
+        function btnRotateRight_onclick() {
+            console.log('btnRotateRight_onclick IN');
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                return;
+            }
+            DWObject.RotateRight(DWObject.CurrentImageIndexInBuffer);
+            console.log('btnRotateRight_onclick OUT');
+        }
+        
+        function btnRotateLeft_onclick() {
+            console.log('btnRotateLeft_onclick IN');
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                return;
+            }
+            DWObject.RotateLeft(DWObject.CurrentImageIndexInBuffer);
+            console.log('btnRotateLeft_onclick OUT');
+        }
+        
+        function btnRemoveCurrentImage_onclick() {
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                return;
+            }
+            DWObject.RemoveAllImages();
+            document.getElementById("TotalImage").value = "0";
+            document.getElementById("CurrentImage").value = "";
+        }
+        
+        function appendMessage(strMessage) {
+            
+        }
+        
+        function btnScan_onclick() {
+            
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            
+            DWObject.SelectSourceByIndex(document.getElementById("source").selectedIndex);
+            var width,height,resolution=0;
+            width=document.getElementById("width").value;
+            height=document.getElementById("height").value;
+            resolution=document.getElementById("resolution").value;
+            
+            DWObject.CloseSource();
+            DWObject.OpenSource();
+            
+            
+            
+            DWObject.IfShowUI = false;//document.getElementById("ShowUI").checked;
+            var i;
+            DWObject.PixelType ='2';//color
+            DWObject.Resolution ='175';// document.getElementById("Resolution").value;
+            
+            
+            var attName=document.getElementById("currentImage").value;
+            if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+            else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+                else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="80%";resolution="300";}
+                    else{width="872";height="80%";resolution="175";}
+            DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+            
+            DWObject.IfDisableSourceAfterAcquire = true;
+            DWObject.AcquireImage();
+            
+            DWObject.ChangeImageSize(
+                DWObject.CurrentImageIndexInBuffer,
+                width,
+                height,
+                2
+            );
+            document.getElementById("uploaded_count").value=1;
+        }
+        
+        
+        function btnScan_onclick() {
+            
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            //DWObject.ProductKey = '8EA9C665599A1BC898D245644FD2B21BE0F74A53AF0170B0C0A783602E29217AF07D0F006DB032A416129A543D975E0CA733EC8986156026C0558AA79D4AFF8F0A938FFA82F282FE1B6E847B52A0CBF987602F94C4307FD173386D6C2485E9224348EE2616F2EB95F9B9005AF9107E;F5482164738C12DA7F6533AE98C2593513428A8A799F6BFB481730BD93A9A7427DB8955385DADE0559264C39113184C0892F568A008015BF0D9341250C3CC36B5E4C4F211ECE87246EDBA91A7389EF21FA7E5AB8EA6808E0F8723CD19F7DB6C1EDA3A1A291766129545CEA923FA7B30746;63F9BFA0E785B11CCC056BA56B6C26CAF70FE21A48202921C194E07F0A32F5F34A7BD2EC09E16F40B3C96B3B17153C0ABD90701BA6B666A78E6F009153873FB1CA31A29043DADE7AA23A88A049DF906873DCB66CD57C49794329AD2B0E0C8ACC5A08037EB3FBB437BEFD7FE8DF044D33CD;E444D906B08A0049F37B2CC7E2C07E0AF692786562E98B83DA3F50841D2EF47D529A8F87ADE444DE76584D415AC66F0C59534556A642D55BADFFE7984095B3C0259C43FE7A21924365E17742A5203CBA13D90087B2C4B38A795640EE7CC91B43E29307E096D20A63C0715DF029F21C3D8D';
+            //alert(DWObject.ProductKey);
+            DWObject.SelectSourceByIndex(document.getElementById("source").selectedIndex);  
+            var width,height,resolution=0;    
+            width=document.getElementById("width").value;
+            height=document.getElementById("height").value;
+            resolution=document.getElementById("resolution").value;       
+            
+            DWObject.CloseSource();
+            DWObject.OpenSource();
+            
+            
+            
+            DWObject.IfShowUI = false;//document.getElementById("ShowUI").checked;
+            var i;  
+            DWObject.PixelType ='2';//color
+            DWObject.Resolution ='175';// document.getElementById("Resolution").value;
+            
+            
+            var attName=document.getElementById("currentImage").value;
+            if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+            else if(attName.toLowerCase().indexOf('application')!=-1){width="600";height="800";resolution="100";}
+                else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+                        else{width="872";height="1232";resolution="175";}
+            DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+            
+            
+            //DWObject.IfFeederEnabled = true;//document.getElementById("ADF").checked ;
+            //DWObject.IfDuplexEnabled = false;//document.getElementById("Duplex").checked ;   
+            
+            //DWObject.IfDisableSourceAfterAcquire = true;
+            //alert('IfDisableSourceAfterAcquire');
+            DWObject.IfDisableSourceAfterAcquire = true;
+            DWObject.AcquireImage();
+            
+            DWObject.ChangeImageSize(
+                DWObject.CurrentImageIndexInBuffer,
+                width,
+                height,
+                2
+            );   
+            document.getElementById("uploaded_count").value=1;
+        }
+        
+        function btnCrop_onclick() {
+            console.log(' In method btnCrop_onclick');
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            /*        if (!checkIfImagesInBuffer()) {
+                return;
+            }
+    */
+            if (_iLeft != 0 || _iTop != 0 || _iRight != 0 || _iBottom != 0) {
+                DWObject.Crop(
+                    DWObject.CurrentImageIndexInBuffer,
+                    _iLeft, _iTop, _iRight, _iBottom
+                );
+                _iLeft = 0;
+                _iTop = 0;
+                _iRight = 0;
+                _iBottom = 0;
+                
+                if (checkErrorString()) {
+                    return;
+                }
+                return;
+            }
+            
+            DWObject.ChangeImageSize(
+                DWObject.CurrentImageIndexInBuffer,
+                width,
+                height,
+                2
+            );
+            console.log(' OUT method btnCrop_onclick');
+        }
+        
+        function btnCrop_onclick() { // to override prvious method 
+            
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!checkIfImagesInBuffer()) {
+                return;
+            }
+            
+            if (_iLeft != 0 || _iTop != 0 || _iRight != 0 || _iBottom != 0) {
+                DWObject.Crop(
+                    DWObject.CurrentImageIndexInBuffer,
+                    _iLeft, _iTop, _iRight, _iBottom
+                );
+                _iLeft = 0;
+                _iTop = 0;
+                _iRight = 0;
+                _iBottom = 0;
+                
+                if (checkErrorString()) {
+                    return;
+                }
+                return;
+            }
+            
+            DWObject.ChangeImageSize(
+                DWObject.CurrentImageIndexInBuffer,
+                width,
+                height,
+                2
+            );
+            
+            /*switch (document.getElementById("Crop").style.visibility) {
+        case "visible": document.getElementById("Crop").style.visibility = "hidden"; break;
+        case "hidden": document.getElementById("Crop").style.visibility = "visible"; break;
+        default: break;
+    }
+    document.getElementById("Crop").style.top = ds_gettop(document.getElementById("btnCrop")) + document.getElementById("btnCrop").offsetHeight + "px";
+    document.getElementById("Crop").style.left = ds_getleft(document.getElementById("btnCrop")) - 80 + "px";*/
+            
+            
+            
+        }
+        function parseDoc(){
+            
+            
+            $.ajax({
+                
+                //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                
+                url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                
+                beforeSend: function(xhr) {
+                    
+                    //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb");
+                    
+                    xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9");
+                    
+                },
+                
+                type: 'POST',
+                
+                dataType: 'json',
+                
+                crossOrigin: true,
+                
+                contentType: 'application/json',             
+                
+                processData: false,
+                
+                data: '{"image":'+imageBase64.value+'}',
+                
+                success: function (data) {
+                    
+                    var t=JSON.stringify(data);
+                    t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                    replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                    t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                    t = t.replace("ID Number", "ID_Number").replace('Name', 'Name').replace('Expiry Date','Expiry_Date');
+                    
+                    var memberObject={};
+                    var dd='['+t+']';
+                    console.log('dd::'+dd);
+                    var ddd=JSON.parse(t);
+                    var cl = ddd['confidence_level']*10;
+                    console.log(cl);
+                    if(Math.abs(cl)<0){//isNaN(Math.abs(cl))||Math.abs(cl)<2||ddd.errorMessage!=undefined
+                        axsAlert('File is Invalid','Please do Re-Uplad a clear copy ');
+                        return;
+                        
+                    }
+                    for(i in ddd["data"]){
+                        memberObject[i] = ddd["data"][i];
+                        //memData_x[i] = ddd["data"][i];
+                    }
+                    if(cs['xceidid__c'] && memberObject["ID_Number"] != '' && memberObject["ID_Number"] != undefined){
+                        cs['xceidid__c'].value = memberObject["ID_Number"];
+                    }
+                    if(cs['xceidedt__c'] && memberObject["Expiry_Date"] != '' && memberObject["Expiry_Date"] != undefined){
+                        cs['xceidedt__c'].value = memberObject["Expiry_Date"];
+                    }
+                    
+                    /*
+                    if(cs['xcmbs__c'] && memberObject["Monthly Basic Salary"] != '' && memberObject["Monthly Basic Salary"] != undefined){
+                        cs['xcmbs__c'].value = memberObject["Monthly Basic Salary"];
+                    }
+                    if(cs['xcma__c'] && memberObject["Accommodation"] != '' && memberObject["Accommodation"] != undefined){
+                        cs['xcma__c'].value = memberObject["Accommodation"];
+                    }
+                    if(cs['xcmta__c'] && memberObject["Transport"] != '' && memberObject["Transport"] != undefined){
+                        cs['xcmta__c'].value = memberObject["Transport"];
+                    }
+                    if(cs['xcmoa__c'] && memberObject["Other Allowances"] != '' && memberObject["Other Allowances"] != undefined){
+                        cs['xcmoa__c'].value = memberObject["Other Allowances"];
+                    }
+                    */
+                    if(cs['xcmbs__c'] && memberObject["Monthly Basic Salary"] != '' && memberObject["Monthly Basic Salary"] != undefined){
+                        cs['xcmbs__c'].value =  parseFloat(memberObject["Monthly Basic Salary"].replaceAll(',',''));
+                        cs['xcma__c'].value = 0.0; cs['xcmta__c'].value = 0.0; cs['xcmoa__c'].value = 0.0; 
+                    }
+                    if(cs['xcma__c'] && memberObject["Accommodation"] != '' && memberObject["Accommodation"] != undefined){
+                        cs['xcma__c'].value =  parseFloat(memberObject["Accommodation"].replaceAll(',',''));
+                    }
+                    if(cs['xcmta__c'] && memberObject["Transport"] != '' && memberObject["Transport"] != undefined){
+                        cs['xcmta__c'].value =  parseFloat(memberObject["Transport"].replaceAll(',',''));
+                    }
+                    if(cs['xcmoa__c'] && memberObject["Other Allowances"] != '' && memberObject["Other Allowances"] != undefined){
+                        cs['xcmoa__c'].value =  parseFloat(memberObject["Other Allowances"].replaceAll(',',''));
+                    }
+                    
+                    //alert(memberObject["ID_Number"]);
+                    
+                    
+                    
+                },
+                
+                error: function(){
+                    // alert("Cannot get data");
+                }
+            });
+            
+            
+        }
+        
+        function openModal(m){
+            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                $('#'+m).modal('show');    
+            });
+            $('.inEditOnly').hide();
+            $('#modal_process_upload').unbind('hidden.bs.modal');
+        }
+        function openUploadModal(){
+            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                popupDocModel('Passport - first page','Passport - first page','a0P1s0000004wgaEAAL');
+                $('#modal_process_upload').unbind('hidden.bs.modal');
+            });
+        }
+        
+        var isFromMemUpdate = false; /*** for memberDetailsUpdate VF Page ***/
+       
+        function parseDoc1(){
+            
+            if(cs["imageBase64"])
+                cs["imageBase64"].value = imageBase64.value;
+            $('#modal_fileuploadPopUp').modal('hide');
+            $('#modal_process_upload').modal('show');
+            $.ajax({
+                
+                //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                
+                url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                
+                beforeSend: function(xhr) {
+                    
+                    //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb");
+                    
+                    xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9");
+                    
+                },
+                
+                type: 'POST',
+                
+                dataType: 'json',
+                
+                crossOrigin: true,
+                
+                contentType: 'application/json',             
+                
+                processData: false,
+                
+                data: '{"image":'+imageBase64.value+'}',
+                
+                success: function (data) {
+                    
+                    var t=JSON.stringify(data);
+                    
+                    //alert(t);
+                    //custom for passport
+                    t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                    replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                    t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                    t = t.replace("ID Number", "ID_Number").replace('Name', 'Name');
+                    t=t.replace('Given Name','Given_Name').replace('MR Passport NO','Passport_No').replace('MR Gender','MR_Gender');
+                    t=t.replace('Traffic Plate #','pltNum_RC1').replace('Traffic Plate','pltNum_RC');//.replace('Traffic Plate','pltNum_RC').replace('Expiry Date','RegDate_RC')
+                    t = t.replace('Model','VehModel_RC');
+                    var memberObject={};
+                    var dd='['+t+']';
+                    var ddd=JSON.parse(t);
+                    var cl = ddd['confidence_level']*10;
+                    console.log('confidence_level ---'+cl);
+                    if(Math.abs(cl)<0){//isNaN(Math.abs(cl))||Math.abs(cl)<2||ddd.errorMessage!=undefined
+                        $('#modal_process_upload').unbind('hidden.bs.modal').modal('hide').on('hidden.bs.modal',function(){
+                            axsConfirmation('File is invalid', 'We couldn\'t capture the data from the uploaded document<br>Do you want to continue?','','openModal','modal_confirm_information','openUploadModal','');
+                        });
+                        return;
+                    }
+                    
+                    passportData = ddd["data"];
+                    for(i in ddd["data"]){
+                        memberObject[i] = ddd["data"][i];
+                        memData_x[i] = ddd["data"][i];
+                    }
+                    
+                    var k1=[];
+                    var passportNo = '';
+                    var membrStr = '';
+                    var fullname = '';
+                    
+                    memberObject["type"] = 'ind';
+                    fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                    if(memberObject["MR Full Name"]==''||memberObject["MR Full Name"]==undefined)
+                        memberObject["fullname"] = fullname;
+                    else{
+                        var nn = memberObject["MR Full Name"].split(' ');
+                        memberObject["fullname"] = memberObject["MR Full Name"];
+                        //memberObject['Surname'] = nn[0];
+                        memberObject['Given_Name'] = memberObject["MR Full Name"];
+                        
+                    }
+                    
+                    //if(memberObject["type"]=='ind') memberObject.passportId = cs["attch_id"].value;
+                    
+                    membrStr = JSON.stringify(memberObject);
+                    
+                    //alert('str::'+membrStr);
+                    
+                    // if(addingOtherMems){
+                    
+                    if(memberObject["type"]=='ind'){
+                        
+                        $('.forEdit').each(function(){
+                            
+                            var f = $(this).attr('fldName');
+                            
+                            if(memberObject[f]!=undefined){
+                                
+                                if(memberObject[f].length>0){
+                                    $(this).val(memberObject[f]);
+                                    if(f=='Passport_No'){
+                                        $(this).val(memberObject[f].replaceAll(' ',''));
+                                    }
+                                    
+                                }
+                                
+                                if($(this).attr('class').includes('datepicker'))
+                                    
+                                    $(this).val(formatDate(memberObject[f]));
+                                
+                            }
+                            
+                            else if(memberObject["MR_"+f]!=undefined){
+                                
+                                $(this).val(memberObject["MR_"+f]);
+                                
+                                if($(this).attr('class').includes('datepicker'))
+                                    
+                                    $(this).val(formatDate(memberObject[f]));
+                                
+                            }
+                            
+                                else{
+                                    
+                                    $(this).val('');
+                                    
+                                }
+                            
+                            if((f=='country'||f=='country2' ) && memberObject['Nationality']!=undefined){ // only for country--Nationality
+                                
+                                var e = $(this);
+                                
+                                e.find('option').each(function(){
+                                    
+                                    var t = $(this).text();
+                                    
+                                    var t1 = $(this).val();
+                                    
+                                    if(t.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim()||t1.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim())
+                                        
+                                        $(this).prop('selected',true);
+                                    
+                                });
+                                
+                            }
+                            
+                            if($(this).attr('extFld')){ // only for country--Nationality
+                                
+                                var e = $(this);
+                                
+                                var ef = $(this).attr('extFld');
+                                
+                                var ef1 = $(this).attr('extFld1');
+                                
+                                if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                    
+                                    var vl = ddd[ef].split(' ')[1];
+                                    
+                                    e.find('option').each(function(){
+                                        
+                                        var t = $(this).text();
+                                        
+                                        var t1 = $(this).val();
+                                        
+                                        if(t.toLowerCase().trim()==vl.toLowerCase().trim()||t1.toLowerCase().trim()==vl.toLowerCase().trim())
+                                            
+                                            $(this).prop('selected',true);
+                                        
+                                    });
+                                    
+                                }
+                                
+                                else if(ddd.data[ef1]!=undefined)
+                                    
+                                    $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                
+                            }
+                            
+                            if($(this).is('select')) $(this).trigger('change');
+                            
+                        });
+                        
+                        
+                        $('#modal_process_upload').unbind('hidden.bs.modal').modal('hide').on('hidden.bs.modal',function(){
+                            var curDoc = cs["docname"].value;
+                            if(isFromMemUpdate && curDoc=='Passport Copy'){
+                                $('#modal_confirm_information_mem').modal('show');
+                                
+                            }else if(isFromMemUpdate && curDoc=='Emirates Id Copy'){
+                                $('#modal_EIDA_confirm_information_mem').modal('show');                                
+                            }else if(curDoc.includes('Eida Card Front Side')  || curDoc.includes('Emirates ID Front Side')){
+                                $('#modal_EIDA_confirm_information').modal('show');
+                            }else if(curDoc.toLowerCase().includes('registration card - front')){
+                                $('#xppor__c').val('Dubai').select2();
+                                // $('#modal_RC_confirm_information').find('input,select').val('').trigger('change');
+                                $('#modal_RC_confirm_information').find('.frmErrMsg').remove();
+                                $('#modal_RC_confirm_information').find('.is-invalid').removeClass('is-invalid');
+                                $('#modal_RC_confirm_information').modal('show');
+                            }else if(curDoc.toLowerCase().includes('registration card - back')){
+                                //rerenderImageB();
+                                //cs['xcnc__ocr'] = $('[fldName="country"]').find("option:selected").text(); 
+                                //$('#modal_RC_confirm_information_back').find('input,select').val('');
+                                $('#modal_RC_confirm_information_back').modal('show');
+                            }else{
+                                $('#modal_confirm_information .modal-body p,#modal_confirm_information1 .modal-body p').eq(0).html('We have captured below information from uploaded documents, please review, correct and confirm to proceed.');
+                                $('#modal_confirm_information,#modal_confirm_information1').modal('show');
+                                if(ddd["type_id"] == "TYPE_DOES_NOT_EXIST"&&(Object.keys(ddd.data).length==0 ||!ddd.data.Nationality )){
+                                    $('#modal_confirm_information1 .modal-body p').eq(0).html('We couldn\'t get the data from the attachment. Please enter the details manually to proceed!');
+                                    $('#modal_confirm_information .modal-body p').eq(0).html('We couldn\'t get the data from the attachment. Please select <b>Nationality</b> to proceed!');
+                                    if(!$('#nat').val())
+                                        $('#modal_confirm_information').find('input,select').attr('disabled',true);
+                                    $('#natNoData').parents('.col-lg-6').show();
+                                    $('#nat').removeAttr('disabled');
+                                    //return;
+                                }
+                            }
+                        });
+                        
+                        $('.saveEditMem').hide();
+                        
+                        $('.inEditOnly').hide(); 
+                        
+                        
+                    }        
+                    
+                    //$('#modal_process_upload').modal('hide');
+                    
+                    
+                    
+                    $('#saveAtt').addClass('disabled');
+                    
+                    
+                    
+                    //document.getElementById('modal_fileuploadPopUp').style.display='none';
+                    
+                    $('body').removeClass('modal-open');
+                    
+                    $('.modal-backdrop').remove();
+                    
+                    
+                    
+                    //$("#base64").val(JSON.stringify(data));
+                    
+                },
+                
+                error: function(){
+                    // alert("Cannot get data");
+                    $('#modal_process_upload').unbind('hidden.bs.modal');
+                    $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                        $('.saveEditMem').hide();
+                        $('.inEditOnly').hide();
+                        $('#modal_confirm_information,#modal_confirm_information1').find('input','select').val('');
+                        $('#modal_confirm_information,#modal_confirm_information1').find('select').select2();
+                        $('#modal_confirm_information .modal-body p,#modal_confirm_information1 .modal-body p').eq(0).html('We cannot fetch the data from uploaded document. Please go ahead and enter manually.');
+                        $('#modal_confirm_information,#modal_confirm_information1').modal('show');
+                        /*axsAlert('Alert','We are not able to fetch the data.<br />Please go ahead and enter manually. ');
+                        $('#modal_alert_global').on('hidden.bs.modal',function(){
+                            $('#modal_confirm_information').modal('show');
+                            $('#modal_alert_global,#modal_process_upload').unbind('hidden.bs.modal');
+                        });*/
+                        
+                        
+                    });
+                }
+            });
+            
+            
+        }
+        function sv1(){
+            var attName=document.getElementById("currentImage").value;
+            var srvCode = '{!R.srvc__r.uid__c}';
+            console.log('srvCode::'+srvCode);
+            if(srvCode == '322' && attName == 'Passport - first page'){
+                if(cs["parseId"]) {cs["parseId"].value = 'true';}
+            }
+            if(cs["parseId"] &&cs["parseId"].value=='true'){
+                console.log('to be parsed -- '+cs["parseId"].value);
+                parseDoc1();
+            }
+            else{
+                if(attName == 'Emirates ID Front Side' ||attName == 'Eida Card (Front Side)' || attName == 'Eida Card (Back Side)' || attName == 'Employment Amendment Contract' || attName == 'Emirates ID - Front Side' || attName == 'Emirates ID - Back side' ||  attName == 'Emirates ID - front' || attName == 'Emirates ID - back' || attName == 'Emirates ID Card (Front Side)' || attName == 'Emirates ID Card (Back Side)' || attName == 'Emirates ID Card (front side)' || attName == 'Emirates ID Card (back side)' || attName == 'Emirates ID Card - Front Page' || attName == 'Emirates ID Card - Back Page' )
+                    parseDoc();
+                /*
+            if(attName == 'OCREIDA')
+            afsocr();
+            else if(attName.includes('obdoc'))
+                afsob(attName);
+            else
+              sv();
+              */
+                closeDialog();startLoaderThis();
+                console.log(' hasRq  >> {!hasRq}');
+                if('{!hasRq}'=='false'){
+                    console.log('inisde');
+                    //  toggleGLoader();
+                    $('#preloader').fadeIn();
+                }  
+                
+                if((cs["visaTransferId"] && cs["visaTransferId"].value == 'int')|| srvCode =='uma')
+                    cs["imageBase64"].value = imageBase64.value;
+                
+                if((cs["visaTransferId"] && cs["visaTransferId"].value == 'int' && cs["docname"].value == 'Passport First Page') || ('{!cv}' == 'VisaCorrection' && cs["docname"].value == 'Passport Copy - First Page') || ('{!cv}' == 'LostPassport' && cs["docname"].value == 'New Passport Copy - first page'))
+                    saveRequest();
+                else
+                    afs();
+                console.log('SaveDone!');
+                //spnChange();
+                
+            }
+        }
+        
+        function btnUpload_onclickOLD(reqNo,width,height,resolution) {
+            var bSave;
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                alert("Please scan a document."); 
+                return 1;
+            }
+            
+            
+            if(DWObject.IsBlankImage(DWObject.CurrentImageIndexInBuffer)){
+                //alert('Please scan or upload an image.');
+                //return flase;
+            }
+            
+            if(DWObject.GetImageXResolution(DWObject.CurrentImageIndexInBuffer)< resolution){
+                // alert('Image resolution is not matching with specified resolution. Please upload an image greater than 200 dpi');
+                //    return flase;
+            }
+            
+            if(DWObject.GetImageYResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+                //alert('Image resolution is not matching with specified resolution.');
+                // return flase;
+            }
+            
+            
+            
+            if(DWObject.GetImageBitDepth(DWObject.CurrentImageIndexInBuffer)<24){
+                alert('Image is not clear.');
+                return flase;
+            }
+            
+            var CurrentPathName = unescape(location.pathname);    
+            
+            var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);  
+            
+            
+            var OnSuccess = function() {
+                appendMessage('<b>Save Image: </b>');
+                // checkErrorStringWithErrorCode(0, "Successful.");
+            };
+            
+            
+            var OnFailure = function(errorCode, errorString) {
+                // checkErrorStringWithErrorCode(errorCode, errorString);
+            };
+            
+            
+            
+            var width,height,resolution=0;
+            width=document.getElementById("width").value;
+            height=document.getElementById("height").value;
+            resolution=document.getElementById("resolution").value;
+            
+            
+            var attName=document.getElementById("currentImage").value; 
+            var srvCode = document.getElementById("serviceCode").value;
+            if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+            else if(attName.toLowerCase().indexOf('application')!=-1){width="600";height="800";resolution="100";}
+                else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+                        else{width="872";height="1232";resolution="175";}
+            var count = DWObject.HowManyImagesInBuffer;
+            DWObject.SelectedImagesCount = count;
+            for (var i = 0; i < count; i++) {
+                DWObject.SetSelectedImageIndex(i, i);
+            } 
+            if(srvCode=='uma' || srvCode == '208' ||  srvCode == 'aml'|| srvCode == '322' || srvCode == '220' || srvCode == 'apt'  || srvCode == 'dnc' || attName.toLowerCase().indexOf('employment contract')!=-1|| attName.toLowerCase().indexOf('eida receipt')!=-1 || attName.toLowerCase().indexOf('outsource agreement')!=-1 || attName.toLowerCase().indexOf('id card')!=-1 || attName.toLowerCase().indexOf('car registration')!=-1 || attName.toLowerCase().indexOf('eida application form')!=-1 || attName.toLowerCase().indexOf('company structure document')!=-1){  /* attName.toLowerCase().indexOf('company structure document')!=-1 ||*/
+                DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_PDF);
+                var uploadfilename=document.getElementById("currentImage").value+".pdf";
+            }else{
+                
+                DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+                DWObject.JPEGQuality = 40;
+                
+                
+                DWObject.ChangeImageSize(
+                    DWObject.CurrentImageIndexInBuffer,
+                    width,
+                    height,
+                    2
+                );
+                
+                
+                DWObject.GetSelectedImagesSize(1);
+                var uploadfilename=document.getElementById("currentImage").value+".jpg";
+                
+                if(DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_JPG)> 100000  ){
+                    DWObject.JPEGQuality = 30;
+                    
+                }
+            }
+            
+            
+            
+            var imgData = DWObject.SaveSelectedImagesToBase64Binary();     
+            
+            var attType=document.getElementById("currentImage").value
+            var count=parseInt(document.getElementById(attType+"_cur").value);
+            count=count+1;
+            document.getElementById(attType+"_cur").value=count;
+            imageBase64.value=imgData;  
+            
+            reqDocId.value=document.getElementById(attType+"_Id").value;    
+            docName.value=uploadfilename;   
+            btnRemoveCurrentImage_onclick();
+            
+            Dynamsoft.WebTwainEnv.Unload();
+            
+        }
+        
+        function btnUpload_onclick(reqNo,width,height,resolution) {
+            if($('#udDocLabel').text().trim()=='Recent passport size photo' && !$('#photoCond').prop('checked')){/*$('.photoCheck').length>1 && $('.photoCheck').is(':visible')*/
+                addValError('#photoCond','Please select to agree the Emirates ID guidelines.');
+                return;
+            }
+            closeDialog();
+            var bSave;
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            if (!CheckIfImagesInBuffer()) {
+                alert("Please scan a document.");
+                return 1;
+            }
+            var width,height,resolution=0;
+            width=document.getElementById("width").value;
+            height=document.getElementById("height").value;
+            resolution=document.getElementById("resolution").value;
+            var attName=document.getElementById("currentImage").value; 
+            var srvCode = '{!R.srvc__r.uid__c}';
+            
+            if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+            else if(attName.toLowerCase().indexOf('application')!=-1){width="600";height="800";resolution="100";}
+                else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="355";resolution="300";}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="1232";resolution="300";}
+                        else{width="872";height="1232";resolution="175";}
+            
+            var imgData;
+            var uploadfilename;
+            var imgtype=EnumDWT_ImageType.IT_JPG;
+            
+            var bufArr = new Array();
+            var count = DWObject.HowManyImagesInBuffer;
+            
+            
+            for (var i = 0; i < count; i++) {
+                bufArr[i]=i;
+            }
+            if(count>7 && srvCode != '216'){alert("File size exceeding the limit, kindly split the attachment(not more than 7 pages/4MB for each) and upload."); btnRemoveCurrentImage_onclick();return 1;}
+            
+            //alert(document.getElementById("currentImage").value);
+            if(srvCode == '208' || srvCode == 'vfs'  || srvCode == 'aml' || srvCode == '220' || srvCode == '216' || srvCode == 'apt' || srvCode == 'dnc' || srvCode == '116' || srvCode == '122' ||srvCode == '133' ||srvCode == '213' || attName.toLowerCase().indexOf('employment contract')!=-1 || attName.toLowerCase().indexOf('outsource agreement')!=-1 || attName.toLowerCase().indexOf('car registration')!=-1  || attName.toLowerCase().indexOf('Approval from DM')!=-1 || attName.toLowerCase().indexOf('eida application form')!=-1 || attName.toLowerCase().indexOf('company structure document')!=-1) {
+                DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_PDF);
+                imgtype=EnumDWT_ImageType.IT_PDF
+                uploadfilename=document.getElementById("currentImage").value+".pdf";
+            }else{
+                DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_JPG);
+                uploadfilename=document.getElementById("currentImage").value+".jpg";
+                DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+                DWObject.JPEGQuality = 40;
+                DWObject.ChangeImageSize(
+                    DWObject.CurrentImageIndexInBuffer,
+                    width,
+                    height,
+                    2
+                );
+                bufArr = new Array();
+                bufArr[0]=0;
+                uploadfilename=document.getElementById("currentImage").value+".jpg";                
+            }
+            
+            
+            
+            DWObject.ConvertToBase64(
+                bufArr,
+                imgtype,
+                function(result, indices, type) {
+                    
+                    imgData=result.getData(0, result.getLength());
+                    imageBase64.value=imgData;
+                    
+                    console.log(imageBase64.value);
+                    docName.value=uploadfilename;
+                    sv1();
+                    btnRemoveCurrentImage_onclick();
+                },
+                function(errorCode, errorString) {
+                    console.log(errorString);
+                }
+            );
+            
+            
+            
+            
+            
+        }
+        
+        function btnUpload_onclick2(reqNo,width,height,resolution) {
+            console.log('btnUpload_onclick');
+            
+            var bSave;
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            
+            console.log('btnUpload DWObject >>'+ DWObject);
+            console.dir(DWObject);
+            
+            if (!CheckIfImagesInBuffer()) {
+                alert("Please scan a document.");
+                return 1;
+            }
+            if(DWObject.IsBlankImage(DWObject.CurrentImageIndexInBuffer)){
+                //alert('Please scan or upload an image.');
+                //return false;
+            }
+            if(DWObject.GetImageXResolution(DWObject.CurrentImageIndexInBuffer)< resolution){
+                //alert('Image resolution is not matching with specified resolution. Please upload an image greater than 200 dpi');
+                //    return false;
+            }
+            
+            if(DWObject.GetImageYResolution(DWObject.CurrentImageIndexInBuffer)<resolution){
+                //alert('Image resolution is not matching with specified resolution.');
+                // return false;
+            }
+            
+            if(DWObject.GetImageBitDepth(DWObject.CurrentImageIndexInBuffer)<24){
+                alert('Image is not clear.');
+                return false;
+            }
+            
+            var CurrentPathName = unescape(location.pathname);
+            console.log('btnUpload CurrentPathName >>'+ CurrentPathName);
+            
+            var CurrentPath = CurrentPathName.substring(0, CurrentPathName.lastIndexOf("/") + 1);
+            console.log('btnUpload CurrentPath >>'+ CurrentPath);
+            
+            
+            //alert(CurrentPathName);
+            var OnSuccess = function() {
+                appendMessage('<b>Save Image: </b>');
+                // checkErrorStringWithErrorCode(0, "Successful.");
+            };
+            
+            
+            var OnFailure = function(errorCode, errorString) {
+                // checkErrorStringWithErrorCode(errorCode, errorString);
+            };
+            
+            
+            
+            var width,height,resolution=0;
+            width=document.getElementById("width").value;
+            height=document.getElementById("height").value;
+            resolution=document.getElementById("resolution").value;
+            
+            console.log('width>>'+width);
+            console.log('height>>'+height);
+            console.log('resolution>>'+resolution);
+            var srvCode = '{!R.srvc__r.uid__c}';
+            console.log('srvCode::'+srvCode);
+            var attName=document.getElementById("currentImage").value;
+            if(attName.toLowerCase().indexOf('photo')!=-1){width="300";height="355";resolution="200";}
+            else if(attName.toLowerCase() == 'eida card (front side)' || attName.toLowerCase() == 'emirates id - front side' || attName.toLowerCase() == 'emirates id - front' || attName.toLowerCase() == 'emirates id card - front page'){width="300";height="355";resolution="300";}
+                else if(attName.toLowerCase().indexOf('eida')!=-1){width="300";height="80%";resolution="300";}
+                    else if(attName.toLowerCase().indexOf('visa')!=-1){width="872";height="80%";resolution="300";}
+                        else{width="872";height="80%";resolution="175";}
+            
+            var count = DWObject.HowManyImagesInBuffer;
+            
+            console.log('count>>'+count);
+            
+            DWObject.SelectedImagesCount = count;
+            for (var i = 0; i < count; i++) {
+                DWObject.SetSelectedImageIndex(i, i);
+            }
+            if(srvCode == '208'||  srvCode == 'aml' || srvCode == '220' || srvCode == 'apt' || srvCode == 'dnc' || srvCode == '116' || srvCode == '122' ||srvCode == '133' ||srvCode == '213' || attName.toLowerCase().indexOf('employment contract')!=-1 || attName.toLowerCase().indexOf('outsource agreement')!=-1 || attName.toLowerCase().indexOf('car registration')!=-1  || attName.toLowerCase().indexOf('Approval from DM')!=-1) {
+                DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_PDF);
+                var uploadfilename=document.getElementById("currentImage").value+".pdf";
+                
+                alert('1 uploadfilename>>'+uploadfilename);
+            }else{
+                
+                DWObject.SetDPI(DWObject.CurrentImageIndexInBuffer, resolution, resolution, true, 1);
+                DWObject.JPEGQuality = 40;
+                DWObject.ChangeImageSize(
+                    DWObject.CurrentImageIndexInBuffer,
+                    width,
+                    height,
+                    2
+                );
+                
+                
+                DWObject.GetSelectedImagesSize(1);
+                var uploadfilename=document.getElementById("currentImage").value+".jpg";
+                alert('2 uploadfilename>>'+uploadfilename);
+                if(DWObject.GetSelectedImagesSize(EnumDWT_ImageType.IT_JPG)> 100000  ){
+                    DWObject.JPEGQuality = 30;
+                    
+                }
+            }
+            // var imgData = DWObject.SaveSelectedImagesToBase64Binary();
+            var imgData;
+            alert(DWObject.CurrentImageIndexInBuffer);
+            DWObject.ConvertToBase64(
+                [0],
+                Dynamsoft.EnumDWT_ImageType.IT_PDF,
+                function(result, indices, type) {
+                    imgData=result.getData(0, result.getLength());
+                    alert(imgData);
+                    alert(result.getData(0, result.getLength()));
+                },
+                function(errorCode, errorString) {
+                    alert(errorString);
+                }
+            );
+            
+            
+            var z=document.getElementById("currentImage").value;
+            console.log('z>>'+z);
+            var attType=z;
+            if(z.includes('Copy of Passport')){
+                attType ='PassportCopy';
+            }
+            else attType=z;
+            
+            //var UrlLbl = document.getElementById("localUrlLbl").value;
+            
+            //document.getElementById(UrlLbl).innerHTML = thisFilePath;
+            
+            
+            console.log('attType>>'+attType);
+            
+            //JP// var count=parseInt(document.getElementById(attType+"_cur").value);
+            //JP//count=count+1;
+            
+            //JP// document.getElementById(attType+"_cur").value=count;
+            alert(imgData);
+            imageBase64.value=imgData;
+            console.log('tst2::'+imageBase64.value);
+            //JP//reqDocId.value=document.getElementById(attType+"_Id").value;
+            docName.value=uploadfilename;
+            
+            btnRemoveCurrentImage_onclick();
+            
+            
+            //JP//Dynamsoft.WebTwainEnv.Unload();
+            
+        }
+        
+        
+        String.prototype.trim = function() {
+            return this.replace(/^\s+|\s+$/g,'');
+        }
+        
+        function Dynamsoft_OnPostTransfer() {
+            updatePageInfo();
+        }
+        
+        function Dynamsoft_OnPostLoadfunction(path, name, type) {
+            updatePageInfo();
+        }
+        
+        function Dynamsoft_OnPostAllTransfers() {
+            updatePageInfo();
+            checkErrorString();
+        }
+        
+        function Dynamsoft_OnMouseClick(index) {
+            updatePageInfo();
+        }
+        
+        function Dynamsoft_OnMouseRightClick(index) {
+            // To add
+        }
+        
+        
+        function Dynamsoft_OnImageAreaSelected(index, left, top, right, bottom) {
+            _iLeft = left;
+            _iTop = top;
+            _iRight = right;
+            _iBottom = bottom;
+        }
+        
+        function Dynamsoft_OnImageAreaDeselected(index) {
+            _iLeft = 0;
+            _iTop = 0;
+            _iRight = 0;
+            _iBottom = 0;
+        }
+        
+        function Dynamsoft_OnMouseDoubleClick() {
+            return;
+        }
+        
+        
+        function Dynamsoft_OnTopImageInTheViewChanged(index) {
+            _iLeft = 0;
+            _iTop = 0;
+            _iRight = 0;
+            _iBottom = 0;
+            DWObject.CurrentImageIndexInBuffer = index;
+            updatePageInfo();
+        }
+        
+        function Dynamsoft_OnGetFilePath(bSave, count, index, path, name) {
+        }
+        
+        
+        function btnChangeImageSize_onclick(){
+            document.getElementById('ImgSizeEditor').style.visibility='';
+        }
+        function btnCancelChange_onclick(){
+            document.getElementById('ImgSizeEditor').style.visibility='hidden';
+        }
+        
+        
+        function btnChangeImageSizeOK_onclick() {
+            var re= new RegExp('^[0-9]*$');
+            var DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+            document.getElementById("img_height").className = "";
+            document.getElementById("img_width").className = "";
+            if (document.getElementById("img_height").value=='' && !re.test(document.getElementById("img_height").value)) {
+                document.getElementById("img_height").className += " invalid";
+                document.getElementById("img_height").focus();
+                alert("Please input a valid height.");
+                return;
+            }
+            if (document.getElementById("img_width").value=='' && !re.test(document.getElementById("img_width").value)) {
+                document.getElementById("img_width").className += " invalid";
+                document.getElementById("img_width").focus();
+                alert("Please input a valid width.");
+                return;
+            }
+            DWObject.ChangeImageSize(
+                DWObject.CurrentImageIndexInBuffer,
+                document.getElementById("img_width").value,
+                document.getElementById("img_height").value,
+                2
+            );
+            
+            if (checkErrorString()) {
+                document.getElementById("ImgSizeEditor").style.visibility = "hidden";
+                return;
+            }
+        }
+        var hyphenCodes = ['sh1','sh2','sh3','sh4','sh5','sh6','sh7','dr','bd1','bd2','bd3','bd4','bd5','bd6','bd7','gm','ub1','ub2','ub3','ub4','ub5','ub6','ub7','lr1'];
+        function popupDocModel(lbl,typ,seq){
+            var l = lbl;
+            var match = hyphenCodes.find(i=>(lbl.includes(i)?true:false));
+            if(match){
+                l = lbl.replaceAll(' - '+match,'').trim();
+            }
+            currentDoc = lbl;
+            console.log('In popupDocModel() DocLabel >> '+'lbl');  
+            document.getElementById("udDocType").value = typ;//dname;
+            document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
+            document.getElementById("udDocLabel").innerHTML = l;
+            /* added for EIDA guidlines mandate check. */
+            $('#photoCond').prop('checked',false);
+            removeValError('#photoCond');
+            $('.photoCheck').hide();
+            if(lbl=='Recent passport size photo'){
+                $('.photoCheck').show();
+            }
+            /* added for EIDA guidlines mandate check. */
+            $('#modal_fileuploadPopUp').modal('show');
+            // $('#saveAtt').removeClass('disabled');
+        }
+        function updatePageInfo() {
+            // document.getElementById("DW_TotalImage").value = DWObject.HowManyImagesInBuffer;
+            //document.getElementById("DW_CurrentImage").value = DWObject.CurrentImageIndexInBuffer + 1;
+        }
+        function closeDialog() {
+            $('#modal_fileuploadPopUp').modal('hide');
+        }
+        </script>
+        <!--c:qrbtns isNew="false" isEdit="true" isView="false" pgHide="true" ispu="true" pg="grqei" R="{!rq}" A="{!rq.acc__r}" Stp="3"/-->
+        
+        
+        
+        
+        <div class="modal fade modal-base" id="modal_fileuploadPopUp" tabindex="-1" role="dialog" aria-hidden="true">
+            
+            <!--from refer start -->
+            <input type="hidden" id="TotalImage" value="" />
+            <input type="hidden" id="CurrentImage" value="" />
+            <input type="hidden" id="CurrentImageURL" value="" />
+            <div id="emessage" style="display:none" ></div>
+            <!-- Left column -->
+            <div class=" two_third">
+                <!--<h3 class="bg-404 fc-fff p-5 d-block">Scan / Upload Attachment</h3>-->
+                <!-- scan start -->
+                <div id="divBlank" style="height:20px;">
+                    <div  class="popup-error">
+                        <ul>
+                            <li></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="dwtcontrolContainer" id="dwtcontrolContainer2" style="width:450px;"></div>
+                <div id="DWTNonInstallContainerID" style="width:580px;"></div>
+                <div id="DWTemessageContainer" style="width:580px;"></div>
+                
+            </div>
+            
+            
+            <!--input type="hidden" id="udDocLabel" value=""/-->
+            <input type="hidden" id="udDocType" value=""/>
+            <input type="hidden" id="localUrlLbl" value=""/>
+            <input type="hidden" name="dfileId" id="dfileId" value=""/>
+            <input type="hidden" id="width" value="700"/>
+            <input type="hidden" id="height" value="855"/>
+            <input type="hidden" id="resolution" value="300"/>
+            <input type="hidden" size="20" id="txt_fileNameforSave"/>
+            <input type="hidden" name="txt_fileName" id="txt_fileName"/>
+            <input type="hidden" name="uploaded_count" id="uploaded_count" value="0"/>
+            <input type="hidden" name="htempfieldname" id="htempfieldname" value="test"/>
+            <input type="hidden" name="currentImage" id="currentImage" value="test"/>
+            <input type="hidden" name="currentImageURL" id="currentImageURL" value="{!$Resource.gso_fileuploadNew9}"/>
+            <input type="hidden" name="attchId" id="attchId" value=""/>
+            <!--
+<input id="Passport copy_Id" type="hidden" value="a0Pp000000BhrlEEAR" />
+<input id="Passport copy_cur" type="hidden" value="0" />
+<input id="Passport copy_max" type="hidden" value="2" />
+<input id="Passport copy_min" type="hidden" value="1" />
+
+<input id="test_Id" type="hidden" value="a0Pp000000BhrlEEAR" />
+<input id="test_cur" type="hidden" value="0" />
+<input id="test_max" type="hidden" value="2" />
+<input id="test_min" type="hidden" value="1" />
+-->
+            <apex:repeat id="r0" value="{!Docs}" var="D">
+                <input type="hidden" id="{!D.Doc.Name}_Id" value="{!D.Doc.Id}"/>
+                <input type="hidden" id="{!D.Doc.Name}_cur" value="0"/>
+                <input type="hidden" id="{!D.Doc.Name}_max"  value="{!D.Doc.mxAts__c}"/>
+                <input type="hidden" id="{!D.Doc.Name}_min"  value="{!D.Doc.mnAts__c}"/>
+            </apex:repeat>
+            
+            <!--from refer end -->
+            
+            
+            <div class="modal-dialog" role="document" style="width: 993px;">
+                <div class="modal-content">
+                    <h3 class="bg-404 fc-fff pl-3 pt-3 d-block" style="padding-left: 2.2rem !important;">Scan / Upload Attachment</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="stopLoaderThis();">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <apex:outputPanel id="opd" />
+                        
+                        <div class="row">
+                            <div class="col-md-6 order-md-2">
+                                <div class="d-flex flex-column h-100">
+                                    <div class="mb-auto">
+                                        <!--h2 class="mb-4"><input type="text"  id="udDocLabel" value="Upload passport copy 2"/></h2-->
+                                        <!--h2 class="mb-4"><apex:outputlabel value="Upload Document" id="udDocLabel" /></h2-->
+                                        <h2 class="mb-4">
+                                            <label id="udDocLabel">Upload Document</label>
+                                            <span style="float: right;" class="ml-4 d-md-none d-lg-none">
+                                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" onclick="btnLoad_onclick()" >
+                                                    <i title="Upload" style="font-size: 1.5em;" class="fa fa-upload text-primary"  aria-hidden="true"></i>
+                                                </a>
+                                                <!--<i title="Scan" class="fa fa-laptop text-primary" onclick="btnLoadbtnScan_onclick_onclick();" aria-hidden="true"></i>-->
+                                            </span>
+                                        </h2>
+                                        <div class="d-none d-lg-block d-md-block">
+                                            Please ensure that the uploaded document meets the following guidelines otherwise it may result in the rejection of your application:
+                                            <ul>
+                                                <u class="mb-4"><i><b>Upload guidelines</b></i></u>
+                                                <li style="list-style: disc;">Documents uploaded must be in full colour and in .pdf or .jpg format. If a pdf document with multiple pages is uploaded, only the first page of the file will be considered per upload.</li>
+                                                <li style="list-style: disc;">Maximum document size - 4MB</li>
+                                            </ul>
+                                            Once you have scanned or uploaded your document, you can use the edit tools to crop or rotate.
+                                        </div>
+                                    
+                                    
+                                    <!--
+<input type="file" id="files" name="files" style="display: none;"/>  style="width:580px;"-->
+                                        <!--
+<label for="title"><strong>Select a Scanner</strong></label>
+<select id="source" name="title" class="select2-selection__rendered"  style="min-width: 304px;max-width: 100%;">
+</select>
+-->
+                                        <!-- btnLoad_onclick() handleBrowseClick()-->
+                    <button type="button" class="d-none d-lg-block d-md-block btn btn-outline-primary mb-2 btn-block-sm" 
+                            style="min-width: 304px;max-width: 100%;" onclick="btnLoad_onclick();">
+                        UPLOAD 
+                    </button>
+                                        
+                                        <button type="button" class="d-none d-lg-block btn btn-outline-primary btn-block-sm"
+                                                style="min-width: 304px;max-width: 100%;"  onclick="btnScan_onclick();">
+                                            SCAN 
+                                        </button><br/>
+                                        <p class="chk mt-4 photoCheck form-group" style="display:none;vertical-align: middle; font-size: 1em;" >
+                                            <label class="custom-checkbox mr-4">
+                                                <input id="photoCond" onchange="rmErronTC()" type="checkbox" />
+                                                <span>I/We hereby certify that the uploaded photograph complies with the guidelines (<a href="{!$Resource.EIDA_photo_specifications}" target="_blank"><u>click here</u></a>) of the <b>Federal Authority for Identity and Citizenship</b>. axs is not liable for delays or rejection of application due to submission of an incorrect photograph.</span>
+                                            </label>  
+                                        </p>
+                                        
+                                    </div>
+                                    <div class="text-right d-none d-md-block">
+                                        <a onclick="javascript:btnUpload_onclick('123','300','355','96');" id="saveAtt" style="color: #00000;" class="fff-Font btn btn-primary ">
+                                            SAVE FILE
+                                        </a>
+                                        <!--  disabled <button class="btn btn-primary btn-block-sm button-process-upload" id="saveAttachment">SAVE</button>-->
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- .col -->
+                            <div class="col-md-6 order-md-1"  style="width: 456px">
+                                <div class="image-area" id="image-area" style="background-color: #D8D8D8;width: 456px">
+                                    <div class="dwtcontrolContainer" id="dwtcontrolContainer" style="background-color: #ffffff;padding-top: 0%; width:456px"></div>
+                                </div>
+                                
+                                <div class="text-center text-md-left mt-3">
+                                    <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" onclick="btnCrop_onclick()" ><i
+                                                                                                                                             class="icon-crop"></i></a>
+                                    <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" onclick="btnRotateLeft_onclick()"><i
+                                                                                                                                                  class="icon-rotate-left"></i></a>
+                                    <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" onclick="btnRotateRight_onclick()"><i
+                                                                                                                                                   class="icon-rotate-right"></i></a>
+                                    <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" id="uploadDel" onclick="btnRemoveCurrentImage_onclick()"><i
+                                                                                                                                                                         class="icon-delete"></i></a>
+                                </div>
+                                
+                            </div>
+                            <!-- .col -->
+                            
+                        </div>
+                        <!-- .row -->
+                        <div class="text-right d-block d-md-none mt-4">
+                            <a class="save-mob fff-Font btn btn-primary btn-block-sm button-process-upload"
+                                    onclick="closeDialog();javascript:btnUpload_onclick('123','300','355','96');"
+                                    >SAVE</a>
+                        </div>
+                        
+                    </div>
+                    <!-- .modal-body -->
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-de7e2ef6bfefd24b79a3f68b414b87b8db5b08439cac3f1012092b2290c719cd.js"></script>
+        
+        <script type="text/javascript" language="javascript">
+            var imageBase64=document.getElementById("{!$Component.imageBase64}");
+        var reqDocId=document.getElementById("{!$Component.reqDocId}");
+        var docName=document.getElementById("{!$Component.docName}");
+        
+        var passportData;
+        function handleFileSelect(evt) {
+            //var f = evt.target.files[0]; // FileList object
+            var f = $('#files')[0].files[0]
+            alert('f>>'+JSON.stringify(f));
+            var reader = new FileReader();
+            // $('#table_content').empty();
+            // Closure to capture the file information.
+            reader.onload = function (theFile) {
+                return function (e) {
+                    var binaryData = e.target.result;
+                    //Converting Binary Data to base 64
+                    var base64String = window.btoa(binaryData);
+                    //showing file converted to base64
+                    $.ajax({
+                        //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                        url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=true",
+                        beforeSend: function(xhr) { 
+                            //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+                            xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                        },
+                        type: 'POST',
+                        dataType: 'json', 
+                        crossOrigin: true,
+                        contentType: 'application/json',              
+                        processData: false,
+                        data: '{"image":'+base64String+'}',
+                        success: function (data) { 
+                            var t=JSON.stringify(data);
+                            var memberObject={};
+                            var dd='['+t+']'; 
+                            var ddd=JSON.parse(dd);
+                            passportData = ddd[0]["data"];
+                            memberObject = ddd[0]["data"];
+                            //console.log(ddd[0]["data"]);
+                            var k1=[];
+                            var passportNo = '';
+                            var membrStr = '';
+                            var fullname = '';
+                            
+                            let duplicatePassport = false;
+                            $('.addedMems').each(function(){
+                                let v = JSON.parse($(this).val())['Passport No'];
+                                if(memberObject["Passport No"] == v){
+                                    $('#uploadErr').modal('show');
+                                    duplicatePassport = true;
+                                }
+                            });
+                            if(duplicatePassport){
+                                $('#image-area img,#modal_process_upload').hide();
+                                $('#image-area div').show();
+                                return;
+                            };
+                            fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                            membrStr = JSON.stringify(memberObject);
+                            let attVal = JSON.stringify($('#files').val(''));
+                            var mNewRow = $("<div class='col-lg-6'>");  
+                            let sharesPerc = (parseInt($('#memShares').val())/parseInt($('#sharesTotal').val()))*100
+                            var mCols = "";
+                            mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+                            mCols += "<label>"+fullname+"</label> <input type='hidden' class='addedMems' id='"+memberObject["Passport No"]+"' value='"+membrStr+"'/>";
+                            mCols += '<button type="button" onclick="memberEdit(\''+memberObject["Passport No"]+'\');" data-toggle="modal" data-target="#modal_confirm_information" id="memberEditid" class="btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+                            mCols += '<a onclick="deleteItem(\''+memberObject["Passport No"]+'\');" class="btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a>';
+                            mCols +=  "</div><div class='shareholder-box-right'><div class='input-percentage-wrapper'>";
+                            mCols += "<input type='text' readonly='true' class='form-control' value='"+sharesPerc+"' /> </div><label>Share Percentage</label> ";
+                            mCols += ' </div></div>';
+                            mNewRow.append(mCols);
+                            $("#addedMembers").prepend(mNewRow);      
+                            $('#modal_process_upload').modal('hide');
+                            $('#files').val('');
+                            $('#saveAtt').addClass('disabled');
+                            validateAddSHDIV();
+                            //document.getElementById('modal_fileuploadPopUp').style.display='none';
+                            $('body').removeClass('modal-open'); 
+                            $('.modal-backdrop').remove();
+                            
+                            $("#base64").val(JSON.stringify(data));
+                            // document.getElementById('base64').value = base64String;
+                        },
+                        error: function(){
+                            // alert("Cannot get data");
+                        }
+                    });
+                    //alert('Attachment pushed pls wait...');
+                    $('#modal_fileuploadPopUp').modal('hide');
+                    $('#modal_process_upload').modal('show');
+                };
+            }(f);
+            // Read in the image file as a data URL.
+            reader.readAsBinaryString(f);
+        }
+        
+        </script>
+        
+        <!-- from refer Start-->
+        
+        <div id="imgPrv" title="Image Preview" style="vertical-align:center; text-align:center;" >
+            <img id="imP" src="" />
+        </div>
+        <script type="text/javascript">
+        //function openDialogDW(docName,val,dialogId){
+        function openDialogDW(){
+            // Dynamsoft.webtwain.__unload();
+            //$("#default-popup").load();
+            $("#dwtcontrolContainer").load();
+            Dynamsoft.WebTwainEnv.Load();
+            //openDialog(docName,val,dialogId);
+            //Dynamsoft.webtwain.Load();
+            
+        }
+        $("#imgPrv").dialog({autoOpen: false,show: {effect: "scale",duration: 200},hide: {effect: "explode",duration: 400}});
+        function imgPreview(fName,src){
+            document.getElementById("imP").src=src;
+            $("#imgPrv").dialog("option","title",fName);
+            $('#imgPrv').dialog({height:700,width:1000,maxHeight:750,maxWidth:1000,resizable:true,modal: true});
+            $( "#imgPrv" ).dialog({ position: { my: "left", at: "left", of: window } });
+            $( "#imgPrv" ).dialog({ position: { my: "top", at: "top", of: window } });
+            $("#imgPrv").dialog("open");
+        }
+        function printImage(src){
+            var html  = "<html><head>" +
+                "</head>" +
+                "<body  style ='-webkit-print-color-adjust:exact;'>"+
+                "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+                "</body>";
+            var win = window.open("about:blank","_blank");
+            win.document.write(html);
+        }
+        openDialogDW();
+        
+        function rmErronTC(){
+            if($('#photoCond').prop('checked'))
+                removeValError('#photoCond');
+            else
+                addValError('#photoCond','Please select to agree the guidelines.');
+        }
+        </script> 
+        <!-- from refer End-->
+        <!--
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/moment/min/moment.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/js/select2.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/jquery.easy-autocomplete.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+-->
+        <!--  <apex:inputHidden id="xtcdl__c" value="{!rq.xtcdl__c}"/> -->
+        <!--  <script> cs["xtcdl__c"]=document.getElementById("{!$Component.xtcdl__c}"); 
+</script> -->
+    </apex:outputText>
+</apex:component>

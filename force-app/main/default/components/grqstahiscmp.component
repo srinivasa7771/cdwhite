@@ -1,0 +1,122 @@
+<apex:component rendered="{!req.Status_History__r.size>0}" controller="gctlstahis">
+    <!--apex:attribute name="req" description="Request" type="g_Req__c" required="true"/-->
+    <apex:attribute name="ispu" description="Portal User" type="Boolean" />
+    <apex:attribute name="isgu" description="Guest User" type="Boolean" />
+    <apex:attribute name="os" description="Portal User" type="Double" />
+    <apex:variable value="{!0}" var="counter"/>
+    <apex:variable value="{!0}" var="colCounter"/>
+    
+    <div class="status-collapse grey-collapse">
+        <apex:repeat value="{!req.Status_History__r}" var="history">
+            
+            <apex:outputText rendered="{!IF(counter <= 0,true,false)}">
+                <apex:outputText rendered="{!AND(history.t__r.kstp__c,ispu)}">
+                    <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse" data-target="#status_collapse">
+                        <apex:variable var="counter" value="{!counter+1}"/>
+                        <div class="collapse-title">
+                            <span class="fs-14">CURRENT STATUS</span> <br/>
+                            <apex:outputText rendered="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))<18),history.t__r.hisl__c=='MEDIAH')}">
+                                {!history.itm__r.Name} - {!$Label.MEDIAH17}
+                            </apex:outputText>
+                            <apex:outputText rendered ="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))>17),history.t__r.hisl__c=='MEDIAH')}">
+                                {!history.itm__r.Name} - {!$Label.MEDIAH18}
+                            </apex:outputText>
+                            <apex:outputText rendered ="{!history.t__r.hisl__c<>'MEDIAH'}">
+                                {!history.itm__r.Name} - {!if(ISBLANK(history.t__r.hisl__c),history.To__c,if(AND(history.t__r.hisl__c=='EPNEXT',contains(req.xadh__c,'la;')),$Label.EPNEXTLA,if(AND(history.t__r.hisl__c=='EPNEXT',NOT(contains(req.xadh__c,'la;'))) ,$Label.EPNEXTAI,history.t__r.hisl__c)))}
+                            </apex:outputText>
+                            <span style="color: #9B9B9B !important;">
+                                <apex:outputText value="{0,date,dd'/'MM'/'yyyy G 'at' hh.mm a}">
+                                    <apex:param value="{!history.CreatedDate}" />  <!-- NOW() -->
+                                </apex:outputText> 
+                            </span>
+                        </div>
+                        <div class="ml-0 ml-md-auto" style="display:{!if(ispu,'none','block')}">
+                            <h5 class="fs-16 m-0">by {!history.CreatedBy.Name}</h5>
+                        </div>
+                        <div class="ml-5 d-none d-lg-block">
+                            <h5 class="fs-16 m-0">STATUS HISTORY</h5>
+                        </div>
+                    </a>
+                </apex:outputText>
+                <apex:outputText rendered="{!NOT(ispu)}">
+                    <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse" data-target="#status_collapse">
+                        <apex:variable var="counter" value="{!counter+1}"/>
+                        <div class="collapse-title">
+                            <span class="fs-14">CURRENT STATUS</span> <br/>
+                            <apex:outputText rendered="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))<18),history.t__r.hisl__c=='MEDIAH')}">
+                                {!history.itm__r.Name} - {!$Label.MEDIAH17} - {!history.To__c}
+                            </apex:outputText>
+                            <apex:outputText rendered ="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))>17),history.t__r.hisl__c=='MEDIAH')}">
+                                {!history.itm__r.Name} - {!$Label.MEDIAH18} - {!history.To__c}
+                            </apex:outputText>
+                            <apex:outputText rendered ="{!history.t__r.hisl__c<>'MEDIAH'}">
+                                {!history.itm__r.Name} - {!if(ISBLANK(history.t__r.hisl__c),history.To__c,if(AND(history.t__r.hisl__c=='EPNEXT',contains(req.xadh__c,'la;')),$Label.EPNEXTLA,if(AND(history.t__r.hisl__c=='EPNEXT',NOT(contains(req.xadh__c,'la;'))) ,$Label.EPNEXTAI,history.t__r.hisl__c)))} - {!history.To__c}
+                            </apex:outputText>
+                            <span class="text-light">
+                                <apex:outputText value="{0,date,dd'/'MM'/'yyyy hh.mm a}">
+                                    <apex:param value="{!req.Status_History__r[0].CreatedDate}" /> 
+                                </apex:outputText>
+                            </span>
+                        </div>
+                        <div class="ml-0 ml-md-auto" style="display:{!if(ispu,'none','block')}">
+                            <h5 class="fs-16 m-0">by {!req.Status_History__r[0].CreatedBy.Name}</h5>
+                        </div>
+                        <div class="ml-5 d-none d-lg-block">
+                            <h5 class="fs-16 m-0">STATUS HISTORY</h5>
+                        </div>
+                    </a>
+                </apex:outputText>
+                
+            </apex:outputText>
+            
+        </apex:repeat>
+        
+        <div id="status_collapse" class="collapse">
+            <div class="collapse-content">
+                <ul class="status-list">
+                    <apex:repeat value="{!req.Status_History__r}" var="history">
+                        <apex:variable var="colCounter" value="{!colCounter+1}"/>
+                        <apex:outputText rendered="{!IF((colCounter > counter),true,false)}">
+                            <apex:outputText rendered="{!AND(history.t__r.kstp__c,ispu)}">
+                                <li>
+                                    <apex:outputText rendered="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))<18),history.t__r.hisl__c=='MEDIAH')}">
+                                        {!history.itm__r.Name} - {!$Label.MEDIAH17}
+                                    </apex:outputText>
+                                    <apex:outputText rendered ="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))>17),history.t__r.hisl__c=='MEDIAH')}">
+                                        {!history.itm__r.Name} - {!$Label.MEDIAH18}
+                                    </apex:outputText>
+                                    <apex:outputText rendered ="{!history.t__r.hisl__c<>'MEDIAH'}">
+                                        {!history.itm__r.Name} - {!if(ISBLANK(history.t__r.hisl__c),history.To__c,if(AND(history.t__r.hisl__c=='EPNEXT',contains(req.xadh__c,'la;')),$Label.EPNEXTLA,if(AND(history.t__r.hisl__c=='EPNEXT',NOT(contains(req.xadh__c,'la;'))) ,$Label.EPNEXTAI,history.t__r.hisl__c)))}
+                                    </apex:outputText>
+                                    &nbsp;&nbsp;
+                                    <apex:outputText value="{0,date,dd'/'MM'/'yyyy 'at' G hh.mm a}">
+                                        <apex:param value="{!history.CreatedDate}"/> 
+                                    </apex:outputText>
+                                </li>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!NOT(ispu)}">
+                                <li>
+                                    <apex:outputText rendered="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))<18),history.t__r.hisl__c=='MEDIAH')}">
+                                        {!history.itm__r.Name} - {!$Label.MEDIAH17} - {!history.To__c}
+                                    </apex:outputText>
+                                    <apex:outputText rendered ="{!AND(NOT(ISNULL(req.xcbd__c)),((YEAR(TODAY())-YEAR(req.xcbd__c))>17),history.t__r.hisl__c=='MEDIAH')}">
+                                        {!history.itm__r.Name} - {!$Label.MEDIAH18} - {!history.To__c}
+                                    </apex:outputText>
+                                    <apex:outputText rendered ="{!history.t__r.hisl__c<>'MEDIAH'}">
+                                        {!history.itm__r.Name} - {!if(ISBLANK(history.t__r.hisl__c),history.To__c,if(AND(history.t__r.hisl__c=='EPNEXT',contains(req.xadh__c,'la;')),$Label.EPNEXTLA,if(AND(history.t__r.hisl__c=='EPNEXT',NOT(contains(req.xadh__c,'la;'))) ,$Label.EPNEXTAI,history.t__r.hisl__c)))} - {!history.To__c}
+                                    </apex:outputText>
+                                    ,&nbsp;&nbsp;
+                                    <apex:outputField value="{!history.CreatedDate}"/>
+                                    ,&nbsp;&nbsp;
+                                    <div class="ml-0 ml-md-auto" style="display:{!if(OR(ispu,isgu),'none','block')}">
+                                        <h5 class="fs-16 m-0">by {!history.CreatedBy.Name}</h5>
+                                    </div>
+                                </li>
+                            </apex:outputText>
+                        </apex:outputText>
+                    </apex:repeat>
+                </ul>
+            </div>
+        </div>
+    </div>
+</apex:component>

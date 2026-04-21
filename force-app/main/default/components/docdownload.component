@@ -1,0 +1,317 @@
+<apex:component >
+    <style>
+        
+        .stage {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding: 2rem 0;
+        margin: 0 -5%;
+        overflow: hidden;
+        }
+        .dot-elastic {
+        position: relative;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #000;
+        color: #000;
+        animation: dotElastic 1s infinite linear;
+        }
+        
+        .dot-elastic::before, .dot-elastic::after {
+        content: '';
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        }
+        
+        .dot-elastic::before {
+        left: -15px;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #000;
+        color: #000;
+        animation: dotElasticBefore 1s infinite linear;
+        }
+        
+        .dot-elastic::after {
+        left: 15px;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #000;
+        color: #000;
+        animation: dotElasticAfter 1s infinite linear;
+        }
+        
+        @keyframes dotElasticBefore {
+        0% {
+        transform: scale(1, 1);
+        }
+        25% {
+        transform: scale(1, 1.5);
+        }
+        50% {
+        transform: scale(1, 0.67);
+        }
+        75% {
+        transform: scale(1, 1);
+        }
+        100% {
+        transform: scale(1, 1);
+        }
+        }
+        
+        @keyframes dotElastic {
+        0% {
+        transform: scale(1, 1);
+        }
+        25% {
+        transform: scale(1, 1);
+        }
+        50% {
+        transform: scale(1, 1.5);
+        }
+        75% {
+        transform: scale(1, 1);
+        }
+        100% {
+        transform: scale(1, 1);
+        }
+        }
+        
+        @keyframes dotElasticAfter {
+        0% {
+        transform: scale(1, 1);
+        }
+        25% {
+        transform: scale(1, 1);
+        }
+        50% {
+        transform: scale(1, 0.67);
+        }
+        75% {
+        transform: scale(1, 1.5);
+        }
+        100% {
+        transform: scale(1, 1);
+        }
+        }
+        
+    </style>
+    <apex:attribute name="ri"   description="Request Item"  type="g_reqitem__c" required="true"/>
+    <apex:attribute name="rq"   description="Request"  type="g_Req__c" />
+    <!-- <apex:outputText rendered="{!AND(OR(ri.itm__r.cd__c == 'ep',ri.itm__r.cd__c == 'eci',ri.itm__r.cd__c == 'eca',ri.itm__r.cd__c == 'ia'),ri.sta__r.cd__c == 'ok')}">
+<a onclick="downloadDoc();" href="#" class="btn btn-primary">DOWNLOAD</a>
+</apex:outputText> -->
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '216',ri.itm__r.cd__c =='nl',ri.sta__r.cd__c != 'v',ri.sta__r.cd__c != 'okk')}">
+        <a  href="/DisplayDoc?id={!ri.ccrmid__c}" target="_blank" class="btn btn-primary">DOWNLOAD</a><!--xoca__c-->
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '196',ri.itm__r.cd__c =='rd')}">
+        <a  href="/DisplayDoc?id={!ri.ccrmid__c}" target="_blank" class="btn btn-primary">DOWNLOAD</a><!--xoca__c-->
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '220',ri.itm__r.cd__c =='ddd',OR(ri.sta__r.cd__c == 'wd'))}">
+        <a onclick="enableItm('ddd');" href="#" class="btn btn-primary">COURIER BOOKING</a>
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '216',ri.itm__r.cd__c =='nl',OR(ri.sta__r.cd__c == 'ldc'))}">
+        <a onclick="enableItm('nl');" href="#" class="btn btn-primary">COURIER BOOKING</a>
+    </apex:outputText>
+      <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '196')}">
+        <a onclick="invokeCourier('rd');" href="#" class="btn btn-primary">COURIER BOOKING</a>
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '216',ri.itm__r.cd__c =='dr',OR(ri.sta__r.cd__c == 'wd'))}">
+        <a onclick="enableItm('dr');" href="#" class="btn btn-primary">COURIER BOOKING</a>
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(or(ri.sta__r.cd__c='ok',ri.sta__r.cd__c='wd',ri.sta__r.cd__c='sod',ri.sta__r.cd__c='vcc'),rq.srvc__r.uid__c == '220',rq.xcamc__c =='Appoint/Change of Secretary')}">
+        <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Register of Secretary&rg=N&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Register of Secretary</a>
+    </apex:outputText>
+    <apex:outputText rendered="{!AND(or(ri.sta__r.cd__c='ok',ri.sta__r.cd__c='wd',ri.sta__r.cd__c='sod',ri.sta__r.cd__c='vcc'),rq.srvc__r.uid__c == '220',CONTAINS(rq.xcamc__c,'Director'))}">
+        <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Register of Directors&rg=N&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Register of Directors</a>
+    </apex:outputText>
+    <apex:outputPanel rendered="{!AND(rq.srvc__r.uid__c == '220')}">
+        <apex:outputText rendered="{!OR(rq.xcamc__c=='Remove Activity',rq.xcamc__c =='Remove Broadcasting Channels',rq.xcamc__c =='Remove Publishing Title')}">
+            <apex:outputText rendered="{!AND(OR(rq.xcamc__c =='Remove Publishing Title',rq.xcamc__c =='Remove Broadcasting Channels'),rq.STA__c!='Completed')}">
+                 <div class="data-value">License Amendments details has been updated successfully</div>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(rq.xcamc__c =='Remove Activity',rq.STA__c=='Completed')}">
+                 <div class="data-value">License Amendments details have been updated successfully and License is available for download.</div>
+            </apex:outputText>
+            <!--div class="data-value">Please wait, Licence copy is being Generated.</div-->
+            <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Commercial+License&rg=Y" target="_blank" class="btn btn-primary">Print Licence copy</a>
+            <div class="snippet" data-title=".dot-elastic">
+                <div class="stage">
+                    <div class="dot-elastic"></div>
+                </div>
+            </div>
+            <script>
+            setTimeout(function(){
+                location.reload();
+            },360000);
+            </script>
+        </apex:outputText>
+    </apex:outputPanel>
+    <apex:outputText rendered="{!AND(ri.itm__r.cd__c !='nl',OR(rq.srvc__r.uid__c == '322',ri.itm__r.cd__c !='ec'),ri.itm__r.cd__c !='ob',OR(rq.srvc__r.uid__c == '208',AND(rq.srvc__r.uid__c == '220',OR(rq.xcamc__c =='Add Activity',rq.xcamc__c =='Change of General Manager',rq.xcamc__c =='Add Segment',rq.xcamc__c =='Remove Segment',rq.xcamc__c =='Adding New Publishing Title',rq.xcamc__c =='Adding New Broadcasting Channels',rq.xcamc__c =='Parent Company Name Change',rq.xcamc__c =='Company Name Change - FZ-LLC',rq.xcamc__c =='Company Name Change - Operating Name',rq.xcamc__c =='Company Name Change - Operating Name  & Parent Company Name')),rq.srvc__r.uid__c == '322',rq.srvc__r.uid__c == '216'),rq.xfpc__c !=null)}">
+        <apex:outputText rendered="{!AND(DATE(2021,4,4) > DATEVALUE(rq.xfpc__c),OR((NOW()-rq.xfpc__c) > 1,((NOW()-rq.xfpc__c)*24*60)>5))}">
+            <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '322',rq.Acc__r.Legal_Framework__c == 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Commercial+License&rg=Y" target="_blank" class="btn btn-primary">DOWNLOAD</a><!--xoca__c-->
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(OR(rq.srvc__r.uid__c == '208',rq.srvc__r.uid__c == '220'),rq.Acc__r.Legal_Framework__c == 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Freelancer Permit&rg=N&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Licence copy</a>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(rq.Acc__r.Legal_Framework__c != 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Commercial+License&rg=N&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Licence copy</a><!--xoca__c--> 
+            </apex:outputText>
+            
+        </apex:outputText>
+        <apex:outputText ><!--rendered="{!AND(DATE(2021,4,3) < DATEVALUE(rq.xfpc__c),OR((NOW()-rq.xfpc__c) > 1,((NOW()-rq.xfpc__c)*24*60)>5))}"-->
+            <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '322',rq.Acc__r.Legal_Framework__c == 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Commercial+License" target="_blank" class="btn btn-primary">DOWNLOAD</a>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '208',rq.Acc__r.Legal_Framework__c == 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Freelancer Permit&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Licence copy</a>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(OR(ri.sta__r.cd__c='ok',ri.sta__r.cd__c='wd'),rq.srvc__r.uid__c == '220',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Freelancer Permit&rg=N&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Licence copy</a>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND(rq.srvc__r.uid__c != '220',rq.Acc__r.Legal_Framework__c != 'Freelancer',rq.Acc__r.lc__c !='')}">
+                <a  href="/apex/getdoccopy?lc={!rq.Acc__r.lc__c}&dc=Commercial+License&rid={!rq.id}" target="_blank" class="btn btn-primary">Print Licence copy</a> 
+                </apex:outputText>
+        </apex:outputText>
+        <apex:outputText rendered="{!AND(OR(rq.srvc__r.uid__c == '208',AND(rq.srvc__r.uid__c == '322',rq.Acc__r.lc__c=='',rq.STA__c == 'Completed')), (NOW()-rq.xfpc__c) < 1,((NOW()-rq.xfpc__c)*24*60)<5)}">
+            <div class="data-value">Please wait, Licence copy is being Generated.</div>
+            <div class="snippet" data-title=".dot-elastic">
+                <div class="stage">
+                    <div class="dot-elastic"></div>
+                </div>
+            </div>
+            <script>
+            setTimeout(function(){
+                location.reload();
+            },360000);
+            </script>
+        </apex:outputText>    
+    </apex:outputText> 
+    <!--apex:outputPanel rendered="{!AND(Contains('ok',ri.sta__r.cd__c),rq.srvc__r.uid__c == '220')}" >
+        
+        <apex:outputText rendered="{!rq.xcamc__c=='Remove Activity'}" >
+            <div class="data-value">Please wait, Licence copy is being Generated.</div>
+        </apex:outputText>
+        <div class="snippet" data-title=".dot-elastic">
+            <div class="stage">
+                <div class="dot-elastic"></div>
+            </div>
+        </div>
+        
+    </apex:outputPanel-->
+    
+    <apex:outputText rendered="{!OR( AND(Contains('okk,ca,ii,ok',ri.sta__r.cd__c), rq.ID_Generated__c,Contains('rp,rt,trp,rpc',ri.itm__r.cd__c)),  AND(rq.ID_Generated__c,Contains('123,142,071,068,070,087,088,109',rq.srvc__r.uid__c), Contains('tid,id,id2,2id,3id,4id,gid,5id',ri.itm__r.cd__c)),  AND( OR(rq.srvc__r.uid__c == 'ltp',rq.srvc__r.uid__c == 'ltv',rq.srvc__r.uid__c == 'ltc', rq.srvc__r.uid__c == 'ltn', rq.srvc__r.uid__c == 'lts',rq.srvc__r.uid__c == 'dnc', AND(ri.itm__r.cd__c == 'ofl',ri.sta__r.cd__c=='aw', Contains('001,002,021,020,040,078,303,304,601',rq.srvc__r.uid__c), or(CONTAINS(rq.xadh__c,'ofl;'),ri.itm__r.cd__c == 'ofl')) ) , or(rq.STA__c=='Completed', AND(rq.srvc__r.uid__c == 'ltc',OR(rq.STA__c=='Under Review',rq.STA__c=='In Process')), AND(rq.srvc__r.uid__c == '208',OR(rq.STA__c=='Under Review',rq.STA__c=='In Process',rq.STA__c=='Open'),rq.AP__c!=0), AND(ri.itm__r.cd__c == 'ofl', Contains('001,002,021,020,040,078,303,304,068,070,087,088,601',rq.srvc__r.uid__c), or(CONTAINS(rq.xadh__c,'ofl;'), ri.itm__r.cd__c == 'ofl'), OR(rq.STA__c=='Under Review',rq.STA__c=='In Process',rq.STA__c=='Open'))) ) )}"> 
+        <apex:repeat value="{!rq.Attachments}" var="string" id="theRepeat">
+            <p>
+                
+                {!if(ri.itm__r.cd__c == 'ofl','Offer Letter has been issued.',if(rq.srvc__r.uid__c == '208','',''))}
+            </p>
+            
+ <a  href="/servlet/servlet.FileDownload?file={!string.id}" target="_blank" class="btn btn-primary">{!if(rq.srvc__r.uid__c == '208','Print Licence copy',if(OR(ri.itm__r.cd__c == 'rp',ri.itm__r.cd__c == 'rt',ri.itm__r.cd__c == 'trp',ri.itm__r.cd__c == 'rpc',ri.itm__r.cd__c == 'id',ri.itm__r.cd__c == 'id2',ri.itm__r.cd__c == '2id',ri.itm__r.cd__c == '3id',ri.itm__r.cd__c == '4id',ri.itm__r.cd__c == '5id',ri.itm__r.cd__c == 'gid'),'DOWNLOAD ID CARD','DOWNLOAD'))}</a><!--xoca__c-->            
+            
+        </apex:repeat>                               
+        <apex:outputPanel rendered="{!AND(rq.Attachments.size<1,OR(rq.STA__c=='Completed',rq.srvc__r.uid__c == '208'),rq.srvc__r.uid__c != '051',rq.srvc__r.uid__c != '052',rq.srvc__r.uid__c != '050')}">
+            <apex:outputText rendered="{!rq.srvc__r.uid__c == '208'}">
+                <div class="data-value">Please wait, Licence copy is being Generated.</div>
+            </apex:outputText>
+            <apex:outputText rendered="{!AND (rq.srvc__r.uid__c != '208',rq.srvc__r.uid__c != '051',rq.srvc__r.uid__c != '052',rq.srvc__r.uid__c != '050')}">
+                <div class="data-value">Please wait, Letter is being Generated.</div>
+            </apex:outputText>
+            <div class="snippet" data-title=".dot-elastic">
+                <div class="stage">
+                    <div class="dot-elastic"></div>
+                </div>
+            </div>
+            <script>
+            setTimeout(function(){
+                location.reload();
+            },30000);
+            </script>
+        </apex:outputPanel>
+    </apex:outputText> 
+    
+    <apex:outputpanel rendered="{!IF(rq.srvc__r.uid__c=='apt' && (rq.STA__c=='Completed' || rq.STA__c=='In Process'),true,false)}">
+        <!--<apex:outputpanel rendered="{!rq.xcped__c!= null && rq.xcped__c>=TODAY() && (rq.i_STA__c=='Access Permit | Approved' || rq.i_STA__c=='Access Permit (Renewal) | Approved')}">
+<a href="/apex/grqAPPdf?id={!rq.id}" target="_blank">Click here to download</a>
+</apex:outputpanel>  -->
+        <apex:outputpanel rendered="{!rq.xcped__c!= null && rq.xcped__c<TODAY()}">
+            <p style="color:Red;"> Permit expired on - &nbsp; <apex:outputField style="color:Red;" value="{!rq.xcped__c}"/> </p>
+        </apex:outputpanel>
+    </apex:outputpanel>
+    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c == '136',rq.STA__c=='Completed')}">
+        <br/><a  href="/apex/gstult?id={!rq.id}" target="_blank" class="btn btn-primary">DOWNLOAD </a>
+    </apex:outputText>
+    <!--<apex:outputText rendered="{!AND(OR(rq.srvc__r.uid__c == '162',rq.srvc__r.uid__c == '198'),NOT(rq.con__r.xpdl__c==''))}">
+<p>Insurance policy has been generated.</p>
+<a  href="{!rq.con__r.xpdl__c}" target="_blank" class="btn btn-primary">Print policy document</a>
+</apex:outputText>-->
+    
+    <!-- <apex:outputpanel rendered="{!IF(rq.srvc__r.uid__c=='201' && rq.STA__c=='Completed',true,false)}">
+<a id="btndetails" class="btn btn-primary" data-toggle="modal" data-target="#modal_doc_details" style="color:#fff;" onclick="return false;">
+DOWNLOAD DOCUMENTS
+</a>
+
+</apex:outputpanel> 
+
+<div class="mb-3"></div>-->
+    
+    
+    <div class="modal fade modal-base" id="modal_doc_details" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 836px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <div class="text-center pt-2">
+                        <p class="mb-1" ><h3>Reissuance of Constitutional documents </h3></p>
+                    <p class="mb-1"><h5>Click on the document to download</h5></p>                    
+                <p style="font-size: 1.125rem;font-weight: 500;"></p>
+                <div>
+                    <div class="relationship-manager-line"></div>
+                    <div>
+                        <h4 id="pop_policydetails"></h4>
+                        <div class="panel">
+                            <div class="panel-body">
+                                <div class="table-responsive table-responsive-lg">
+                                    <table id="docTable" class="table ui-table">
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+
+$(document).ready(function () {   downloadDoc2($('#xtcdl__cval').text().trim());});
+
+function downloadDoc2(docs){
+    var docAbbr = {'Certificate of Incorporation':'COI','Articles of Association':'AOA','Certificate of Company Name Change':'cocn','Freelancer Permit':'fp','Certificate of Branch Registration':'cobr','Commercial Licence':'License','Company Extract':'cxt','Board Resolution':'brs','Register Of Directors':'ROD'};
+    if(docs!=undefined && docs!=""){
+        var alldocs = docs.split(';');
+        for(var i=0; i<alldocs.length-1;i++){
+            if(alldocs[i]!=""){
+                var docname = alldocs[i].trim();
+                //var tr = "<tr> <td>"+alldocs[i]+"</td><td><h5><a id=\"a_doc"+i+"\" href=\"/getdoccopy\" onclick=\"window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;\" style=\"color:#3a87d0;\">Click here to download</a></h5></td></tr>";
+                var tr = "<tr> <td></td><td><h5><a id=\"a_doc"+i+"\" href=\"/apex/getdoccopy?dc="+docAbbr[docname]+"\" onclick=\"window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;\" style=\"color:#3a87d0;\">"+docname+"</a></h5></td></tr>";
+                $('#docTable').append(tr);
+            }
+        }
+    }
+} 
+</script>
+</apex:component>

@@ -1,0 +1,109 @@
+<apex:component controller="ApplicantDetailController">
+    <apex:attribute name="mdList" type="DDAMembersWrapper" description="Existing members" />
+    <style>
+        
+        .locSection{
+            display:none;
+        }
+    </style>
+   
+   <div class="row">
+        <div id="exMemLst" style="display:none;">
+            <apex:outputPanel id="exMemList">
+                <div class="form-group">
+                    <div id="gmdiv" class="fs-18 my-2 locSection">
+                    Select the member you want to remove based on the decision of the board or shareholders. If the current member holds multiple positions, they will be retained in other positions AS IS and will be removed only from the post of Manager.
+                    </div>
+                    <div id="sdiv" class="fs-18 my-2 locSection">
+                    Select the member you want to remove based on the decision of the board or shareholders. If the current member holds multiple positions, they will be retained in other positions AS IS and will be removed only from the post of Secretary.
+                    </div>
+                    <h5>Select the member to proceed</h5>
+                    <table class="table table-align-middle" id="table-exMem" data-page-length='25'>
+                        <thead>
+                            <tr>
+                                <th>SELECT<i class="fa text-primary"></i></th>
+                                <th>NAME<i class="fa text-primary"></i></th>
+                                <th>ROLE<i class="fa text-primary"></i></th>
+                                <th>PASSPORT#<i class="fa text-primary"></i></th>
+                                <!--<th>EXPIRY DATE<i class="fa text-primary"></i></th>-->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <apex:repeat value="{!mdList.licenseInfos[0].members}" var="m">
+                                <tr rowTitle="{!m.positions}">
+                                    <apex:repeat value="{!m.passports}" var="mm">
+                                        <td>
+                                            <label class="custom-checkbox mt-2">
+                                                <input ppNum='{!mm.docNo}' name='exMember' type="checkbox" role="{!m.positions}" onchange="settoFld(this)"   class="cards exmemClass"/>
+                                                <span>&nbsp;</span>
+                                            </label>
+                                        </td>
+                                        <td>{!m.firstName} {!m.lastName}</td>
+                                        <td>{!m.positions}</td>
+                                        <td attr="ppNum">{!mm.docNo}</td>
+                                        <!--<td>{!mm.expiryDate}</td>-->
+                                    </apex:repeat>
+                                </tr>
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                </div>
+            </apex:outputPanel>
+        </div>
+    </div>
+    <script>
+    //PJ 1.1
+    var adhoc3Proto = '{"serviceRequests":[{"serviceId":"","axsRefNo":"","licenseNo":"","isPaid":false,"members":[{"positions":"Manager","isMobilePhoneVerified":"","mobilePhoneVerificationDatetime":"","perEmail":"","isEmailVerified":"","emailVerificationDatetime":"","nationality":"","lastName":"","gender":"","firstName":"","ddaId":"","birthDate":"","dateOfIncorporation":"","countryOfIncorporation":"","operatingName":"","registrationNo":"","proposedNumberOfShares":"","currentNumberOfShares":"","registrationDate":"","cessationDate":"","passports":[{"countryOfIssuance":"","placeOfIssuance":"","issueDate":"","expiryDate":"","docNo":""}],"emiratesId":{"issueDate":"","expiryDate":"","docNo":""},"addresses":[{"type":"HOME","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""},{"type":"UAE","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""}],"actionType":"ADD"}]}]}';
+    var adhoc4Proto = '[{"Salutation":"","Given_Name":"","Surname":"","MR_Gender":"","Date_of_Birth":"","Place_of_Issue":"","undefined":"","Passport_No":"","Date_of_Issue2":"","Date_of_Expiry2":"","country":"","Place_of_Birth":"","eid":"","InOrOut":"","AttachmentId":""}]';
+    var selectedJSON = [];
+    var members = [];
+    var mem = {},xuvdetVal = {};
+    $(document).ready(function(){
+        $('.base-nav-next').hide();//US APD2635
+        getExMemDtls();
+    });
+    function settoFld(e) {
+        if('{!req.id}'!=''  && cs['xcamc__c'].value=='Remove Director'){
+            //deleteMemResol();
+            //axsConfirmation('Warning','Are you sure want to change the member?',false,'deleteMemResol','','','')
+        } 
+    
+        let ppNum = $(e).attr("ppNum");
+        let type = $(e).attr('type');
+        for (i of JSON.parse(cs['existingMemDetail'].value).licenseInfos[0].members) {
+            if (i.type != 'Corporate' && i.type != 'FZLLC_Company'){
+                if ( i.passports[0] && ppNum == i.passports[0].docNo) {
+                    if (type == 'checkbox')
+                        if(!$(e).is(':checked')){
+                            for([j,v] of selectedJSON.entries()){
+                                if(v.passports[0].docNo==i.passports[0].docNo)
+                                    selectedJSON.splice(j,1);
+                            }
+                            
+                        }
+                        else{
+                            cs['isMobilePhoneVerified']= i.isMobilePhoneVerified; //PJ 1.1
+                            cs['isEmailVerified']= i.isEmailVerified; //PJ 1.1
+                            selectedJSON.push(i);
+                        }
+                    else{
+                        selectedJSON = [];
+                        selectedJSON[0] = i;
+                    }
+                }
+            }
+        }
+        cs['xuvdet__c'].value = JSON.stringify(selectedJSON);
+        
+        if(selectedJSON.length>0){
+            $('.base-nav-next').show();
+            if('{!req.id}'!=''&&cs['xadtx3__c']&&cs['xadtx3__c'].value && cs['xcamc__c'].value=='Remove Director'){
+                callWSExplicit();
+            }
+        }
+        else{
+            $('.base-nav-next').hide();
+        }
+    }
+ </script>
+</apex:component>

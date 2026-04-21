@@ -1,0 +1,1748 @@
+<!--**************************************************************************************************
+@Version History
+* Version       Date            Name                        Description
+* 1.0         Initial          DHAM                        Initial Draft
+* 1.1         02-02-2022       DHAM                        Tickmark getting hidden on UBO on GM selection (ln- 2376) -- VMKR
+* 1.2         03-03-2022       DHAM                        adding fileupload for members passports remove restiction of bod option in other dropdowns
+* 1.3         25-07-2024       DHAM                        Added logic to remove alpha numeric charecter for passport and changed max length for passport to 12 and mobile number to 15.Removed commented code.
+* 1.4         03-10-2024       Prateek Jangir              Added code to capture PEP details.
+**************************************************************************************************-->
+
+<apex:component controller="gctlMembers" allowDML="true" id="mem">
+    <apex:attribute name="req" description="request" type="g_Req__c" required="false" assignTo="{!rq}" />
+    <style>
+        .submitBtns .frmErrMsg{
+        position:relative !important;
+        font-weight: bold !important;
+        font-style: normal !important;
+        font-size: 1em !important;
+        }
+        
+        @keyframes blink {
+        0% {
+        opacity: 0.4;
+        }
+        50% {
+        opacity: 0.8;
+        }
+        80% {
+        opacity: 1;
+        }
+        100% {
+        opacity: 1;
+        }
+        }
+        
+        .blinkAny_inf {
+        animation: blink 2s infinite;
+        }
+        .blinkAny_4 {
+        animation: blink 2s 4;
+        }
+        
+        /** to Show tick marks on selected members in dropdown page **/
+        .memAdded > .board-member label::before {
+        position: absolute;
+        content: '';
+        right: -1.6875rem;
+        top: -1.6875rem;
+        width: 3.125rem;
+        height: 3.125rem;
+        background-color: #94CB59;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
+        -webkit-transition: all 0.3s;
+        -o-transition: all 0.3s;
+        transition: all 0.3s;
+        }
+        
+        .memAdded > .board-member label::after {
+        display: inline-block;
+        font: normal normal normal 14px/1 FontAwesome;
+        font-size: inherit;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        position: absolute;
+        content: "\f00c";
+        right: 3px;
+        top: 3px;
+        width: 0.8125rem;
+        height: 0.8125rem;
+        font-size: 0.8125rem;
+        color: #fff;
+        opacity: 1;
+        -webkit-transition: all 0.3s;
+        -o-transition: all 0.3s;
+        transition: all 0.3s;
+        }
+        ul.members li i{display:none;}
+        ul.members li {color:red;}
+        ul.members li {color:red;}
+        li.addedMemberLI {
+        color: green !important;
+        }
+        .addedMemberLI i {
+        display: inline-block !important;
+        }
+        /** to Show tick marks on selected members in dropdown page **/       
+        
+        /***************** to Show steps for roles *****************/
+        .breadcrumb li {
+        font-size: 1.25em;
+        }
+        .pendingRole {
+        color: red !important;
+        }
+        .optionalRole{
+        }
+        .completedRole {
+        color: green !important;
+        }
+        ul.breadcrumb span {
+        padding: 0 5px;
+        font-weight: bold;
+        }
+        
+        /***************** to Show steps for roles *****************/
+        /* to hide % symbol */
+        .input-percentage-wrapper::after {
+        content: none !important;
+        }
+        
+        
+        .option-error {
+        color: #E62D38;
+        font-style: italic;
+        padding-left: 0.8rem;
+        position: absolute;
+        }
+        .insideUAE{display:none}
+        .shareholder-box .input-percentage-wrapper input{
+        padding-right: 7px !important;
+        }
+        .errField,.is-invalid{ 
+        border: 0.5px solid #E62D38 !important;
+        }
+        .frmErrMsg {
+        color: #E62D38;
+        font-style: italic;
+        padding-left: 0.8rem;
+        position: absolute; 
+        }
+        .row.inEditOnly {
+        display: none !important;
+        }
+        .inEditOnly {
+        display: none ;
+        }
+        html {
+        overflow-x: hidden !important;
+        }
+        label.box-check .box {
+        min-height: 8.75rem !important;
+        }
+        a.btn.btn-primary.onboarding-nav-subDocs,.onboarding-nav-pay {
+        -webkit-box-ordinal-group: 4;
+        -ms-flex-order: 3;
+        order: 3;
+        -ms-flex-preferred-size: auto;
+        flex-basis: auto;
+        margin-left: auto;
+        }
+        
+        
+        .base-collapse .collapse-header::after, .base-collapse .collapse-toggle::after {
+        margin-right: 2rem !important;
+        } 
+        
+    </style>
+    <apex:actionFunction name="submitDocstoPrm" action="{!submitDocstoPrm1}" rerender="rerenderDummy1" oncomplete="hideTempLoader_input()" />
+    <apex:actionFunction name="saveDetails1" action="{!saveOpen1}" rerender="corpSHDocs,rerenderDummy,obdmdoc" oncomplete="hideTempLoader_input()" />
+
+    <apex:actionFunction name="saveLandDoc" action="{!saveLandDoc}" rerender="corpSHDocs,rerenderDummy,obdmdoc,opDocLR" oncomplete="hideTempLoader_input(); $('#modal_confirm_shareholders').modal('hide'); $('.pgs').hide(); page3(); hideTempLoader_input();">
+         <apex:param name="landDocToDel" value="" />
+    </apex:actionFunction>
+    
+    <apex:actionFunction name="submitToPRM" action="{!submitToPRM}" rerender="rerenderDummy" oncomplete="location.reload(true);" />
+    
+    <input type='hidden' id='currentpgid' value='pg1'/>
+    <apex:inputHidden id="xadtx4__c" value="{!rq.xadtx4__c}"/>
+    <!--<apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>-->
+    <apex:inputHidden id="xadtx5__c" value="{!rq.xadtx5__c}"/>
+    <apex:inputHidden id="xfb__c" value="{!rq.xfb__c}"/>
+    
+    <apex:inputHidden value="{!sourceOfFundJSON}" id="sourceoffunds" /> <!-- PJ 1.4 -->
+    
+    <div id="pg1" class="pgs" style="display:none;">
+        <h3>Select your shareholding type</h3>
+        <p>Select the applicable shareholding type for your planned business</p>
+        
+        <div class="row">
+            <div class="col-lg-3 col-md-4 col-6">
+                <label class="box-check">
+                    <input type="radio" class="forReadOnly" name="shareholders_type" val='onlyMem' checked="" />
+                    <div class="shareholding-type box box-center box-hover">
+                        <div class="box-icon text-primary">
+                            <i class="icon-individual"></i>
+                            <i class="icon-individual"></i>
+                        </div>
+                        <span class="shareholding-type-title box-title">All Individuals</span>
+                    </div>
+                </label>
+            </div>
+            <!-- .col -->
+            <div class="col-lg-3 col-md-4 col-6">
+                <label class="box-check">
+                    <input type="radio" class="forReadOnly" name="shareholders_type" val='memAndCorp' />
+                    <div class="shareholding-type box box-center box-hover">
+                        <div class="box-icon">
+                            <span class="text-primary">
+                                <i class="icon-individual"></i>
+                                <i class="icon-individual"></i>
+                            </span>
+                            <span class="plus">+</span>
+                            <i class="icon-organization text-primary"></i>
+                        </div>
+                        <span class="shareholding-type-title box-title">Individuals and <br/>corporates / companies</span>
+                    </div>
+                </label>
+            </div>
+            <!-- .col -->
+            <div class="col-lg-3 col-md-4 col-6">
+                <label class="box-check">
+                    <input type="radio" class="forReadOnly" name="shareholders_type" val='onlyCorp' />
+                    <div class="shareholding-type box box-center box-hover">
+                        <div class="box-icon">
+                            <i class="icon-organization text-primary"></i>
+                        </div>
+                        <span class="shareholding-type-title box-title">All Corporates / <br/>companies</span>
+                    </div>
+                </label>
+            </div>
+            <!-- .col -->
+        </div>
+        <div id="shtypeError"  class="invalid-feedback"></div>
+    </div>
+    <div id="pg2" class="pgs" style="display:none;">
+        <h3>Enter the number of shares for your business </h3>
+        <div class="row form-style">
+            <div class="col-xl-4 col-lg-6">
+                <div class="form-group">
+                    <label>Total number of shares</label><!-- onchange="deleteAllMembers();"-->
+                    <i class="icon-info-circle text-primary" style="vertical-align: middle;font-size: 1.5em;"
+                       data-toggle="tooltip" data-placement="top" title="Total number of shares to be set based on par value of AED 1,000 per share"></i>
+                    <input id="sharesTotal" maxLength='11' type="text" onchange="shNumChange(this)" onkeyup="validateShvalSht()" placeholder="Ex: 100" class="forReadOnly form-control numOnly" />
+                </div>
+                <!-- .form-group -->
+            </div>
+            <!-- .col -->
+            <div class="col-xl-4 col-lg-6">
+                <div class="form-group">
+                    <label>Par value per share (AED)</label>
+                    <input id="shareVal" onkeyup="validateShvalSht()" type="text" value="1000" disabled="true" class="forReadOnly form-control numOnly" />
+                </div>
+                <!-- .form-group -->
+            </div>
+            <!-- .col -->
+        </div>
+        <p>
+            <b class="text-primary">Note: </b>
+            Minimum number of shares are should be 10.
+        </p>
+    </div>    
+    <div id="pg3" class="pgs" style="display:none;">
+        <h3>Add your shareholders</h3>
+        <p>
+            Please provide shareholder details and their associated number of shares. 
+        </p>
+        <p>Please enter number of shares and click on <b>UPLOAD PASSPORT/ADD MEMBER</b></p>
+        <p id="remShares" style="display:none;"><i class="icon-info-circle mr-2 text-primary"></i>Remaining number of shares - <elem></elem></p>
+        <p class="text-primary" id="onShNumChange">
+            <i class="icon-info-circle"></i>&nbsp;Please adjust your members as per your new share value&nbsp;<elem></elem>.
+            <br /> If already adjusted, please click on <b>NEXT</b> to proceed to next page.
+        </p>
+        <p id="shMsg">
+        </p>
+        
+        <div class="row mt-4 mb-3" id='addedMembers'>
+            <div class="col-lg-6 sHDivs" id="addSHDiv">
+                <div class="shareholder-box box-grey">
+                    <div class="shareholder-box-main">
+                        <label>Add shareholder details</label>
+                        <a id="uploadPassport" onclick="chageSaveAttEvent_mem();popupDocModel('Passport copy','Passport copy','');" 
+                           style="color:#fff" class="disabled btn btn-primary btn-outline-primary-3"
+                           data-toggle="modal" data-target="#validShares" btnFor="ind">UPLOAD PASSPORT</a>
+                    </div>
+                    <div class="shareholder-box-right">
+                        <input style="width: 5em;" maxLength="11" id="memShares" type="text" class="forReadOnly form-control numOnly" onkeyup="validateShares(this)" />
+                        <label>Number of Shares</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 sHDivs" id="addCrpSHDiv">
+                <div class="shareholder-box box-grey">
+                    <div class="shareholder-box-main">
+                        <label>Add a Corporate Shareholder</label>
+                        <button id="addCorpSH" btnFor="corp" data-toggle="modal" onclick="addCSH()" type="button" class="disabled btn btn-primary">ADD MEMBER</button>
+                    </div>
+                    <div class="shareholder-box-right">
+                        <input id="memShares1" maxLength="11" type="text" class="forReadOnly form-control numOnly" onkeyup="validateShares(this)" />
+                        <label>Number of Shares</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>   
+    <div id="pg4" class="pgs" style="display:none;">
+          <apex:outputText rendered="{!OR(NOT(contains(rq.xfb__c,'Branch')), (rq.xvtyp__c == 'DED' && rq.Acc__r.clt__c == 'Land'))}">
+            <h3>Add new board members</h3>
+            <!--<p>Please add the member details.</p>-->
+        </apex:outputText>
+         <apex:outputText rendered="{!OR(NOT(contains(rq.xfb__c,'Branch')), (rq.xvtyp__c == 'DED' && rq.Acc__r.clt__c == 'Land'))}">
+            <h3>Select roles for your shareholders or add new board members</h3>
+            <p>You can either select shareholder from the dropdown for the role or add a new member.</p>
+
+        </apex:outputText>
+        <div>
+            <h5>
+                <i class="icon-info-circle text-primary"></i> &nbsp;
+                Mandatory members to be declared to proceed further
+            </h5>
+            <ul class="members">
+                <li for="ub" rolCompletionCode="ub" style="{!if(contains(rq.xfb__c,'FZ-LLC'),'','display:none')}">
+                    Step-1 > Atleast one Ultimate Beneficiary Owner.
+                    <i class="ml-2 fa fa-check text-primary"></i>
+                </li>
+                <li rolCompletionCode="ub" for="ub" style="{!if(contains(rq.xfb__c,'FZ-LLC'),'display:none','')}">
+                    Step-1 > Ultimate Beneficiary Owner&nbsp;<i  data-placement="top" data-toggle="tooltip" class="icon-info-circle text-primary" title="All Share holders having shares 25% or more (atleast one UBO is mandatory)"></i>
+                    <i class="ml-2 fa fa-check text-primary"></i>
+                </li>
+                <li for="bd" rolCompletionCode="bd" style="{!if(OR(contains(rq.xfb__c,'FZ-LLC'), AND(rq.xvtyp__c == 'DED', rq.Acc__r.clt__c == 'Land')),'','display:none')}"> Step-2 > Atleast one Board of director <i class="ml-2 fa fa-check text-primary"></i></li>
+                 <li for="gm" rolCompletionCode="gm">  {!if(OR(contains(rq.xfb__c,'FZ-LLC'), AND(rq.xvtyp__c == 'DED', rq.Acc__r.clt__c == 'Land')),
+              'Step-3','Step-2')}  > One {!if(AND(rq.xvtyp__c =='DED', rq.Acc__r.clt__c == 'Land'), 'Authorized Signatory', 'General manager')}<i class="ml-2 fa fa-check text-primary"></i></li>
+            </ul>
+        </div>
+
+        <div class="row mt-4 mb-2" id="board_members">
+            <div class="col-lg-6"   style="{!if(OR(rq.xvtyp__c!='DED',AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land')),'','display:none;')}"> <!-- --> 
+                <div class="board-member box-grey">
+                    <label>Ultimate Beneficiary Owner</label> 
+                    <select id="ultben" class="forReadOnly form-control input-select2-flat select-member dropdowns" onchange="addMemPopup(this,'ub')" selCode="ub">
+                        <option value="">Select</option>
+                        <option>Add New Member</option>
+                    </select>
+                </div>
+            </div>
+             <div class="col-lg-6"  style="{!if(AND(contains(rq.xfb__c,'Branch'), OR(AND(rq.xvtyp__c !='DED', rq.Acc__r.clt__c != 'Land'), AND(rq.xvtyp__c =='DDA', rq.Acc__r.clt__c == 'Land')) ),'display:none;','')}"  > <!--  style="{!if(OR(contains(rq.xfb__c,'Branch'),rq.acc__r.lctp__c=='DED'),'display:none;','')}" -->
+                <div class="board-member box-grey">
+                    <label>Board of director</label>  <!--MS 1.1 -->
+                    <select disabled='true' class="forReadOnly form-control input-select2-flat select-member dropdowns" onchange="addMemPopup(this,'bd')" selCode="bd">
+                        <option value="">Select</option>
+                        <option>Add New Member</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="board-member box-grey">
+                    <label>{!if(AND(rq.xvtyp__c =='DED', rq.Acc__r.clt__c == 'Land'), 'Authorized Signatory', 'General manager')}</label> 
+                    <select disabled='true' class="forReadOnly form-control input-select2-flat select-member dropdowns" onchange="addMemPopup(this,'gm')" id="" selCode="gm">
+                        <option value="">Select</option>
+                        <option>Add New Member</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-lg-6" > <!-- style="{!if(rq.acc__r.lctp__c=='DED','display:none;','')}"-->
+                <div class="board-member box-grey">
+                    <label>{!if(AND(rq.xvtyp__c =='DED', rq.Acc__r.clt__c == 'Land'), 'Legal point of contact', 'Legal representative (optional)')}</label><!-- -->
+                    <select disabled='true' class="forReadOnly form-control input-select2-flat select-member dropdowns" onchange="addMemPopup(this,'lr')" selCode="lr">
+                        <option value="">Select</option>
+                        <option>Add New Member</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <apex:outputPanel styleClass="row col-12" id="gmDec" rendered="true">
+            <label>Does the appointed General Manager have a valid UAE residency visa?</label>
+            <div class="my-2 col-lg-12">
+                <label class="custom-radio mr-3">
+                    <input type="radio" value='yes' name="gmvs" class="gmvscls"/>
+                    <span>Yes</span>
+                </label>
+                <label class="custom-radio">
+                    <input type="radio" value='no' name="gmvs" class="gmvscls"/>
+                    <span>No</span>
+                </label>
+                <div id="Errorgmvs" class="invalid-feedback"></div>
+            </div>
+            <script>
+            if('{!gmDec.id}' != null && '{!gmDec.id}' != ''){
+                $('#GMDocupload').show();
+                $('input[name=gmvs][value="yes"]').prop('checked',true);
+            }
+            $('input[name=gmvs]').on('change',function () {
+                $('.gmvscls').parent().parent().find('.invalid-feedback').html('* This field is required!').hide();
+                $('.gmvscls').parent().parent().find('.frmErrMsg').remove();
+                console.log('GM flg:'+$(this).val());    
+                if ($(this).val() === 'yes') {
+                    cs['inUAE__c'].value = true;
+                    $('#GMDocupload').show();
+                } else {
+                    $('#GMDocupload').hide();
+                    cs['inUAE__c'].value = false;
+                }
+            });
+            
+            
+            </script>
+            <br/>
+            <div class="box box-block col-6" id="GMDocupload" style="display:none">
+                <div class="forLoader" forLoad="GMD" style="display:block">
+                    <label class="fs-18">Declaration of Appointment as General Manager</label>
+                    <span class="loader_img" style="float:right;display:none">
+                        <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                    </span>
+                </div>
+                <apex:outputPanel rendered="{!gmDec.id==null}">
+                    <div class="upload-field d-flex">
+                        <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                            <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                            <span>Choose File to Upload</span>
+                        </div>
+                        <div>
+                            <a btnFor="GMD" type="button" onclick="gmDecBtnClick(this)" class="btn btn-primary"
+                               style="color:#FFF;">
+                                BROWSE
+                            </a>
+                        </div>
+                    </div> <br/>
+                    <a href="/servlet/servlet.FileDownload?file=0152y000000vqXm" target="_blank" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!gmDec.id!=null}">
+                    <div class="upload-list">
+                        <div class="upload-list-item box box-white box-padding">
+                            <i class="fa fa-check-circle text-success"></i>
+                            <a onclick="window.open('/servlet/servlet.FileDownload?file='+'{!gmDec.id}','_blank')" 
+                               style="cursor:pointer" class="upload-item-title text-li"><u>Declaration of Appointment as General Manager</u></a>
+                            <a btnFor="GMD" onclick="deleteAOADocs1('{!gmDec.id}')" class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+            </div>
+            
+        </apex:outputPanel>
+        <apex:outputPanel styleClass="row col-12" id="csdPanel">
+            <script>
+            </script>
+
+        </apex:outputPanel>
+         <apex:outputPanel id="corpSHDocs" >
+        <apex:outputPanel rendered="{!OR(rq.os__c=='businessName',rq.os__c=='segments',rq.os__c=='members')}">
+            <apex:inputHidden id="xcddocs__c" value="{!rq.xcddocs__c}"/>
+            <script>
+                cs['xcddocs__c']=getC('{!$Component.xcddocs__c}');
+                var docnameTodelete = cs['xcddocs__c'].value;
+            </script>
+            <p>
+                Please upload the mandatory documents below.
+                <br /><i class="icon-info-circle text-primary"></i>
+                Some documents are currently optional; however, they will be required at a later stage. 
+            </p>
+            <c:lerqObup Dim="LR" id="obdmdoc" PageControllerBaseCalling="{!this}" keyAssigned="componentOne"/>
+        </apex:outputPanel>
+        </apex:outputPanel>
+    </div>
+    <div class="modal fade modal-base" id="modal_upload_gmDec"  tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4">Declaration of Appointment as General Manager</h2>
+                                    <div>
+                                        Please ensure that the uploaded document meets the following guidelines otherwise it may result in the rejection of your application:
+                                        <ol class="mt-2">
+                                            <li>Image is in full colour</li>
+                                            <li>Documents should be in .pdf or .jpg format</li>
+                                            <li>Maximum size of 4MB</li>
+                                        </ol>
+                                    </div>
+                                    
+                                    <p id="saveText1" style="display:none">
+                                        File uploaded please click on <b>SAVE</b> to Proceed.
+                                    </p>
+                                    <input type="file" class="files" onchange="checkFile1(this)" id="gmDecFiles" name="files" style="display: none;"/>
+                                    <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick_gmDec();">
+                                        UPLOAD DOCUMENT
+                                    </button>
+                                </div>
+                                <div class="text-right d-none d-md-block" >
+                                    <a onclick="saveAttachment_gmDec(this);" style="color: #fff;" 
+                                       class="saveAtt btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right d-block d-md-none mt-4">
+                        <a onclick="saveAttachment_gmDec(this);" style="color: #fff;" 
+                           class="saveAtt btn btn-primary disabled">
+                            SAVE
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_upload_csd"  tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4">Company Structure Doc</h2>
+                                    <div>
+                                        Please ensure that the uploaded document meets the following guidelines otherwise it may result in the rejection of your application:
+                                        <ol class="mt-2">
+                                            <li>Image is in full colour</li>
+                                            <li>Documents should be in .pdf or .jpg format</li>
+                                            <li>Maximum size of 4MB</li>
+                                        </ol>
+                                    </div>
+                                    
+                                    <p id="saveText1" style="display:none">
+                                        File uploaded please click on <b>SAVE</b> to Proceed.
+                                    </p>
+                                    <input type="file" class="files" onchange="checkFile1(this)" id="csdFiles" name="files" style="display: none;"/>
+                                    <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick_csd();">
+                                        UPLOAD DOCUMENT
+                                    </button>
+                                </div>
+                                <div class="text-right d-none d-md-block" >
+                                    <a onclick="saveAttachment_csd(this);" style="color: #fff;" 
+                                       class="saveAtt btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right d-block d-md-none mt-4">
+                        <a onclick="saveAttachment_csd(this);" style="color: #fff;" 
+                           class="saveAtt btn btn-primary disabled">
+                            SAVE
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="pg5" class="pgs" style="display:none;">
+        <h3>
+            You're almost done, {!$User.firstName}&nbsp;{!$User.LastName}! 
+        </h3>
+        
+        <p style="font-size: 1.125rem;">Thank you for choosing to set up your business with {!rq.Acc__r.prk__c}.</p>
+         <apex:outputPanel rendered="{!AND(rq.Acc__r.clt__c == 'Land',NOT(rq.Acc__r.uwl__c),NOT(rq.piFlg__c),  rq.xvtyp__c == 'DED')}">
+             <p style="font-size: 1.125rem;">Your application is currently under committee review, which typically takes 10 working days to complete. Once your application is approved, we will initiate the review process. In the meantime, please contact your relationship manager for further assistance.</p>
+        </apex:outputPanel>
+         <apex:outputPanel rendered="{!AND(rq.Acc__r.clt__c == 'Land',rq.Acc__r.uwl__c,  rq.xvtyp__c == 'DED')}">
+             <p style="font-size: 1.125rem;">
+            Your application is currently on the waiting list for land acquisition. Meanwhile, the committee is reviewing your application and will contact you if any additional documentation is required. For further assistance, please reach out to your relationship manager.</p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!AND(rq.Acc__r.clt__c != 'Land',  rq.xvtyp__c != 'DED')}">
+             <p style="font-size: 1.125rem;">Your application is under review, which can take up to 5 days. Once approved, you will be required to submit additional documents to complete the process.</p>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!AND(rq.piFlg__c,Not(rq.isAMLCompleted__c))}">
+            <p style="font-size: 1.125rem;">Your application is under committee review. Once approved, you can proceed for next steps.</p>
+        </apex:outputPanel>
+        <!--start  added  For land-->
+        <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land', rq.piFlg__c,  rq.AP__c==0)}">
+            <p style="font-size: 1.125rem;">We are pleased to inform you that your application for the land lease has been approved by the committee.
+As the next step, kindly proceed with the payment of the application processing fee of AED 5,250 (inclusive of VAT).
+Once the payment is completed, it will take approximately three (3) working days to issue the offer letter for your acceptance.
+ .</p>
+        </apex:outputPanel>
+        <apex:outputLabel >
+            <div class="row mt-5">
+                <apex:repeat value="{!rq.attachments}" var="atts">
+                    <apex:outputPanel styleClass="col-lg-6 mb-5 row" rendered="{!OR(contains(atts.name,'AOA Onboarding'),contains(atts.name,'Application for FZ LLC DDA'))}">
+                        <div class="box box-block attBox">
+                            <div class="forLoader" forload="{!atts.name}" style="display:block">
+                                <label class="fs-18 attName">{!atts.name}</label>
+                                <span class="loader_img" style="float:right;display:none">
+                                    <img src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" width="20" />
+                                </span>
+                            </div>
+                            <span id="">
+                                <div class="upload-field d-flex mb-2">
+                                    <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                        <span>Choose File to Upload</span>
+                                    </div>
+                                    <div>
+                                        <a btnfor="{!atts.name}" class="docBtn btn btn-primary btn-outline-primary-3" onclick="docBtnClick(this)" type="button" style="color: #fff;">BROWSE</a>
+                                    </div>
+                                </div>
+                                <a targe="_blank" href="/servlet/servlet.FileDownload?file={!atts.id}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a>
+                            </span>
+                        </div>
+                        
+                    </apex:outputPanel> 
+                </apex:repeat>
+                <apex:outputPanel id="attElem" styleClass="col-lg-12 row">
+                    <apex:repeat value="{!AOADocs}" var="Doc">
+                        <apex:repeat value="{!Doc.attachments}" var="att">
+                            <div class="col-lg-6">
+                                <div class="box box-block">
+                                    <label class="fs-18">{!att.name}</label>
+                                    <div class="upload-list">
+                                        <div class="upload-list-item box box-white box-padding">
+                                            <i class="fa fa-check-circle text-success"></i>
+                                            <span class="upload-item-title">
+                                                <a target="_blank" style="text-decoration:underline;" href="/servlet/servlet.FileDownload?file={!att.id}">{!att.name}</a>
+                                            </span>
+                                            <a onclick="deleteAOADocs1('{!att.id}')" class="upload-item-remove"><i class="fa fa-close"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                            aoaDocList += '{!Doc.attachments}';
+                            </script>
+                        </apex:repeat>
+                    </apex:repeat>
+                </apex:outputPanel>
+                <apex:outputLabel rendered="false">
+                </apex:outputLabel>
+                <div class="modal fade modal-base" id="modal_upload_Doc_2"  tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="width: 993px;">
+                        <div class="modal-content">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="icon-close"></i>
+                            </button>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-12 order-md-2">
+                                        <div class="d-flex flex-column h-100">
+                                            <div class="mb-auto">
+                                                <h2 class="upHead mb-4">Upload Certificate</h2>
+                                                <div>
+                                                    Please ensure that the uploaded document meets the following guidelines otherwise it may result in the rejection of your application:
+                                                    <ol class="mt-2">
+                                                        <li>Image is in full colour</li>
+                                                        <li>Documents should be in .pdf or .jpg format</li>
+                                                        <li>Maximum size of 4MB</li>
+                                                    </ol>
+                                                </div>
+                                                <p id="saveText" style="display:none">
+                                                    File uploaded please click on <b>SAVE</b> to Proceed.
+                                                </p>
+                                                <input type="file" class="files" onchange="checkFile1(this)" id="docFiles" name="files" style="display: none;"/>
+                                                <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                                        style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick_doc();">
+                                                    UPLOAD DOCUMENT
+                                                </button>
+                                            </div>
+                                            <div class="text-right d-none d-md-block" >
+                                                <a onclick="saveAttachment_doc(this);" style="color: #fff;" 
+                                                   class="saveAtt btn btn-primary disabled">
+                                                    SAVE
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right d-block d-md-none mt-4">
+                                    <a onclick="saveAttachment_doc(this);" style="color: #fff;" 
+                                       class="saveAtt btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </apex:outputLabel>
+        
+    </div> 
+    <div class="modal fade modal-base" id="modal_upload_passport" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    
+                    <div class="row">
+                        <div class="col-md-6 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4">Upload passport copy</h2>
+                                    Please ensure that the uploaded document meets the following guidelines otherwise it may result in the rejection of your application:
+                                    <ul>
+                                        <li>Image is in full colour</li>
+                                        <li>Documents should be in .pdf or .jpg format</li>
+                                        <li>Maximum size of 4MB</li>
+                                    </ul>
+                                    Once you have uploaded your document, you can use the edit tools to crop or rotate.                                
+                                    <input type="file" onchange="checkFile(this)" id="files" name="files" style="display: none;"/>
+                                    <button type="button" class="forReadOnly btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick();">
+                                        UPLOAD IMAGE
+                                    </button>
+                                    <br/>
+                                    
+                                    <p class="mt-4">
+                                        Note: A plugin is needed for in order to scan your image.
+                                    </p>
+                                    
+                                </div>
+                                <div class="text-right d-none d-md-block">
+                                    <a onclick="saveAttachment_mem(this);" style="color: #fff;" 
+                                       class="forReadOnly saveAtt btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div class="col-md-6 order-md-1">
+                            
+                            <div class="image-area" id="image-area" style="background-color: #D8D8D8;">
+                                <div style="background-color: #D8D8D8;padding-top: 100%;"></div>
+                                <img src="" style="width:80%;display:none;" />
+                            </div>
+                            
+                            <div class="text-center text-md-left mt-3">
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-crop"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-left"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-right"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" id="uploadDel"><i
+                                                                                                                           class="icon-delete"></i></a>
+                            </div>
+                            
+                        </div>                        
+                    </div>
+                    <!-- .row -->
+                    <div class="text-right d-block d-md-none mt-4">
+                        <a onclick="saveAttachment_mem(this);" style="color: #fff;" 
+                           class="forReadOnly saveAtt btn btn-primary disabled">
+                            SAVE
+                        </a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="modal fade modal-base" id="modal_process_upload" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="process-upload-wrapper">
+                        <h2 class="mb-4">Please wait</h2>
+                        <div class="process-upload-image">
+                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/process-'+rq.acc__r.park__c+'.png')}"/>
+                            <i class="icon-process"></i>
+                        </div>
+                        <p>
+                            We are currently extracting and processing information from the uploaded image. 
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade modal-base" id="modal_fees_breakdown" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 1000px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body px-xl-5">
+                    <h2>Fees breakdown</h2>
+                    <p>
+                        Below is the breakdown of the estimated fees so far. 
+                        These are subject to change based on what is remaining as part of your business setup process and options you have selected.               
+                    </p>
+                    <div class="onboarding-review-table onboarding-review-table-static">
+                        <div class="onboarding-review-toggle">
+                            <div class="onboarding-review-row">
+                                <span class="onboarding-review-label">LICENSE</span>
+                                <span class="onboarding-review-value">20,500 AED</span>
+                            </div>
+                        </div>
+                        <div class="onboarding-review-body">
+                            <div class="onboarding-review-row">
+                                <span class="onboarding-review-label">Security Deposit</span>
+                                <span class="onboarding-review-value">12,000 AED</span>
+                            </div>
+                            <div class="onboarding-review-row">
+                                <span class="onboarding-review-label">License setup cost</span>
+                                <span class="onboarding-review-value">15,500 AED</span>
+                            </div>
+                        </div>
+                        <div class="onboarding-review-row total"
+                             style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                            <span class="onboarding-review-label"></span>
+                            <span class="onboarding-review-value font-weight-bold">87,500 AED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <c:modalConfirmation rq="{!rq}"/><!-- component for confirmation -->
+    <c:modalAddCorpSH attchedCorpDocId="{!attchedCorpDocId}" rq="{!rq}"/> <!-- component for corporate sareholders -->
+    <div class="modal fade modal-base" id="modal_corp_ubo"  role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <div class="">
+                        <label style="padding-left: 10px;">UBO information is not required if the corporate shareholder is listed on a recognized stock exchange subject to disclosure requirements or is wholly owned by UAE local or federal government or Already submitted to Federal Government. </label>
+                        <div class="mt-4 row" style="padding-left: 24px;">
+                            <div class="col-lg-12"> 
+                                <div class="row form-group mt-3 reqRadio">
+                                    <label class="col-6 custom-radio mb-4">
+                                        <input name="cExp" val1="stockExchangeListed" onchange="updateForm(this)" type="radio" />
+                                        <span>Listed on a recognized stock exchange</span>
+                                    </label>
+                                    <!--<label class="col-6 custom-radio mb-4">
+                                        <input name="cExp" val1="ownedByUAE" onchange="updateForm(this)" type="radio" />
+                                        <span>Wholly owned by the UAE Local or Federal Government</span>
+                                    </label>-->
+                                    <label class="col-6 custom-radio mb-4">
+                                        <input name="cExp" val1="submittedToFdrl" onchange="updateForm(this)" type="radio" />
+                                        <span>Already submitted to Federal Government</span>
+                                    </label>
+                                    <label class="col-6 custom-radio">
+                                        <input for="no" name="cExp" val1="None" onchange="updateForm(this)" type="radio" />
+                                        <span>None of the above</span>
+                                    </label>
+                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="noStockExchange" style="display:none;">
+                            <i class="icon-info-circle text-primary"></i>&nbsp;Please click on ADD MEMBER to proceed and add Individual member.
+                        </p>
+                        <a id="corpUbo" onclick="corpToUbo(this)" style="color: white !important;" class="disabled forReadOnly btn btn-primary">ADD AS UBO</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_confirm_information" data-backdrop="static" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" onclick="resetUBO();" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                
+                <div class="modal-body" id="ubo_sec">
+                    <div class="base-collapse ubofld">
+                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#UBO_details">
+                            <div class="collapse-title">UBO details  existing </div>
+                        </a>
+                        <div id="UBO_details" class="collapse show">
+                            <div class="collapse-content mb-4">
+                                <b>Introduction</b><br/>
+                                UAE Federal Law 20 of 2018 on Anti Money Laundering and Countering the Financing of Terrorism, Cabinet Decision No. 10 of 2019 issued under the AML Law and Cabinet Decision No. (109) of 2023 Regulating the Beneficial Owner Procedures, as amended from time to time (the “AML Law”) require business licensing agencies in the UAE to identify the ultimate individual beneficial Owner(s) of businesses licensed by them.
+                                <br/><br/>The Dubai Development Authority (the “Authority”) requires all the business partners it licenses (whether as FZLLCs or Branch Offices – “Business Partners”) to disclose their ultimate beneficial owners.
+                                <br/><br/>
+                                <b>Who is the UBO?</b><br/>
+                                The Beneficial Owner of the Legal Person shall be whoever person that ultimately owns or controls, whether directly through a chain of ownership or control or by other means of control such as the right to appoint or dismiss the majority of its Directors, 25% or more of the shares or 25% or more of the voting rights in the Legal Person.           
+                                <br/><br/>
+                                <ul style="padding-left: 30px;">
+                                    <li style="list-style: disc">
+                                        The Beneficial Owner may be traced through any number of Legal Persons or arrangements of whatsoever kind.
+                                    </li>
+                                    <li style="list-style: disc">
+                                        If two or more natural persons jointly own or control a ratio of capital in the Legal Person, all of them shall be deemed as jointly owners or controllers of such ratio. 
+                                    </li>
+                                    <li style="list-style: disc">
+                                        If, after all reasonable means have been taken, no natural person is identified as an ultimate Beneficial Owner, or there is reasonable doubt that any natural person identified as an ultimate Beneficial Owner is the true Beneficial Owner in the Legal Person; then the natural person who controls the Legal Person by other means of control shall be deemed as the Beneficial Owner. 
+                                    </li>
+                                </ul>
+                                It is important to note that the UBO is not necessarily the shareholder. ( For example only, an overseas company called ABC Limited owns 100% of the shares in a free zone company called XYZ FZLLC. Bill and Ted each own 50% of the shares in ABC Limited. The UBOs of XYZ FZLLC are Bill and Ted (not ABC Limited).
+                                <br/><br/>
+                                It is a condition of issue and renewal of a license to a Business Partner in the Dubai Development Authority Free Zone that a Business Partner provides UBO information to the Authority and updates that UBO information as and when the UBO changes.
+                                <br/><br/>
+                                The Authority reserves the right to request any Business Partner to supply documentation and other information to evidence information made in the UBO declaration.
+                                <br/><br/>
+                                Certain Business Partners are exempt from making a UBO declaration. Those exceptions are set out when selecting the corporate entity. Unless a Business Partner is entitled to the exception, the UBO declaration must be completed.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ubofld">
+                        <b><h4>
+                            <div class="form-group">
+                                <div class="requiredInput" id="touRI">
+                                    <apex:outputPanel id="tou">Type Of UBO</apex:outputPanel> 
+                                    <script type="text/javascript">
+                                    cs['tou']=getC('{!$Component.tou}');
+                                    </script>
+                                </div>
+                            </div></h4>
+                        </b>                        
+                    </div>                    
+                    <div class="ubo-all-details" >
+                        <div class="uboChkPrnt mb-4">
+                            <div class="ubofld"> 
+                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                    <apex:inputCheckbox onchange="setUboData(this)" id="more" styleClass="dynaubo chkubo forEdit" html-fldName="moreshares"/>
+                                    <span>
+                                        Ultimately owns or controls whether directly or indirectly 25% or more of the shares or voting rights
+                                    </span>
+                                    <script type="text/javascript">
+                                    cs['more']=getC('{!$Component.more}');
+                                    </script>
+                                </label>
+                            </div>
+                            <div class="ubofld">
+                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                    <apex:inputCheckbox onchange="setUboData(this)" id="director"  styleClass="dynaubo chkubo forEdit" html-fldName="directorShares"/>
+                                    <span>
+                                        Holds the right, directly or indirectly, to appoint or remove a majority of the board of directors
+                                    </span>
+                                    <script type="text/javascript">
+                                    cs['director']=getC('{!$Component.director}');
+                                    </script>
+                                </label>
+                            </div>
+                            <div class="ubofld">
+                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                    <apex:inputCheckbox onchange="setUboData(this)" id="body"  styleClass="dynaubo chkubo forEdit" html-fldName="corpbody" />
+                                    <span>
+                                        Has the right to exercise, or actually exercises, significant influence or control over the corporate body
+                                    </span>
+                                    <script type="text/javascript">
+                                    cs['body']=getC('{!$Component.body}');
+                                    </script>
+                                </label>
+                            </div>
+                            <div class="ubofld">
+                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                    <apex:inputCheckbox onchange="setUboData(this)" id="managment"  styleClass="dynaubo chkubo forEdit" html-fldName="managementcontrol"/>
+                                    <span>
+                                        Exercises ultimate control over the management
+                                    </span>
+                                    <script type="text/javascript">
+                                    cs['managment']=getC('{!$Component.managment}');
+                                    </script>
+                                </label>
+                            </div>
+                            <div class="ubofld">
+                                <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                    <apex:inputCheckbox onchange="setUboData(this)" id="corporate" styleClass="dynaubo chkubo forEdit" html-fldName="controlsCorpBody" />
+                                    <span>
+                                        Controls the corporate body
+                                    </span>
+                                    <script type="text/javascript">
+                                    cs['corporate']=getC('{!$Component.corporate}');
+                                    </script>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="passport-info">
+                            <h2 class="heading">Verify and confirm the information</h2>
+                            <p class="pInfo">
+                                We have gathered this information from the uploaded passport copy. It may vary or have few errors
+                                depending on the quality of the image. Kindly review to confirm and proceed to save.
+                            </p>
+                            <p>
+                                <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                <span class='rqrdMsg'>All fields are mandatory</span>
+                            </p>
+                            
+                            <div class="form-style">
+                                
+                                <div class="row">
+                                    <div class="col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <label>Related company name</label>
+                                            <input type="text" fldName="uboRelatedTo" id="rCmpName" class="disabledApex form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" style="display:none;">
+                                        <div class="form-group">
+                                            <label>Related company registration number</label>
+                                            <input type="text" maxlength="35" fldName="rRegNum" id="rRegNum" class="disabledApex form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>First name</label>
+                                            <input type="text" maxlength="35" fldName="Given Name" id="fnameid" class="alphaChar forReadOnly form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Last name</label>
+                                            <input type="text" maxlength="50" fldName="Surname" id="lnameid" class="alphaChar forReadOnly form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Passport number</label> 
+                                            <!-- 1.3 -->
+                                            <input type="text" maxlength='15' onchange="checkPPEdit(this)" fldName="Passport No" id="passportid" class="forReadOnly alphaNumOnly form-control forEdit" onkeyup="removeValError(this);validAlphaNumeric(this)" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>Passport issue date</label>
+                                                    <div class="input-datepicker-group input-group">
+                                                        <input onchange="dformat2(getC('datepicker2').value,'datepicker2');checkDate(this,'pid'); checkDateRange(this);" type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit" validationName="pid" fldName="Date of Issue" id="datepicker2"
+                                                               data-toggle="datetimepicker" data-target="#datepicker2" />
+                                                        <div class="input-group-append">
+                                                            <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>Passport expiry date</label>
+                                                    <div class="input-datepicker-group input-group">
+                                                        <input onchange="dformat2(getC('datepicker3').value,'datepicker3');checkDate(this,'ped');checkDateRange(this);" type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit" validationName="ped"
+                                                               fldName="Date of Expiry" id="datepicker3"
+                                                               data-toggle="datetimepicker" data-target="#datepicker3" placeholder="DD/MM/YYYY"/>
+                                                        <div class="input-group-append">
+                                                            <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="collapse-title mt-2 mb-2"> </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Passport place of issue</label>
+                                                    <input class="form-control forEdit" maxlength="50" type="text" fldName="Place of Issue" id="placeissued" />
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <div class="form-group">
+                                                        <label>Place of birth</label>
+                                                        <input class="form-control forEdit" maxlength="50" type="text" fldName="placeborn" id="placeborn" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                             <!--Start Ms 1.1-->
+                                           <!-- <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>Gender</label>
+                                                    <div>
+                                                        <select class="forReadOnly form-control input-select2-flat forEdit" fldName="MR Gender" id="genderid">
+                                                            <!--<option value="">Select</option>-->
+                                                           <!-- <option value="M">Male</option>
+                                                            <option value="F">Female</option>
+                                                        </select>-->
+                                                    <!--</div>
+                                                </div>
+                                            </div> -->
+                                                <div class="col-lg-6">
+                                                   
+                                                    <div class="form-group">
+                                                        <div class="form-group">
+                                                            <div class="form-group">
+                                                                <label>Birth Country</label>
+                                                                <select class="form-control input-select2-flat forEdit" extFld='type'
+                                                                        id="bnat" extFld1='Country Code'  fldName="birthCountry">
+                                                                    <!--<option value="">Select</option>-->
+                                                                  
+                                                                    
+                                                                </select>
+                                                                <script>
+                                                                     $('#bnat').append(countryOptions); /*Ms 1.1*/
+                                                                    setTimeout(function(){
+                                                                            $('#bnat').select2();
+                                                                           },5000); 
+                                                                   
+                                                                     
+                                                                    /* $('#bnat').select2({
+                                                                          placeholder: 'Select an option', data:countryOptions,
+                                                                        });*/
+                                                                    
+                                                                    //  placeholder: 'Select an option', data:countryOptions,
+                                                                    </script>
+                                                              
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <!-- .col  -->
+                                             <!-- End MS 1.1 -->
+                                            <div class="col-6">
+                                                <div class="form-group">
+                                                    <label>Date of birth</label>
+                                                    <div class="input-datepicker-group input-group">
+                                                        <input type="text" onchange="dformat2(getC('datepicker1').value,'datepicker1');checkDate(this,'dob')" class="forReadOnly dateCheck form-control input-datepicker forEdit" validationName="dob" fldName="Date of Birth" id="datepicker1"
+                                                               data-toggle="datetimepicker" data-target="#datepicker1" />
+                                                        <div class="input-group-append">
+                                                            <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker1">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                     <div class="col-md-4"> 
+                                        <div class="form-group">
+                                            <label>Gender</label>
+                                            <div>
+                                                <select class="forReadOnly form-control input-select2-flat forEdit" fldName="MR Gender" id="genderid">
+                                                    <!--<option value="">Select</option>-->
+                                                    <option value="M">Male</option>
+                                                    <option value="F">Female</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Nationality</label>
+                                            <select class="form-control input-select2-flat forEdit" extFld='type'
+                                                    id="nat" extFld1='Country Code' onchange="memNationalityChange(this)" fldName="Nationality">
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Email address</label>
+                                            <input type="text" id="indemail"
+                                                   onchange="convertToLower(this);checkEmail(this)" 
+                                                   onkeydown="convertToLower(this)" 
+                                                   validationName="email" 
+                                                   fldName="email" 
+                                                   class="forReadOnly form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Phone number (optional)</label>
+                                            <input type="text" optional="true" maxlength='15' fldName="phoneno" id="phoneno" class="forReadOnly form-control forEdit onlyNum " value="" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">                            
+                                        <div class="form-group">
+                                            <label>Mobile number</label>
+                                            <div class="d-flex">
+                                                <div style="flex-basis: 200px;width: 200px;">
+                                                    <select fldName="phoneCode" id="countryCode1" class="forEdit countryCode form-control input-select2-flat">
+                                                        
+                                                    </select>
+                                                </div>
+                                                <!-- 1.3 -->
+                                                <input class="forReadOnly form-control forEdit numOnly ml-3" maxlength="10" minlength = '9' onchange="removeValError(this);validateMobileNumber(this);" validationName="mobile" fldName="mobileNum" type="text" />
+                                                <script type="text/javascript">
+                                                cs['xcmob__ocr']=document.getElementById('mobileid');
+                                                var countryCodeOptions11='';
+                                                for(i of countryCodeObj_new){
+                                                    var opt ='';
+                                                    if( i.dial_code && i.name )
+                                                        opt = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                                    countryCodeOptions11 += opt;
+                                                }
+                                                $('#countryCode1').html(countryCodeOptions11);
+                                                setTimeout(function(){
+                                                    $('#countryCode').select2({allowSearch:true});
+                                                },500);
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6" id="isVisa">
+                                        <label>Are you UAE citizen / holding a Resident Visa / Golden Visa holder?</label><!--Are you currently holding a valid UAE residency visa?-->
+                                        <div class="form-group mt-3 inuae reqRadio">
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" onchange="showEIDfields(this)" for="yes" name="eid"/>
+                                                <span>Yes</span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" onchange="showEIDfields(this)" for="no" name="eid"/>
+                                                <span>No</span>
+                                            </label>
+                                            <div class="option-error" style="display:none">Please select an option!</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- isvisted start MS1.1-->
+                                    <div class="col-md-6" id="isVisited" style="display:none;">
+                                        <label>Have you ever visited UAE?</label>
+                                        <div class="form-group mt-3 isVisited reqRadio">
+                                            <label class="custom-radio mr-5">
+                                               <input type="radio"  for="Visited UAE Investors" name="vid"/>
+                                                <span>Yes</span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                 <input type="radio"  for="Non-Visited UAE Investors" name="vid"/>
+                                                <span>No</span>
+                                            </label>
+                                            <div class="option-error" style="display:none">Please select an option!</div>
+                                        </div>
+                                    </div>
+                                     <!-- isvisted end MS1.1--> 
+                                    
+                                    <div class="row"> <!-- MS 1.1 -->
+                                    <div class="col-md-4 ifVisa" style="display:none;">
+                                        <div class="form-group">
+                                            <label>Emirates ID number</label>
+                                            <input type="text" onkeydown="eidCheck(this,event)" onchange="checkEid(this)" fldName="eid" class="forReadOnly form-control forEdit" value="" />
+                                        </div>
+                                        <script>
+                                        function eidCheck(elem,event){
+                                            $(elem).parent().find('.frmErrMsg').remove();
+                                            $(elem).attr('maxlength',18);
+                                            if(event.keyCode == 8)
+                                                return;
+                                            let v = $(elem).val();
+                                            let l = $(elem).val().length;
+                                            if(l==3 || l==8 || l==16 ){
+                                                $(elem).val(v+'-');
+                                            }
+                                        }
+                                        function checkEid(elem){
+                                            if(!$(elem).val())
+                                                return;
+                                            if(!validateEmiratesId($(elem).val())){
+                                                addValError(elem,'Invalid Emirates id!');
+                                            }else{
+                                                removeValError($(elem));
+                                            }
+                                        }
+                                        </script>
+                                    </div>
+                                        <!--start Ms 1.1 -->
+                                         <div class="col-md-4 ifVisa" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Emirates ID Issue date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input validationName="pid" onchange="dformat2(getC('datepickerEIsd').value,'datepickerEIsd');" type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit" fldName="emiratesIdIssueDate" id="datepickerEIsd"
+                                                           data-toggle="datetimepicker" data-target="#datepickerEIsd" />
+                                                    <div class="input-group-append">
+                                                        <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepickerEIsd">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--end Ms 1.1 -->
+                                    <div class="col-md-4 ifVisa" style="display:none;">
+                                        <div class="form-group">
+                                            <label>Emirates ID expiry date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input validationName="rqrdDate" onchange="dformat2(getC('datepickerEid').value,'datepickerEid');" type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit" fldName="eidExp" id="datepickerEid"
+                                                       data-toggle="datetimepicker" data-target="#datepickerEid" />
+                                                <div class="input-group-append">
+                                                    <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepickerEid">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="collapse-title mt-2 mb-2 outsideUAE">Address outside the UAE </div>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="outsideUAE">
+                                            <div class="form-group">
+                                                <label>Street</label>
+                                                <input maxlength="100" class="form-control forEdit" type="text" fldName="street" id="street" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="row outsideUAE">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>City</label>
+                                                    <input class="form-control forEdit" type="text" maxlength="55" fldName="city" id="city" />
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Country</label>
+                                                    <select class="form-control input-select2-flat forEdit" extFld='type' id="cntr" extFld1='Country Code' fldName="country" >
+                                                    </select>
+                                                    <script type="text/javascript">
+                                                    for (var i=0; i< $('#nat').find('option').length; i++){
+                                                        if($('#nat').find('option')[i].value == 'United Arab Emirates')
+                                                            $('#nat').find('option')[i].remove(i);
+                                                    }  
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="collapse-title mt-2 mb-2 insideUAE">UAE address</div>
+                                <div class="row insideUAE">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Street{!if(contains(rq.xfb__c,'Foreign'),' (optional)','')}</label>
+                                            <input maxlength="100" class="form-control forEdit {!if(contains(rq.xfb__c,'Foreign'),'foreign','local')}" type="text" fldName="Area" id="area" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row ">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Area{!if(contains(rq.xfb__c,'Foreign'),' (optional)','')}</label>
+                                                    <input class="form-control forEdit {!if(contains(rq.xfb__c,'Foreign'),'foreign','local')}" type="text" maxlength="55" fldName="cityIn" id="cityIn" />
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Emirate{!if(contains(rq.xfb__c,'Foreign'),' (optional)','')}</label>
+                                                    <!--<input class="form-control forEdit" type="text" maxlength="55" fldName="emirate" id="emirate" />-->
+                                                    <select class="forReadOnly form-control input-select2-flat forEdit {!if(contains(rq.xfb__c,'Foreign'),'foreign','local')}" id="emirate" fldName="emirate" >
+                                                        <option value="">--None--</option>
+                                                        <option>Abu Dhabi</option>
+                                                        <option>Ajman</option>
+                                                        <option>Dubai</option>
+                                                        <option>Fujairah</option>
+                                                        <option>Ras Al Khaimah</option>
+                                                        <option>Sharjah</option>
+                                                        <option>Umm Al Quwain</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group text-left inEditOnly">
+                                            <label>Shares</label>
+                                            <input class="forReadOnly form-control numOnly forEdit" onblur="valPopShares(this);" maxlength="11" type="text" fldName="shareNum" id="shareid" />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- .col -->                            
+                            </div> 
+                        </div> 
+
+                                                            
+                        <!-- PJ 1.4 PEP Association Start -->
+                        <div class="ubofld base-collapse">
+                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#per_info">
+                                <div class="collapse-title">Politically Exposed Person (PEP)  Association</div>
+                            </a>
+                            <div id="per_info" class="collapse show ">
+                                <div class="collapse-content">
+                                    <div class="row">
+                                        <div class="col-sm-6"> 
+                                            <div class="form-group">
+                                                <label>Do you or any of immediate family member or business / close associate (currently or formerly) qualified as one of the PEPs</label>
+                                                <apex:selectList html-for="pepAssociation" id="pepAssociation" html-fldName="pepAssociation" multiselect="false" size="1" styleclass="requiredFld form-control input-select2-flat forEdit" onchange="updatePEPAssociation(this.value);">
+                                                    <apex:selectOption itemLabel=""  itemValue=""></apex:selectOption>    
+                                                    <apex:selectOption itemLabel="Not Applicable"  itemValue="Not Applicable"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="PEP (Self)"  itemValue="PEP (Self)"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="Closely Related to PEP"  itemValue="Closely Related to PEP"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="Closely Associated to PEP"  itemValue="Closely Associated to PEP"></apex:selectOption>
+                                                </apex:selectList>
+                                            </div>
+                                        </div>  
+                                        
+                                        <div class="col-sm-12" id="closlyRelatedPEP" style="display:none;">
+                                            <b>
+                                                <div>
+                                                    <apex:outputPanel >If closely related to PEP, then please tick the type</apex:outputPanel> 
+                                                </div>
+                                            </b>
+                                            <div class="form-group">
+                                                <apex:selectList html-for="closelyRelatedToPEP" html-fldName="pepCloselyRelated" multiselect="true" size="1" styleclass="requiredFld form-control input-select2-flat forEdit" onchange="onChangePepRelated(this,'closelyRelatedToPEP');">
+                                                    <apex:selectOption itemLabel="a spouse"  itemValue="a spouse"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a partner considered by national law as equivalent to a spouse"  itemValue="a partner considered by national law as equivalent to a spouse"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a child"  itemValue="a child"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a spouse or partner of a child"  itemValue="a spouse or partner of a child"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a brother or sister (including a half-brother or half-sister)"  itemValue="a brother or sister (including a half-brother or half-sister)"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a spouse or partner of a brother or sister"  itemValue="a spouse or partner of a brother or sister"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a parent"  itemValue="a parent"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a parent-in-law"  itemValue="a parent-in-law"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a grandparent"  itemValue="a grandparent"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a grandchild"  itemValue="a grandchild"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="others: (Please specify details in below text box)"  itemValue="others: (Please specify details in below text box)"></apex:selectOption>
+                                                </apex:selectList>
+                                            <div class="form-group" id="othersCloselyRelated" style="display:none;margin-top: 4%;">
+                                                <apex:inputTextarea id="closelyRelatedToPEPOthers" html-fldName="pepCloselyRelatedOthers"  styleClass="requiredFld form-control forEdit"/>
+                                            </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-sm-12" id="closelyAssociatedPEP" style="display:none;">
+                                            <b>
+                                                <div>
+                                                    <apex:outputPanel >If closely associated to PEP, then please tick the type:</apex:outputPanel> 
+                                                </div>
+                                            </b>
+                                            <div class="form-group">
+                                                <apex:selectList html-for="closelyAssociatedToPEP" html-fldName="pepCloselyAssociated" multiselect="true" size="1" styleclass="requiredFld form-control input-select2-flat forEdit" onchange="onChangePepRelated(this,'closelyAssociatedToPEP');">
+                                                    <apex:selectOption itemLabel="a joint beneficial owner of a legal person or legal arrangement, or any other close business relationship, with UBO"  itemValue="a joint beneficial owner of a legal person or legal arrangement, or any other close business relationship, with UBO"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="the sole beneficial owner of a legal person or legal arrangement known to have been set up for the benefit of UBO"  itemValue="the sole beneficial owner of a legal person or legal arrangement known to have been set up for the benefit of UBO"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="a beneficiary of a legal arrangement of which UBO is a beneficial owner or beneficiary, or a person in a position to conduct substantial financial transactions on behalf of UBO"  itemValue="a beneficiary of a legal arrangement of which UBO is a beneficial owner or beneficiary, or a person in a position to conduct substantial financial transactions on behalf of UBO"></apex:selectOption>
+                                                    <apex:selectOption itemLabel="others: (Please specify details in below text box)"  itemValue="others: (Please specify details in below text box)"></apex:selectOption>
+                                                </apex:selectList>
+                                                <div id="othersCloselyAssociated" style="display:none;margin-top: 4%;">
+                                                    <apex:inputTextarea id="closelyAssociatedToPEPOthers" html-fldName="pepCloselyAssociatedOthers" styleClass="requiredFld form-control forEdit"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-sm-12" id="pEPSelf" style="display:none;">
+                                            <div class="form-group"> 
+                                                <b><label>Jurisdiction risk of the country in which the individual PEP his/her political position:</label> </b> <!-- 1.1 -->
+                                                <div class="d-flex">
+                                                    <div style="flex-basis: 40%;">
+                                                        <div style="flex-basis: 40%;">
+                                                            <select class="requiredFld form-control countryNames forEdit" fldName="pepCountry"> 
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                        
+                                        <!-- Sounrce of Fund Start-->
+                                        <div class="col-sm-12"> 
+                                            <apex:outputPanel id="fundPanel"> 
+                                                <c:sourceoffund tableJSONData="{!sourceOfFundJSON}"/>
+                                            </apex:outputPanel>
+                                        </div>
+                                        
+                                        <!-- Sounrce of Fund End-->
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                        <!-- PJ 1.4 PEP Association End -->
+
+                        <div class="ubofld" >
+                            <h3>Nominee Arrangement Confirmation</h3>
+                            <div class="col-md-6" id="nacq1">
+                                <label>Are you acting as a nominee shareholder on behalf of a third party?</label>
+                                <div class="form-group mt-3 reqRadio">
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio"   onchange="nomineeSH(this)" for="nSHyes" name="yName1"/>
+                                        <span>Yes</span>
+                                    </label>
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio"  onchange="nomineeSH(this)" for="nSHno" name="yName1"/>
+                                        <span>No</span>
+                                    </label>
+                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="nacq2">
+                                <label>Are you acting as a nominee director on behalf of a third party?</label>
+                                <div class="form-group mt-3 reqRadio">
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio" onchange="nomineeD(this)" for="nDyes" name="yName2"/>
+                                        <span>Yes</span>
+                                    </label>
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio"  onchange="nomineeD(this)" for="nDno" name="yName2"/>
+                                        <span>No</span>
+                                    </label>
+                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ubofld">
+                            <h4>Additional Details of Ultimate Beneficial Owner(s) (UBO)</h4>  
+                            <div class="row">
+                                <div class="col-sm-6"> 
+                                    <div class="form-group"> 
+                                        <label> The number of other legal persons which the Beneficial Owner owns, manages or controls accordingly</label>
+                                        <apex:selectList size="1" onchange="enableUBOSave();removeValError(this)" id="legals" html-fldName="legals" styleclass="requiredFld forEdit dynaubo form-control input-select2-flat">
+                                            <apex:selectOption itemValue="" itemLabel=""/>
+                                            <apex:selectOption itemValue="0-1" itemLabel="0-1"/>
+                                            <apex:selectOption itemValue="2-3" itemLabel="2-3"/>
+                                            <apex:selectOption itemValue="4-5" itemLabel="4-5"/>
+                                            <apex:selectOption itemValue="6-7" itemLabel="6-7"/>
+                                            <apex:selectOption itemValue="8-9" itemLabel="8-9"/>
+                                            <apex:selectOption itemValue="More than 10" itemLabel="More than 10"/>
+                                        </apex:selectList>
+                                        <script type="text/javascript">
+                                        cs['legals']=getC('{!$Component.legals}');
+                                        </script>
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                    <!-- ####################################################################################################################################### -->
+                    
+                    <div class="form-group text-right submitBtns">
+                        <a class="saveBtns forReadOnly btn btn-primary" id="indToUbo" onclick="indMemToUBO(this);" style="color: white !important; display:none;">ADD MEMBER AS UBO</a>
+                        <a id="saveEditMem" style="color: white !important;" class="saveBtns forReadOnly btn btn-primary saveEditMem">SAVE</a>
+                        <a id="addMemBtn" style="color: white !important;" onclick="addMem()" class="saveMember saveBtns forReadOnly btn btn-primary">ADD MEMBER</a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="validShares" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h1>Please enter valid number of shares.</h1>
+                    <p>
+                        Shares should be greater than 0!
+                    </p>
+                </div>
+                <!-- .modal-body -->
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="invokeUploadBtn" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                </div>
+                <!-- .modal-body -->
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="uploadErr" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h1>Passport copy already used for another member.</h1>
+                    <p>
+                        Please upload a different passport or delete the existent user!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="uploadToolsValidation" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h1>Please upload a passport copy to perform these operations.</h1>
+                    <p>
+                        Use <b>UPLOAD IMAGE</b> or <b>SCAN IMAGE</b> to upload an image!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_relationship_manager" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 836px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    
+                    <div class="text-center pt-2">
+                        <p class="mb-1">Your assigned Relationship Manager is</p>
+                        <p style="font-size: 1.125rem;font-weight: 500;">Faisal Ahmed</p>
+                        
+                        <div class="relationship-manager-row">
+                            <div class="relationship-manager-line"></div>
+                            <div class="relationship-manager-col">
+                                <h4>Email</h4>
+                                <p>You can contact Faisal on the following email address</p>
+                                <h5>faisal@tecomgroup.com</h5>
+                            </div>
+                            <div class="relationship-manager-line"></div>
+                            <!-- .relationship-manager-col -->
+                            <div class="relationship-manager-col">
+                                <h4>Call</h4>
+                                <p>You can call Faisal on</p>
+                                <div class="d-flex justify-content-around">
+                                    <div>
+                                        Landline
+                                        <h5>+971 4 053822</h5>
+                                    </div>
+                                    <div>
+                                        Mobile
+                                        <h5>+971 50 053822</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- .relationship-manager-col -->
+                        </div>
+                        <!-- .relationship-manager-row -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- correction modal starts -->
+    <apex:outputPanel rendered="{!rq.crflg__c}">
+        <div class="modal fade modal-base" id="modal_Correction_submission" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <apex:outputPanel rendered="true">
+                            <iframe style="min-height: 500px;width:100%" src="/apex/crtn_popup?id={!rq.id}" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                            </iframe>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </apex:outputPanel>
+    <!-- correction modal ends -->
+    
+    <apex:outputPanel id="rerenderDummy"></apex:outputPanel>
+    <apex:outputPanel id="rerenderDummy1">
+        <apex:inputHidden id="attch_id" value="{!rq.xepAtt__c}" />
+        <script>
+        cs["attch_id"] = document.getElementById("{!$Component.attch_id}");
+        </script>
+    </apex:outputPanel>
+    <apex:actionFunction name="attachmentSave" action="{!saveAttachment}" rerender="rerenderDummy1,corpDocSection" oncomplete="reRenderCorpDocs()" />
+    <apex:actionFunction name="loadData_mem" action="{!init_mem}" rerender="attElem,gmDec,csdPanel"/>
+    <apex:actionFunction name="deleteAOADocs" action="{!deleteAOADocs}" rerender="attElem,gmDec">
+        <apex:param name="ID" assignTo="{!delDocID}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="deletecsdaf" action="{!deletecsd}" rerender="attElem,csdPanel">
+        <apex:param name="ID" assignTo="{!delcsdDocID}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="savegmDec" action="{!savegmDec1}" rerender="gmDec" oncomplete="removeEmptyLabels();cs['AOADoc'].value='';" />
+    <apex:actionFunction name="savecsd" action="{!savecsd1}" rerender="csdPanel" oncomplete="removeEmptyLabels();cs['AOADoc'].value='';" />
+    <apex:actionFunction name="saveDocs" action="{!saveAttachment1}" rerender="attElem" oncomplete="hideTempLoader_input();" />
+    <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+    <apex:inputHidden id="AOADoc" value="{!AOADoc}" />
+    <apex:inputHidden id="docname" value="{!docname}" />
+    
+    <c:membersJS rq="{!rq}" />
+    
+    <script>
+    function validAlphaNumeric(e){ // 1.3
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    cs['sourceoffunds']=getC('{!$Component.sourceoffunds}'); //1.1
+    var countryNamesOptions= '<option value=""></option>'; //1.1
+    for(x=0;x<countryCode_Obj.length;x++){
+        var i = countryCode_Obj[x];
+        var opt = '<option value="'+i.ddaname+'">'+i.axsname+'</option>';
+        countryNamesOptions += opt;
+    }
+    $('.countryNames').html(countryNamesOptions);
+    setTimeout(function(){
+        $('.countryNames').select2({allowSearch:true});
+    },500);
+    
+    function updatePEPAssociation(pepValue){ //1.1
+        if(pepValue == 'Closely Related to PEP'){
+            $('#closlyRelatedPEP').show();
+            $('#closelyAssociatedPEP').hide();
+            $('#pEPSelf').show();
+        }
+        else if(pepValue =='Closely Associated to PEP'){
+            $('#closelyAssociatedPEP').show();
+            $('#closlyRelatedPEP').hide();
+            $('#pEPSelf').show();
+        }
+        else if(pepValue =='PEP (Self)'){
+            $('#pEPSelf').show();
+            $('#closelyAssociatedPEP').hide();
+            $('#closlyRelatedPEP').hide();
+        }
+        else{
+            $('#closelyAssociatedPEP').hide();
+            $('#closlyRelatedPEP').hide();
+            $('#pEPSelf').hide();
+        }
+    }
+    
+    function onChangePepRelated(selectElement,sectionName){ //1.1
+        let selectedValues = [];
+        for (let i = 0; i < selectElement.options.length; i++) {
+            if (selectElement.options[i].selected) {
+                selectedValues.push(selectElement.options[i].value);
+            }
+        }
+        if(selectedValues.includes('others: (Please specify details in below text box)')){
+            if(sectionName == 'closelyRelatedToPEP'){
+                $('#othersCloselyRelated').show();
+            }
+            else{
+                $('#othersCloselyAssociated').show();
+            }
+        }
+        else{
+            if(sectionName == 'closelyRelatedToPEP'){
+                $('#othersCloselyRelated').hide();
+            }
+            else{
+                $('#othersCloselyAssociated').hide();
+            }
+        }
+    }     
+    </script>
+</apex:component>

@@ -1,0 +1,859 @@
+<apex:page Controller="ddtectl" showheader="false">
+<apex:includeScript value="{!$Resource.ddt_lookups}"/>
+<head><meta http-equiv="X-UA-Compatible" content="IE=7" ></meta></head>  
+<object id="DemoActiveX" classid="clsid:20664329-6969-4901-8DE5-7CF6B04C3DA0"></object>
+
+<style>
+#szlider{
+    width:100%;
+    height:15px;
+    border:1px solid #000;     
+    overflow:hidden; }
+#szliderbar{
+    width:37%;
+    height:15px;
+    border-right: 1px solid #000000; 
+    background: #445491; }
+#szazalek {
+    color: #D7D7DE;
+    font-size: 15px;    
+    font-weight: bold;
+    left: 10px;
+    position: relative;
+    top: -16px; }
+textarea { width: 0%; margin: 0; padding: 0; border-width: 0; }
+label { width: 100%; margin: 0; padding: 0; border-width: 0; }
+</style>
+<script type="text/javascript">                          
+    var cIndx=0;        
+    
+    var obj;
+    obj = document.DemoActiveX;
+    var hwnd;
+    var status; 
+    var statusLable;
+    var ended=0;
+    var attJS;    
+    var flw= {"status":[{"c":"load","url":"https://salem.dha.gov.ae/portal/#/signin","msg":"Initializing"},{"c":"wait","msg":"Waiting for Landing Page"},{"c":"wait","msg":"Waiting for Login Page"},{"c":"waitL","fm":[{"d":2000}]},{"c":"focusxojo","msg":"focus Residence fld","fm":[{"v":"username","t":"input","at":"id"}]},{"c":"filldlogin","msg":2,"fm":[{"d":"username","s":"DNRD_UN"},{"d":"password","s":"DNRD_PWD"}]},{"c":"wait","msg":"Waiting for Landing Page"},{"c":"waitL","fm":[{"d":10000}]},{"c":"end","msg":"Complete"}]} ;
+    var rqI ;
+    function Reset(){
+        cIndx=0;
+    }  
+    function DownloadFiles(reqName){
+        try{
+            attJS={!attJS};
+            for(var index=0; index<{!totalPhotos}; index++){
+                //var separator="_";                
+                //var fileName=attJS[index].att.Name.replace(".jpg",separator.concat(attJS[index].att.Id));
+                var fileName=attJS[index].att.Id;
+                fileName=fileName+".jpg";
+                obj.WriteFile(attJS[index].attCode, reqName, fileName);
+            }
+            //alert(attJS[0].attCode);
+        }
+        catch (ex) {
+            alert("CU-DownloadFiles - message is: " + ex.Description);
+        }
+        
+        //alert(attJS[0].attCode);
+        //obj.WriteFile(attJS[0].attCode);        
+    }
+    function Execute(){    
+       
+        try 
+        {        
+        rqI={!rqIJS};                    
+        var byr={!ctBirthYr};
+        var uid='{!JSENCODE(uid)}';
+        var uidyr='1';
+        var visa2={!visaNumberP2};
+        var ovisaNumberP1={!ovisaNumberP1}; var ovisaNumberP2={!ovisaNumberP2}; var ovisaNumberP3={!ovisaNumberP3};                        
+        var visaNumberP1={!visaNumberP1}; var visaNumberP2={!visaNumberP2}; var visaNumberP3={!visaNumberP3};
+        var fvisaNumber=visaNumberP1+'/'+visaNumberP2+'/'+visaNumberP3;
+        var fvisaNumber2=visaNumberP3+'/'+visaNumberP1+'/'+visaNumberP2;
+        var vvisaNumberP1={!vvisaNumberP1}; var vvisaNumberP2={!vvisaNumberP2}; var vvisaNumberP3={!vvisaNumberP3};
+        var spVisaNumberP1={!spVisaNumberP1}; var spVisaNumberP2={!spVisaNumberP2}; var spVisaNumberP3={!spVisaNumberP3}; //alert(spVisaNumberP3);
+        var spVVisaNumberP1={!spVVisaNumberP1}; var spVVisaNumberP2={!spVVisaNumberP2}; var spVVisaNumberP3={!spVVisaNumberP3}; //alert(spVVisaNumberP3);
+        var ecNoP1={!ecNoP1}; var ecNoP2={!ecNoP2}; var ecNoP3={!ecNoP3}; var ecNoStP3={!ecNoStP3}
+        var spRpIssueYr={!spRpIssueYr}; var spRpExpiryYr={!spRpExpiryYr};        
+        var estName={!estName}; var estNameSt={!estNameSt}; var commActivity={!commActivity}; var estTypeCode={!estTypeCode};  
+        var contactFN={!contactFN}; var mohAddress={!mohAddress};
+        var vvOccupation={!vvOccupation};      
+        var yrsOfResidence={!yrsOfResidence}; 
+        var eidaMobile= {!eidaMobile}; 
+        var qlHardCode={!qlHardCode}; 
+        var occpHardCode={!occpHardCode};        
+        var mohOccpHardCode={!mohOccpHardCode}; 
+        var mohOccpNameHardCode={!mohOccpNameHardCode};
+        var yrsOfTransfer={!yrsOfTransfer};
+        var transType={!transType};
+        var stCommActivity={!stCommActivity};
+        var stEstTypeCode={!stEstTypeCode};
+        var ioUAE={!ioUAE};
+        var eidaSType={!eidaSType}; var eidaYears={!eidaYears}; var workMode={!workMode};
+        var visaNumberEidaP3={!visaNumberEidaP3}; var visaNumberEidaP4={!visaNumberEidaP4};
+        var spBirthYr={!spBirthYr};        
+        var dob = '{!JSENCODE(dob)}';
+        var pIDate = '{!JSENCODE(pIDate)}';
+        var pEDate = '{!JSENCODE(pEDate)}';
+        var gender= '{!JSENCODE(rqI.RQ__r.Con__r.Salutation)}' == 'Mr.' ? 'Male' : 'Female';           
+        var cnar = '{!JSENCODE(cnar)}';
+        var photoUrl = "C:\\DDTE\\"+ '{!JSENCODE(rqI.RQ__r.Name)}' +"\\"+ '{!JSENCODE(rqI.RQ__r.xphid__c)}' + ".jpg" ;
+        
+        var serviceName = '{!JSENCODE(rqI.RQ__r.srvc__r.Name)}'.toLowerCase();        
+        fvisaNumber2 = (serviceName.indexOf('renewal') != -1) ? fvisaNumber : fvisaNumber2 ;
+        
+        if(obj==null){location.replace(location);}  
+        
+        for(var i=cIndx;i<flw.status.length;i++){
+            myTextBox2.value = myTextBox2.value + flw.status[i].c+"\r\n";      
+            statusLable=flw.status[i].c;
+            if(flw.status[i].msg!==void 0){document.getElementById("progress").innerText = flw.status[i].msg;}
+            //if(flw.status[i].index!==void 0){document.getElementById("progress").innerText = flw.status[i].index;}                                                      
+            drawszlider(flw.status.length, cIndx);                         
+            if(flw.status[i].c == 'load'){
+                cIndx = i;  
+                if(flw.status[i].msg=='Initializing dh'){                                 
+                    status = obj.GetBrowser2(flw.status[i].url);
+                   
+                } 
+                else{
+                    status = obj.GetBrowser(flw.status[i].url);
+                    //alert(obj.document);
+                }
+                DownloadFiles(rqI.RQ__r.Name);                                                      
+            }
+            if(flw.status[i].c == 'loadn'){                 
+                cIndx = i;
+                status = obj.NavBrowser(flw.status[i].url);                
+            }
+            if(flw.status[i].c == 'mohloadpay'){                 
+                // alert(document.forms[0].action);
+                
+            }              
+            if(flw.status[i].c == 'wait'){
+                cIndx = i;
+                break;
+            }
+            if(flw.status[i].c == 'waitL'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.Wait(flw.status[i].fm[j].d);
+                }               
+            }
+            if(flw.status[i].c == 'end'){
+                cIndx = 0;        
+                drawszlider(flw.status.length,flw.status.length);
+                ended=1;       
+                break;
+            }            
+            if(flw.status[i].c == 'sleep'){
+                sleep(3000);                
+            }
+            if(flw.status[i].c == 'sleepax'){
+                obj.Sleep();                
+            }
+            
+            
+             if(flw.status[i].c == 'fillWithId'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                 
+                    obj.SetText(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                    //document.getElementById('ddlResiYearOfBirth').value='1980';
+                }               
+            }
+            
+            
+            if(flw.status[i].c == 'fill'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                 
+                    obj.SetText(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'fill2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                 
+                    obj.SetText2(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'filldlogin'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                 
+                    obj.SetLoginText(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'filleidalogin'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                 
+                    obj.SetEIDALoginText(flw.status[i].fm[j].s);
+                }               
+            }            
+           /* if(flw.status[i].c == 'filld'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].svar));                                  
+                    obj.SetText(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            }*/
+            
+             if(flw.status[i].c == 'filld'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].svar));                                  
+                    obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].svar));
+                }               
+            }
+            
+            if(flw.status[i].c == 'vfilld'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                   // alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].svar));                                  
+                    obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].svar));
+                }               
+            }
+            
+            if(flw.status[i].c == 'filld2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].svar));                                  
+                    obj.SetText2(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].svar));
+                }               
+            }
+            
+          
+            if(flw.status[i].c == 'filldar'){
+                cIndx = i;                              
+                if(countryarMap[rqI.RQ__r.Con__r.nc__c.toUpperCase()].code==0){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].evar));
+                    }               
+                }
+                else if(countryarMap[rqI.RQ__r.Con__r.nc__c.toUpperCase()].code==1){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].avar));
+                    }               
+                }
+            }
+            if(flw.status[i].c == 'filldarrqi'){
+                cIndx = i;                              
+                if(countryarMap[rqI.xcnc__c.toUpperCase()].code==0){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].evar));
+                    }               
+                }
+                else if(countryarMap[rqI.RQ__r.Con__r.nc__c.toUpperCase()].code==1){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].avar));
+                    }               
+                }
+            }
+            if(flw.status[i].c == 'filldspar'){
+                cIndx = i;                              
+                if(countryarMap[rqI.RQ__r.Spr__r.nc__c.toUpperCase()].code==0){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].evar));
+                    }               
+                }
+                else if(countryarMap[rqI.RQ__r.Spr__r.nc__c.toUpperCase()].code==1){
+                    for(var j=0;j<flw.status[i].fm.length;j++){   
+                        //alert(flw.status[i].fm[j].svar+':'+eval(flw.status[i].fm[j].evar));                                  
+                        obj.SetText(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].avar));
+                    }               
+                }
+            }            
+            if(flw.status[i].c == 'filldrel'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    var key=eval(flw.status[i].fm[j].svar1).concat(eval(flw.status[i].fm[j].svar2));  
+                    //alert(key);                  
+                    //alert(relSpMap[key].code);                                 
+                    obj.SetText(flw.status[i].fm[j].d,relSpMap[key].code);
+                }               
+            }
+             if(flw.status[i].c == 'vfilldrel'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    var key=eval(flw.status[i].fm[j].svar1).concat(eval(flw.status[i].fm[j].svar2));  
+                                                    
+                    obj.SetTextDDL(flw.status[i].fm[j].d,relSpMap[key].code);
+                }               
+            }
+             if(flw.status[i].c == 'filldrelvv'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    var key=eval(flw.status[i].fm[j].svar1).concat(eval(flw.status[i].fm[j].svar2));  
+                    //alert(key);                  
+                    //alert(relSpMapVV[key].code);                                 
+                    obj.SetText(flw.status[i].fm[j].d,relSpMapVV[key].code);
+                }               
+            }
+            if(flw.status[i].c == 'filldt'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    var dt=eval(flw.status[i].fm[j].svar).split("-");                                 
+                    obj.SetText(flw.status[i].fm[j].d,dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);
+                }               
+            }
+            if(flw.status[i].c == 'filldt2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    var dt=eval(flw.status[i].fm[j].svar).split("-");                                 
+                    obj.SetText2(flw.status[i].fm[j].d,dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);
+                }               
+            }
+            if(flw.status[i].c == 'filldts'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){  
+                    //alert('eval:'+eval(flw.status[i].fm[j].s));  
+                    var dt=eval(flw.status[i].fm[j].s).split("-");  
+                    //alert('splitted:'+dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);                                                   
+                    obj.SendKeysLite(dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);
+                }               
+            }
+            if(flw.status[i].c == 'filldtxojo'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    //alert(eval(flw.status[i].fm[j].s));              
+                    var dt=eval(flw.status[i].fm[j].s).split("-");                                                     
+                    obj.SendKeys(dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);
+                }               
+            }
+            if(flw.status[i].c == 'filldtxojol'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    //alert(eval(flw.status[i].fm[j].s));              
+                    var dt=eval(flw.status[i].fm[j].s).split("-");                                                     
+                    obj.SendKeysLite(dt[dt.length-1]+"/"+dt[dt.length-2]+"/"+dt[dt.length-3]);
+                }               
+            }
+            if(flw.status[i].c == 'filldsxlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);
+                    obj.SetText(flw.status[i].fm[j].d,sexMap[myStr].code);                  
+                }               
+            }
+              if(flw.status[i].c == 'vfilldsxlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);
+                    obj.SetTextDDL(flw.status[i].fm[j].d,sexMap[myStr].code);                  
+                }               
+            }
+            if(flw.status[i].c == 'filldsxmlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);                                                   
+                    obj.SetTextDDL(flw.status[i].fm[j].d,sexMOHMap[myStr].code);                  
+                }               
+            }
+            if(flw.status[i].c == 'filldsxmlkp2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);                                                   
+                    obj.SetTextDDL2(flw.status[i].fm[j].d,sexMOHMap[myStr].code);                  
+                }               
+            }
+            if(flw.status[i].c == 'filldsxeidalkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);     
+                    // alert(sexMOHMap[myStr].code);                                              
+                    obj.SendKeys(sexMOHMap[myStr].code);                  
+                }               
+            }
+            if(flw.status[i].c == 'filldsxeidalkps'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                         
+                    var strSex=eval(flw.status[i].fm[j].s);
+                    var strLen = strSex.length;
+                    var myStr = strSex.slice(0,strLen-1);     
+                   // alert(sexMOHMap[myStr].code);                                              
+                    obj.SendKeys(sexMOHMap[myStr].code);                  
+                }               
+            }
+            if(flw.status[i].c == 'filldlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){  
+                    if(typeof(eval(flw.status[i].fm[j].s))!="undefined"){                                                   
+                        obj.SetText(flw.status[i].fm[j].d,countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                       // alert(countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                    }
+                }               
+            }
+             if(flw.status[i].c == 'tfilldlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){  
+                    if(typeof(eval(flw.status[i].fm[j].s))!="undefined"){                                                   
+                        obj.SendKeys(countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                       
+                    }
+                }               
+            }
+             if(flw.status[i].c == 'vfilldlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){  
+                    if(typeof(eval(flw.status[i].fm[j].s))!="undefined"){ 
+                        //alert(eval(flw.status[i].fm[j].s).toUpperCase());                                                  
+                       // obj.SetTextDDL(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].s).toUpperCase());
+                        //alert(countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                        obj.SetTextDDL(flw.status[i].fm[j].d,countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                    }
+                }               
+            }
+            if(flw.status[i].c == 'filldlkpeida'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    if(typeof(eval(flw.status[i].fm[j].s))!="undefined"){                                                     
+                        obj.SendKeys(countryEidaMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                    }
+                }               
+            }    
+            if(flw.status[i].c == 'filldqlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){   
+                    if(typeof(eval(flw.status[i].fm[j].s))!="undefined"){                                                                                  
+                        obj.SetText(flw.status[i].fm[j].d,qualMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                    }
+                }               
+            }            
+            if(flw.status[i].c == 'filldeqlkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.SendKeysLite(qualMap[eval(flw.status[i].fm[j].s).toUpperCase()].ename);
+                }                
+            }
+            if(flw.status[i].c == 'fillmslkp'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(eval(flw.status[i].fm[j].s);                                                    
+                    obj.SetText(flw.status[i].fm[j].d,marMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }
+            if(flw.status[i].c == 'fillmslkpeida'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(mareidaMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);                                                    
+                    obj.SendKeysLite(mareidaMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }       
+            if(flw.status[i].c == 'fillrelglkpeida'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(eval(flw.status[i].fm[j].s));
+                    //alert(relMapEida[eval(flw.status[i].fm[j].s).toUpperCase()].code);                                                    
+                    obj.SendKeysLite(relMapEida[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }
+            if(flw.status[i].c == 'fillrelgdpthlkpeida'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(flw.status[i].fm[j].s);                    
+                    obj.SendKeysLite(muslimMapEida[flw.status[i].fm[j].s.toUpperCase()].code);
+                }               
+                // alert(muslimMapEida[flw.status[i].fm[j].s.toUpperCase()].code); 
+            }         
+            if(flw.status[i].c == 'fillrelglkpdnrd'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(eval(flw.status[i].fm[j].s));
+                    //alert(relMapEida[eval(flw.status[i].fm[j].s).toUpperCase()].code);                                                    
+                    obj.SendKeysLite(relMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }       
+            if(flw.status[i].c == 'fillddl'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                //alert(eval(flw.status[i].fm[j].s));                                                         
+                   // obj.SetTextDDL(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].s));
+                    obj.SetTextDDL(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'fillddl2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){ 
+              //  alert(flw.status[i].fm[j].s);                                                        
+                    obj.SetTextDDL2(flw.status[i].fm[j].d,flw.status[i].fm[j].s);
+                }               
+            } 
+            if(flw.status[i].c == 'fillddl3'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){  
+               //alert(eval(flw.status[i].fm[j].svar));                                                       
+                    obj.SetTextDDL(flw.status[i].fm[j].d,eval(flw.status[i].fm[j].svar));
+                }               
+            }               
+            if(flw.status[i].c == 'fillddlctmoh'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                                         
+                    obj.SetTextDDL(flw.status[i].fm[j].d,countryMOHMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }
+            if(flw.status[i].c == 'fillddlctmoh2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                                         
+                    obj.SetTextDDL2(flw.status[i].fm[j].d,countryMOHMap[eval(flw.status[i].fm[j].s).toUpperCase()].code);
+                }               
+            }
+            if(flw.status[i].c == 'focus'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.SetFocus(flw.status[i].fm[j].d);
+                }               
+            }
+            if(flw.status[i].c == 'focusi'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.SetFocusInput(flw.status[i].fm[j].d);
+                }               
+            }
+            if(flw.status[i].c == 'focusb'){
+                cIndx = i;              
+                obj.SetFocusButton(flw.status[i].subid);               
+            }
+            if(flw.status[i].c == 'sendkeys'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.SendKeys(flw.status[i].fm[j].s);
+                    //alert("sk:"+flw.status[i].fm[j].s);
+                }               
+            }            
+            if(flw.status[i].c == 'focusdojo'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(flw.status[i].fm[j].s);                                     
+                    //obj.FocusDojo("usernameInput","input");
+                    obj.FocusDojo(flw.status[i].fm[j].v,flw.status[i].fm[j].t,flw.status[i].fm[j].at);                    
+                    //alert("sk:"+flw.status[i].fm[j].s);
+                }               
+            }   
+            if(flw.status[i].c == 'focusvojo'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(flw.status[i].fm[j].s);                                     
+                    //obj.FocusDojo("usernameInput","input");
+                    obj.FocusVojo(flw.status[i].fm[j].v,flw.status[i].fm[j].t,flw.status[i].fm[j].at);                    
+                    //alert("sk:"+flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'focusxojo'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(flw.status[i].fm[j].s);                                     
+                    //obj.FocusDojo("usernameInput","input");
+                    obj.FocusXojo2(flw.status[i].fm[j].v,flw.status[i].fm[j].t,flw.status[i].fm[j].at);                    
+                    //alert("sk:"+flw.status[i].fm[j].s);
+                }               
+            }
+            if(flw.status[i].c == 'focxdiv'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                    
+                    obj.FocusXojoByDiv(flw.status[i].fm[j].pn,flw.status[i].fm[j].ptt,flw.status[i].fm[j].pat,flw.status[i].fm[j].pft,flw.status[i].fm[j].cn,flw.status[i].fm[j].ctt,flw.status[i].fm[j].cat);                                        
+                }               
+            }
+            if(flw.status[i].c == 'focuscmb2'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    if(countryMap[eval(flw.status[i].fm[j].s).toUpperCase()].code=='101'){
+                        obj.FocusXojo2(flw.status[i].fm[j].v1,flw.status[i].fm[j].t1,flw.status[i].fm[j].at1);
+                    }   
+                    else{
+                        obj.FocusXojo2(flw.status[i].fm[j].v2,flw.status[i].fm[j].t2,flw.status[i].fm[j].at2);
+                    }
+                                        
+                   
+                }               
+            }  
+            if(flw.status[i].c == 'focusxojo3'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    //alert(flw.status[i].fm[j].s);                                     
+                    //obj.FocusDojo("usernameInput","input");
+                    obj.FocusXojo3(flw.status[i].fm[j].v,flw.status[i].fm[j].t,flw.status[i].fm[j].at);                    
+                    //alert("sk:"+flw.status[i].fm[j].s);
+                }               
+            } 
+            if(flw.status[i].c == 'sendkeysl'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                     
+                    obj.SendKeysLite(flw.status[i].fm[j].s);
+                }                
+            }if(flw.status[i].c == 'sendkeyslv'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){ 
+                    obj.SendKeysLite(eval(flw.status[i].fm[j].s));
+                }                
+            }
+            
+            if(flw.status[i].c == 'sendkeysld'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    //alert(eval(flw.status[i].fm[j].s));                                 
+                    obj.SendKeysLite(eval(flw.status[i].fm[j].s));
+                }                
+            }
+            if(flw.status[i].c == 'sendkeysldE'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    //alert(eval(flw.status[i].fm[j].s));                                 
+                    obj.SendKeysLite(eval(flw.status[i].fm[j].s));
+                }                
+            }
+            if(flw.status[i].c == 'sendkeysldE1'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){    
+                    alert(eval(flw.status[i].fm[j].s));                                 
+                    obj.SendKeysLite(eval(flw.status[i].fm[j].s));
+                }                
+            }
+            if(flw.status[i].c == 'sendeidapob'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){                                                                             
+                    var pob=eval(flw.status[i].fm[j].s); //alert(eval(flw.status[i].fm[j].s));
+                    var pobstatic=eval(flw.status[i].fm[j].d);
+                    if(typeof(pob) == "undefined"){
+                        obj.SendKeysLite(pobstatic);                                                                                                                       
+                    }
+                    else{
+                        obj.SendKeysLite(pob);     
+                    }
+                }                
+            }   
+            if(flw.status[i].c == 'sendkeyslng'){
+                cIndx = i;              
+                for(var j=0;j<flw.status[i].fm.length;j++){
+                    var lngs=eval(flw.status[i].fm[j].s);//alert(lngs); 
+                    if(lngs!==void 0){               
+                        for(var k=0;k<lngs.length;k++){                        
+                            obj.SendKeysLite(lngs[k]);
+                        }                 
+                    }                                        
+                }                
+            }          
+            if(flw.status[i].c == 'autosubl'){
+                cIndx = i;                
+                //DownloadFiles(rqI.RQ__r.Name);
+                //obj.AutoSubmitLink("ctl00_btnSetEnglish");
+                obj.AutoSubmitLink(flw.status[i].subid);
+            }     
+            if(flw.status[i].c == 'autosub'){
+                cIndx = i;   
+                //obj.AutoSubmit("ctl00_ContentPlaceHolder1_Button1");
+                obj.AutoSubmit(flw.status[i].subid);
+            }  
+            if(flw.status[i].c == 'upload'){               
+                var docMap="";                                                   
+                for(var index=0; index<{!totalPhotos}; index++){                                    
+                    if(attJS[index].reqDocName==flw.status[i].subid){                                              
+                      var str3=attJS[index].att.Id;                                          
+                      var str4="\~";                                            
+                      docMap=docMap.concat(str3,str4);                   
+                    }
+                }                  
+                docMap=docMap.substring(0,docMap.length-1);                     
+                obj.UploadDocs(docMap, rqI.RQ__r.Name);                
+                cIndx = i;                                                                       
+            }
+            if(flw.status[i].c == 'upload2'){               
+                var docMap="";                                                   
+                for(var index=0; index<{!totalPhotos}; index++){  
+                    //alert('Doc Name:'+attJS[index].reqDocName);
+                    //alert('flq Name:'+flw.status[i].subid);                                 
+                    if(attJS[index].reqDocName==flw.status[i].subid){                                                                 
+                      var str3=attJS[index].att.Id;                                          
+                      var str4="\~";                                            
+                      docMap=docMap.concat(str3,str4);  
+                      //alert(docMap);                 
+                    }
+                }
+                //alert(docMap);                  
+                docMap=docMap.substring(0,docMap.length-1);    
+                //alert(docMap);                 
+                obj.UploadDocs2(docMap, rqI.RQ__r.Name, 18);                
+                cIndx = i;                                                                       
+            }
+            if(flw.status[i].c == 'upload3'){               
+                var docMap="";                                                   
+                for(var index=0; index<{!totalPhotos}; index++){  
+                    //alert('Doc Name:'+attJS[index].reqDocName);
+                    //alert('flq Name:'+flw.status[i].subid);                                 
+                    if(attJS[index].reqDocName==flw.status[i].subid && attJS[index].itemCode==flw.status[i].itmc){                                                                 
+                      var str3=attJS[index].att.Id;                                          
+                      var str4="\~";                                            
+                      docMap=docMap.concat(str3,str4);  
+                      //alert(docMap);                 
+                    }
+                }
+                //alert(docMap);                  
+                docMap=docMap.substring(0,docMap.length-1);    
+                //alert(docMap);                 
+                obj.UploadDocs2(docMap, rqI.RQ__r.Name, 18);                
+                cIndx = i;                                                                       
+            }
+              
+            //if(flw.status[i].c == 'autosub'){
+              //  cIndx = i;
+                //obj.AutoSubmit("ctl00_ContentPlaceHolder1_btnCreate");
+                //obj.AutoSubmit(flw.status[i].subid);
+            //}                               
+        }
+        } catch (err) {
+            //alert("CU-Execute - message is: " + ex.Description);
+            var vDebug = ""; 
+            for (var prop in err) {  
+                vDebug += "property: "+ prop+ " value: ["+ err[prop]+ "]\n"; 
+            } 
+            vDebug += "toString(): " + " value: [" + err.toString() + "]";
+            alert(vDebug);
+        }
+        
+    }
+    function CallObjSet() {
+        //alert(cIndx);
+        var ReturnVal;
+        try {
+            if (obj) {                
+                ReturnVal = obj.SetBrowser(hwnd);   
+            } else {
+                alert("Object is not created!");
+            }
+            if (ReturnVal == 1) { alert("Form Submitted.") }
+            else { alert("Issue while Submitting the Form. Please contact administrator.") }
+        } catch (ex) {
+            alert("Some error happens, error message is: " + ex.Description);
+        }
+    }        
+
+    function setText(txt) {
+        myTextBox.value = txt;
+    }
+
+    function appendText(txt) {
+        myTextBox.value = myTextBox.value + txt;
+    }
+    function MyComComponent_onunload() {
+        obj.Dispose();
+    }   
+    function sleep(milliseconds) {
+        var start = new Date().getTime();
+        for (var i = 0; i < 1e7; i++) {
+            if ((new Date().getTime() - start) > milliseconds){
+                break;
+            }
+        }
+    }
+    window.onload = function() { 
+      try {               
+        Reset();Execute();drawszlider(100, 0);
+      }      
+      catch (err) {
+            //alert("CU-Execute - message is: " + ex.Description);
+            var vDebug = ""; 
+            for (var prop in err) {  
+                vDebug += "property: "+ prop+ " value: ["+ err[prop]+ "]\n"; 
+            } 
+            vDebug += "toString(): " + " value: [" + err.toString() + "]";
+            alert(vDebug);
+      }              
+    }
+    function drawszlider(ossz, meik){
+        var szazalek=Math.round((meik*100)/ossz);
+        document.getElementById("szliderbar").style.width=szazalek+'%';
+        document.getElementById("szazalek").innerHTML=szazalek+'%';
+    }   
+    function SaveToDisk(fileURL, fileName) {
+        if ( !! window.ActiveXObject && document.execCommand){          
+            var _window = window.open(fileURL, '_blank');           
+        }
+    }
+    function ExecuteDDTE(){
+        
+        
+        /*
+        if(rqI.exp__c == true){
+            flw = {"status":[{"c":"waitL","msg":"wait at 3","fm":[{"d":200}]},{"c":"focusxojo","msg":"focus Residence fld","fm":[{"v":"residencyNo","t":"input","at":"id"}]},{"c":"sendkeysld","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"fvisaNumber2"}]},{"c":"waitL","fm":[{"d":5000}]},{"c":"sendkeysl","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":22,"fm":[{"d":100}]},{"c":"sleep","msg":"data"},{"c":"fillWithId","msg":"fillWithId","fm":[{"d":"sponsorAddress","s":"DKP Block 8, Dubai"}]},{"c":"waitL","msg":"filling contcat details","fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile 1","fm":[{"v":"mobileNo1","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":4,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile no 2","fm":[{"v":"mobileNo2","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 3}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"Sleep 1"},{"c":"waitL","msg":"wait5","fm":[{"d":10000}]},{"c":"sendkeysl","msg":"1st page finish","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after Next btn clicked","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep,wait after next btn"},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"sleep2,wait after next btn"},{"c":"sendkeysl","msg":"Enter on popup","fm":[{"s":"{HOME}"},{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait5","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 3"},{"c":"waitL","msg":"2nd wait after popup done","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 4"},{"c":"sendkeysl","msg":"set radio btn","fm":[{"s":"{HOME}"},{"s":"{TAB 2}"},{"s":"{LEFT}"},{"s":"{RIGHT}"},{"s":"{RIGHT}"},{"s":"{RIGHT}"},{"s":"{TAB 2}"},{"s":"K"},{"s":"{TAB 2}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Next btn stp 3","fm":[{"s":"{HOME}"},{"s":"{TAB 3}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":2000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Tab to Next btn","fm":[{"s":"{TAB}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"end","msg":"end"}]};
+        }
+        else{
+            flw = {"status":[{"c":"waitL","msg":"wait at 3","fm":[{"d":200}]},{"c":"focusxojo","msg":"focus Residence fld","fm":[{"v":"residencyNo","t":"input","at":"id"}]},{"c":"sendkeysld","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"fvisaNumber2"}]},{"c":"waitL","fm":[{"d":5000}]},{"c":"sendkeysl","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":22,"fm":[{"d":100}]},{"c":"sleep","msg":"data"},{"c":"fillWithId","msg":"fillWithId","fm":[{"d":"sponsorAddress","s":"DKP Block 8, Dubai"}]},{"c":"waitL","msg":"filling contcat details","fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile 1","fm":[{"v":"mobileNo1","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":4,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile no 2","fm":[{"v":"mobileNo2","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 3}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"Sleep 1"},{"c":"waitL","msg":"wait5","fm":[{"d":10000}]},{"c":"sendkeysl","msg":"1st page finish","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after Next btn clicked","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep,wait after next btn"},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"sleep2,wait after next btn"},{"c":"sendkeysl","msg":"Enter on popup","fm":[{"s":"{HOME}"},{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait5","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 3"},{"c":"waitL","msg":"2nd wait after popup done","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 4"},{"c":"sendkeysl","msg":"set radio btn","fm":[{"s":"{HOME}"},{"s":"{TAB 2}"},{"s":"{LEFT}"},{"s":"{RIGHT}"},{"s":"{TAB 2}"},{"s":"K"},{"s":"{TAB 2}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Next btn stp 3","fm":[{"s":"{HOME}"},{"s":"{TAB 3}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":2000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Tab to Next btn","fm":[{"s":"{TAB}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"end","msg":"end"}]};
+        }
+        */
+        
+        if(rqI.exp__c == true){
+            flw = {"status":[{"c":"waitL","msg":"wait at 3","fm":[{"d":200}]},{"c":"focusxojo","msg":"focus Residence fld","fm":[{"v":"residencyNo","t":"input","at":"id"}]},{"c":"sendkeysld","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"fvisaNumber2"}]},{"c":"waitL","fm":[{"d":5000}]},{"c":"sendkeysl","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":22,"fm":[{"d":100}]},{"c":"sleep","msg":"data"},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"emiratesId","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 12}"},{"s":"rqI.RQ__r.Con__r.eidid__c"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"fillWithId","msg":"fillWithId","fm":[{"d":"sponsorAddress","s":"DKP Block 8, Dubai"}]},{"c":"waitL","msg":"filling contcat details","fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 12}"},{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus landline","fm":[{"v":"landline","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 8}"},{"s":"043911111"}]},{"c":"waitL","msg":"wait after landline","fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile 1","fm":[{"v":"mobileNo1","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 10}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile no 2","fm":[{"v":"mobileNo2","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 3}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"Sleep 1"},{"c":"waitL","msg":"wait5","fm":[{"d":10000}]},{"c":"sendkeysl","msg":"1st page finish","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after Next btn clicked","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep,wait after next btn"},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"sleep2,wait after next btn"},{"c":"sendkeysl","msg":"Enter on popup","fm":[{"s":"{HOME}"},{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait5","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 3"},{"c":"waitL","msg":"2nd wait after popup done","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 4"},{"c":"sendkeysl","msg":"set radio btn","fm":[{"s":"{HOME}"},{"s":"{TAB 2}"},{"s":"{LEFT}"},{"s":"{RIGHT}"},{"s":"{RIGHT}"},{"s":"{RIGHT}"},{"s":"{TAB 2}"},{"s":"K"},{"s":"{TAB 2}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Next btn stp 3","fm":[{"s":"{HOME}"},{"s":"{TAB 3}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":2000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Tab to Next btn","fm":[{"s":"{TAB}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"end","msg":"end"}]};
+        }
+        else{
+            flw = {"status":[{"c":"waitL","msg":"wait at 3","fm":[{"d":200}]},{"c":"focusxojo","msg":"focus Residence fld","fm":[{"v":"residencyNo","t":"input","at":"id"}]},{"c":"sendkeysld","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"fvisaNumber2"}]},{"c":"waitL","fm":[{"d":5000}]},{"c":"sendkeysl","msg":"click on Retrieve Dubai Visa data","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":22,"fm":[{"d":100}]},{"c":"sleep","msg":"data"},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"emiratesId","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 12}"},{"s":"rqI.RQ__r.Con__r.eidid__c"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"fillWithId","msg":"fillWithId","fm":[{"d":"sponsorAddress","s":"DKP Block 8, Dubai"}]},{"c":"waitL","msg":"filling contcat details","fm":[{"d":100000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 12}"}]},{"c":"waitL","msg":2,"fm":[{"d":50000}]},{"c":"focusxojo","msg":"Focus email","fm":[{"v":"email","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"dhafc@axs.ae"}]},{"c":"waitL","msg":2,"fm":[{"d":500000}]},{"c":"focusxojo","msg":"Focus landline","fm":[{"v":"landline","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 8}"},{"s":"043911111"}]},{"c":"waitL","msg":"wait after landline","fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile 1","fm":[{"v":"mobileNo1","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 10}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"focusxojo","msg":"Focus mobile no 2","fm":[{"v":"mobileNo2","t":"input","at":"id"}]},{"c":"sendkeysl","fm":[{"s":"{DEL 3}"},{"s":"0506537429"}]},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"Sleep 1"},{"c":"waitL","msg":"wait5","fm":[{"d":10000}]},{"c":"sendkeysl","msg":"1st page finish","fm":[{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after Next btn clicked","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep,wait after next btn"},{"c":"waitL","msg":2,"fm":[{"d":5000}]},{"c":"sleep","msg":"sleep2,wait after next btn"},{"c":"sendkeysl","msg":"Enter on popup","fm":[{"s":"{HOME}"},{"s":"{TAB}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait5","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 3"},{"c":"waitL","msg":"2nd wait after popup done","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 4"},{"c":"sendkeysl","msg":"set radio btn","fm":[{"s":"{HOME}"},{"s":"{TAB 2}"},{"s":"{LEFT}"},{"s":"{RIGHT}"},{"s":"{TAB 2}"},{"s":"K"},{"s":"{TAB 2}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":5000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Next btn stp 3","fm":[{"s":"{HOME}"},{"s":"{TAB 3}"},{"s":"{ENTER}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"waitL","msg":"wait after home","fm":[{"d":2000}]},{"c":"sleep","msg":"sleep 5"},{"c":"sendkeysl","msg":"Tab to Next btn","fm":[{"s":"{TAB}"}]},{"c":"waitL","msg":"wait after home","fm":[{"d":20000}]},{"c":"sleep","msg":"sleep 5"},{"c":"end","msg":"end"}]};
+        }
+        
+        Reset();Execute();
+    }
+</script>
+<script for="DemoActiveX" event="MyFirstEvent(args)" language="javascript">
+        function DemoActiveX::MyFirstEvent(args) {
+            appendText("DemoActiveX raised MyFirstEvent Bubble. args: ");
+            appendText(args);
+            appendText("\r\n");
+            cIndx=cIndx+1;
+            if(ended!=1){Execute();}                        
+        }
+    </script>
+
+<body>  
+    <!-- <input type="button" value="Auto Execute" onclick='Reset();Execute();'></input> -->       
+    {!ddtConfig}
+    <div id="szlider">
+    <div id="szliderbar">
+    </div>
+    <div id="szazalek">
+    </div>
+    </div>    
+    <div>
+        <input type="button" value="Continue DDTE work" onclick="ExecuteDDTE();" />
+    </div>  
+    <table width="90px"> 
+        <tr>
+            <!-- <td><a href="#" onclick="javascript:DownloadFiles();">Download</a></td> -->
+            <td width="20px">
+                <label id="progress"></label> 
+            </td>
+        </tr>
+        <tr>
+        <td width="70%">                        
+        <apex:pageBlock >
+        <apex:pageBlockSection title="Documents ({!totalPhotos})" collapsible="false">                            
+            <apex:repeat value="{!attWrapList}" var="a">                                
+                <img src="data:image/jpeg;base64,{!a.attCode}"  width="50px" height="50px" />
+            </apex:repeat>
+        </apex:pageBlockSection>
+        </apex:pageBlock>        
+               
+        </td>
+        </tr>              
+        <tr>
+            <td>
+                <textarea id="myTextBox"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <textarea id="myTextBox2"></textarea>
+            </td>
+        </tr>              
+    </table>            
+</body>                   
+</apex:page>

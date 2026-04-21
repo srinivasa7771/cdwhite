@@ -1,0 +1,158 @@
+<apex:component >
+    <apex:attribute name="rq" description="Request" type="g_Req__c"  required="true"/>
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="srv" description="Service " type="g_Srvc__c" />
+  
+    
+    <div class="form-group mb-3 mt-4 pt-3">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="form-group">
+                    <c:gsponlookup id="spnlookup" Request="{!rq}" role="Employee" accId="{!rq.Acc__c}" sta="Active" heading="Select the employee to add a new dependent for this application" /> 
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="fs-18">To add a new dependent, please select dependent’s relationship with the employee/sponsor</p>
+                <div class="mb-5">
+                    <label class="custom-radio mr-4">
+                        <input type="radio" name="relationship" value="spouse" />
+                        <span>Spouse</span>
+                    </label>
+                    <label class="custom-radio mr-4">
+                        <input type="radio" name="relationship" value="child" />
+                        <span>Child</span>
+                    </label>
+                     <label class="custom-radio">
+                        <input type="radio" name="relationship" value="newborn" />
+                        <span>New born</span>
+                    </label>
+                </div>
+                
+   <div id="newborn_relationship" class="form-group" style="display: none;">
+    <label class="custom-checkbox custom-checkbox-sm mb-4" id="nbrn" >
+        <input type="checkbox" name="newbornchk" />
+        <span>Select if the applicant is born in the UAE and did not leave the country</span>
+    </label>
+    </div>   
+    <div class="depSrv" style="display:none;">
+        
+    
+    <!-- .form-group -->
+    <div class="form-group" style="{! If((srvLst.size > 1)  ,'display: block;','display: none;') }">
+        
+        <label class="srvlbl mb-3 fs-18">{!srvLbl}</label>
+        
+        <div class="row">
+           <p><b>
+               GDRFA (General Directorate of Residency and Foreigners Affairs) has stopped issuing 3 years of residence visas. Henceforth, GDRFA will issue either 1-year or 2 years residence visas only.
+                    </b>
+                    </p>
+            <apex:repeat value="{!srvLst}" var="sr">
+                  <apex:outputText rendered="{!NOT(CONTAINS(sr.Name,'3 Years'))}">
+                <div class="v{!sr.kstp__c} col-lg-3 col-sm-6">
+                    <label class="box-check">
+                        <!--
+                       <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,false)}">
+                        <input type="radio" class="service_id" disabled="true"  ser="tynb" name="service_id" value="{!sr.id}"/>
+                        
+                        <div class="box box-center box-padding box-hover" style="background-color:#a29b9b;min-height: 70px;">
+                            <span class="box-title font-weight-medium">
+                                {!sr.Short_Label__c}<br/>
+                                <span class="text-000">{!sr.Service_Type__c}</span>
+                            </span>
+                        </div>
+                        </apex:outputText>
+-->
+                     
+                        <input type="radio" class="service_id"  ser="tynb" name="service_id" value="{!sr.id}"/>
+                        
+                        <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                            <span class="box-title font-weight-medium">
+                                {!sr.Short_Label__c}<br/>
+                                <span class="text-000">{!sr.Service_Type__c}</span>
+                            </span>
+                        </div>
+                        
+                        <script>
+                        
+                        if('{!srvLst.size}' ==1){
+                            
+                            $('.service_id').eq(0).attr('checked','true');
+                        }
+                        </script>
+                    </label>
+                </div>
+                    </apex:outputText>
+            </apex:repeat>
+            
+        </div>
+        
+    </div>
+    </div>
+    <!-- .form-group -->
+    <div id="incountryChk" class="form-group" style="display: none;">
+    <label class="custom-checkbox custom-checkbox-sm mb-4" id="inc" >
+        <input type="checkbox" name="incountry"/>
+        <span>Select if the applicant is in the UAE and intends to stay here throughout the visa
+            process</span>
+    </label>
+    </div>
+     <script>
+    (function ($) {
+        $(function () {
+            $('input[name=relationship]').change(function () {
+               $('#newborn_relationship').hide();
+                if ($(this).val() == 'child') {
+                     $('.vspouse').hide();$('.vchild').show();$('.vnewborn').hide();
+                    $('.depSrv').show(); $('.srvNew').hide();$('.srvTransfers').show();
+                   $('[value="child"]').prop('checked',true);
+                    $('#incountryChk').show();
+                    cs["visaTransferId"].value= 'c';cs["uid"].value = '006';
+                  
+                    
+                } 
+                else if($(this).val() == 'newborn') {
+                    console.log('new born::::');
+                    $("input[name='newbornchk']").prop('checked',true);
+                    $('.depSrv').show();
+                    $('.vspouse').hide();$('.vchild').hide();$('.vnewborn').show();
+                    //$('[value="a0L2000000YQVKhEAP"]').prop('checked',true);
+                    //$('[value="a0L2000000YQVLCEA5"]').prop('checked',true);
+                    $('[value="newborn"]').prop('checked',true);
+                    $('#newborn_relationship').show();
+                    $('#incountryChk').hide();
+                    //commented for newborn scenario $('.depSrv').hide();
+                   $('.srvTransfers').show(); $('.srvNew').hide();
+                    cs["visaTransferId"].value= 'b';cs["uid"].value = '009';
+                }
+                else {
+                    $('.depSrv').show(); $('.srvNew').show();$('.srvTransfers').hide();
+                    $('.vspouse').show();$('.vchild').hide();$('.vnewborn').hide();
+                    $('[value="spouse"]').prop('checked',true);
+                    $('#incountryChk').show();
+                    cs["visaTransferId"].value= 's';cs["uid"].value = '';
+                   
+                
+                }
+                
+            });
+             $('#nbrn').change(function () { 
+                 var newbornChecked = $('input[name="newbornchk"]:checked').length > 0;  
+                console.log('check box changed:::::::');
+                if(newbornChecked) {
+                    $('.depSrv').show();
+                    $('.vspouse').hide();$('.vchild').hide();$('.vnewborn').show();
+                  }
+                 else{
+                     $('.depSrv').hide();
+                      $('.vspouse').hide();$('.vchild').hide();$('.vnewborn').hide();
+                     }
+             });                 
+        });
+    }(jQuery))
+</script>
+    
+    
+</apex:component>

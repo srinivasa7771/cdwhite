@@ -1,0 +1,568 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!req.srvc__r.lbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+        
+        
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <script type="text/javascript">
+        function changeLabel(elem,val){
+            $(elem).parent().find('label').html(val);
+        }
+        var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+        var cs = {};
+        function dformat(dt,id){
+            var d = new Date(dt);//alert(d);
+            var m=d.getMonth()+1;
+            var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+            var mm=m>9?m:'0'+m;
+            var yy=d.getFullYear();
+            document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+        }
+        function checkPassportnumber(passportId){
+            addWarningMsg(passportId,'Please make sure you re-upload your passport');
+        }
+        $(document).ready(function() {
+            changecodes = {'cr':'xcrlg__c','dbc':'xcbd__c','ntc':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c,xcnc__c','np':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c','pc':'xcmbs__c,xcma__c,xcmta__c,xcmoa__c','msc':'xcms__c'};            
+            //Disabling  fields
+            if(cs['xard__c'].value ==  true){
+                let flds = ['#spokenLng','#xcbd__c',cs['xcbc__c'],cs['xcbp__c'],cs['xcnc__c'],cs['xcnp__c'],cs['xcrlg__c']];
+                flds.forEach(function(i){ 
+                    //$(i).val()!=null && $(i).val()!='' && $(i).val()!==void 0?$(i).attr('disabled',true):'';
+                    $(i).attr('disabled',true);
+                });
+            }
+            
+            let flds1 = [cs['xeidav__c']];  
+            flds1.forEach(function(i){   
+                $(i).parent().parent().hide();   
+            }); 
+            hr();
+            mr();
+            $('[value="Married"]').prop('checked',true);
+            cs['xcms__c'].value = 'Married';
+            $("input[name='martialStatus']").attr('disabled',true);
+            $("input[name='salutation']").attr('disabled',true);
+            $(cs['xcp__c']).attr('onchange','checkPassportnumber(this)');
+            changeLabel(cs['xceml__c'],"Applicant's email");
+             $('#appMobile').html('Applicant&#180;s mobile');
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z ]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+            var val = cs['xadh__c'].value;
+            var codes = val.split(";");
+            console.log('codes::::'+codes);
+            setTimeout(function(){
+                $('.ddValidation').on('change',function(){
+                    $('select').on('change',function(){
+                        var v = $(this).val();
+                        if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                            removeValError($(this));
+                    });
+                });
+                
+                $('select').on('change',function(){
+                    var v = $(this).val();
+                    if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                        removeValError($(this));
+                });
+            },3000);
+        });
+        
+        //check whether date is valid or not
+        function checkValidDate(thisElement){
+            console.log('validDate:::');
+            var date = $(thisElement).val();
+            console.log('date:::'+date);
+            var date_regex =/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/;
+            
+            var r = (date_regex.test(date))?true:'invalid';
+            console.log('r::::'+r);
+            if(r == 'invalid'){
+                removeWarningMsg(thisElement);
+                removeValError(thisElement);  
+                addValError(thisElement,'Please enter a valid Date(DD/MM/YYYY)');
+                return false;   
+            }else{
+                removeValError(thisElement);  
+                return r;
+            }
+        }
+        //Add validation error
+        function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            elem.parents('.form-group').eq(0).append(errElem);
+        }
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+        }
+        //Validate Basic salary
+        function validateBasicSalary(thiselem){
+            var sal = $(thiselem).val();
+            if(sal < 1000){ 
+                addValError(thiselem,'Minimum basic salary should be AED 1000.','salVal');
+                return false;
+            }else{
+                // $(thiselem).parent().find('.frmErrMsg').remove();
+                removeValError(thiselem);
+            }
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+            //elem.parent().find('.warningMsg').remove();
+        }
+        //Validation for current Nationality if it is syria
+        function validateCurrenNationality(thisElement){
+            var curNat = $(thisElement).val();
+            if(curNat == 'Syria'){
+               // addValError(thisElement,'Applicants should be in country, salary should be above 10,000 AED, and job title should be Manager or Above.');
+               // return false;
+            }else{
+                removeValError(thisElement);     
+            }
+        }
+        //Validation  for UAE Mobile Number
+        function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                addValError(elem,'Please enter a valid UAE mobile number');
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            var val = cs['xadh__c'].value;
+            var codes = val.split(";")
+            
+            $('.requiredFld').each(function(){
+                
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    console.log('field::::::'+$(this).attr('id'));
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            if(codes.includes('ntc')){
+                if(cs['Nationality'].value == cs['xcnc__c'].value){
+                    validated = false;
+                    addValError(cs["xcnc__c"],'Old and new Nationality should not be same.');
+                    //    addValError($('#xcnc__c').parent(),'Old and new Nationality should not be same.');
+                }
+                if(cs['ppNo'].value == cs['xcp__c'].value){
+                    validated = false;
+                    addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                }
+            }
+            if(codes.includes('np')){
+                if(cs['ppNo'].value == cs['xcp__c'].value){
+                    validated = false;
+                    addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                }
+            }
+            console.log('validateData2:::::'+validated);
+            if(codes.includes('cr')){
+                if(cs['religion'].value == cs['xcrlg__c'].value){
+                    validated = false;
+                    addValError(cs["xcrlg__c"],'Old and new Religion should not be same.');
+                }       
+            }
+            if(codes.includes('dbc')){
+                if(getFormattedDate(cs['dob'].value) == cs['xcbd__c'].value){
+                    validated = false;
+                    addValError($("#xcbd__c"),'Corrected Date of Birth should not be same as old value.');
+                }       
+            }
+            console.log('validateData3:::::'+validated);
+            if(codes.includes('msc')){
+                if(cs['marSta'].value == cs['xcms__c'].value){
+                    validated = false;
+                    $("input[name='martialStatus']").parent().parent().parent().find('.option-error').html('Corrected Martial status should not be same').show();
+                }       
+            }
+            console.log('validateData4:::::'+validated);
+            if(codes.includes('nc')){
+                if((cs['fName'].value == cs['xcfn__c'].value) && (cs['mName'].value == cs['xcmn__c'].value) && (cs['lName'].value == cs['xcln__c'].value)){
+                    validated = false;
+                    addValError(cs["xcfn__c"],'Correction of Name should not be same as old value');
+                }       
+            }
+            console.log('validateData5:::::'+validated);
+            
+            var salutation = $("input[name='salutation']:checked").val();
+            var martialStatus = $("input[name='martialStatus']:checked").val();
+            if(salutation == undefined){
+                //alert('Please select salutation');
+                $("input[name='salutation']").parent().parent().parent().find('.option-error').show();
+                validated =false;
+            }
+            //alert('salutation v:'+validated);
+            if(martialStatus == undefined){
+                $("input[name='martialStatus']").parent().parent().parent().find('.option-error').show();
+                //alert('Please select martial status');
+                validated =false;
+            }//alert('martialStatus v:'+validated);
+            
+            if(GCC_Nations.includes(cs["xcnc__c"].value)){
+                validated =false;
+                addValError(cs["xcnc__c"],'GCC nationals are not allowed !!');
+                scrollToDiv($(cs["xcnc__c"]));
+            }
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                //   console.log('note:::'+cs['xcma__c'].value);
+                //  console.log('Issue Date:::'+cs['xcpid__c'].value);
+                //console.log('Expiry Date:::'+cs['xcped__c'].value);
+                //console.log('DOB:::'+cs['xcbd__c'].value);
+                next();
+                //alert("Req Updated::::::::::"); 
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:inputHidden id="xard__c" value="{!req.xard__c}"/>
+            <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+            <apex:inputHidden id="xadtx1__c" value="{!req.xadtx1__c}"/>
+            <input type="hidden" id="msg" value="{!req.con__r.mgs__c}"/>
+            <input type="hidden" id="Nationality" value="{!req.con__r.nc__c}"/>
+            <input type="hidden" id="ppNo" value="{!req.con__r.p__c}"/>
+            <input type="hidden" id="religion" value="{!req.con__r.rlg__c}"/>
+            <!--<apex:inputHidden id="dob" value="{!req.xcbd__c}"/> -->
+            <input type="hidden" id="dob" value="{!req.con__r.Birthdate}"/> 
+            <input type="hidden" id="marSta" value="{!req.con__r.ms__c}"/>
+            <input type="hidden" id="fName" value="{!req.con__r.firstName}"/>
+            <input type="hidden" id="mName" value="{!req.con__r.middleName}"/>
+            <input type="hidden" id="lName" value="{!req.con__r.lastName}"/>
+            <input type="hidden" id="JbId" value="{!req.con__r.jb__c}"/>
+            <input type="hidden" id="xcjb__c" value="{!req.xcjb__c}"/>
+            <input type="hidden" id="rtacn__c" value="{!req.rtacn__c}"/>
+            <input type="hidden" id="xcmbs__c" value="{!req.xcmbs__c}"/>
+            <input type="hidden" id="xcma__c" value="{!req.xcma__c}"/>
+            <input type="hidden" id="xcmta__c" value="{!req.xcmta__c}"/>
+            <input type="hidden" id="xcmoa__c" value="{!req.xcmoa__c}"/>
+            <script>
+            cs['xard__c']=document.getElementById('{!$Component.xard__c}');
+            cs['xcjb__c']=document.getElementById('xcjb__c');
+            cs['xadh__c']=document.getElementById('{!$Component.xadh__c}');
+            cs['xadtx1__c']=document.getElementById('{!$Component.xadtx1__c}');
+            cs['rtacn__c']=document.getElementById('rtacn__c');
+            cs['xcmbs__c']=document.getElementById('xcmbs__c');
+            cs['xcma__c']=document.getElementById('xcma__c');
+            cs['xcmta__c']=document.getElementById('xcmta__c');
+            cs['xcmoa__c']=document.getElementById('xcmoa__c');
+            cs['rmsg']=document.getElementById('msg');
+            cs['Nationality']=document.getElementById('Nationality');
+            cs['ppNo']=document.getElementById('ppNo');
+            cs['religion']=document.getElementById('religion');
+            //cs['dob']=document.getElementById('{!$Component.dob}');
+            cs['dob']=document.getElementById('dob');
+            
+            
+            cs['marSta']=document.getElementById('marSta');
+            cs['fName']=document.getElementById('fName');
+            cs['mName']=document.getElementById('mName');
+            cs['lName']=document.getElementById('lName');
+            cs['JbId']=document.getElementById('JbId');
+            
+            
+            </script>
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:inputHidden id="gender__c" value="{!req.Gender__c}"/>
+                    <script type="text/javascript">
+                    cs['gender__c']=getC('{!$Component.gender__c}');
+                    </script>
+                <apex:actionFunction name="saveReqDraft3" action="{!saveDraft}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="btnid,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideTempLoader_input();loadData_jt();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <!--<apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="btnid,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();"    onbeforedomupdate="javascript: toggle_inputs();"/>-->
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                    <!-- <div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                                <!-- <a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a> -->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+                                
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" PayDone="{!if(req.AP__c>0,true,false)}" id="comp"/>
+                                     
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        <c:grqbrdcrumbs req="{!req}" applicant="active" addon="" payment=""/>       
+                                        <!--   <div class="steps steps-desktop">
+<div class="step-item active">
+<div class="step-item-inner">
+<i class="step-icon icon-members"></i>
+<div class="step-title">Applicant</div>
+</div>
+</div>
+
+
+<div class="step-item">
+<div class="step-item-inner">
+<i class="step-icon icon-addon"></i>
+<div class="step-title">Additional Services</div>
+</div>
+</div>
+
+<div class="step-item">
+<div class="step-item-inner">
+<i class="step-icon icon-cash-deposit"></i>
+<div class="step-title">Review &amp; Payment</div>
+</div>
+</div>
+
+</div>
+<!-- end .steps -->
+                                        
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        
+                                        
+                                        <b><apex:pageMessages id="msg"  />
+                                            
+                                            
+                                        </b>
+                                        
+                                        <c:passportdetails req="{!req}" id="ppdCmp"/> 
+                                        <c:emiratesidinfo req="{!req}" id="EinfoCmp"/> 
+                                        <c:RPDetail req="{!req}" cmpTitle="RP Details"/> 
+                                        <!-- .base-collapse -->
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                                <div class="collapse-title">Applicant Details</div>
+                                            </a>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        <apex:inputField id="xcjb__c" value="{!req.xcjb__c}" />
+                                                        <script type="text/javascript">
+                                                            var ttype= '{!$Component.xcjb__c}';  
+                                                            var gender =cs['gender__c'].value;
+                                                            console.log('gender::'+gender);
+                                                            document.getElementById(ttype).style.display='none';
+                                                            if(gender == 'Male'){
+                                                                document.getElementById(ttype).value='Muhrem';
+                                                            }else{
+                                                                document.getElementById(ttype).value='House Wife';
+                                                            }                               
+                                                            document.getElementById(ttype+'_lkwgt').style.display='none';
+                                                        </script>
+                                                        <c:personaldetailsBO req="{!req}" 
+                                                                          Salutations="{!salutations}"
+                                                                          MartialStatus="{!MartialStatus}"
+                                                                          SpokenLanguages="{!spokenLanguages}" id="perDetail"/>
+                                                        
+                                                        
+                                                        <!--<c:sponsorinfo req="{!req}" id="sponInfo"/>-->
+                                                        
+                                                        <c:contactinformation req="{!req}" id="conInfoCmp"/>
+                                                        <c:educationqualification req="{!req}" id="qualificationCmp"/>
+                                                        <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp"/> 
+                                                        
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+            
+        </apex:form>
+    </html>    
+</apex:page>

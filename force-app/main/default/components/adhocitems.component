@@ -1,0 +1,535 @@
+<apex:component allowDML="true" controller="gctlInsComp">
+    
+    <apex:attribute name="adHocItms" description="adHocItms" type="g_srvcitm__c[]"/>
+    <apex:attribute name="countriesOptions" description="countriesOptions" type="SelectOption[]"/>
+    <apex:attribute name="rqDraft" description="request" required="true" type="g_Req__c" />
+    <apex:attribute name="allCountries" description="allCountries" required="true" type="SelectOption[]"/>
+    
+    <style>
+        #Attestation{display:none;}
+        #Attestation_msg ul.pl-3 {
+        text-transform: capitalize;
+        }
+        #Attestation_msg li {
+        list-style: disc !important;
+        }
+    </style>
+    
+    
+    <label class="box-check">
+        <input id='chkvfs' type="checkbox" name="service" onclick="updateADHOC('vfs','false');" />
+        <div class="box box-grey box-grey-block addon-service-box">
+            <div class="addon-service-img">
+                <img src="https://www.vfsglobal.com/en/assets/images/vfs-global-logo.svg" alt="VFS Global Logo" />
+                <!-- <img src="{!$Resource.VfsGlobal}" alt="VFS Global Logo" />-->
+            </div>
+            <div class="box-grey-label">VFS Attestation Services</div>
+            <div style="flex: 0 0 150px" class="ml-sm-auto text-sm-right mt-3">
+                <button id="vfsbtndetails" type="button" class="btn btn-link pr-0 pl-2 mt-2 mt-sm-0" data-toggle="modal" data-target="#modal_vfsatt" > <!-- onclick="resetModalInputs(); return false;"-->
+                    <i class="icon-info text-primary"></i> VIEW DETAILS
+                </button>
+            </div>
+        </div>
+    </label>
+    <!--  </div>-->
+    
+    <div class="modal fade modal-base" id="modal_vfsatt" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close"  aria-label="Close" onclick="clearVFSdets2(); return false;">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">VFS Global document attestation services</h2>
+                    <p>
+                        To avail this service, please fill in all relevant information required. VFS representative may contact you directly if any additional information is needed.
+                    </p>
+                    
+                    <div class="mb-3"></div>
+                    <div class="form-style">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Select certification type</label>
+                                    <select id="certificate" class="form-control requiredFld certificate-placeholder requiredFldpop input-select2-flat">
+                                        <option></option>
+                                        <option attr="" value="certificate"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Select the issuing country of the certificate</label>
+                                    <apex:selectList styleClass="form-control input-select2-tags dum requiredFld requiredFldpop" id="country"  multiselect="false" onChange="showHideAttestation()"> 
+                                        <apex:selectOptions value="{!countriesOptions}"/>
+                                    </apex:selectList>
+                                    <script>
+                                    cs['country2']=document.getElementById('{!$Component.country}');
+                                    </script> 
+                                </div>
+                            </div>
+                            <label class="text-primary col-md-12 " id="Attestation">
+                                <span class="fs-14 font-weight-bold my-3 text-underline">Required Documents</span>
+                                <span id="Attestation_msg"></span>
+                            </label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6" id="NumberOfCertif" style="display:none;">
+                                <div class="form-group">
+                                    <label>Number of certification required</label>
+                                    <select id="NumberofcertifOptions" class="form-control requiredFld certificate-placeholder requiredFldpop input-select2-flat">
+                                        <option></option>
+                                        <script>
+                                        let i=1; 
+                                        var listOptions = document.getElementById("NumberofcertifOptions");                                       
+                                        while (i <= 10) {
+                                            var newOption = document.createElement("option");
+                                            newOption.text = i;
+                                            newOption.value = i; 
+                                            listOptions.options.add(newOption);
+                                            i++;
+                                        }
+                                        cs['NumberofcertifOptions'] = getC('{!$Component.NumberofcertifOptions}');
+                                        </script>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">    
+                                <div class="form-group">
+                                    <label>Country of pickup</label>
+                                    <apex:selectList styleClass="requiredFld requiredFldpop country-placeholder input-select2-flat" id="countryOfPickup"  multiselect="false"> 
+                                        <apex:selectOptions value="{!countriesOptions}"/>
+                                    </apex:selectList>
+                                    
+                                    <script>
+                                    cs['countryOfPickup']=document.getElementById('{!$Component.countryOfPickup}');
+                                    
+                                    </script>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Certificate issuing <elem id="unv">university</elem></label>
+                                    <textarea id="university" class="form-control requiredFldpop requiredFld alphaChar"/>
+                                    <!--richText="True"-->
+                                    <!-- <input type="text" id="university"  class="form-control requiredFldpop requiredFld alphaChar" value=""/> -->
+                                </div>
+                            </div>
+                            <script> 
+                            cs['university'] = document.getElementById("{!$Component.university}");
+                            </script> 
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label>Address for certificate collection</label>
+                                    <textarea id="colladdress" class="form-control requiredFldpop requiredFld"/>
+                                    <!--<input type="text" id="colladdress"  class="form-control requiredFldpop requiredFld" value=""/>-->
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Contact number</label>
+                                    <div class="d-flex">
+                                        <select id="countryCode" class="form-control requiredFld requiredFldpop input-select2-flat">                                                
+                                        </select>
+                                        <!--<input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:70px;" id="countryCode"/>-->
+                                        <input type="text" onchange="checkMob(this);" onkeyup="validDigits(this);"  id="contactnum" class="form-control ml-3 requiredFldpop" value="" />
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- script for country code--> 
+                            <script type="text/javascript"> 
+                            //we have an array countryCodeObj_new of the following format in the static resource AXS2_formValidations : 
+                            //------------format example-------------
+                            /*  var countryCodeObj_new = [{
+                                "name": "United Arab Emirates",
+                                "dial_code": "+971",
+                                "code": "AE"
+                            }, {
+                                "name": "Afghanistan",
+                                "dial_code": "+93",
+                                "code": "AF"
+                            },*/
+                            //--------------------------------------
+                            var countryCodeOptions = ''; 
+                            for(i of countryCodeObj_new){
+                                var option = ''; 
+                                if(i.dial_code && i.name) {                                   
+                                    option = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                    countryCodeOptions += option; 
+                                }
+                            }
+                            $('#countryCode').html(countryCodeOptions); 
+                            //cs['countryCode'] = getC('{!$Component.countryCode}');
+                            cs['countryCode'] = document.getElementById('countryCode');
+                            console.log('COUNTRY CODE HEREEEE' + cs['countryCode'].value);
+                            </script>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Contact person's name</label>
+                                    <input name = "contactperson" type="text" id="contactperson"  class="form-control requiredFldpop requiredFld alphaChar"/>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <input type="text" id="additionalDetails"  class="form-control requiredFldpop requiredFld alphaChar" value=""/>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        <div class="form-group text-right">
+                            <label>&nbsp;</label><br/>
+                            <button class="btn btn-primary btnConfirmPop" onclick="saveVFSDetails();return false;">CONFIRM</button>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    <apex:inputHidden id="vfsFlag" value="{!rqDraft.vfsFlag__c}"/>
+    <!--  
+<apex:inputHidden id="srvcUid" value="{!rqDraft.srvc__r.uid__c}"/>
+
+cs["srvcUid"] = document.getElementById("{!$Component.srvcUid}");
+</script>
+
+<apex:inputHidden id="srvcUid" value="{!rqDraft.srvc__r.uid__c}"/>
+<input type="hidden" id="vfsFlag" value="true"/>
+<input type="hidden" id="srvcUid" value="002"/>
+-->
+    
+    
+    
+    <!--CONFIRM button-->
+    
+    
+    <script>
+    
+    var jsonVFSDetails={};
+    $(document).ready(function () {
+        
+        updateGreenTick(); checkSelectedAddons(); setPlaceholder();
+        showHideCertificate();
+    });
+    
+    function setPlaceholder(){
+        setTimeout(function(){
+            $(".country-placeholder").select2({
+                placeholder: "Select a country",
+                enableSearch: true
+            }); 
+            
+            $(".certificate-placeholder").select2({
+                placeholder: "Select a certificate",
+                enableSearch: true
+            });
+        },500);
+        
+    }
+    
+    function checkSelectedAddons(){
+        var adhcItms = cs['xadh__c'].value;
+        var lstAdhocs = adhcItms.split(';');
+        for(var i=0; i<lstAdhocs.length;i++){
+            if(getC('chk'+lstAdhocs[i])!=null){
+                console.log('----------------update flag to true in checkselectedaddons-----------');
+                console.log('chk'+lstAdhocs[i]);
+                //getC('chk'+lstAdhocs[i]).checked = true;
+            }
+        }
+    }
+    
+    function chkcmof(){
+        // assign the selected value
+    }
+    
+    function saveVFSDetails(eId, eValue){
+        console.log('-----------entering save vfs details-----------');
+        var brk2 = false; brk2 = vPopFlds();
+        console.log('brk2 value'+ brk2);
+        
+        if(!brk2){
+            console.log('within brk2 false');
+            
+            var selectedValuesCode = ' ';
+            var selectedValuesLabel = ' ';
+            //for (let i = 0; i < cs['country2'].selectedOptions.length; i++) {
+            // var selectedValuesCode = cs['country2'].selectedOptions[i].value;
+            //  console.log('selectedCountry' + cs['country2'].selectedOptions[i]);
+            //          selectedValuesCode = selectedValuesCode + ',' + cs['country2'].selectedOptions[i].value;
+            //          selectedValuesLabel = selectedValuesLabel + ',' + cs['country2'].selectedOptions[i].label;                          
+            // }
+            selectedValuesLabel = cs['country2'].selectedOptions[0].label;
+            selectedValuesCode = cs['country2'].selectedOptions[0].value;
+            jsonVFSDetails['country']  = selectedValuesLabel;
+            jsonVFSDetails['issuingCountryCode']  = selectedValuesCode;
+            //jsonVFSDetails['country']  = $('#country').val().join(';');
+            //$(cs['country']).find("option:selected").text().trim();
+            //jsonVFSDetails['countrycode'] = $(cs['countryCode']).val().trim();
+            jsonVFSDetails['certificate'] = $('#certificate').val().trim();
+            jsonVFSDetails['university'] = $('#university').val().trim();
+            jsonVFSDetails['countryOfPickup'] = $(cs['countryOfPickup']).val().trim();
+            jsonVFSDetails['colladdress'] = $('#colladdress').val().trim();
+            jsonVFSDetails['contactnum'] = $('#contactnum').val().trim();
+            jsonVFSDetails['countryCode'] = $('#countryCode').val().trim();
+            jsonVFSDetails['contactperson'] = $('#contactperson').val().trim();
+            jsonVFSDetails['accid'] = cs['accid'].value.trim();
+            jsonVFSDetails['reqstID'] = reqstID;
+            jsonVFSDetails['NumberofcertifOptions']= $('#NumberofcertifOptions').val().trim();
+            jsonVFSDetails['additionalDetails']= $('#additionalDetails').val().trim();
+            
+            console.log('json value'+ jsonVFSDetails);
+            xadtx3__c = JSON.stringify(jsonVFSDetails);
+            cs['xadtx3__c'].value = xadtx3__c;
+            
+            if (cs['xadh__c'] != null) {
+                var adh = cs['xadh__c'].value;
+                if (!adh.includes('vfs;')) {
+                    cs['xadh__c'].value += 'vfs;';
+                    console.log('adhocvalue' + cs['xadh__c'].value);
+                }
+            }
+            
+            
+            console.log('xadtx3__cval' + cs['xadtx3__c'].value + 'json val'+ xadtx3__c); 
+            $('#preloader').fadeIn();
+            
+            // alert(cs['xadtx3__c'].value);
+            save_Vfs_Popup_Details();
+            //  boSave();
+            //toggleGLoader();
+            console.log('-------------xadtx3 value in savevfsdetails-------------'+xadtx3__c);
+            //cs['xadtx3__c'].value = JSON.stringify(jsonVFSDetails);
+            
+            getC('chkvfs').checked = true; getC('chkvfs').onclick();
+            $('#modal_vfsatt').modal('hide');
+        }
+    }
+    
+    
+    
+    //######## common functions    
+    function vPopFlds(){
+        var brk = false;var elem = '';
+        $(".requiredFldpop").each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        return brk;
+    }
+    
+    
+    function clearVFSdets(){
+        axsConfirmation('Are you sure to proceed without VFS Attestation?','','','clearVFSdets2');       
+    }
+    
+    function updateADHOC2(itmCd){
+        axsConfirmation('Are you sure to proceed without VFS Attestation?','','','updateADHOC','vfs'); 
+    }
+    
+    function clearVFSdets2(){
+        $('#modal_vfsatt').modal('hide');
+        //##getC('chkvfs').checked = false; cs['xadtx3__c'].value = "";  getC('chkvfs').onclick(); 
+    }
+    
+    //resets all the input fields from the modal
+    function resetModalInputs(modalId){ 
+        $(modalId).find('input:enabled').val('');$(modalId).find('[type="radio"]').prop('checked',false); $(modalId).find('.input-select2-flat').val('').trigger('change'); 
+        $(".requiredFldpop").each(function(){removeValError(this);}); 
+    }
+    
+    
+    //on load check vfs option and set green tick to green if automatically checked
+    cs["vfsFlag"] = document.getElementById("{!$Component.vfsFlag}");
+    function updateGreenTick(){
+        console.log('----------Entering update green tick--------------');
+        //get the selected value 
+        var returnedVfsFlag = cs["vfsFlag"].value || cs['xadh__c'].value.includes('vfs');
+        console.log('------------returnedVfsFlag--------'+ returnedVfsFlag);
+        console.log('-----------type of -----------'+ typeof(cs["vfsFlag"].value)); 
+        
+        //check vfs flag value
+        if(returnedVfsFlag === 'true'){
+            console.log('---------------entering if returned VfsFlag is true------------------');
+            //update getC(AdnicIns) to true based on the value
+            getC('chkvfs').checked = true;
+            console.log('---------------after green tick is updated------------------');
+            
+        }else{  
+            console.log('------------------------- green tick false---------'); 
+            getC('chkvfs').checked = false; 
+            console.log('------------------after updating green tick to false----------');
+        }
+        
+    }
+    
+    // cs["srvc__r.uid__c"] = document.getElementById("{!$Component.srvcUid}");
+    //cs["srvc__r.uid__c"] = document.getElementById("srvcUid");
+    var suid='{!rqDraft.srvc__r.uid__c}';
+    //get type of visa : employee or spouse or child or new born from previous page or from the first module of adnic 
+    // change value and label of certification
+    function showHideCertificate(){
+        $('#unv').text('authority');
+        //check if employee visa
+        if(suid == '002' || suid == '004' || suid == '021' || suid == '078' || suid == '304' || suid == '020' || suid == '040' || suid == '303' || suid == '001' || suid == '003'
+           || suid == '028' || suid == '026' || suid == '081' || suid == '308' || suid == '015'
+           || suid == '025' || suid == '027' || suid == '080' || suid == '307' || suid == '010'
+           || suid == '189' || suid == '191' || suid == '193'
+           || suid == '188' || suid == '190' || suid == '192' || suid == '050' || suid == '053'){
+            document.getElementById("certificate").options[1].text = 'Education certificate';
+            document.getElementById("certificate").options[1].value = 'Education certificate';
+            $('#certificate option').attr('mDoc','Education certificate');
+            $('#unv').text('university');
+            //show the Number of certification dropdown 
+            document.getElementById("NumberOfCertif").style.display='block';
+            
+        }
+        
+        //check if spouse visa
+        if(suid == '138' || suid == '311' || suid == '139'
+           || suid == '012' || suid == '310' || suid == '005'
+           || suid == '117' || suid == '018' || suid == '023' || suid == '317'){
+            document.getElementById("certificate").options[1].text = 'Marriage certificate';
+            document.getElementById("certificate").options[1].value = 'Marriage certificate';
+            $('#certificate option').attr('mDoc','Marriage certificate');
+            
+        }
+        
+        //check if chid or new born visa
+        if(suid == '140' || suid=='009' || suid=='006' || suid=='313' || suid=='141'
+           || suid=='013' || suid=='312' || suid=='006' 
+           || suid=='014' || suid=='009'){
+            document.getElementById("certificate").options[1].text = 'Birth certificate';
+            document.getElementById("certificate").options[1].value = 'Birth certificate';
+            $('#certificate option').attr('mDoc','Birth certificate');
+            
+        }
+        
+        
+    }
+    var docsTobeSkipped = ['passport','birth','marriage','degree','educational','additional requirements'];
+    var docsTobeSkipped_subText = ['(NAWA form attached in the email)','(format will be provided on attestation confirmation)','(Attached in the email)'];
+    var certToBeSkipped = [{"Bahrain":"Education certificate"},{"China":"Birth certificate,Marriage certificate"},{"Kenya":"Education certificate"}];
+    var showRqDocs = false;
+    function showHideAttestation(){//show hide documents and attestations
+        showRqDocs = false;
+        $('#Attestation').hide();
+        cs['xcddocs__c'].value = '';
+        //1- check if Select certification type is choosed first                
+        var certificateValue = document.getElementById('certificate').value;
+        if(!cs['country2'].value)
+            return;
+        else
+        {
+            $('#certificate option').removeAttr('disabled');
+            for([i,v] of certToBeSkipped.entries()){
+                if(cs['country2'].selectedOptions[0].label == Object.keys(v)){
+                    for(j of Object.values(v).join().split(',')){
+                        $('option[value="'+j+'"]').attr('disabled','true')
+                    }
+                }
+            }
+        }
+        if(!$('#certificate').val()){ 
+            return;            
+        } 
+        else {              
+            $('#unv').text('authority');
+            if(certificateValue=='Education certificate')
+                $('#unv').text('university');
+            document.getElementById('Attestation').classList.remove('selectCertificateFirst');
+            //console.log('country2Val' + cs['country2']); 
+            //initiate msg_to_display 
+            var msg_to_display = '',client_docs='';
+            var msg_html = '<ul class="pl-3">';
+            var selectedValues;
+            for (let i = 0; i < cs['country2'].selectedOptions.length; i++) {
+                // var selectedValuesCode = cs['country2'].selectedOptions[i].value;
+                selectedValues = selectedValues + cs['country2'].selectedOptions[i].label;
+            }      
+            //console.log('returned val'); 
+            //console.log(selectedValues);     
+            const map_country_msg = msg_countries; //msg_countries imported from a static resource    
+            //concatenate msg_to_display based on selected country in multipicklist
+            var new_key = '';
+            //check if employee visa or educational certificate
+            new_key = $(cs['country2']).find('option:selected').text().trim() +'_'+ certificateValue.split(' ')[0];
+            
+        }
+        msg_countries.forEach(function(value,ind){
+            if(value.hasOwnProperty('attType')&&value['attType']==new_key){
+                let docs = value['docsToDisplay'];
+                let docs_upload = value['docsToUpload'];
+                //console.log('requiredDocs --- '+docs);
+                docs.split(';').forEach(function(v, i) {
+                    if(v)
+                        msg_html += '<li>' + v + '</li>';
+                    docsTobeSkipped.forEach(function(dV, dI) {
+                        if (v.toLowerCase().includes(dV)){
+                            v = '';
+                            return;
+                        }
+                    });
+                    if (v)
+                        msg_to_display += v+';';
+                });
+                
+                if(docs_upload){
+                    docs_upload.split(';').forEach(function(v, i) {
+                        docsTobeSkipped.forEach(function(dV, dI) {
+                            if (v.toLowerCase().includes(dV)){
+                                v = '';
+                                return;
+                            }
+                        });
+                        if(!v)
+                            return;
+                        docsTobeSkipped_subText.forEach(function(dV, dI) {
+                            if (v.toLowerCase().includes(dV.toLowerCase())){
+                                v = v.replace(dV,'');
+                                return;
+                            }
+                        });
+                        if(v.trim().toLowerCase().includes('uae adress proof')||v.trim().toLowerCase().includes('uae visa')||v.trim().toLowerCase().includes('emirates id')||v.trim().toLowerCase().includes('offer letter'))
+                            v= v.trim();
+                        else
+                            v= v.trim()+'_'+cs['country2'].selectedOptions[0].label;
+                        if (v)
+                            client_docs += v+';';
+                    });
+                }
+                //client_docs += 'Applicant passport copy;'+$('#certificate option:selected').attr('mDoc')+';';/*commented on 17/01/2024 for Emp Visa - VMKR*/
+                client_docs = '';
+                if($('#certificate').val()=="Birth certificate")
+                    client_docs += 'Father passport copy;Mother passport copy;';
+                else if($('#certificate').val()=="Marriage certificate")
+                    client_docs += 'Spouse passport copy;';
+                showRqDocs = true;
+                cs['xcddocs__c'].value = client_docs;
+                console.log('client_docs -- ' + client_docs); 
+            }
+        });
+        
+        console.log('msg_to_display -- ' + msg_to_display);
+        $('#Attestation_msg').html(msg_html);
+        if(showRqDocs)
+            $('#Attestation').show();
+        //document.getElementById('Attestation').innerHTML= msg_to_display;            
+    }
+    
+    
+    </script>
+</apex:component>

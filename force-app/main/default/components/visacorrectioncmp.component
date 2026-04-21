@@ -1,0 +1,225 @@
+<apex:component >
+    <apex:attribute name="rq" description="Request" type="g_Req__c"  required="true"/>
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="rqSave" description="Service Type Label" type="Boolean"  />
+    <apex:attribute name="srvTp" description="Service Type" type="String" />
+    <apex:attribute name="srvCT" description="Service Category" type="String" />
+    
+    <div>
+        <div class="form-group mb-3 mt-4 pt-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <c:gconlookup saveRq="{!rqSave}" id="conlookup" Request="{!rq}" role="{!rq.ConRol__c}" accId="{!rq.Acc__c}" sta="{!rq.ConSTA__c}" heading="{!srvLbl}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group" style="{! If((srvLst.size > 1)  ,'display: block;','display: none;') }">
+            
+            <label class="mb-3 fs-18">Choose the duration of the visa you want to apply for</label>
+            
+            <div class="row">
+                <p><b>
+                                               GDRFA (General Directorate of Residency and Foreigners Affairs) has stopped issuing 3 years of residence visas. Henceforth, GDRFA will issue either 1-year or 2 years residence visas only.
+                                               </b>
+                                             </p>
+                <apex:repeat value="{!srvLst}" var="sr">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            
+                            <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,false)}">
+                                <input type="radio" disabled="true" class="serRadio service_id"  name="service_id" value="{!sr.id}"/>
+                            
+                            <div class="box box-center box-padding box-hover" style="background-color:#a29b9b;min-height: 70px;">
+                                <span class="box-title font-weight-medium">
+                                    <span class="text-000">{!sr.Short_Label__c}</span>
+                                </span>
+                            </div>
+                                 </apex:outputText>
+                            <apex:outputText rendered="{!if(CONTAINS(sr.Name,'3 Years'),false,true)}">
+                            <input type="radio" class="serRadio service_id"  name="service_id" value="{!sr.id}"/>
+                            
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">
+                                    <span class="text-000">{!sr.Short_Label__c}</span>
+                                </span>
+                            </div>
+                           </apex:outputText>     
+                            <script>
+                            if('{!srvLst.size}' ==1){
+                                $('.service_id').eq(0).attr('checked','true');
+                            }
+                            </script>
+                        </label>
+                    </div>
+                </apex:repeat>
+                
+            </div>
+            <div class="serErr">Please select the duration of visa.</div>
+        </div>
+        <apex:outputText rendered="{!srvCT <> 'Renewals'}">  
+            <div class="form-group mb-5">
+                <label class="mb-3 fs-18">Select the changes you would like to make (select multiple)</label>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input id="ntc" type="checkbox" name="amendvisa" value="ntc" onchange="updateCorItm('ntc');"/>
+                            <div class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Nationality <br/>change</span>
+                            </div>
+                        </label>
+                    </div>
+                <!-- .col -->
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input id="np" type="checkbox" name="amendvisa" value="np" onchange="updateCorItm('np');"/>
+                            <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Change Of Passport </span>
+                            </div>
+                        </label>
+                    </div>
+                <!-- .col 
+                <div class="col-lg-3 col-sm-6">
+                    <label class="box-check">
+                        <input id="cr" type="checkbox" name="amendvisa"  value="cr" onchange="updateCorItm('cr');"/>
+                        <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                            <span class="box-title font-weight-medium">Change in religion</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- .col 
+               
+                <div class="col-lg-3 col-sm-6">
+                    <label class="box-check">
+                        <input id="msc" type="checkbox" name="amendvisa"  value="msc" onchange="updateCorItm('msc');"/>
+                        <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                            <span class="box-title font-weight-medium">Change in marital status</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- .col -->
+                <apex:outputText rendered="{!srvCT <> 'Renewals'}"> 
+                 <!-- <div class="col-lg-3 col-sm-6">
+                    <label class="box-check">
+                        <input id="dbc" type="checkbox" name="amendvisa" value="dbc" onchange="updateCorItm('dbc');"/>
+                        <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                            <span class="box-title font-weight-medium">Correction in date of <br/>birth</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- .col -->    
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input id="nc" type="checkbox" name="amendvisa" value="nc" onchange="updateCorItm('nc');"/>
+                            <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Name change</span>
+                            </div>
+                        </label>
+                    </div>
+                    </apex:outputText>
+                    <!-- .col -->
+                    <apex:outputText rendered="{!srvTp == 'Employee'}">
+                        <div class="col-lg-3 col-sm-6">
+                            <label class="box-check">
+                                <input id="pc" type="checkbox" name="amendvisa" value="pc"  onchange="updateCorItm('pc');"/>
+                                <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">Change in job title</span>
+                                </div>
+                            </label>
+                        </div>
+                        <!-- .col -->
+                        <div class="col-lg-3 col-sm-6">
+                            <label class="box-check">
+                                <input id="cpn" type="checkbox" name="amendvisa" value="cpn" onchange="updateCorItm('cpn');" />
+                                <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">Company name change</span>
+                                </div>
+                            </label>
+                        </div>
+                        <!-- .col -->
+                    </apex:outputText>
+
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input id="phu" type="checkbox" name="amendvisa" value="phu" onchange="updateCorItm('phu');"/>
+                            <div  class="amd box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Personal photo correction</span>
+                            </div>
+                        </label> 
+                    </div>
+                    
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input id="epc" type="checkbox" name="amendvisa" value="epc" />
+                            <div  class="amd box box-center box-padding box-hover input + .box::after " style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Emirates ID amendment </span>
+                            </div>
+                        </label> 
+                    </div>
+                </div>
+                <div>
+                    <label class="mb-3 fs-18" style="color:red"><b>Note: Emirates ID amendment  Mandatory.</b></label>
+                </div>
+                <div class="frmErrMsg1" style="display:none">Please select an option</div>
+                <!-- .row -->
+            </div>
+        </apex:outputText>     
+        <!-- .form-group -->
+        
+        <!-- .form-group -->
+        <!--  <label class="custom-checkbox custom-checkbox-sm mb-4" id="copyDocs" >
+<input type="checkbox" name="copydocs"/>
+<span>Copy Documents from existing service.</span>
+</label> -->
+        
+    </div>
+    
+    <script>
+    cs["xeidav__c"].value = 'Yes';
+    
+    function updateCorItm(itmCode){
+        
+        var allxadhitems = cs['xadh__c'].value;
+        
+        if($('#'+itmCode).prop("checked")){
+            
+             $('#epc').attr('checked','false');
+            $('#epc').attr('checked','true');
+            if(!allxadhitems.includes(itmCode+';')){
+                cs['xadh__c'].value += itmCode+';';
+            }
+            if(itmCode=='ntc'){
+                if(!allxadhitems.includes('np;')){
+                    // cs['xadh__c'].value += 'np;';
+                    // $('#np').attr('checked','true');
+                }
+            }
+            
+        }else{
+            cs['xadh__c'].value = cs['xadh__c'].value.replaceAll(itmCode+';','');
+            if(itmCode=='ntc'){ 
+                cs['xadh__c'].value = cs['xadh__c'].value.replaceAll('np;','');
+                $('#np').attr('checked','');
+            }
+        }
+       
+    }
+    
+    function setCorItm(){
+        var cds = ['np;', 'rt;', 'pc;', 'ntc;', 'nc;','ef;','msc;','dbc;','cr;','cpn;','phu;'];
+        for(var i=0; i<cds.length;i++){
+            var adhk = cs['xadh__c'].value; 
+            if(adhk.includes(cds[i])){
+                var eID = cds[i].replace(';',''); 
+                $('#'+eID).prop("checked",true);
+            }
+        }
+    }
+    
+    $(document).ready(function() {
+        setCorItm();
+    });
+      </script>
+</apex:component>

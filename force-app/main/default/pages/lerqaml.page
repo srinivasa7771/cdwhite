@@ -1,0 +1,1667 @@
+<apex:page cache="false" controller="leAMLCtl" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  title="AXS - Home" >
+    <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>    
+    <apex:outputPanel rendered="{!!ispu}">
+        <c:onlyBOCss ></c:onlyBOCss>
+    </apex:outputPanel>
+    <style>
+        .disabled-box{
+        opacity: 0.5 !important;
+        pointer-events: none;
+        cursor: not-allowed !important;
+        }
+        .loadingProgress{
+        cursor: wait !important;
+        pointer-events: none !important;
+        }
+        .select2-container.select2-container--default {
+        width: 100% !important;
+        }
+        .bootstrap-datetimepicker-widget table td {
+        padding: 5px !important;
+        }
+        .visaNum {padding: 0.9rem;display: inline-block;}
+    </style>
+    <script type="text/javascript">
+    var cs= {}; var validVisa = true;
+    /*var farD={!farDiff};//afsBo
+    var lcfDt=new Date('{!liFirstDate}');
+    var lcfMonth=lcfDt.getMonth()+1;
+    var lcfDt1 = lcfMonth+'/'+lcfDt.getDate()+'/'+lcfDt.getFullYear();*/
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    function checkValidDate(thisElement){
+        console.log('validDate:::');
+        if(!$(thisElement) || !$(thisElement).is(":visible"))
+        return true;
+        var date = $(thisElement).val();
+        console.log('date:::'+date);
+        var date_regex =/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/;
+        var r = (date_regex.test(date))?true:'invalid';
+        console.log('r::::'+r);
+        if(r == 'invalid'){
+            removeWarningMsg(thisElement);
+            removeValError(thisElement);   
+            addValError(thisElement,'Invalid date format');
+            return false;    
+        }else{
+            removeValError(thisElement);   
+            return r;
+        }
+    }
+    function validateData(){
+        //----------------new logic---------------
+        const checkboxes = document.querySelectorAll('.afsCheckbox');
+        let isChecked = false;
+
+        // Loop through all checkboxes to check if at least one is selected
+        checkboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                isChecked = true;
+            }
+        });
+
+        // If no checkbox is selected, show alert and stop execution
+        if (!isChecked) {
+            axsAlert('Alert!', 'Please select at least one checkbox to proceed.');
+            return false; // Stop further execution
+        }
+        
+        //----------------end new logic----------
+        //showGLoader();
+        if(document.getElementById('newsd__c').value !== '' && document.getElementById('newsd__c').value !== undefined && document.getElementById('newsd__c').value !== null){
+            var validDateInput = checkValidDate(document.getElementById('newsd__c')); 
+            console.log(' at date '+validDateInput);
+        }
+        //console.log('atfersave' +validDateInput + cs['newSubmissionDate'].value + ' '+ wrongDateInput );
+        var elem = '';
+        var validated  = true;  
+        $('.requiredFld:visible').each(function(){
+            
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            var v = $(this).val();
+            if(!v){
+                addValError(this,'**This field is required!');
+                validated=false;
+                if(elem=='') elem = $(this);
+            }else {
+                if(isNaN(v) && $(this).hasClass('numbOnly')){
+                    addValError(this, '**Only numbers allowed!');
+                    validated = false;
+                    if (elem == '')
+                        elem = $(this);
+                }
+                else
+                    removeValError(this);
+            }
+        });
+        console.log('nextCondition '+validated + ' '+ validDateInput + ' '+ wrongDateInput);
+        if(validated == true && validDateInput !== false && validDateInput !==undefined && wrongDateInput!== false && wrongDateInput!== undefined && cs['newSubmissionDate'] !== undefined) {
+            showGLoader();
+            console.log('validdddddddddddd');
+            // to trigger on change event to execute the saveNewSubmissionDate method
+            console.log('finalSubmision' + cs['newSubmissionDate']);
+           // $('#newsd__c').val(cs['newSubmissionDate'].value).change();
+            //showGLoader(); // initial one
+            if($('[name="prevYrDts"]:checked').val()=='No'){
+                cs['adhocItem'].value += ';fn;';
+            }
+            
+            next();
+            /*
+            if(cs['newSubmissionDate'])
+            $('#newsd__c').val(cs['newSubmissionDate'].value).change();
+            showGLoader();
+            if($('[name="prevYrDts"]:checked').val()=='No'){
+                cs['adhocItem'].value += ';afs;';
+            }
+            */
+        }else if((validated == true && (cs['newSubmissionDate'] === 'null' || cs['newSubmissionDate'] === '' || cs['newSubmissionDate'] === undefined)) || (validated == true && validDateInput === undefined)) {
+            showGLoader();
+            console.log('beforeApplytingPenalty' + cs['penalty']);
+            if(cs['penalty'] === true){
+                console.log('------------penalty-------'+cs['penaltyApplied']);
+                cs['penaltyApplied'].value = true;
+                console.log('FINALPENALTY '+  cs['penaltyApplied'].value);
+            }
+            next();
+        }
+        
+    }
+
+    function selectprvYr(selectedCheckbox,startd, endd,ct,sta){
+
+        var sz={!openAfsReqs.size}; 
+        var hideResForNonsb = true;
+        //for 2026 2027 cases
+        if(sz>1){
+            var startDateArray = startd.split("-");
+            var listCheckboxes = document.querySelectorAll('.afsCheckbox');
+            if(listCheckboxes[0].getAttribute('year') < '2024'){
+                hideResForNonsb = false;
+            }
+        }
+        if(sta=='In Progress'){
+            $("#newSubmissionDateNoOption").attr("style", "display:none");
+            $("#yesNoSection").attr("style", "display:none");
+            $("#afsForm").attr("style", "display:block");
+            $("#collapseTitle").attr("style", "display:block");            
+            $("#application_details").attr("style", "display:block");
+            cs['adhocItem'].value = 'ar;'; 
+
+            //axsAlert('Alert!.','Your previous submission is currently under approval. Once processed, you can resubmit the request.');
+            //selectedCheckbox.checked = false; return false;
+        }
+         if(ct!=1){
+             axsAlert('Alert!.','Please complete the previous years submission before proceeding to the following years.');
+             selectedCheckbox.checked = false; 
+             return false;
+         }else if(sz==1 && sta !== 'In Progress'){
+             document.getElementById('newSubmissionDateNoOption').style.display='block';
+             
+         }
+        const startDtArray = startd.split("-");
+        const endDtArray = endd.split("-");
+        cs['ddaId'].value = selectedCheckbox.value;
+        console.log('ddaId' + cs['ddaId'].value);
+         // Get all checkboxes in the table
+        let yr = $('[name="prevsYear"]:checked').attr('year');
+        cs['financialYearDate'].value = yr;
+       
+        $('#ysd__c').val(formValueStartDate);
+        $('#yed__c').val(formValueEndDate);
+        
+        checkedStartDate=startDtArray[2]+'/'+startDtArray[1]+'/'+startDtArray[0];
+         checkedEndDate=endDtArray[2]+'/'+endDtArray[1]+'/'+endDtArray[0];
+                        
+                        $('#ysd__c').val(checkedStartDate).change();
+                        $('#yed__c').val(checkedEndDate).change();
+        
+        cs['yearstartdate'].value=checkedStartDate;
+         cs['yearenddate'].value=checkedEndDate;
+         const checkboxes = document.querySelectorAll('.afsCheckbox');
+         console.log('checkboxes '+ checkboxes);
+            // Check if the selected checkbox is checked
+            const isChecked = selectedCheckbox.checked;
+            console.log('isChecked '+ isChecked);
+
+            console.log('checkboxes length: ', checkboxes.length);
+        
+            var financialYearEndDateFormVal = parseDateString(cs['yearenddate'].value);
+            var financialYearEndDate180Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+            financialYearEndDate180Days = new Date(financialYearEndDate180Days.setDate(financialYearEndDate180Days.getDate()+180));
+            var theToday=new Date();
+            
+            checkboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                if (checkbox !== selectedCheckbox) {
+                    if (isChecked) {
+                        cs['adhocItem'].value='afs;';
+                        const formStartDate = document.getElementById('ysd__c').value;
+                        const formEndDate = document.getElementById('yed__c').value; 
+
+                       
+                        //START DATE : day, month , year
+                        var parsedFormStartDay =  parseDateString(formStartDate).getDate(); 
+                        var parsedFormStartMonth =  parseDateString(formStartDate).getMonth()+1;//+1 
+                        var parsedFormStartYear =  parseDateString(formStartDate).getFullYear(); 
+                        //END DATE : day month year
+                        var parsedFormEndDay =  parseDateString(formEndDate).getDate(); 
+                        var parsedFormEndMonth =  parseDateString(formEndDate).getMonth()+1;//+1 
+                        var parsedFormEndYear =  parseDateString(formEndDate).getFullYear(); 
+
+                        //on check of financial year
+                        var checkedStartDate = parsedFormStartDay +'/'+parsedFormStartMonth+'/'+yr;
+                        var checkedEndDate = '';                         
+                        var updatedYear = yr;
+                        console.log('start and end value '+ parseDateString(formStartDate));
+                        if(parsedFormEndYear !== parsedFormStartYear){
+                           
+                            updatedYear = (+yr + 1).toString(); //convert the year to number then add 1 and convert back to string
+                            checkedEndDate = parsedFormEndDay +'/'+parsedFormEndMonth+'/'+updatedYear;
+                        }else{
+                            
+                            checkedEndDate = parsedFormEndDay +'/'+parsedFormEndMonth+'/'+yr;
+                        }
+                         console.log('checkedEndDate '+ checkedEndDate + 'checkedStartDate '+ checkedStartDate);
+                        // tbd
+
+                       // $('#ysd__c').val('01/01/'+yr);
+                       // $('#yed__c').val('31/12/'+yr);
+                        console.log('make grayscale');
+                        // Grayscale the row and disable the checkbox
+                        row.style.filter = 'grayscale(100%)';
+                        checkbox.disabled = true;
+                    } else {
+                        console.log('remove grayscale');
+                        // Remove grayscale and enable the checkbox
+                        row.style.filter = 'none';
+                        checkbox.disabled = false;
+                    }
+                }
+            });
+    
+        //to show and hide the Yes and no options 
+        //prevsYear
+        if(selectedCheckbox.checked){ //document.getElementById('afsOption').checked
+            console.log('checkedc---------'); 
+            if(!hideResForNonsb){
+                document.getElementById('resForNonsb').style.display='block';
+            }else if(hideResForNonsb){
+                $("#afsForm").attr("style", "display:block");
+            }
+        }else{
+            document.getElementById('resForNonsb').style.display='none';
+        }
+
+       if(theToday>financialYearEndDate180Days && sz==1){
+            $("#newSubmissionDateNoOption").attr("style", "display:none");
+            $("#yesNoSection").attr("style", "display:none");
+            $("#afsForm").attr("style", "display:block");
+            $("#collapseTitle").attr("style", "display:block");            
+            $("#application_details").attr("style", "display:block");
+            $("#resForNonsb").attr("style", "display:none");
+            cs['adhocItem'].value = 'ar;sd3;'; 
+           }
+
+
+
+    }
+    
+    function prevYrSubmissionDate(){
+        var sz={!openAfsReqs.size}; 
+        var prvradioOption = $("input[name='prevYrDts']:checked").val();
+        if(prvradioOption=='No'){
+            cs['adhocItem'].value = 'afs;';
+
+            console.log('-----------startdate----- '+ cs['yearstartdate'].value);
+            console.log('-----------enddate----- '+ cs['yearenddate'].value);
+            const startDateForm = cs['yearstartdate'].value;
+            
+            let yr = $('[name="prevsYear"]:checked').attr('year');
+            var parsedStartDay =  parseDateString(startDateForm).getDate(); 
+            var parsedStartMonth =  parseDateString(startDateForm).getMonth()+1;//+1 
+            var parsedStartYear =  parseDateString(startDateForm).getFullYear();
+
+            var formStartDateSelected = parsedStartDay +'/'+parsedStartMonth+'/'+yr;
+            cs['yearstartdate'].value= formStartDateSelected;
+           // cs['yearstartdate'].value='31/12/2023'; 
+            
+            document.getElementById('afsForm').style.display='none';
+            document.getElementById('reasonNonSubmission').style.display='block';
+            // document.getElementById('newSubmissionDateNoOption').style.display='block';
+            
+        }else {
+            cs['adhocItem'].value = 'ar;'; 
+                        
+            document.getElementById('reasonNonSubmission').style.display='none';
+            document.getElementById('afsForm').style.display='block';
+        }
+    }
+    
+    </script> 
+    
+    
+    <apex:form id="mainForm" styleClass="form-style">
+        <apex:pageBlock id="pbMain">  
+            <apex:actionFunction name="next" action="{!saveReq}" status="theStatus"  reRender="msg" oncomplete="$('#preloader').fadeOut();"    />
+            <body class="base">           
+                <div id="main">
+                    <div class="container pt-2 pb-2">
+                        <div class="text-right">
+                            <apex:outputPanel id="SRId">
+                                <apex:outputText rendered="{!rq.id!=''}">
+                                    <div class="text-right">
+                                        <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                            SR # <span class="text-000">{!rq.name} </span>
+                                        </span>
+                                        <!-- <c:drftCnclBtns req="{!rq}" shwCncl="true" shwDraft="false"/>-->
+                                    </div>
+                                </apex:outputText>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    
+                    <apex:outputPanel id="rqfldId">
+                        
+                        <apex:InputHidden id="fileSrc"/>
+                        
+                        
+                        
+                        
+                    </apex:outputPanel>
+                    <div class="container">
+                        
+                        <div class="base-layout">
+                            
+                            
+                            <!--left-side pannel start-->   
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <div>
+                                        <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                        
+                                        <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                           data-target="#base_side_content_1">
+                                            <h3 class="text-primary">ABOUT THIS SERVICE</h3>
+                                        </a>
+                                        <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                                            <div class="collapse-content">
+                                                <p class="text-000" id="serDef">
+                                                    <apex:outputText escape="true" value="{!sd.sd__c}" />
+                                                </p>
+                                                
+                                                
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <h3 class="text-primary d-md-block d-none">DOCUMENTS YOU NEED</h3>
+                                        
+                                        <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                           data-target="#base_side_content_2">
+                                            <h3 class="text-primary">DOCUMENTS YOU NEED</h3>
+                                        </a>
+                                        
+                                        <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                            <p>JPG / JPEG / PDF / PNG / TIFF Formats (max 4 MB each)</p>
+                                            
+                                            <ul class="ul-style">
+                                                <apex:repeat value="{!docLblList}" var="doc">
+                                                    <li><apex:outputText value="{!doc}" escape="true" /></li>
+                                                </apex:repeat>  
+                                            </ul>
+                                            
+                                            <span >
+                                                
+                                                <apex:repeat value="{!infoDocLst}" var="idoc">
+                                                    {!idoc}<br/><br/>
+                                                </apex:repeat>  
+                                            </span>
+                                            
+                                            
+                                        </div>
+                                        
+                                        <!-- .collapse-content-wrapper -->
+                                    </div>
+                                    
+                                </div>
+                                <!-- .base-side-content -->
+                                
+                            </div>
+                            <!--left-side pannel- end -->  
+                            
+                            <div class="base-main">
+                                <apex:pageMessages id="msg"  />
+                                <div class="base-main-content">
+                                    <div>
+                                        <h3 class="base-main-title">Audited Financial Status – Summary</h3>
+                                    </div>
+                                    <apex:inputHidden id="financialYearDate" value="{!fi.financialYear}"/>
+                                    <apex:inputHidden id="ddaId" value="{!fi.ddaId}"/>
+                                    <apex:inputHidden id="currentDdaId" value="{!currentAfsRequest.ddaId}"/>
+                                    
+                                  
+                                    
+                                    <script type="text/javascript">
+                                        cs['ddaId'] = document.getElementById('{!$Component.ddaId}');
+                                        cs['currentDdaId'] = document.getElementById('{!$Component.currentDdaId}');
+                                        cs['financialYearDate'] = document.getElementById('{!$Component.financialYearDate}');
+                                        console.log('financialYear' + cs['financialYearDate']);
+                                    </script>
+                                    <!--table old reports-->
+                                   
+                                    <apex:variable var="counter" value="{!0}" />
+                                     <apex:outputPanel id="cardList2" rendered="{!openAfsReqs.size==0}">
+                                        <div class="form-group">
+                                              <p>There is no curent requests for Audit financial Statement</p>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel id="cardList" rendered="{!openAfsReqs.size>0}">
+                                         <div class="form-group">
+                                              <p>Please check the audited financial statement details and proceed</p>
+                                            <apex:outputText rendered="{!And(openAfsReqs.size>0)}">
+                                            Audited financial statements from previous years must be submitted before proceeding with the current year's submission. Please ensure that the prior years' statements are submitted promptly. Kindly make a selection from the table below.
+                                             </apex:outputText>
+                                             <table class="table table-align-middle" id="table-parking" data-page-length='25' >
+                                                 <thead>
+                                                     <tr>
+                                                         <th>Financial Year Start Date<i class="fa text-primary"></i></th>
+                                                         <th>Financial Year End Date<i class="fa text-primary"></i></th>
+                                                         <th>Penalty<i class="fa text-primary"></i></th>
+                                                         <th>Status<i class="fa text-primary"></i></th>
+                                                     </tr>
+                                                 </thead>
+                                                 
+                                                 <tbody>
+                                                     <apex:repeat value="{!openAfsReqs}" var="c">
+                                                         <apex:variable var="counter" value="{!counter + 1}" />
+                                                         <tr>
+                                                             <td>
+                                                                 <label class="custom-checkbox mt-2">
+                                                                    
+                                                                    <input type="checkbox" year="{!c.financialYear}"  value="{!c.ddaId}" class="custom-checkbox mt-2 afsCheckbox" name="prevsYear" onchange="selectprvYr(this,'{!c.financialYearStart}','{!c.financialYearEnd}','{!counter}','{!c.Status}');" id="afsOption"/>
+                                                                                                                                            
+                                                                     <apex:outputText value="{0, date, dd/MM/yyyy}">
+                                                                    <apex:param value="{!c.finYearStartDt}" />
+                                                                    </apex:outputText>
+                                                                            <span>&nbsp;</span>
+                                                                 </label>
+                                                             </td>
+                                                             <td>
+                                                                  <apex:outputText value="{0, date, dd/MM/yyyy}">
+                                                                    <apex:param value="{!c.finYearEndDt}" />
+                                                                    </apex:outputText>
+                                                                       <span>&nbsp;</span>
+                                                               
+                                                            </td>
+                                                             <td>
+                                                                    {!c.totalAmountToPay} AED
+                                                                     <span>&nbsp;</span>
+                                                             </td>
+                                                              <td>
+                                                                  {!c.Status}
+                                                             </td>
+                                                         </tr>
+                                                     </apex:repeat>
+                                                 </tbody>
+                                             </table>
+                                         </div>
+                                    </apex:outputPanel>
+                                    <!--end of reports old -->
+                                    <!--FAR2-->
+                                    <div class="form-group" id="newSubmissionDateNoOption" style="display:none;"> <!-- style="{!if(openAfsReqs.size>0,'display:none','display:block')}"-->
+                                        <div class="col-lg-12" id="yesNoSection"> <!--id="vfsOpt"-->
+                                            <div class="col-lg-12">
+                                                <label>Do you want to change the submission date? </label>
+                                                <p class="fs-12">Kindly submit the Financial Audit report on or before the selected date to avoid penalties and sanctions. </p>
+                                                <br/>
+                                                <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                    <label class="custom-radio mr-4">
+                                                        <input type="radio" value="Yes" class="requiredFld" name="submissionDateOption" onchange="changeSubmissionDate();" id="yesOption"/>
+                                                        <span>Yes</span>
+                                                    </label>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                    <label class="custom-radio mr-4">
+                                                        <input type="radio" value="No" class="requiredFld" name="submissionDateOption" onchange="changeSubmissionDate();" id="noOption" />
+                                                        <span>No</span>
+                                                    </label>
+                                                </apex:outputPanel>
+                                            </div>
+                                        </div> 
+                                        <script type="text/javascript">
+                                            function convertDateToString(dateValue){ // Wed Apr 30 2025 00:00:00 GMT+0400 (Gulf Standard Time) --> dd/mm/yyyy
+                                                    let dateValueDay = dateValue.getDate(); 
+                                                    let dateValueMonth = dateValue.getMonth()+1;//+1 
+                                                    let dateValueYear = dateValue.getFullYear(); 
+                                                    var formattedDateString = dateValueDay +'/'+dateValueMonth+'/'+dateValueYear;
+                                                    return formattedDateString; //  dd/mm/yyyy
+                                            }
+
+                                            function changeSubmissionDate(){
+                                               
+                                                cs['newSubmissionDate'] = document.getElementById('newsd__c');
+                                                var submissionDateOption = $("input[name='submissionDateOption']:checked").val();
+                                                console.log('submissionDateOption' + submissionDateOption); 
+                                                
+                                                if(submissionDateOption === 'Yes'){ 
+                                                    document.getElementById('newsd__c').removeAttribute('readonly');
+                                                    $("#reasonNewSubmissionDate").attr("style", "display:block");
+                                                    $("#labelNewSubmDate").attr("style", "display:block");
+                                                    //$("#newSubmDateSection").attr("style", "display:block");
+                                                     const div = document.querySelector(".input-datepicker-group");
+                                                     if (div) {
+                                                        div.classList.remove("d-none"); // Add a class that hides the element
+                                                     }
+                                                    $("#newsd__c").attr("style", "display:block");
+                                                    //ddaId
+                                                    cs['ddaId'].value = cs['currentDdaId'].value;                                                   
+                                                    document.getElementById('application_details').style.display= 'none'; 
+                                                    document.getElementById('collapseTitle').style.display= 'none';
+                                                
+                                                    //saved submission date in DB
+                                                    var savedSubmissionDate = '{!fi.newSubmissionDate}'; //old logic {!newSubmissionDate}'
+                                                   //var savedSubmissionDate  = cs['newSubmissionDate'].value;
+                                                   console.log('savedSubmissionDate '+ savedSubmissionDate);
+                                                   console.log('fetchedSubmissionDate '+ new Date(savedSubmissionDate).toLocaleDateString('en-GB') +new Date(savedSubmissionDate));
+                                                   
+                                                   var parsedSavedSubmissionDate= '';
+                                                    if(savedSubmissionDate !== null && savedSubmissionDate !== '' && savedSubmissionDate !== undefined){
+                                                        var parsedSavedSubmissionDate= new Date(savedSubmissionDate);
+                                                    }
+                                                    //if(savedSubmissionDate !== null && savedSubmissionDate !== '' && savedSubmissionDate !== undefined){
+                                                     //   console.log('diffnull');
+                                                      //  parsedSavedSubmissionDate = parseDateString(savedSubmissionDate); // returns date type
+                                                   // }
+                                                    console.log('parsedSavedSubmissionDate12 '+parsedSavedSubmissionDate);
+                                                    console.log('parsedSavedSubmissionDate1 '+parsedSavedSubmissionDate + cs['yearenddate'].value + cs['newSubmissionDate'].value);  
+                                                    //today and tomorrow date
+                                                    //#################TESTING 
+                                                    var todayDate = new Date();//2nd january 2023
+                                                    //var testingDate = '{!todayDate}';
+                                                    ///var todayDate = parseDateString(testingDate);
+                                                    console.log('#################TESTING:'+todayDate);
+                                                    //#################TESTING
+                                                    //console.log('savedSubmissionDate '+savedSubmissionDate);  
+                                                    
+                                                    var financialYearEndDateFormVal = parseDateString(cs['yearenddate'].value); //form financial year end date
+                                                    financialYearEndDateFormVal.setDate(financialYearEndDateFormVal.getDate());//financial year end date + 1 day
+                                                    console.log('financialYearEndDateFormVal --- '+ financialYearEndDateFormVal); 
+
+                                                    //110 days
+                                                    var financialYearEndDate110Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate110Days = new Date(financialYearEndDate110Days.setDate(financialYearEndDate110Days.getDate()+110)); 
+
+                                                    //120 days
+                                                    var financialYearEndDate120Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate120Days = new Date(financialYearEndDate120Days.setDate(financialYearEndDate120Days.getDate()+120)); //financial year end date + 120 days
+
+                                                     //140 days
+                                                    var financialYearEndDate140Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate140Days = new Date(financialYearEndDate140Days.setDate(financialYearEndDate140Days.getDate()+140));
+
+                                                    //150 days
+                                                    var financialYearEndDate150Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate150Days = new Date(financialYearEndDate150Days.setDate(financialYearEndDate150Days.getDate()+150));
+
+                                                    //180 days
+                                                    var financialYearEndDate180Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate180Days = new Date(financialYearEndDate180Days.setDate(financialYearEndDate180Days.getDate()+180));
+
+                                                    console.log('today '+ todayDate +'financialYearEndDate110Days '+ financialYearEndDate110Days + 'financialYearEndDate120Days  '+ financialYearEndDate120Days + ' 150 '+financialYearEndDate150Days);
+                                                    //console.log('bool '+ (todayDate>financialYearEndDate120Days && todayDate<=financialYearEndDate150Days));
+                                                    //savedSubmission date is null
+                                                   
+                                                    if((parsedSavedSubmissionDate === null || parsedSavedSubmissionDate === '' || parsedSavedSubmissionDate === 'undefined') && (todayDate<financialYearEndDate120Days)){// && (todayDate>financialYearEndDateFormVal && todayDate<=financialYearEndDate120Days)
+                                                        console.log('emptySubmissionDate');
+                                                     
+                                                      
+                                                        $('#newsd__c').val(financialYearEndDate120Days.toLocaleDateString('en-GB')).change(); 
+                                                        // addValError(cs['newSubmissionDate'],'Kindly submit the Financial Audit report on or before the selected date to avoid penalties and sanctions.');
+                                                    }else if((parsedSavedSubmissionDate !== null && parsedSavedSubmissionDate !== '' && parsedSavedSubmissionDate !== 'undefined') && (todayDate<financialYearEndDate120Days && parsedSavedSubmissionDate<financialYearEndDate120Days)){
+                                                     //120 day - multiple cases
+                                                        $('#newsd__c').val(parsedSavedSubmissionDate.toLocaleDateString('en-GB')).change(); 
+                                                        console.log('todaygreaterthansaveddate' + ((todayDate>=new Date(savedSubmissionDate))? todayDate.toLocaleDateString('en-GB') : new Date(savedSubmissionDate).toLocaleDateString('en-GB')));
+                                                        //addValError(cs['newSubmissionDate'],'Please Submit before that date or Choose a Date between '+new Date(savedSubmissionDate).toLocaleDateString('en-GB')+' and '+financialYearEndDate120Days.toLocaleDateString('en-GB'));
+                                                        addValError(cs['newSubmissionDate'],'Please Submit before that date or Choose a Date between '+((todayDate>=new Date(savedSubmissionDate))? todayDate.toLocaleDateString('en-GB') : new Date(savedSubmissionDate).toLocaleDateString('en-GB'))+' and '+financialYearEndDate120Days.toLocaleDateString('en-GB'));
+                                                    }else if(((parsedSavedSubmissionDate !== null && parsedSavedSubmissionDate !== '' && parsedSavedSubmissionDate !== 'undefined') && (todayDate>=financialYearEndDate110Days && todayDate<=financialYearEndDate120Days)) 
+                                                             || ((parsedSavedSubmissionDate === null || parsedSavedSubmissionDate === '' || parsedSavedSubmissionDate === 'undefined') && (todayDate>=financialYearEndDate120Days && todayDate<financialYearEndDate150Days))){ // && (todayDate>financialYearEndDate120Days && todayDate<=financialYearEndDate150Days)
+                                                        console.log('150 case' + document.getElementById('newsd__c'));
+                                                        //show reason field
+                                                        $('#newsd__c').val(financialYearEndDate150Days.toLocaleDateString('en-GB')).change();
+                                                        setTimeout(function() {
+                                                            //document.getElementById('newsd__c').setAttribute('readonly', false);
+                                                        }, 100); 
+                                                        addValError(cs['newSubmissionDate'],'Please Submit the Audit report before this Date');
+                                                        document.getElementById('reasonNewSubmissionDate').style.display = 'block';
+                                                    }else if(todayDate>=financialYearEndDate150Days && todayDate<=financialYearEndDate180Days){ // (parsedSavedSubmissionDate !== null && parsedSavedSubmissionDate !== '' && parsedSavedSubmissionDate !== 'undefined') && 
+                                                        console.log('180case'); 
+                                                        $('#newsd__c').val(financialYearEndDate180Days.toLocaleDateString('en-GB')).change(); 
+                                                        setTimeout(function() {
+                                                            //document.getElementById('newsd__c').setAttribute('readonly', false);
+                                                            addValError(cs['newSubmissionDate'],'Please Submit the Audit report before this Date');
+                                                        }, 100); 
+                                                    }
+                                                    
+                                                    //to make date field editable for <120 days
+                                                    //#################TESTING
+                                                    //var dateToday = new Date(2025,01,01);
+                                                     var dateToday = new Date();
+                                                    //var testingDate = '{!todayDate}';
+                                                    // var dateToday = parseDateString(testingDate);
+                                                    console.log('#################TESTING:'+dateToday);
+                                                    //#################TESTING
+                                                    if(dateToday < financialYearEndDate120Days){
+                                                        console.log('before120days');
+                                                        document.getElementById('newsd__c').removeAttribute('readonly');
+                                                    }
+
+                                                }else if(submissionDateOption === 'No'){
+                                                    //new labelNewSubmDate
+                                                    $("#labelNewSubmDate").attr("style", "display:none");
+                                                    //$("#newSubmDateSection").attr("style", "display:none");
+                                                    const div = document.querySelector(".input-datepicker-group");
+                                                    if (div) {
+                                                      div.classList.add("d-none"); // Add a class that hides the element
+                                                    }
+                                                    $("#newsd__c").attr("style", "display:none");
+                                                    $("#reasonNewSubmissionDate").attr("style", "display:none");
+                                                   $('#yesprevYrDts').prop('checked', true);
+                                                    $("#yesprevYrDts").change();
+                                                     $("#resForNonsb").attr("style", "display:none");
+                                                    
+                                                    //alert(document.getElementById('resForNonsb').style.display);
+                                                    //document.getElementById('afsForm').style.display='block';   
+                                                    
+                                                    document.getElementById('newsd__c').setAttribute('readonly', false);
+                                                    console.log('no change of submission date');
+                                                    removeValError(cs['newSubmissionDate']); 
+                                                    $('#newsd__c').val('').change();
+                                                    document.getElementById('application_details').style.removeProperty('display');
+                                                    document.getElementById('collapseTitle').style.removeProperty('display');
+
+                                                    //document.getElementById('collapseTitle').style.display= 'block';
+                                                    //document.getElementById('application_details').style.display = 'block';
+                                                    //console.log('applicationdeatils '+ document.getElementById('application_details').style.display); 
+                                                        /*
+                                                    document.getElementById('application_details').style.display= 'block';
+                                                  
+                                                    document.getElementById('collapseTitle').style.display= 'block';
+                                                    */
+                                                
+                                                    //cs['adhocItem'].value = 'ar;';             
+                                                                                    }
+                                                    
+                                            }
+                                        </script>
+                                       <!-- </div>-->
+
+                                       <!-- <div class="col-lg-12">
+                                            <div class="form-group">
+                                                <input type="checkbox" id="changeSubmissionDatesCheckbox" onclick="changeCheckboxValue()"/>
+                                                <label for="changeDatesCheckbox">Change Submission Dates ?</label>-->
+                                            <!--<apex:inputCheckbox id="changeSubmissionDatesCheckbox" onclick="changeCheckboxValue();"/>
+                                            Change Submission Dates ?-->
+                                            <!--</div>
+                                        </div>-->
+                                        <div class="col-lg-6">
+                                            <label id="labelNewSubmDate">New Submission Date</label>
+                                            <div class="input-datepicker-group input-group" id="newSubmDateSection">
+                                                <apex:inputHidden id="adhocItem" value="{!rq.xadh__c}"/>
+                                                <apex:inputHidden id="xcddocs__c" value="{!rq.xcddocs__c}"/>
+                                                <apex:inputHidden id="penaltyApplied" value="{!penaltyApplied}"/>
+                                                <apex:inputHidden id="newSubmissionDate" value="{!fi.newSubmissionDate}"/>
+                                                <input type="text" class="form-control input-datepicker" data-toggle="datetimepicker" data-target="#newsd__c" id="newsd__c" validationname="pid" onchange ="saveNewSubmissionDate();" placeholder="dd/mm/yyyy"/> <!--readonly="readonly"--><!--onchange = "assignfldVal(this.value,'ysd');" value="{!fi.yearstartdate}" value="{!financialYearStartDate}" data-toggle="datetimepicker" data-target="#ysd__c" input-datepicker-->
+                                                <script type="text/javascript">
+                                                cs['adhocItem'] = document.getElementById('{!$Component.adhocItem}');
+                                                cs['xcddocs__c'] = document.getElementById('{!$Component.xcddocs__c}');
+
+                                                cs['penaltyApplied'] = document.getElementById('{!$Component.penaltyApplied}');
+
+                                                var wrongDateInput;
+                                                /*
+                                                function convertDateToString(dateValue){ // Wed Apr 30 2025 00:00:00 GMT+0400 (Gulf Standard Time) --> dd/mm/yyyy
+                                                    let dateValueDay = dateValue.getDate(); 
+                                                    let dateValueMonth = dateValue.getMonth()+1;//+1 
+                                                    let dateValueYear = dateValue.getFullYear(); 
+                                                    var formattedDateString = dateValueDay +'/'+dateValueMonth+'/'+dateValueYear;
+                                                    console.log('fromattedDateString2 '+ formattedDateString);
+                                                    return formattedDateString; //  dd/mm/yyyy
+                                                }
+                                                    */
+
+                                                function saveNewSubmissionDate(){
+                                                    wrongDateInput = true;
+                                                    //editable date by user
+                                                    var choosenSubmissionDate = document.getElementById('newsd__c').value;
+                                                    var parsedChoosenSubmissionDate = parseDateString(choosenSubmissionDate);
+
+                                                     //#################TESTING
+                                                    //var dateOfToday = new Date(2025,01,01);
+                                                     var dateOfToday  = new Date();
+                                                    //var testingDate = '{!todayDate}';
+                                                    //var dateOfToday = parseDateString(testingDate);
+                                                    console.log('#################TESTING:'+dateOfToday);
+                                                    //#################TESTING
+                                                    //console.log('dateOfToday '+ dateOfToday);
+                                                    var financialYearEndDateFormVal = parseDateString(cs['yearenddate'].value);
+                                                    var financialYearEndDate120Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate120Days = new Date(financialYearEndDate120Days.setDate(financialYearEndDate120Days.getDate()+120));
+
+                                                    var financialYearEndDate150Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate150Days = new Date(financialYearEndDate150Days.setDate(financialYearEndDate150Days.getDate()+150));
+                                                    
+                                                    var financialYearEndDate180Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate180Days = new Date(financialYearEndDate180Days.setDate(financialYearEndDate180Days.getDate()+180));
+                                                    
+                                                    var dateOfTodayFormatted = convertDateToString(dateOfToday);
+                                                    var financialYearEndDate120DaysFormatted = convertDateToString(financialYearEndDate120Days);
+                                                    var financialYearEndDate150DaysFormatted = convertDateToString(financialYearEndDate150Days);
+                                                    var financialYearEndDate180DaysFormatted = convertDateToString(financialYearEndDate180Days);
+
+
+                                                    console.log('todayDate ' +dateOfToday + 'parsedChoosenSubmissionDate '+parsedChoosenSubmissionDate+ 'initialdate '+ cs['previousSubmissionDate']); 
+                                                    cs['HiddenNewSubmissionDate'] = document.getElementById('{!$Component.newSubmissionDate}');
+                                                    
+                                                       
+                                                    if((parsedChoosenSubmissionDate <= dateOfToday) || ((parsedChoosenSubmissionDate > financialYearEndDate120Days) && (parsedChoosenSubmissionDate < financialYearEndDate150Days) && ((cs['previousSubmissionDate'] === null || cs['previousSubmissionDate'] === undefined || cs['previousSubmissionDate'] === '') || (cs['previousSubmissionDate']<=financialYearEndDate120Days)))){
+                                                      
+                                                        wrongDateInput = false; 
+                                                        console.log('dateOfTodayFormatted1 ' + dateOfTodayFormatted);
+                                                        //change date to this format dd/mm/yyyy
+                                                        // addValError(document.getElementById('newsd__c'),'Please choose a date between2 ' +dateOfTodayFormatted + ' and '+ financialYearEndDate120DaysFormatted);
+                                                        //addValError(document.getElementById('newsd__c'),'Please choose a date between2 ' +dateOfTodayFormatted + ' and '+ financialYearEndDate120DaysFormatted);
+                                                        console.log('wrong value choosen');
+                                                    }else if((parsedChoosenSubmissionDate > dateOfToday) && (parsedChoosenSubmissionDate <= financialYearEndDate120Days)){
+                                                        if(cs['previousSubmissionDate'] === null || cs['previousSubmissionDate'] === undefined || cs['previousSubmissionDate'] === ''){
+                                                            console.log('validremoval'); 
+                                                            removeValError(document.getElementById('newsd__c'));
+                                                        }else if(cs['previousSubmissionDate'] !== null && cs['previousSubmissionDate'] !== undefined && cs['previousSubmissionDate'] !== ''){
+                                                            if(dateOfToday < financialYearEndDate120Days && parsedChoosenSubmissionDate < cs['previousSubmissionDate']){
+                                                                console.log('valid2'); 
+                                                                wrongDateInput = false;
+                                                                
+                                                                //addValError(document.getElementById('newsd__c'),'Please choose a date between1 ' +cs['previousSubmissionDate'].toLocaleDateString('en-GB') + ' and '+ financialYearEndDate120DaysFormatted);
+                                                            }else if(dateOfToday < financialYearEndDate120Days && parsedChoosenSubmissionDate > cs['previousSubmissionDate']){
+                                                                removeValError(document.getElementById('newsd__c'));
+                                                               
+                                                            }
+                                                        }
+                                                    }
+                                                    //on change --> save the selected value in JSON adhoc1
+                                                    //cs['HiddenNewSubmissionDate'] = document.getElementById('{!$Component.newSubmissionDate}');
+                                                    var oldSubmissionDate = cs['HiddenNewSubmissionDate'].value;
+                                                    cs['HiddenNewSubmissionDate'].value = document.getElementById('newsd__c').value;
+                                                    
+                                                    //---------------Documents and items logic ---------------------------------------
+                                                   // var currentCheckbox = document.getElementById('changeSubmissionDatesCheckbox');
+                                                   var radioOption = $("input[name='submissionDateOption']:checked").val();
+                                                   
+                                                    console.log('savedDate '+cs['HiddenNewSubmissionDate'].value); 
+                                                    
+
+                                                    var parsedSavedSubmissionDate='';
+                                                    var parsedOldSubmissionDate='';
+                                                    if(cs['HiddenNewSubmissionDate'].value !== null && cs['HiddenNewSubmissionDate'].value !== '' && cs['HiddenNewSubmissionDate'].value !== undefined){
+                                                        console.log('diffnull');
+                                                        parsedSavedSubmissionDate = parseDateString(cs['HiddenNewSubmissionDate'].value);
+                                                    }
+                                                    if(oldSubmissionDate!== null && oldSubmissionDate !== '' && oldSubmissionDate !== undefined){
+                                                        parsedOldSubmissionDate = parseDateString(oldSubmissionDate);
+                                                    }
+                                                    var financialYearEndDateFormVal = parseDateString(cs['yearenddate'].value);
+                                                    //120 days
+                                                    var financialYearEndDate120Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate120Days = new Date(financialYearEndDate120Days.setDate(financialYearEndDate120Days.getDate()+120)); //financial year end date + 120 days
+                                                    
+                                                    //150 days
+                                                    var financialYearEndDate150Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate150Days = new Date(financialYearEndDate150Days.setDate(financialYearEndDate150Days.getDate()+150));
+                                                    
+                                                    //180 days
+                                                    var financialYearEndDate180Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                                                    financialYearEndDate180Days = new Date(financialYearEndDate180Days.setDate(financialYearEndDate180Days.getDate()+180));
+                                                    
+                                                    console.log('parsedSavedSubmissionDate '+parsedSavedSubmissionDate + ' oldSubmissionDate '+ oldSubmissionDate + (parsedOldSubmissionDate < financialYearEndDate120Days) + (oldSubmissionDate !=='' || oldSubmissionDate !== null || oldSubmissionDate !== undefined));
+                                                    //console.log('currentCheckbox.checked '+currentCheckbox.checked);
+                                                    //!currentCheckbox.checked
+                                                    if(radioOption === 'No'){
+                                                        cs['adhocItem'].value = 'ar';
+                                                    }else if(radioOption === 'Yes' && (oldSubmissionDate ==='' || oldSubmissionDate === null || oldSubmissionDate === undefined) && (parsedSavedSubmissionDate.setHours(0, 0, 0, 0) < financialYearEndDate120Days.setHours(0, 0, 0, 0))){
+                                                        console.log('adhoc sd1');
+                                                        cs['adhocItem'].value = 'sd1;';
+                                                        
+                                                    }else if(radioOption === 'Yes' && (parsedSavedSubmissionDate.setHours(0, 0, 0, 0) == financialYearEndDate120Days.setHours(0, 0, 0, 0))){
+                                                        cs['adhocItem'].value = 'sd1';
+                                                    }else if(radioOption === 'Yes' && (parsedSavedSubmissionDate.setHours(0, 0, 0, 0) == financialYearEndDate150Days.setHours(0, 0, 0, 0))){
+                                                        if(!cs['adhocItem'].value.includes('ar')){
+                                                            cs['adhocItem'].value += ';sd2;';
+                                                        }else {
+                                                            cs['adhocItem'].value = 'sd2;';
+                                                        }
+                                                    }else if(radioOption === 'Yes' && (parsedSavedSubmissionDate.setHours(0, 0, 0, 0) == financialYearEndDate180Days.setHours(0, 0, 0, 0))){
+                                                        if(!cs['adhocItem'].value.includes('ar')){
+                                                            cs['adhocItem'].value += ';sd3;';
+                                                            cs['xcddocs__c'].value ='Engagement Letter From The Appointed Auditor;'; 
+
+                                                        }else {
+                                                            cs['adhocItem'].value = 'sd3;';
+                                                            cs['xcddocs__c'].value ='Engagement Letter From The Appointed Auditor;'; 
+
+                                                        }
+                                                    }    
+                                                     
+                                                    
+                                                    // worngdate input which is right date but not worng
+                                                    wrongDateInput=true;
+                                                    if(dateOfToday<financialYearEndDate120Days){
+                                                        if(parsedChoosenSubmissionDate> financialYearEndDate120Days || parsedChoosenSubmissionDate <=dateOfToday){
+                                                            wrongDateInput = false;
+                                                            axsAlert('Alert!','Please choose a date between ' +dateOfTodayFormatted + ' and '+ financialYearEndDate120DaysFormatted);
+                                                            document.getElementById('newsd__c').value='';                                                        
+                                                        }else if(parsedChoosenSubmissionDate<=dateOfToday){
+                                                            wrongDateInput = false; 
+                                                            axsAlert('Alert!','New Submission date cannot be a past date,kinldy choose a date between ' +dateOfTodayFormatted + ' and '+ financialYearEndDate120DaysFormatted);
+                                                            document.getElementById('newsd__c').value='';      
+                                                        }
+                                                     }else if(dateOfToday>=financialYearEndDate120Days && dateOfToday <= financialYearEndDate150Days){
+                                                       
+                                                        
+                                                         if(parsedChoosenSubmissionDate <= financialYearEndDate120Days || parsedChoosenSubmissionDate > financialYearEndDate150Days || parsedChoosenSubmissionDate <=dateOfToday){
+                                                            wrongDateInput = false;
+                                                            axsAlert('Alert!','Please choose a date between ' +dateOfTodayFormatted + ' and '+ financialYearEndDate150DaysFormatted);
+                                                            document.getElementById('newsd__c').value='';         
+                                                        } 
+                                                     }else if(dateOfToday>=financialYearEndDate150Days && dateOfToday <= financialYearEndDate180Days){
+                                                        if(parsedChoosenSubmissionDate <= financialYearEndDate150Days || parsedChoosenSubmissionDate > financialYearEndDate180Days || parsedChoosenSubmissionDate <=dateOfToday){
+                                                            wrongDateInput = false;
+                                                            axsAlert('Alert!','Please choose a date between ' +dateOfTodayFormatted + ' and '+ financialYearEndDate180DaysFormatted);
+                                                            document.getElementById('newsd__c').value='';         
+                                                        }   
+                                                     }
+                                                    
+                                                    
+                                                    /*
+                                                        if(parsedSavedSubmissionDate === financialYearEndDate120Days){
+                                                            console.log('adhoc sd2');
+                                                            cs['adhocItem'].value = 'sd2'; 
+                                                        }else if(parsedSavedSubmissionDate === financialYearEndDate150Days){//if saved value previously is 150 so he is changing again the submission date to 180 so sd3 engagement letter will be shown
+                                                            console.log('checked150'); 
+                                                            console.log('adhoc sd3');
+                                                            cs['adhocItem'].value = 'sd3';
+                                                        }
+                                                        */
+                                                    
+                                                    
+                                                }
+                                                </script>
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#ysdid__c">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        &nbsp;&nbsp;
+                                        <div class="col-lg-12"> 
+                                            <div class="form-group" id="reasonNewSubmissionDate"  style="display:none">
+                                                <label>Reason for Changing Submission Dates</label>
+                                                <apex:inputText styleClass="requiredFld form-control" id="reasonId" value="{!fi.reasonNewSubmissionDate}" />
+                                                <script type="text/javascript">
+                                                cs['reasonId']=document.getElementById('{!$Component.reasonId}');
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End of far 2 -->
+                                    <div class="base-collapse" id="collapseTitle" style="{!if(openAfsReqs.size>1,'display:block','display:none')}">
+                                        
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                            <div class="collapse-title">Financial Information-Amount In <span id='currencyValue'>UAE Dirham</span>
+                                                <!-- Financial Information-Amount {!if(legalFrm=="Branch of a Foreign Company","","(In UAE Dirham)")} -->
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div id="application_details" class="collapse show" style="{!if(openAfsReqs.size>1,'display:block','display:none')}">
+                                        <div class="col-lg-12" id="resForNonsb" style="display:none"> 
+                                            <div class="col-lg-12">
+                                                <label>Do you have the required details? If not, you may select 'NO' and upload the reason for non-submission along with the supporting document. You can then proceed with the penalty, if applicable.
+                                                </label><br/>
+                                                <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                    <label class="custom-radio mr-4">
+                                                        <input type="radio" value="Yes" class="requiredFld" name="prevYrDts" onchange="prevYrSubmissionDate();" id="yesprevYrDts"/>
+                                                        <span>Yes</span>
+                                                    </label>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                    <label class="custom-radio mr-4">
+                                                        <input type="radio" value="No" class="requiredFld" name="prevYrDts" onchange="prevYrSubmissionDate();" id="noprevYrDts" />
+                                                        <span>No</span>
+                                                    </label>
+                                                </apex:outputPanel>
+                                            </div>
+                                            <div class="col-lg-12"> 
+                                                <div class="form-group" id="reasonNonSubmission"  style="display:none">
+                                                    <label>Reason for Not Submitting the Audit Report</label>
+                                                    <apex:inputText styleClass="requiredFld form-control" id="reasonNonSubmissionId" value="{!fi.reasonNonSubmission}" /><!--value="{!fi.reasonNonSubmission}"-->
+                                                    <script type="text/javascript">
+                                                        cs['reasonNonSubmissionId']=document.getElementById('{!$Component.reasonNonSubmissionId}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="collapse-content" id="afsForm" style="{!if(openAfsReqs.size>0,'display:none','display:block')}">
+                                            <form class="form-style" id="app_details_form" action="">
+                                                <div class="row row-lg"> 
+                                                    <div class="col-lg-12"> 
+                                                        <div class="form-group">
+                                                            <label>Audit Firm</label>
+                                                            <apex:inputText styleClass="requiredFld form-control" value="{!fi.auditfirm}" id="auditfirm" />
+                                                            <script type="text/javascript">
+                                                            cs['auditfirm']=document.getElementById('{!$Component.auditfirm}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            
+                                                            <label>Year Start Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                
+                                                                
+                                                                <!-- start NEW part-->
+                                                                <!--<apex:inputField styleClass=" form-control input-datepicker" value="{!fi.yearstartdate}"/>-->
+                                                                <!-- end New part --> 
+                                                                <apex:inputHidden id="yearstartdate" value="{!fi.yearstartdate}"/> <!-- id=ysd-->
+                                                                <input type="text" class="requiredFld form-control input-datepicker" id="ysd__c" readonly="readonly" validationname="pid" onchange ="saveYearStartDate();" value="{!fi.yearstartdate}"/> <!--readonly="readonly"--><!--onchange = "assignfldVal(this.value,'ysd');" value="{!fi.yearstartdate}" value="{!financialYearStartDate}" data-toggle="datetimepicker" data-target="#ysd__c" input-datepicker-->
+                                                                <script type="text/javascript">
+                                                                function saveYearStartDate(){
+                                                                    console.log('saveYearStartDate');
+                                                                    cs['yearstartdate'] = document.getElementById('{!$Component.yearstartdate}');
+                                                                    cs['yearstartdate'].value = document.getElementById('ysd__c').value;
+                                                                    console.log('triggeredONCHANGE'+cs['yearstartdate']);
+                                                                }
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#ysdid__c">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                            </div>
+                                                            
+                                                        </div>                  
+                                                    </div>
+                                                    
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Year End Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <apex:inputHidden id="yearenddate" value="{!fi.yearenddate}" />
+                                                                <input type="text" class="requiredFld form-control input-datepicker" id="yed__c" readonly="readonly" onchange ="saveYearEndDate();"/> <!-- onchange = "assignfldVal(this.value,'yed');" value="{!fi.yearenddate}"-->
+                                                                <!--onchange="checkIssueAndExpiryDate(this,document.getElementById('xcped__c'))"/>-->
+                                                                <script type="text/javascript">
+                                                                function saveYearEndDate(){
+                                                                    console.log('saveYearEndDate');
+                                                                    cs['yearenddate'] = document.getElementById('{!$Component.yearenddate}');
+                                                                    cs['yearenddate'].value = document.getElementById('yed__c').value;
+                                                                    console.log('triggeredONCHANGE'+cs['yearenddate']);
+                                                                }
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#yed__c">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                            //cs['yed__c']=document.getElementById('yed__c');
+                                                            // dformat('{!fi.yearenddate}','yed__c');
+                                                            //cs['yed']=getC('{!$Component.yed}');
+                                                            </script>
+                                                        </div>                           
+                                                    </div>
+
+                                                    <!--FAR 2-->
+                                                  
+                                           
+                                                    
+                                                    <div class="col-lg-6">
+                                                        <apex:outputText rendered="{!if(legalFrm=='Branch of a Foreign Company',true,false)}">
+                                                            <div class="form-group"> <!--{!if(legalFrm=="Branch of a Foreign Company",true,false)}-->
+                                                                <label>Currency</label>
+                                                                <select id="currency" class="form-control requiredFld requiredFldpop input-select2-flat" onchange="onCurrencySelection(this);"> <!--onchange="onCurrencySelection()"-->
+                                                                    <option value="AED">AED</option>
+                                                                    <option value="USD">USD</option>
+                                                                    <option value="EUR">EUR</option>
+                                                                    <option value="CAD">CAD</option>
+                                                                    <option value="KWD">KWD</option>
+                                                                    <option value="BHD">BHD</option>
+                                                                    <option value="OMR">OMR</option>
+                                                                    <option value="GBP">GBP</option>
+                                                                    <option value="KYD">KYD</option>
+                                                                    <option value="INR">INR</option>
+                                                                    <option value="LBP">LBP</option>
+                                                                </select>             
+                                                                <script type="text/javascript">
+                                                                function onCurrencySelection(event){
+                                                                    let selectedCurrency = $(event).val();
+                                                                    $('#currencyValue').text(selectedCurrency);
+                                                                    console.log('selected currency == '+selectedCurrency);
+                                                                    cs['currency']=document.getElementById('{!$Component.selectedCurrency}');
+                                                                    cs['currency'].value = selectedCurrency;                      
+                                                                    console.log('currencySelected' + cs['currency']); 
+                                                                }
+                                                                </script>
+                                                            </div>
+                                                        </apex:outputText>
+                                                        <apex:inputHidden id="selectedCurrency" value="{!fi.selectedCurrency}" />
+                                                        
+                                                    </div>
+                                                </div>    
+                                                <h4 class="mt-4">Income Statement</h4>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Revenues</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.revenues}" id="revenues" />
+                                                            <script type="text/javascript">
+                                                            cs['revenues']=document.getElementById('{!$Component.revenues}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Cost of Sales</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.costofsales}" id="costofsales" />
+                                                            <script type="text/javascript">
+                                                            cs['costofsales']=document.getElementById('{!$Component.costofsales}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Gross Profit</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.grossprofit}" id="grossprofit" />
+                                                            <script type="text/javascript">
+                                                            cs['grossprofit']=document.getElementById('{!$Component.grossprofit}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Operating Costs</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.operatingcost}" id="operatingcost" />
+                                                            <script type="text/javascript">
+                                                            cs['operatingcost']=document.getElementById('{!$Component.operatingcos}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Operating Profit</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.operatingprofit}" id="operatingprofit" />
+                                                            <script type="text/javascript">
+                                                            cs['operatingprofit']=document.getElementById('{!$Component.operatingprofit}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Interest Expenses</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.interestexpenses}" id="interestexpenses" />
+                                                            <script type="text/javascript">
+                                                            cs['interestexpenses']=document.getElementById('{!$Component.interestexpenses}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                
+                                                <div class="row row-lg">    
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Worker Compensation</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal"  value="{!fi.workerCompensation}" id="workerCompensation" />
+                                                            <script type="text/javascript">
+                                                            cs['workerCompensation']=document.getElementById('{!$Component.workerCompensation}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Fees &amp; Taxes</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal"  value="{!fi.feesAndTaxes}" id="feesAndTaxes" />
+                                                            <script type="text/javascript">
+                                                            cs['feesAndTaxes']=document.getElementById('{!$Component.feesAndTaxes}');
+                                                            </script>
+                                                        </div>
+                                                    </div> 
+                                                </div>
+                                                
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Depreciation</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.depreciation}" id="depreciation" />
+                                                            <script type="text/javascript">
+                                                            cs['depreciation']=document.getElementById('{!$Component.depreciation}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Amortization</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.amortization}" id="amortization" />
+                                                            <script type="text/javascript">
+                                                            cs['amortization']=document.getElementById('{!$Component.amortization}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Other Income/ Loss</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.otherincomeorloss}" id="otherincomeorloss" />
+                                                            <script type="text/javascript">
+                                                            cs['otherincomeorloss']=document.getElementById('{!$Component.otherincomeorloss}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Net Profit</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.netprofit}" id="netprofit" />
+                                                            <script type="text/javascript">
+                                                            cs['netprofit']=document.getElementById('{!$Component.netprofit}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    
+                                                </div>
+                                                <h4 class="mt-4">Balance Sheet</h4>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Current Assets</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.currentassets}" id="currentassets" />
+                                                            <script type="text/javascript">
+                                                            cs['currentassets']=document.getElementById('{!$Component.currentassets}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Fixed Assets</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.fixedassets}" id="fixedassets" maxlength="18" />
+                                                            <script type="text/javascript">
+                                                            cs['fixedassets']=document.getElementById('{!$Component.fixedassets}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Investments</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.investments}" id="investments" />
+                                                            <script type="text/javascript">
+                                                            cs['investments']=document.getElementById('{!$Component.investments}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Other Assets</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.otherassets}" id="otherassets" />
+                                                            <script type="text/javascript">
+                                                            cs['otherassets']=document.getElementById('{!$Component.otherassets}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Current Liabilities</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.currentliabilities}" id="currentliabilities" />
+                                                            <script type="text/javascript">
+                                                            cs['currentliabilities']=document.getElementById('{!$Component.currentliabilities}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Long Term Liabilities</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.longtermliabilities}" id="longtermliabilities" />
+                                                            <script type="text/javascript">
+                                                            cs['longtermliabilities']=document.getElementById('{!$Component.longtermliabilities}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Share Capital</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.sharecapital}" id="sharecapital" />
+                                                            <script type="text/javascript">
+                                                            cs['sharecapital']=document.getElementById('{!$Component.sharecapital}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Retained Earnings</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.retainedearnings}" id="retainedearnings" />
+                                                            <script type="text/javascript">
+                                                            cs['retainedearnings']=document.getElementById('{!$Component.retainedearnings}');
+                                                            </script>
+                                                        </div>
+                                                    </div>  
+                                                    
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Reserves and Surplus</label>
+                                                            <apex:inputText styleClass="requiredFld form-control numbOnly twoDecimal" value="{!fi.reservesandsurplus}" id="reservesandsurplus" />
+                                                            <script type="text/javascript">
+                                                            cs['reservesandsurplus']=document.getElementById('{!$Component.reservesandsurplus}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    
+                                                </div>
+                                                
+                                                
+                                            </form>
+                                        </div>  
+                                    </div>
+                                    <!-- .base-main-content -->
+                                    <c:saveBtn ispu="true" isgu="false" req="{!rq}" rendered="{!openAfsReqs.size>0}"/>
+                                </div>
+                            </div>
+                            
+                            <!-- .base-main -->
+                            
+                        </div>
+                        <!-- .base-layout -->
+                        
+                    </div>
+                    <!-- .container -->
+                    
+                    
+                    
+                    
+                    
+                </div>
+                <div class="modal fade modal-base" id="modal_vfs" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="width: 990px;">
+                        <div class="modal-content">
+                            <h2 class="modal-title" style="margin-left: 1.8rem;" ><u><label id="mdHeader">File Preview</label></u></h2>
+                            <!--
+<button type="button" class="btn btn-primary btn-icon mb-4" data-dismiss="modal"  onclick="printFile();" ><i class="icon icon-print"></i></button> -->
+                            
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="icon-close"></i>
+                            </button>
+                            <div class="modal-body" style="padding: 0px 30px 30px;">
+                                <div class="mb-3"></div>
+                                <img src="" id='previewDiv' />
+                            </div>
+                            
+                            <!-- <a href="#"  onclick="printFile();" style="align-self: flex-end;margin: 0px 30px 5px;"><u>Print</u></a> -->
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
+                
+            </body>
+        </apex:pageBlock> 
+    </apex:form>   
+    <!-- <apex:form id="uploadFrm" rendered="true">
+<c:fileuploadpopupnew13 R="{!rq}" /> 
+</apex:form> -->
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <!-- main js -->
+    
+    <script type="text/javascript"> 
+    var currentDoc = '';
+    //string dates to display on the form
+    var formValueStartDate = ''; 
+    var formValueEndDate = '';
+    function parseDateString(dateString) {
+        var parts = dateString.split('/');
+        console.log('dateString '+ dateString); 
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10)-1;
+        var year = parseInt(parts[2], 10);
+        console.log('year '+ year+ 'month ' + month +'day '+ day); 
+        return new Date(year, month, day);
+    }
+    
+    //checkbox logic
+        function changeCheckboxValue() {
+            var checkbox = document.getElementById('changeSubmissionDatesCheckbox'); //value is "on" when checked and object if not value
+            cs['newSubmissionDate'] = document.getElementById('newsd__c');
+            console.log('checkbox value '+ checkbox);
+            if (checkbox.checked) {
+                /*
+                document.getElementById('application_details').style.display= 'none'; 
+                document.getElementById('collapseTitle').style.display= 'none';
+                //saved submission date in DB
+                var savedSubmissionDate = '{!newSubmissionDate}';
+                console.log('fetchedSubmissionDate '+savedSubmissionDate);
+
+                var parsedSavedSubmissionDate='';
+                if(savedSubmissionDate !== null && savedSubmissionDate !== '' && savedSubmissionDate !== undefined){
+                    console.log('diffnull');
+                    parsedSavedSubmissionDate = parseDateString(savedSubmissionDate);
+                }
+                console.log('parsedSavedSubmissionDate '+parsedSavedSubmissionDate);  
+                //today and tomorrow date
+                var todayDate = new Date(2024,05,28);//2nd january 2023
+
+                console.log('savedSubmissionDate '+savedSubmissionDate);  
+
+                var financialYearEndDateFormVal = parseDateString(cs['yearenddate'].value); //form financial year end date
+                financialYearEndDateFormVal.setDate(financialYearEndDateFormVal.getDate());//financial year end date + 1 day
+                console.log('financialYearEndDateFormVal --- '+ financialYearEndDateFormVal); 
+
+                //120 days
+                var financialYearEndDate120Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                financialYearEndDate120Days = new Date(financialYearEndDate120Days.setDate(financialYearEndDate120Days.getDate()+120)); //financial year end date + 120 days
+
+                //150 days
+                var financialYearEndDate150Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                financialYearEndDate150Days = new Date(financialYearEndDate150Days.setDate(financialYearEndDate150Days.getDate()+150));
+
+                //180 days
+                var financialYearEndDate180Days = new Date(financialYearEndDateFormVal.getTime()); //clone to avoid overriding 
+                financialYearEndDate180Days = new Date(financialYearEndDate180Days.setDate(financialYearEndDate180Days.getDate()+180));
+
+                console.log('today '+ todayDate + 'financialYearEndDate120Days  '+ financialYearEndDate120Days + ' '+financialYearEndDate150Days);
+                //console.log('bool '+ (todayDate>financialYearEndDate120Days && todayDate<=financialYearEndDate150Days));
+                //savedSubmission date is null
+                if(parsedSavedSubmissionDate === null || parsedSavedSubmissionDate === '' || parsedSavedSubmissionDate === 'undefined' && (todayDate>financialYearEndDateFormVal && todayDate<=financialYearEndDate120Days)){// && (todayDate>financialYearEndDateFormVal && todayDate<=financialYearEndDate120Days)
+                    $('#newsd__c').val(financialYearEndDate120Days.toLocaleDateString('en-GB')).change(); 
+                    addValError(cs['newSubmissionDate'],'Please Submit the Audit report before this Date');
+                }else if((parsedSavedSubmissionDate !== null || parsedSavedSubmissionDate !== '' || parsedSavedSubmissionDate !== 'undefined') && (todayDate>financialYearEndDate120Days && todayDate<=financialYearEndDate150Days)){ // && (todayDate>financialYearEndDate120Days && todayDate<=financialYearEndDate150Days)
+                    console.log('onefiftycase');
+                    //show reason field
+                    $('#newsd__c').val(financialYearEndDate150Days.toLocaleDateString('en-GB')).change(); 
+                    addValError(cs['newSubmissionDate'],'Please Submit the Audit report before this Date');
+                    document.getElementById('reasonNewSubmissionDate').style.display = 'block';
+                }else if((parsedSavedSubmissionDate !== null || parsedSavedSubmissionDate !== '' || parsedSavedSubmissionDate !== 'undefined') && (todayDate>financialYearEndDate150Days && todayDate<=financialYearEndDate180Days)){
+                    console.log('180case'); 
+                    $('#newsd__c').val(financialYearEndDate180Days.toLocaleDateString('en-GB')).change(); 
+                    addValError(cs['newSubmissionDate'],'Please Submit the Audit report before this Date');
+                }
+                //document.getElementById('newsd__c').removeAttribute('readonly');
+                //console.log("Checkbox is checked: Changing Submission Dates.");
+                */
+            } else {
+                /*
+                removeValError(cs['newSubmissionDate']);   
+                $('#newsd__c').val('').change(); 
+                document.getElementById('application_details').style.display= 'block';
+                document.getElementById('collapseTitle').style.display= 'block';
+                */
+               // document.getElementById('newsd__c').setAttribute('readonly', true);
+                //console.log("Checkbox is unchecked.");
+            }
+        }
+    
+    $(document).ready(function() {
+        
+        var legalFramework = '{!legalFrm}'; 
+        //to save default value on page load for the currency
+        if(legalFramework==='Branch of a Foreign Company'){
+            if ('{!fi.selectedCurrency}' == '' || '{!fi.selectedCurrency}' == null || '{!fi.selectedCurrency}' == undefined) {
+                console.log('currencyBlank'); 
+                //$('#currency').val('AED Dirham');
+                console.log('mycurrencyy' + $('#currency')[0]);
+                onCurrencySelection($('#currency')[0]);
+            }else {
+                $('#currency').val('{!fi.selectedCurrency}');
+                console.log('currencyNotBlank' +'{!fi.selectedCurrency}'); 
+            }              
+        }
+        //get from controller apex value as a string of the following format : '31/12/2023' 
+        var financialYearStartDate = '{!financialYearStartDate}';
+        var financialYearEndDate = '{!financialYearEndDate}'; 
+        var latestSubmissionDate = '{!latestSubmissionDate}'; 
+        var licenseIssueDate = '{!licenseIssueDate}'; 
+        var licenseFirstIssueDate = '{!licenseFirstIssueDate}';
+        console.log('financialYearStartDate '+ financialYearStartDate); 
+        //parse string date (example : '31/12/2023') to new date in javascript
+        var parsedLicenseFirstIssueDate = parseDateString(licenseFirstIssueDate);
+        var parsedFinancialYearEndDate = parseDateString(financialYearEndDate);
+        var parsedLatestSubmissionDate = parseDateString(latestSubmissionDate);
+        var parsedFinancialYearStartDate = parseDateString(financialYearStartDate);
+        var todayDate = new Date(); //for testing input the month-1 because it is zero based 
+        //var todayDate = new Date();
+        //get day,month,year-1 from today date 
+        var todayYearMinusOne = todayDate.getFullYear()-1; //-1
+        var todayDateYear = todayDate.getFullYear();
+        var todayDateMonth = todayDate.getMonth()+1; //+1
+        var todayDateDay = todayDate.getDate();         
+        console.log('--1--'+todayYearMinusOne);
+        console.log('--2--'+todayDateYear);
+        console.log('--3--'+todayDateMonth);
+        console.log('--4--'+todayDateDay);
+        //get day month year form Financial Year End Date 
+        var parsedFinancialYearEndDateDay = parsedFinancialYearEndDate.getDate(); 
+        var parsedFinancialYearEndDateMonth = parsedFinancialYearEndDate.getMonth();//+1 
+        var parsedFinancialYearEndDateYear = parsedFinancialYearEndDate.getFullYear(); 
+        //get day month year form Latest Submission Date
+        var parsedLatestSubmissionDateDay = parsedLatestSubmissionDate.getDate();
+        var parsedLatestSubmissionDateMonth = parsedLatestSubmissionDate.getMonth();
+        var parsedLatestSubmissionDateYear = parsedLatestSubmissionDate.getFullYear();
+        
+        console.log('todayDate '+todayDate); 
+        console.log('todayDateMonth' +todayDateMonth);
+        console.log('parsedFinancialYearEndDateMonth' +parsedFinancialYearEndDateMonth);
+        
+        //form value end date calculation
+        if(todayDateMonth>=parsedFinancialYearEndDateMonth){ //>=
+            endDateFormValue = new Date(todayDateYear, parsedFinancialYearEndDateMonth, parsedFinancialYearEndDateDay);//.toLocaleDateString('en-GB');
+        }else{
+            console.log('withinThiscONDITION '+ todayYearMinusOne +'prsedFYEDM'+ parsedFinancialYearEndDateMonth + parsedFinancialYearEndDateDay); 
+            endDateFormValue = new Date(todayYearMinusOne, parsedFinancialYearEndDateMonth, parsedFinancialYearEndDateDay);//.toLocaleDateString('en-GB');
+            console.log('endDateFormValuewithincond '+ endDateFormValue); 
+        }
+        console.log('endDateFormValue '+endDateFormValue); 
+        //form value start date calculation -12 month from end date
+        var tempEndDateFormValue = new Date(endDateFormValue);
+        console.log('tempEndDateFormValue '+ tempEndDateFormValue); 
+        startDateFormValue = new Date(tempEndDateFormValue.setMonth(tempEndDateFormValue.getMonth() - 12));
+        startDateFormValue.setDate(startDateFormValue.getDate() + 1);
+        console.log('startDateFormValueModified '+ startDateFormValue); 
+        formValueStartDate = startDateFormValue.toLocaleDateString('en-GB');
+        console.log('parsedLicenseFirstIssueDate'+parsedLicenseFirstIssueDate);
+        diffLicenseFirstIssueDateFormEndDate = parsedLicenseFirstIssueDate - endDateFormValue;
+        console.log('diffLicenseFirstIssueDateFormEndDate'+ Math.abs(diffLicenseFirstIssueDateFormEndDate/(1000 * 60 * 60 * 24 * 30.44)));
+        //check excetional cases
+        if(latestSubmissionDate !== ''){
+            latestSubmissionPlusOneDay = new Date(parsedLatestSubmissionDate.setDate(parsedLatestSubmissionDate.getDate() + 1));
+            var diffFormEndDateLatestSubmission = endDateFormValue - parsedLatestSubmissionDate;
+            if(diffFormEndDateLatestSubmission/(1000 * 60 * 60 * 24 * 30.44) < 18){
+                startDateFormValue = latestSubmissionPlusOneDay;
+            }
+        }else if(latestSubmissionDate === '' &&  Math.abs(diffLicenseFirstIssueDateFormEndDate/(1000 * 60 * 60 * 24 * 30.44)) <= 18){   
+            startDateFormValue = parsedLicenseFirstIssueDate;
+            console.log('startDateFormValue latestsubmissionblank'+startDateFormValue);
+        }
+        formValueStartDate = startDateFormValue.toLocaleDateString('en-GB');
+        formValueEndDate = endDateFormValue.toLocaleDateString('en-GB');
+        console.log('formValueStartDate ' + formValueStartDate + ' '+ 'formValueEndDate '+ formValueEndDate); 
+        //assign the calculated value to input field in the form
+        if ('{!fi.yearstartdate}' == '' || '{!fi.yearstartdate}' == null || '{!fi.yearstartdate}' == undefined) {
+            console.log('blank'); 
+            $('#ysd__c').val(formValueStartDate).change(); // $('#ysd__c').val('30/11/2022');
+        }else{
+            console.log('not blank' + '{!fi.yearstartdate}'); 
+            var fetchedYearStartDate = '{!fi.yearstartdate}';
+            var formattedStartDateFetched = new Date(fetchedYearStartDate).toLocaleDateString('en-GB'); 
+            console.log('formattedStartDateFetched1' +formattedStartDateFetched);
+            $('#ysd__c').val(formattedStartDateFetched).change(); // $('#ysd__c').val('30/11/2022');
+        }
+        //END DATE
+        if ('{!fi.yearenddate}' == '' || '{!fi.yearenddate}' == null || '{!fi.yearenddate}' == undefined) {
+            console.log('blank yearenddate'); 
+            $('#yed__c').val(formValueEndDate).change();
+        }else{
+            console.log('not blank end date' + '{!fi.yearenddate}'); 
+            var fetchedYearEndDate = '{!fi.yearenddate}';
+            var formattedEndDateFetched = new Date(fetchedYearEndDate).toLocaleDateString('en-GB'); 
+            console.log('formattedStartDateFetched1' +formattedEndDateFetched);
+            $('#yed__c').val(formattedEndDateFetched).change(); // $('#ysd__c').val('30/11/2022');
+        }
+        console.log('before apexYearStartDate');
+        // $('#yearstartdate').val(formValueStartDate);
+        console.log('after apexYearStartDate');
+        console.log('affecting apexYearStartDate');
+        
+        //-------------------------------------submissionDate change logic-----------------------------------------------------------
+        var savedSubmissionDateOnLoad = '{!fi.newSubmissionDate}'; //'{!newSubmissionDate}';
+        console.log('savedSubmissionDateOnLoad '+ savedSubmissionDateOnLoad);
+        cs['previousSubmissionDate'] = savedSubmissionDateOnLoad;
+        var fyedFormVal = parseDateString(cs['yearenddate'].value); //financial year end date calculated
+
+         //110 days
+         var fyed110Days = new Date(fyedFormVal.getTime()); //clone to avoid overriding
+         fyed110Days = new Date(fyed110Days.setDate(fyed110Days.getDate()+110)); 
+
+         //120 days
+         var fyed120Days = new Date(fyedFormVal.getTime()); //clone to avoid overriding
+         fyed120Days = new Date(fyed120Days.setDate(fyed120Days.getDate()+120)); 
+
+        //140 days
+        var fyed140Days = new Date(fyedFormVal.getTime()); //clone to avoid overriding
+        fyed140Days = new Date(fyed140Days.setDate(fyed140Days.getDate()+140)); 
+         
+        //150 days
+        var fyed150Days = new Date(fyedFormVal.getTime()); //clone to avoid overriding
+        fyed150Days = new Date(fyed150Days.setDate(fyed150Days.getDate()+150)); 
+
+        //180 days
+        var fyed180Days = new Date(fyedFormVal.getTime()); //clone to avoid overriding
+        fyed180Days = new Date(fyed180Days.setDate(fyed180Days.getDate()+180)); 
+        //alert('endDtArray' + endDtArray);
+        
+        if (savedSubmissionDateOnLoad !== '' && savedSubmissionDateOnLoad !== null && savedSubmissionDateOnLoad !== undefined) {
+            
+            console.log('notNULL' + savedSubmissionDateOnLoad);
+
+            //var parsedSavedSubmissionDateOnLoad = parseDateString(savedSubmissionDateOnLoad);
+            //###############TESTING##################
+            //var dateToday = new Date(2025,01,01);
+             var dateToday = new Date();
+            //var testingDate = '{!todayDate}';
+            //var dateToday = parseDateString(testingDate);
+             console.log('#################TESTING:'+dateToday);
+            //###############TESTING##################
+            console.log('today '+dateToday +  ' parsedSavedSubmissionDateOnLoad '+ savedSubmissionDateOnLoad + 'fyed110Days '+ fyed110Days + 'fyed120Days '+ fyed120Days + 'fyed140Days '+ fyed140Days); 
+            console.log('condition satisfied' + new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0)  +'   '+ fyed150Days.setHours(0, 0, 0, 0));
+            //-----new logic to add - multiple 120 case ----- 
+            if(((dateToday <= new Date(savedSubmissionDateOnLoad)) && (new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) < fyed120Days.setHours(0, 0, 0, 0)) && (dateToday.setHours(0, 0, 0, 0)<=fyed110Days.setHours(0, 0, 0, 0))) ||
+             ((dateToday <= new Date(savedSubmissionDateOnLoad)) && (dateToday.setHours(0, 0, 0, 0)>fyed110Days.setHours(0, 0, 0, 0)) && (dateToday.setHours(0, 0, 0, 0)<=fyed120Days.setHours(0, 0, 0, 0)) && (fyed150Days.setHours(0,0,0,0) !== new Date(savedSubmissionDateOnLoad).setHours(0,0,0,0)))){
+                document.getElementById('application_details').style.display= 'none'; 
+                document.getElementById('collapseTitle').style.display= 'none';
+                console.log('HEREEE'); 
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+                setTimeout(function() {
+                    console.log('Adding validation error...');
+                   // addValError(document.getElementById('newsd__c'), 'Please submit before this date by clicking on No or Choose a new date between -ready '+ new Date(savedSubmissionDateOnLoad).toLocaleDateString('en-GB') + ' and '+fyed120Days.toLocaleDateString('en-GB'));
+                    addValError(document.getElementById('newsd__c'),'Please submit before this date by clicking on No or Choose a new date between -ready ' +
+                      (((dateToday.setHours(0, 0, 0, 0) > fyed110Days.setHours(0, 0, 0, 0)) &&
+                      (dateToday.setHours(0, 0, 0, 0) <= fyed120Days.setHours(0, 0, 0, 0)))
+                      ? fyed120Days.toLocaleDateString('en-GB') + ' and ' + fyed150Days.toLocaleDateString('en-GB')
+                      : new Date(savedSubmissionDateOnLoad).toLocaleDateString('en-GB') + ' and ' + fyed120Days.toLocaleDateString('en-GB'))
+                    );
+
+                   //addValError(document.getElementById('newsd__c'), 'Please submit before this date by clicking on No'+ (new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) === fyed120Days.setHours(0, 0, 0, 0) ? '' : ' or Choose a new date between -ready ' + new Date(savedSubmissionDateOnLoad).toLocaleDateString('en-GB') + ' and ' + fyed120Days.toLocaleDateString('en-GB')));
+                }, 100); 
+            }else if((dateToday.setHours(0, 0, 0, 0)<=fyed110Days.setHours(0, 0, 0, 0)) && (new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) === fyed120Days.setHours(0, 0, 0, 0))){
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+                document.getElementById('yesNoSection').style.display = 'none';
+                //set the savedSubmission date to null to reset because i am applying the form
+            }else if((dateToday.setHours(0, 0, 0, 0) <= fyed150Days.setHours(0, 0, 0, 0)) && new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) === fyed150Days.setHours(0, 0, 0, 0)){
+                document.getElementById('yesNoSection').style.display = 'none';
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+            }else if((dateToday.setHours(0, 0, 0, 0) > fyed150Days.setHours(0, 0, 0, 0)) && new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) === fyed150Days.setHours(0, 0, 0, 0)){
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+                setTimeout(function() {
+                    addValError(document.getElementById('newsd__c'),'Please submit before this date by clicking on No or Choose a new date by clicking on yes' );
+                }, 100);
+            }else if((dateToday.setHours(0, 0, 0, 0) > fyed150Days.setHours(0, 0, 0, 0)) && (dateToday.setHours(0, 0, 0, 0) < fyed180Days.setHours(0, 0, 0, 0)) && new Date(savedSubmissionDateOnLoad).setHours(0, 0, 0, 0) === fyed180Days.setHours(0, 0, 0, 0)){
+                document.getElementById('yesNoSection').style.display = 'none';
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+            }else if((dateToday.setHours(0, 0, 0, 0) > fyed180Days.setHours(0, 0, 0, 0))){
+               
+                console.log('180logic');
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+                cs['penalty'] = true;
+                
+                //$("#newSubmissionDateNoOption").attr("style", "display:none");
+                //$("#yesNoSection").attr("style", "display:none");
+                //$("#afsForm").attr("style", "display:block");
+                
+                if (!cs['adhocItem'].value.includes('sd3')){
+                    cs['adhocItem'].value += ';sd3;';
+                }                
+                document.getElementById('yesNoSection').style.display = 'none';
+                document.getElementById('application_details').style.display= 'none'; 
+                document.getElementById('collapseTitle').style.display= 'none';
+                //apply the penalty logic
+                setTimeout(function() {
+                    //$('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad)));
+                    addValError(document.getElementById('newsd__c'),'You ve missed the audit report submission deadline. Please pay the penalty to proceed' );
+                }, 100); 
+            }
+            /*
+            if(((dateToday < new Date(savedSubmissionDateOnLoad)) && (new Date(savedSubmissionDateOnLoad) >= fyed120Days) && (new Date(savedSubmissionDateOnLoad) < fyed140Days)) || 
+             (new Date(savedSubmissionDateOnLoad)>=fyed150Days)){ //new Date to convert it to date
+               
+                console.log('lessthan' + convertDateToString(new Date(savedSubmissionDateOnLoad))+ formattedEndDateFetched + document.getElementById('newsd__c'));
+                $('#newsd__c').val(convertDateToString(new Date(savedSubmissionDateOnLoad))); //.change();
+                document.getElementById('yesOption').setAttribute('disabled', true); //disable the yes/No options
+                document.getElementById('noOption').setAttribute('disabled', true);
+                setTimeout(function() {
+                    console.log('Adding validation error...');
+                    addValError(document.getElementById('newsd__c'), 'Please submit before this date');
+                }, 100); // Adjust delay as needed
+               // addValError(document.getElementById('newsd__c'),'Please submit before this date'); 
+            }
+            */
+        }
+           //document.getElementById('changeSubmissionDatesCheckbox').setAttribute('readonly', true);
+                /*
+                document.getElementById('changeSubmissionDatesCheckbox').setAttribute('onclick', 'return false;');  // Disable the click action
+                document.getElementById('changeSubmissionDatesCheckbox').setAttribute('onchange', 'return false;'); // Disable the change action
+                */
+        //-----------------------------------------------------------------------------------------------------------------------------
+        /*to disable service checkboxes*/
+        
+        $('.numbOnly').onkeyup(function (event) {
+            return isNumbers(event, this); 
+        });
+        $('.twoDecimal').unbind('change').change(function (event) {
+            $(this).val($(this).val().trim());
+            let r = ($(this).val())%1;
+            if(!isNaN(r)) //r!=0 && 
+                $(this).val(parseFloat($(this).val()).toFixed(2));
+            else
+                $(this).val(0);
+        });
+        
+        // defining array includes for IE
+        if(!Array.prototype.includes){
+            Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+        }
+        $('#btn_id').hide();
+        
+        $('.attBox').eq(0).removeClass('disabled-box').find('.loader_img')
+        .html('<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />')
+        .hide();
+        
+        
+    });
+    function isNumbers(evt, element) 
+    {
+        var elementValue = $(element).val();
+        var regex = /^(\+|-)?(\d*\.?\d*)$/;
+        if (regex.test(elementValue + String.fromCharCode(evt.charCode))) {
+            return true;
+        }
+        return false;
+    }
+    </script>
+</apex:page>

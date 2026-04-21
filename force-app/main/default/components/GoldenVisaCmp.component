@@ -1,0 +1,52 @@
+<apex:component >
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <div class="base-collapse">
+        <a href="#" class="collapse-toggle collapsed" data-toggle="collapse" data-target="#gv_id" aria-expanded="true">
+            <div class="collapse-title">Golden Visa Details</div>
+        </a>
+        <div id="gv_id" class="collapse show" style="">
+            <div class="collapse-content">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Choose Non Sponsored ID card duration</Label>
+                            <select class="forDraft requiredFld form-control dum input-select2-flat" id="gvOption" onchange="selectGVOption(this)">
+                                <option value="">--None--</option>
+                                <option value="id">1 Year</option>
+                                <option value="2id">2 Years</option>
+                                <option value="5id">5 Years</option>
+                            </select>
+                            <script type="text/javascript">
+                             if(cs['xadh__c'] && cs['xadh__c'].value){
+                                 let adh = cs['xadh__c'].value;
+                                 if(adh.includes('2id;')){
+                                     $('#gvOption').find('option[value="2id"]').prop('selected',true);
+                                 }
+                                 if(adh.includes('5id;')){
+                                     $('#gvOption').find('option[value="5id"]').prop('selected',true);
+                                 }
+                                 else if(adh.includes('id;')){
+                                     $('#gvOption').find('option[value="id"]').prop('selected',true);
+                                 }
+                                 $('#gvOption').trigger('change');
+                            }
+                            function selectGVOption(e){
+                                var v = $(e).val();
+                                cs['xadh__c'].value = cs['xadh__c'].value.replaceAll('2id;', '').replaceAll('5id;', '').replaceAll('id;', '');
+                                if(v&&v!='--None--'){
+                                    removeValError(e);
+                                    cs['xadh__c'].value = cs['xadh__c'].value.replaceAll(';2id;', ';').replaceAll(';5id;', ';').replaceAll(';id;', ';');
+                                    cs['xadh__c'].value+= v+';';
+                                    showGLoader();
+                                    saveReqDraft3();
+                                }
+                            }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+                <div class="pb-4"></div>
+            </div>
+        </div>
+    </div>
+</apex:component>

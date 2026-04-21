@@ -1,0 +1,1 @@
+global class khdaSanctionBatchSchld implements Schedulable{ global void execute(SchedulableContext sc) { khdaSanctionBatch b = new khdaSanctionBatch(); database.executebatch(b, 10); } }

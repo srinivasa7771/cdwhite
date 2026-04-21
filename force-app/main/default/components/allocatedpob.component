@@ -1,0 +1,189 @@
+<apex:component controller="gulkpCtrl2" allowDML="true" >
+    <style>
+        
+        .icon-request-preference:before {
+        content: "\e968";
+        }
+        .selectData1{
+        display:block;
+        max-height : 24em;
+        overflow-y:auto;
+        }
+    </style>
+    
+    
+    <div class="custLookup">
+        <apex:attribute name="heading" description="leable for the search" type="String"  />
+        <apex:attribute name="Request" description="Request" type="g_Req__c" required="true" assignTo="{!rq}" />
+        <apex:attribute name="accId" description="Account Id" type="String" required="true" assignTo="{!cAccId}" />
+        <apex:attribute name="srvc" description="Type of po box service" type="String"  assignTo="{!pobSrvc}" />
+        
+        
+        <div class="modal fade modal-base" id="modal_lookup_allocated_POB" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body pt-5 pb-5">
+                        <div class="mb-4 d-flex">
+                            <h3 class="modal-title">
+                                Available PO Boxes
+                            </h3>
+                            
+                            <div class="search-field mb-0 ml-5" style="width: auto;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search for allocatd PO BOX" id="searchAllocatedPOB" onkeyup="searchWithEnter_POB(event)" />
+                                    <div class="input-group-append">
+                                        <div class="btn" onclick="searchAlloactedPOBVal()">
+                                            <div class="icon-search"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="frmErrMsg2" class="frmErrMsg1" style="display:none;padding-left:0px;">
+                                    Minimun 3 characters needed to search!
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        <apex:outputPanel styleClass="selectData1" id="selectAlloactedPOB">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 16.6%;">PO BOX</th>
+                                        <th style="width: 16.6%;">Status</th>
+                                        <th style="width: 16.6%;">Issue Date</th>
+                                        <th style="width: 16.6%;">Expiry Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!lstAllocatedPOB}" var="s">
+                                        <tr style="cursor: pointer;" onclick="setAllocated_POB(this);" pobId="{!s.id}" fullVal="{!s}">
+                                           
+                                            <td val1="{!s.name}">{!s.name}</td>
+                                            <td val1="{!s.id}">{!s.stts__c}</td> 
+                                            <td val1="{!s.idt__c}"><apex:outputField value="{!s.idt__c}" /></td>
+                                            <td val1="{!s.edt__c}"><apex:outputField value="{!s.edt__c}" /></td>
+                                            
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                            
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="row row-lg">
+            <div class="col-lg-12 POBLkp">
+                <div class="form-group">
+                    <apex:outputLabel value="{!heading}"></apex:outputLabel>
+                    <div class="input-group input-group-transparent" onclick="searchAllocatedPob();"> 
+                        <input disabled="true" type="text" class="polookup form-control pointer" id="allocatedPOBSearchVal" />
+                        <div class="pointer input-group-append">
+                            <span class="input-group-text">
+                                <i id="POBLkpSearch" class="icon-request-preference text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="frmErrMsg" id="poberr"  style="display:none;"> 
+                        Value is required!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <apex:actionFunction name="loadAllocated_POB" action="{!init_allocatedPOB}" oncomplete="preAllocatedPOB()" rerender="selectAllocatedPOB"/>
+        <apex:actionFunction name="AllocatedPOBSrch" immediate="true"  action="{!searchAllocatedPOBoxes}" oncomplete="shwMd_allocatedPOB('{!srcPBOString}');hideTempLoader_input();" rerender="selectAlloactedPOB">
+            <apex:param name="allocatedPOB" assignTo="{!allocatedPOB}" value=""/>
+        </apex:actionFunction>
+        
+        <apex:outputLabel style="display:none;" id="selectAllocatedPOB">
+            <apex:inputHidden id="selected_POB" value="{!selected_POB}"/>
+            <apex:inputHidden id="xpbg__c" value="{!Request.xpbg__c}"/>
+            
+            <script>
+            cs['selected_POB']=document.getElementById('{!$Component.selected_POB}');
+            cs["xpbg__c"] = document.getElementById("{!$Component.xpbg__c}");
+            
+            function preAllocatedPOB(){
+                cs['xpbg__c'].value = '{!preloaded_POB.id}';
+                cs['selected_POB'].value = '{!preloaded_POB.name}';
+                $('#allocatedPOBSearchVal').val(cs['selected_POB'].value);
+            }
+            </script>
+        </apex:outputLabel>
+    </div>
+    <script><!-- -->
+    
+    var serPOString = {};
+    $(document).ready(function(){
+        loadAllocated_POB();
+    });
+    
+    function searchWithEnter_POB(e){
+        var key = e.which;
+        if(key == 13){searchAlloactedPOBVal(); return false;  }
+    }
+    
+    function searchAllocatedPob(){
+        showTempLoader_input('#allocatedPOBSearchVal');
+        let sv = $('#allocatedPOBSearchVal').val();
+        $('#searchAllocatedPOB').val(sv);
+        AllocatedPOBSrch(sv);
+    }
+    
+    function shwMd_allocatedPOB(ell){
+        srcPBOString = JSON.parse(ell);
+        if(!$('#modal_lookup_allocated_POB').is(':visible')){$('#modal_lookup_allocated_POB').modal('show');}
+    }
+    
+    function searchAlloactedPOBVal(elem){
+        let v = $("#searchAllocatedPOB").val();
+        if(v!=undefined&&v!=null&&v.length>2){
+            $('#frmErrMsg2').hide();
+            AllocatedPOBSrch(v);
+            showTempLoader_input('#searchAllocatedPOB');
+        }else{
+            $('#frmErrMsg2').show();
+        }
+    }
+    
+    var srcPBOString = {};
+    
+    function setAllocated_POB(elem){
+        let id = $(elem).attr('pobId');
+        let n = $(elem).find('td').eq(0).text();
+       
+        $('#allocatedPOBSearchVal').val(n);
+        $('#modal_lookup_allocated_POB').modal('hide');
+        
+        cs['selected_POB'].value = n;
+        cs['xpbg__c'].value = id;
+        $('.POBLkp .frmErrMsg1').hide();
+        
+        for(j=0;j<srcPBOString.length;j++){
+            var i = srcPBOString[j];
+            if(id == i.Id){
+                if(getC('pobox')!=undefined && getC('pobox')!=null){
+                    if('{!pobSrvc}'=='amendment' || '{!pobSrvc}'=='renewal'){
+                        cs['xln__c'].value = i.typ__c;
+                    }
+                    getC('pobox').value = i.typ__c; getC('pobox').onchange();
+                    
+                    if('{!rq.id}'!=null && '{!rq.id}'!="" ){toggleGLoader();afsd();}
+                }else if('{!pobSrvc}'=='cancellation'){
+                    toggleGLoader();afsd();
+                }
+            }
+        }
+    }
+    
+    </script>
+</apex:component>

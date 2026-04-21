@@ -1,0 +1,440 @@
+<apex:component controller="ApplicantDetailController"  id="perDetail">
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="Salutations" description="Salutations" type="SelectOption[]" required="false"/>
+    <apex:attribute name="MartialStatus" description="MartialStatus" type="SelectOption[]" required="false"/>
+    <apex:attribute name="SpokenLanguages" description="SpokenLanguages" type="string[]" required="false"/>
+    <apex:attribute name="cmpTitle" description="Component Title" type="String"/>
+    <apex:attribute name="shwspousenm" description="to show spouse name fields" type="Boolean" default="false" required="false"/>
+    
+    <!--Spoken Language-->
+    <style>
+        .loader_temp{
+        padding-left: 1rem;
+        }
+        .tooltip-inner {
+            min-width: 250px !important;
+            width:150px;
+        }
+    </style>
+    <script>
+    
+    function runOnKeypressfn(ev,id,arid){
+        var username = document.getElementById(id).value;
+        var isArabicNation = (AR_Nations.includes(cs['xcnc__c'].value.toLowerCase())||GCC_Nations.includes(cs['xcnc__c'].value))?true:false;
+       
+        if(username.length >0 && !isArabicNation){ 
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.ApplicantDetailController.getArabicName}',
+                username,
+                function(result, event){
+                    if (event.status) {
+                        // Get DOM IDs for HTML and Visualforce elements like this
+                        document.getElementById(arid).value = result;
+                    } else if (event.type === 'exception') {
+                        document.getElementById("responseErrors").innerHTML = 
+                            event.message + "<br/>\n<pre>" + event.where + "</pre>";
+                    } else {
+                        document.getElementById("responseErrors").innerHTML = event.message;
+                    }
+                }, 
+                {escape: true}
+            );
+        }else if(!username){
+            document.getElementById(arid).value = '';
+        }
+    } 
+    
+    
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    function lastNameOpt(e){
+        console.log($(e).is(':checked'));
+        if($(e).is(':checked')==false){
+            $('.optLn').show();
+            cs["noFnm__c"].value = false; cs["noFnm__c"].checked = false;
+            
+        }else if($(e).is(':checked')==true){
+            $('.optLn').hide();
+            cs["xcln__c"].value = ''; cs["xclnar__c"].value = ''; 
+            cs["noFnm__c"].value = true;cs["noFnm__c"].checked = true;
+            
+        }
+    }
+    function salutionOnChange(){
+        var salutation = $("input[name='salutation']:checked").val();
+        $("input[name='salutation']").parent().parent().parent().find('.option-error').hide(); 
+        cs['xcslt__c'].value=salutation;
+        console.log('salutionOnChange >>'+ cs['xcslt__c'].value);
+        
+        if(shwspousenm){spNmCheckbox();}
+    }
+    function martialStatusOnchange(){
+        var martialStatus = $("input[name='martialStatus']:checked").val();
+        $("input[name='martialStatus']").parent().parent().parent().find('.option-error').hide(); 
+        cs['xcms__c'].value=martialStatus;
+        console.log('martialStatusOnchange >>'+ cs['xcms__c'].value);
+    }
+    function spokenLanguageOnchange(){
+        var spokenLanguages = $('#spokenLng').val().join(';');
+        cs['xclng__c'].value=spokenLanguages;
+        console.log('spokenLanguageOnchange >>'+ cs['xclng__c'].value);
+    }
+    
+    function checkSpNm(){ 
+        if($("#chspnm").is(':checked')){
+            $('.spousename').show();
+            cs["spnm__c"].checked = true; cs["spnm__c"].value = true;
+        }else if($("#chspnm").is(':checked')==false){
+            $('.spousename').hide();
+            cs["xspn__c"].value = ''; cs["xspnar__c"].value = '';   
+            cs["spnm__c"].checked = false; cs["spnm__c"].value = false;
+        }
+    }
+    
+    function checkntknm(){ 
+      
+    }
+    
+    function spNmCheckbox(){
+        
+        //var isVc = cs["xcpic__c"].value == "India" || cs["xcpic__c"].value == "Pakistan" || cs["xcpic__c"].value == "Nepal";
+        if(shwspousenm){  
+            // spouse name changes only for pakistan
+            var ntcArr = ['Pakistan'];
+            var isVc = ntcArr.includes(cs["xcnc__c"].value) ;// || xcpic__c
+            if(isVc && cs['xcslt__c'].value=='Mrs.'){ 
+                $("#spNamechkb").show();
+            }else{
+                $("#spNamechkb").hide(); $("#chspnm").prop("checked",false); $("#chspnm").trigger("change");
+            }
+
+            // next of kin name changes only for nepal            
+            if(cs["xcnc__c"].value=="Nepal"){
+                $("#nepchkfndiv").show();  $('.ntknm').hide();
+                if(cs["afn__c"].value=="true"){ $("#chkntknm").prop("checked",true); $("#chkntknm").trigger("change");}
+            }else{
+                $("#nepchkfndiv").hide(); $("#chkntknm").prop("checked",false); $("#chkntknm").trigger("change");
+            }
+        }
+        
+        
+        
+    }
+    
+    function nepchkfnc(){
+        /*if($("#nepchkfn").is(':checked')){
+            //$('.fthrnm').hide();
+            cs["afn__c"].checked= true; cs["afn__c"].value= true;             
+            cs["xcfan__c"].value = ''; cs["xcfanar__c"].value = ''; 
+        }else if($("#nepchkfn").is(':checked')==false){
+            //$('.fthrnm').show();
+            cs["afn__c"].checked= false; cs["afn__c"].value= false; 
+        }*/
+        if($("#chkntknm").is(':checked')){
+            $('.ntknm').show();
+            cs["afn__c"].checked= true; cs["afn__c"].value= true;
+        }else if($("#chkntknm").is(':checked')==false){
+            $('.ntknm').hide();
+            cs["ntk__c"].value = ''; cs["ntkar__c"].value = ''; 
+            cs["afn__c"].checked= false; cs["afn__c"].value= false;
+        }
+        
+    }
+    
+    function nofname(){
+        var nofathername = cs["noFnm__c"].value;
+        if(nofathername=='true'){
+            $('.optLn').hide();
+            cs["xcln__c"].value = ''; cs["xclnar__c"].value = ''; 
+            $("#optionallnm").prop('checked',true);
+        }else{
+            $('.optLn').show();
+            $("#optionallnm").prop('checked',false);
+        }
+    }
+    
+    </script>
+    <div class="form-group">
+        <label class="d-block">Title</label>
+        <div class="from-group reqRadio">
+            <apex:repeat value="{!Salutations}" var="title">
+                <apex:outputPanel style="display:inline-block" rendered="{!title.Value == req.xcslt__c}" styleClass="mb-4">
+                    <label class="custom-radio mr-5">
+                        <input type="radio" value="{!title.Value}" checked="true" name="salutation" onchange="salutionOnChange();" class="requiredFld rorenwl"/>
+                        <span>{!title.Label}</span>
+                    </label>
+                </apex:outputPanel>
+                <apex:outputPanel style="display:inline-block" rendered="{!title.Value != req.xcslt__c}"  styleClass="mb-4">
+                    <label class="custom-radio mr-5">
+                        <input type="radio" value="{!title.Value}" name="salutation"  onchange="salutionOnChange();" class="rorenwl"/>
+                        <span>{!title.Label}</span>
+                    </label>
+                </apex:outputPanel>
+            </apex:repeat>
+            <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" />
+            <!-- Salutation-->
+            <!-- Martial status-->
+            <div class="option-error frmErrMsg" style="display:none">Please select an option!</div>
+            <script type="text/javascript">
+            cs['xcslt__c']=document.getElementById('{!$Component.xcslt__c}');
+            </script>
+        </div>
+    </div>
+    <!-- .form-group -->
+    <div class="row row-lg">
+        <div class="col-lg-6">
+            <div class="form-group names">
+                <label class="fnLbl">First name</label>
+                <apex:inputField styleClass="forDraft requiredFld form-control alphaChar" value="{!req.xcfn__c}" id="xcfn__c" onblur="runOnKeypressfn(event,this.id,'{!$Component.xcfnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcfn__c']=document.getElementById('{!$Component.xcfn__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label><elem class="fnLbl">First name</elem> in Arabic <elem class="arNames" style="{!IF(isArabicCntry,'display:none;','')}">(optional)</elem></label>
+                <apex:inputField styleClass="{!IF(isArabicCntry,'requiredFld','')} form-control text-right" value="{!req.xcfnar__c}" id="xcfnar__c"/>
+                <script type="text/javascript">
+                cs['xcfnar__c']=document.getElementById('{!$Component.xcfnar__c}');
+                </script>
+            </div>
+        </div>
+        <!--<div class="col-lg-6 mName" >
+            <div class="form-group names">
+                <label>Middle name</label>
+                <apex:inputField styleClass="form-control alphaChar" value="{!req.xcmn__c}" id="xcmn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcmn__c']=document.getElementById('{!$Component.xcmn__c}')
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 mName" >
+            <div class="form-group">
+                <label>Middle name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcmnar__c}" id="xcmnar__c"/>
+                <script type="text/javascript">
+                cs['xcmnar__c']=document.getElementById('{!$Component.xcmnar__c}');
+                </script>
+            </div>
+        </div>-->
+        <div class="col-lg-6 optLn">
+            <div class="form-group names">
+                <label>Last name</label>
+                <apex:inputField styleClass="forDraft requiredFld form-control alphaChar" value="{!req.xcln__c}" id="xcln__c" onblur="runOnKeypressfn(event,this.id,'{!$Component.xclnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcln__c']=document.getElementById('{!$Component.xcln__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 optLn">
+            <div class="form-group names">
+                <label>Last name in Arabic <elem class="arNames" style="{!IF(isArabicCntry,'display:none;','')}">(optional)</elem></label>
+                <apex:inputField styleClass="{!IF(isArabicCntry,'requiredFld','')} form-control text-right" value="{!req.xclnar__c}" id="xclnar__c"/>
+                <script type="text/javascript">
+                cs['xclnar__c']=document.getElementById('{!$Component.xclnar__c}');
+                </script>
+            </div>
+        </div>
+        
+       <!-- <div class="col-lg-6 fthrnm">
+            <div class="form-group names">
+                <label>Full name of father</label>
+                <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xcfan__c}" id="xcfan__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcfanar__c}');"/>
+                <script type="text/javascript">
+                cs['xcfan__c']=document.getElementById('{!$Component.xcfan__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 fthrnm">
+            <div class="form-group">
+                <label>Father's name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcfanar__c}" id="xcfanar__c"/>
+                <script type="text/javascript">
+                cs['xcfanar__c']=document.getElementById('{!$Component.xcfanar__c}');
+                </script>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Mother's name</label>
+                <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xcmon__c}" id="xcmon__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmonar__c}');"/>
+                <script type="text/javascript">
+                cs['xcmon__c']=document.getElementById('{!$Component.xcmon__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Mother's name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcmonar__c}" id="xcmonar__c"/>
+                <script type="text/javascript">
+                cs['xcmonar__c']=document.getElementById('{!$Component.xcmonar__c}');
+                </script>
+            </div>
+        </div>-->
+        
+        
+        
+        
+        <!-- .col -->
+    </div>
+    <div class="row row-lg">
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Date of birth</label>
+                <div class="input-datepicker-group input-group">
+                    <apex:inputHidden id="xcbd" value="{!req.xcbd__c}" />
+                    <input type="text" class="requiredFld form-control input-datepicker rorenwl" id="xcbd__c"
+                           data-toggle="datetimepicker" data-target="#xcbd__c" value="{!req.xcbd__c}"
+                           onchange = "assignfldVal(this.value,'xcbd');checkDate(this,'dob','{!IF(OR(req.srvc__r.uid__c='051',req.srvc__r.uid__c='054'),'onlyPast',req.srvc__r.uid__c)}','{!req.Gender__c}')"  validationname="dob"/>
+                    <script type="text/javascript">
+                    cs['xcbd__c']=document.getElementById('xcbd__c');
+                    dformat('{!req.xcbd__c}','xcbd__c');
+                    cs['xcbd']=getC('{!$Component.xcbd}');
+                    </script>
+                    <div class="input-group-append">
+                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcbd__c">
+                            <i class="icon-date"></i>
+                        </button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+       
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Nationality </label>
+                <apex:inputField value="{!req.xcnc__c}" onchange="validateCurrenNationality(this);addTLoaders(this);" styleClass="forDraft requiredFld form-control dum input-select2-flat clsspNmchk rorenwl"
+                                 id="xcnc__c" /> <!--onchange="validateCurrenNationality(this);"-->
+                <script type="text/javascript">
+                
+                cs['xcnc__c']=document.getElementById('{!$Component.xcnc__c}');
+                function validateCurrenNationality(thisElement){
+                    console.log('updateReq:::::');
+                    var curNat = $(thisElement).val();
+                    $('#UAEAddress,#nonUAEAddress').show();
+                    if(AR_Nations.includes(curNat.toLowerCase())||GCC_Nations.includes(curNat)){
+                        $('.arNames').text('');//(Please enter )
+                        $('.arNames').parents('.form-group').find('input').addClass('requiredFld').val('');
+                    }
+                    else{
+                        $('.arNames').text('(optional)');
+                        $('.arNames').parents('.form-group').find('input').removeClass('requiredFld is-invalid');
+                        $('.arNames').parents('.form-group').find('.frmErrMsg').remove();
+                    }
+                    //$('#preloader').fadeIn();
+                    if(cs["xcnc__c"].value=='United Arab Emirates'){
+                    	$('#nonUAEAddress').hide();
+                    }
+                    else if(cs["xcflst__c"].value=='novisa') { //if(cs["xcnc__c"].value=='United Arab Emirates'||cs["xcflst__c"].value=='empvisa'||cs["xcflst__c"].value=='gcc'){
+                    	$('#UAEAddress').hide();
+                    }
+                    saveReqDraft3();
+                    
+                }
+                function validateCurrenNationality1(thisElement){
+                    var curNat = $(thisElement).val();
+                    $('.names i,.lnOptional,.PPNote').hide();
+                    
+                }
+                </script>
+            </div>
+        </div>
+    </div>
+        <!-- .col -->
+    
+    <div class="row row-lg">
+        <apex:outputText id="addressBlock">
+            <!--<apex:outputText rendered="{!req.xcnc__c != 'United Arab Emirates'}">-->
+                <div class="col-lg-12" id="nonUAEAddress" style="{!IF(req.xcnc__c != 'United Arab Emirates','','display:none')}">
+                    <div class="collapse-title mt-2 mb-2">Address outside the UAE </div>
+                    <div class="">
+                        <div class="form-group">
+                            <label>Street</label>
+                            <apex:inputField styleClass="requiredFld form-control"  value="{!req.xeng__c}" id="xeng__c" html-maxlength="55" />
+                            <script type="text/javascript">
+                            cs['xeng__c']=document.getElementById('{!$Component.xeng__c}');
+                            
+                            </script>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>City</label>
+                                <apex:inputField styleClass="requiredFld form-control alphaChar"  value="{!req.xengp__c}" id="xengp__c" html-maxlength="40"/>
+                                <script type="text/javascript">
+                                cs['xengp__c']=document.getElementById('{!$Component.xengp__c}');
+                                
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Country</label>
+                                <apex:inputField value="{!req.xcnp__c}" styleClass="requiredFld form-control dum input-select2-flat rorenwl" id="xcnp__c" html-maxlength="80"/>
+                                <script type="text/javascript">
+                                cs['xcnp__c']=document.getElementById('{!$Component.xcnp__c}');
+                                for (var i=0; i< cs['xcnp__c'].length; i++){
+                                    if(cs['xcnp__c'].options[i].value == 'United Arab Emirates')cs['xcnp__c'].remove(i);}  
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                </div>            
+            <!--</apex:outputText>-->
+            <!--<apex:outputText rendered="{!OR(req.xcnc__c = 'United Arab Emirates',req.xcflst__c == 'empvisa',req.xcflst__c == 'gcc')}">-->
+                <div class="col-lg-12" id="UAEAddress" style="{!IF(OR(isArabicCntry,req.xcnc__c = 'United Arab Emirates',req.xcflst__c == 'empvisa',req.xcflst__c == 'gcc'),'','display:none')}">
+                        <div class="collapse-title mt-2 mb-2">UAE Address</div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Emirate</label>
+                                    <apex:inputField value="{!req.xcemrt__c}" styleClass="ddValidation form-control input-select2-flat requiredFld"
+                                                     id="xcemrt__c1"/>
+                                    <script type="text/javascript">
+                                    cs['xcemrt__c']=document.getElementById('{!$Component.xcemrt__c1}');
+                                    </script>
+                                </div>
+                            </div>
+                            <!-- .col -->
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Area</label>
+                                    <apex:inputField value="{!req.xccty__c}" styleClass="depDD requiredFld form-control input-select2-flat "
+                                                     id="xccty__c1"/>
+                                    <script type="text/javascript">
+                                    cs['xccty__c']=document.getElementById('{!$Component.xccty__c1}');
+                                    </script>
+                                </div>
+                            </div>
+                            <!-- .col -->
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Street</label>
+                                    <apex:inputField value="{!req.xcarea__c}" styleClass="depDD requiredFld form-control input-select2-flat"
+                                                     id="xcarea__c1"/>
+                                    <script type="text/javascript">
+                                    cs['xcarea__c']=document.getElementById('{!$Component.xcarea__c1}');
+                                    </script>
+                                </div>
+                            </div>
+                            <!-- .col -->
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Landmark</label>
+                                    <apex:inputField type="text" styleClass="requiredFld form-control" value="{!req.xcstrt__c}"
+                                                     id="xcstrt__c1" html-maxlength="55"/>
+                                    <script type="text/javascript">
+                                    cs['xcstrt__c']=document.getElementById('{!$Component.xcstrt__c1}');
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            <!--</apex:outputText>-->
+        </apex:outputText>
+    </div>
+</apex:component>

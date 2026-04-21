@@ -1,0 +1,159 @@
+<apex:component selfClosing="true">
+       
+        <div id="default-popup" class="avgrund-popup" style="margin-top: 15px;">
+        <h3>Scan / Upload Attachment</h3>
+        <input type="hidden" id="TotalImage" value="" />
+        <input type="hidden" id="CurrentImage" value="" />
+        <input type="hidden" id="CurrentImageURL" value="" />
+        <div id="emessage" style="display:none" ></div>
+        <!-- Left column -->
+        <div class=" two_third">
+        <!-- scan start -->    
+        <div id="dwtcontrol">
+        <div id="mainControlPluginNotInstalled" style="display:none">
+        <table class="divcontrol"  >
+        <tr>
+        <td >
+        <apex:pageMessage summary="Please install below plugin,after the installation restart your browser." severity="Warning" strength="3" rendered="true" >
+        &nbsp;&nbsp;&nbsp;<apex:outputLink value="{!URLFOR($Resource.gso_fileuploadNew, '/DynamicWebTWAIN/DynamicWebTWAINPlugIn.msi')}">Download and install the Plug-in Here</apex:outputLink>                       
+        </apex:pageMessage>
+        </td>
+        </tr>
+        </table>
+        </div>
+        <div id="MACmainControlNotInstalled" style="display:none">
+        <table class="divcontrol">
+        <tr>
+        <td >
+        <apex:pageMessage summary="Please install below plugin,after the installation restart your browser." severity="Warning" strength="3" rendered="true" >
+        &nbsp;&nbsp;&nbsp; <apex:outputLink value="{!URLFOR($Resource.gso_fileuploadNew, '/DynamicWebTWAIN/DynamicWebTWAINMacEdition.pkg')}">Download and install the Plug-in Here</apex:outputLink>                       
+        </apex:pageMessage>
+        </td>
+        </tr>
+        </table>
+        </div>
+        <div id="mainControlPlugin" style="display:inline">
+        </div>
+        <div id="maindivIElimit" style="display:inline" >
+        <table class="divcontrol">
+        <tr>
+        <td style="text-align: center; vertical-align: middle;">
+        <!--  <strong>Internet Explorer restricted this webpage from running scripts or ActiveX control</strong><br />
+        If you wish to continue, please click 'Allow blocked content' on the IE popup message dialog
+        -->
+        </td>
+        </tr>
+        </table>
+        </div>
+        <div id="maindivIE">
+        <!--  prod
+        <object classid="clsid:5220cb21-c88d-11cf-b347-00aa00a28331" style="display:none;" >
+        <param name="LPKPath"  value="{!URLFOR($Resource.gso_fileuploadNew, '/DynamicWebTWAIN/DynamicWebTwain.lpk')}" />
+        -->
+        <object classid="clsid:FFC6F181-A5CF-4ec4-A441-093D7134FBF2" style="display:none;" >        
+        </object>
+        <div id="maindivIEx86" > </div>
+        <div id="maindivIEx64"> </div>
+        </div>
+        </div>
+        <!--- scan end--->                    
+        </div>
+        <!-- /Left Columnt -->
+        <!-- Right column -->
+        <div class=" one_third_right">
+        <!-- Table - Scan --------------------------------------------->
+        <table class="gridtable">
+        <tr>
+        <td>
+        <label for="title">Select Scanner</label>
+        <select id="source" name="title" class="dropdownbox" style="width:165px">           
+        </select>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">
+        <input type="button" value="Scan" class="btn" onclick ="btnScan_onclick();"/>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">        
+        <input type="button" value="Load an existing image" class="btn" onclick="return btnLoad_onclick()"/>
+        </td>
+        </tr>
+        <tr>
+        <td align="center">        
+        <input type="button" value=" Save " class="btn" onclick="javascript:btnUpload_onclick('123','300','355','96');closeDialog();sv()"/></td>
+        </tr>
+        
+        </table>
+        <!-- Table - Edit Image '175','300','189' --------------------------------------------->
+        <table class="gridtable">
+        <tr>
+        <th>Edit Image</th>
+        </tr>
+        <tr>
+        <td class="edit-button">
+        <a class="hint--bottom" data-hint="Crop" href="#" onclick="btnCrop_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/icon-crop.svg')}"  styleClass="responsiveimagenoborder"/>      
+        </a>
+        <a class="hint--bottom" data-hint="Rotate Left" onclick="btnRotateLeft_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/icon-left.svg')}"  styleClass="responsiveimagenoborder"/>
+        </a>
+        <a class="hint--bottom" data-hint="Rotate Right" onclick="btnRotateRight_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/icon-right.svg')}"  styleClass="responsiveimagenoborder"/>
+        </a>
+        <a class="hint--bottom" data-hint="Change Image Size" id="btnChangeImageSize" onclick="btnChangeImageSize_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/tools.svg')}"  styleClass="responsiveimagenoborder" style="width:1.786em;height:2.5em"/>
+        </a>
+        <a class="hint--bottom" data-hint="Delete Image" href="#" onclick="btnRemoveCurrentImage_onclick()">
+        <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/icon-delete.svg')}"  styleClass="responsiveimagenoborder" />
+        </a>
+        </td>
+        </tr>
+<tr id="ImgSizeEditor" style="visibility:hidden;">
+<td>
+<!--
+<div id="ImgSizeEditor" style="visibility:hidden; text-align:left;width:250px;height:150px;">   
+-->
+<ul>
+    <li><label for="img_height"><b>Height :</b>
+        <input type="text" id="img_height" style="width:50%;" size="10"/>px</label></li>
+    <li><label for="img_width"><b>Width :</b>&nbsp;
+        <input type="text" id="img_width" style="width:50%;" size="10"/>px</label></li>
+    <li>Interpolation method:
+        <select size="1" id="InterpolationMethod"><option value = ""></option></select></li>
+    <li style="text-align:center;">
+        <input type="button" value="   OK   "  class="btn" id="btnChangeImageSizeOK" onclick ="return btnChangeImageSizeOK_onclick();"/>
+        <input type="button" value=" Cancel "  class="btn" id="btnCancelChange" onclick ="return btnCancelChange_onclick();"/></li>
+</ul>
+<!--
+</div>
+-->
+</td>
+</tr>       
+        </table>
+        <!-- Save Button -->
+        <div align="center">
+        
+        </div>
+        </div>
+        <!-- /Right Column -->
+        <div class="one_third">
+        <!-- <apex:image url="{!URLFOR($Resource.gso_fileuploadNew, '/images/passport.woman.cm.svg')}"  id="fimageid" styleClass="responsiveimagenoborder"/> -->
+        <img alt="" src="" id='fimageid'  class="responsiveimagenoborder"/>
+        </div>
+        <div class="two_third_right">
+        <br/><br/>
+        <h4> Instructions</h4>
+        <p>Scan or upload the image then use the edit tools to crop and rotate. When finished click the &acute;Save&acute; button to attach the image to the Application.</p>
+        </div>
+        <div class="avgrund-close hint--left" data-hint="Close" onclick="javascript:closeDialog();"></div> <!-- Close button -->
+        </div>
+        <div id="second-popup" class="avgrund-popup">
+        <h2>That's a completely different popup</h2>
+        <p>
+        You can hit ESC or click outside to close the modal. Give it a go to see the reverse transition.
+        </p>
+        <button onclick="javascript:closeDialog();">Close</button>
+        </div>
+        </apex:component>

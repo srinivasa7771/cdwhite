@@ -1,0 +1,668 @@
+<apex:component controller="ApplicantDetailController"  id="perDetail">
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="Salutations" description="Salutations" type="SelectOption[]" required="false"/>
+    <apex:attribute name="MartialStatus" description="MartialStatus" type="SelectOption[]" required="false"/>
+    <apex:attribute name="SpokenLanguages" description="SpokenLanguages" type="string[]" required="false"/>
+    <apex:attribute name="cmpTitle" description="Component Title" type="String"/>
+    <apex:attribute name="shwspousenm" description="to show spouse name fields" type="Boolean" default="false" required="false"/>
+    
+    <!--Spoken Language-->
+    
+    <script type = "text/javascript">
+    var shwspousenm = {!shwspousenm};  
+    $(document).ready(function(){
+        if((document.getElementById('{!$Component.xcfn__c}').value)!=null && (document.getElementById('{!$Component.xcfnar__c}').value) ==''){
+            runOnKeypressfn(event,'{!$Component.xcfn__c}','{!$Component.xcfnar__c}');
+        }
+        if((document.getElementById('{!$Component.xcmn__c}').value)!=null && (document.getElementById('{!$Component.xcmnar__c}').value) ==''){
+            runOnKeypressfn(event,'{!$Component.xcmn__c}','{!$Component.xcmnar__c}');
+        }
+        if((document.getElementById('{!$Component.xcln__c}').value)!=null && (document.getElementById('{!$Component.xclnar__c}').value) ==''){
+            runOnKeypressfn(event,'{!$Component.xcln__c}','{!$Component.xclnar__c}');
+        }
+        if((document.getElementById('{!$Component.xcfan__c}').value)!=null && (document.getElementById('{!$Component.xcfanar__c}').value) ==''){
+            runOnKeypressfn(event,'{!$Component.xcfan__c}','{!$Component.xcfanar__c}');
+        }
+        if((document.getElementById('{!$Component.xcmon__c}').value)!=null && (document.getElementById('{!$Component.xcmonar__c}').value) ==''){
+            runOnKeypressfn(event,'{!$Component.xcmon__c}','{!$Component.xcmonar__c}');
+        }
+    });
+    $(document).ready(function() {
+        setTimeout(function(){
+            $('body').on('contextmenu',function(){
+                //alert('Bhag........');
+                return false;
+            });
+        },400);
+        if(typicalCountries.includes(cs["xcnc__c"].value)){
+            cs["xcfn__c"].value = cs["xcfn__c"].value+' '+cs["xcln__c"].value;
+        }
+        $(cs['xcnc__c']).on('change',function(){
+            
+            if(shwspousenm){   validateCurrenNationality1(this);}
+        });
+        //If previous Nationality is null then update with current  nationality
+        if(cs['xcnp__c'].value == ''){
+            $(cs['xcnp__c']).val(cs['xcnc__c'].value);$(cs["xcnp__c"]).trigger('onchange');
+        }
+        
+        nofname();
+        
+        $( ".clsspNmchk" ).change(function() {
+            spNmCheckbox();
+        });
+        
+        if(shwspousenm){   
+            if(cs["xspn__c"].value){$("#chspnm").prop("checked",true);} 
+            spNmCheckbox(); checkSpNm(); 
+        }
+    });
+    
+    function showEmirates(thisElement){
+        console.log('showEmirates::::::');
+        var val = $(thisElement).val();
+        console.log('val:::'+val);
+        if (val == 'United Arab Emirates'){
+            $('#qualemrt').show();            
+        }else{
+            $('#qualemrt').hide(); 
+        }
+        
+    }
+    </script>
+    <style>
+        .loader_temp{
+        padding-left: 1rem;
+        }
+        .tooltip-inner {
+            min-width: 250px !important;
+            width:150px;
+        }
+    </style>
+    <script>
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    function lastNameOpt(e){
+        console.log($(e).is(':checked'));
+        if($(e).is(':checked')==false){
+            $('.optLn').show();
+            cs["noFnm__c"].value = false; cs["noFnm__c"].checked = false;
+            
+        }else if($(e).is(':checked')==true){
+            $('.optLn').hide();
+            //cs["xcln__c"].value = ''; cs["xclnar__c"].value = ''; 
+            cs["noFnm__c"].value = true;cs["noFnm__c"].checked = true;
+            
+        }
+    }
+    function salutionOnChange(){
+        var salutation = $("input[name='salutation']:checked").val();
+        $("input[name='salutation']").parent().parent().parent().find('.option-error').hide(); 
+        cs['xcslt__c'].value=salutation;
+        console.log('salutionOnChange >>'+ cs['xcslt__c'].value);
+        
+        if(shwspousenm){spNmCheckbox();}
+    }
+    function martialStatusOnchange(){
+        var martialStatus = $("input[name='martialStatus']:checked").val();
+        $("input[name='martialStatus']").parent().parent().parent().find('.option-error').hide(); 
+        cs['xcms__c'].value=martialStatus;
+        console.log('martialStatusOnchange >>'+ cs['xcms__c'].value);
+    }
+    function spokenLanguageOnchange(){
+        var spokenLanguages = $('#spokenLng').val().join(';');
+        cs['xclng__c'].value=spokenLanguages;
+        console.log('spokenLanguageOnchange >>'+ cs['xclng__c'].value);
+    }
+    
+    function checkSpNm(){ 
+        if($("#chspnm").is(':checked')){
+            $('.spousename').show();
+            cs["spnm__c"].checked = true; cs["spnm__c"].value = true;
+        }else if($("#chspnm").is(':checked')==false){
+            $('.spousename').hide();
+            cs["xspn__c"].value = ''; cs["xspnar__c"].value = '';   
+            cs["spnm__c"].checked = false; cs["spnm__c"].value = false;
+        }
+    }
+    
+    function checkntknm(){ 
+      
+    }
+    
+    function spNmCheckbox(){
+        
+        //var isVc = cs["xcpic__c"].value == "India" || cs["xcpic__c"].value == "Pakistan" || cs["xcpic__c"].value == "Nepal";
+        if(shwspousenm){  
+            // spouse name changes only for pakistan
+            var ntcArr = ['Pakistan'];
+            var isVc = ntcArr.includes(cs["xcnc__c"].value) ;// || xcpic__c
+            if(isVc && cs['xcslt__c'].value=='Mrs.'){ 
+                $("#spNamechkb").show();
+            }else{
+                $("#spNamechkb").hide(); $("#chspnm").prop("checked",false); $("#chspnm").trigger("change");
+            }
+
+            // next of kin name changes only for nepal            
+            if(cs["xcnc__c"].value=="Nepal"){
+                $("#nepchkfndiv").show();  $('.ntknm').hide();
+                if(cs["afn__c"].value=="true"){ $("#chkntknm").prop("checked",true); $("#chkntknm").trigger("change");}
+            }else{
+                $("#nepchkfndiv").hide(); $("#chkntknm").prop("checked",false); $("#chkntknm").trigger("change");
+            }
+        }
+        
+        
+        
+    }
+    
+    function nepchkfnc(){
+        /*if($("#nepchkfn").is(':checked')){
+            //$('.fthrnm').hide();
+            cs["afn__c"].checked= true; cs["afn__c"].value= true;             
+            cs["xcfan__c"].value = ''; cs["xcfanar__c"].value = ''; 
+        }else if($("#nepchkfn").is(':checked')==false){
+            //$('.fthrnm').show();
+            cs["afn__c"].checked= false; cs["afn__c"].value= false; 
+        }*/
+        if($("#chkntknm").is(':checked')){
+            $('.ntknm').show();
+            cs["afn__c"].checked= true; cs["afn__c"].value= true;
+        }else if($("#chkntknm").is(':checked')==false){
+            $('.ntknm').hide();
+            cs["ntk__c"].value = ''; cs["ntkar__c"].value = ''; 
+            cs["afn__c"].checked= false; cs["afn__c"].value= false;
+        }
+        
+    }
+    
+    var srvcd='{!req.srvc__r.uid__c}';
+    function nofname(){
+        var typicalCountries = cs["firstNameCountries"].value;
+        var nofathername = cs["noFnm__c"].value;
+        if(nofathername=='true'){
+            $('.optLn').hide();
+            //cs["xcln__c"].value = ''; cs["xclnar__c"].value = ''; 
+            $("#optionallnm").prop('checked',true);
+        }else if(typicalCountries.includes(cs["xcnc__c"].value)){
+                        $('.fnLbl').text('Full name');
+                        //$('.lnLbl').text('Last name');
+           /* if(srvcd=='055' || srvcd=='016' || srvcd=='105'|| srvcd=='106' || srvcd=='305' || srvcd=='306'){
+                if(!cs['xcfn__c'].value.includes(cs["xcln__c"].value.replaceAll('-',''))){
+                    cs['xcfn__c'].value=cs['xcfn__c'].value+' '+ cs['xcmn__c'].value+' '+cs["xcln__c"].value;
+                    cs['xcfnar__c'].value=cs['xcfnar__c'].value+' '+cs['xcmnar__c'].value+' '+cs["xclnar__c"].value;
+                } 
+                
+                
+                }*/
+                        $('.optLn').hide();
+                    } 
+            else{
+                /*if((srvcd=='055' || srvcd=='016' || srvcd=='105'|| srvcd=='106' || srvcd=='305' || srvcd=='306') && cs["xcnc__c"].value!='Philippines'){
+                    if(!cs['xcfn__c'].value.includes(cs["xcmn__c"].value.replaceAll('-',''))){
+                        cs['xcfn__c'].value=cs['xcfn__c'].value+' '+ cs['xcmn__c'].value;
+                        cs['xcfnar__c'].value=cs['xcfnar__c'].value+' '+cs['xcmnar__c'].value;
+                    }
+                }*/
+            $('.optLn').show();
+            $("#optionallnm").prop('checked',false);
+        }
+    }
+    
+    </script>
+    <div class="form-group">
+        <apex:inputHidden id="firstNameCountries" value="{!firstNameCountries}" />
+        <script>
+            
+            cs['firstNameCountries']=document.getElementById('{!$Component.firstNameCountries}');
+        </script>
+        <div class="text-primary" >
+            <b>Note: To avoid application rejection, please fill all fields correctly and as per applicant passport.<span class='PPNote' style="{!IF(OR(req.xcnc__c=='India',req.xcnc__c=='Philippines',req.xcnc__c=='Nepal'),'','display:none;')}"> Click on the “?” icon for more information.</span></b><br/><br/>
+        </div>
+        <label class="d-block">Title</label>
+        <div class="from-group reqRadio">
+            <apex:repeat value="{!Salutations}" var="title">
+                <apex:outputPanel style="display:inline-block" rendered="{!title.Value == req.xcslt__c}" styleClass="mb-4">
+                    <label class="custom-radio mr-5">
+                        <input type="radio" value="{!title.Value}" checked="true" name="salutation" onchange="salutionOnChange();" class="requiredFld"/>
+                        <span>{!title.Label}</span>
+                    </label>
+                </apex:outputPanel>
+                <apex:outputPanel style="display:inline-block" rendered="{!title.Value != req.xcslt__c}"  styleClass="mb-4">
+                    <label class="custom-radio mr-5">
+                        <input type="radio" value="{!title.Value}" name="salutation"  onchange="salutionOnChange();" class=""/>
+                        <span>{!title.Label}</span>
+                    </label>
+                </apex:outputPanel>
+            </apex:repeat>
+            <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" />
+            <!-- Salutation-->
+            <!-- Martial status-->
+            <div class="option-error frmErrMsg" style="display:none">Please select an option!</div>
+            <script type="text/javascript">
+            cs['xcslt__c']=document.getElementById('{!$Component.xcslt__c}');
+            </script>
+        </div>
+    </div>
+    <!-- .form-group -->
+    <div class="row row-lg">
+        <div class="col-lg-12 lnOptional mb-4" style="{!IF(AND(req.xcnc__c=='India', shwspousenm),'','display:none;')}">
+            <div class="from-group">
+                <apex:outputPanel rendered="{!shwspousenm}">
+                    <label class="custom-checkbox custom-checkbox-sm mr-4" id="inc" >
+                        <input type="checkbox" class="focus" id="optionallnm" name="optionalLN" onchange="lastNameOpt(this)"/>
+                        <span>Please select if applicant’s surname is not mentioned in the passport.</span>
+                    </label>
+                    <apex:inputHidden id="noFnm__c" value="{!req.noFnm__c}" />
+                    <script type="text/javascript">
+                    cs['noFnm__c']=document.getElementById('{!$Component.noFnm__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        
+        
+        <div class="col-lg-12 mb-4" id="spNamechkb" style="display:none">
+            <div class="from-group">
+                <apex:outputPanel rendered="{!shwspousenm}">
+                    <label class="custom-checkbox custom-checkbox-sm mr-4" >
+                        <input type="checkbox" name="chspnm" id="chspnm" onchange="checkSpNm();"/> 
+                        <span>Please select if applicant’s spouse name is mentioned in the passport.</span>
+                    </label>
+                    <apex:inputHidden id="spnm__c" value="{!req.spnm__c}" />
+                    <script type="text/javascript">
+                    cs['spnm__c']=document.getElementById('{!$Component.spnm__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        
+        <div class="col-lg-12 mb-4" id="nepchkfndiv" style="display:none">
+            <div class="from-group">
+                <apex:outputPanel rendered="{!shwspousenm}">
+                    <label class="custom-checkbox custom-checkbox-sm mr-4" >
+                        <input type="checkbox" name="chkntknm" id="chkntknm" onchange="nepchkfnc();"/> 
+                        <span>Please confirm if the applicant's father's name is listed as "Next of kin" on the last page of the passport.</span>
+                    </label>
+                    <apex:inputHidden id="afn__c" value="{!req.afn__c}" />
+                    <script type="text/javascript">
+                    cs['afn__c']=document.getElementById('{!$Component.afn__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+      
+        <div class="col-lg-6 optLn" style="{!IF(CONTAINS(firstNameCountries,req.xcnc__c),'display:none;','')}">
+            <div class="form-group names">
+                <label>Surname (As per passport)
+                    <i style="{!IF(req.xcnc__c=='India','','display:none;')}" class="India fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Surname</h3><p>The Surname of the applicant must be entered, in the Surname field. For example, as per below passport: </p><img height="500" src="{!URLFOR($Resource.Passport_Firstname_IND)}"/></div>'></i>
+                    <i style="{!IF(req.xcnc__c=='Nepal','','display:none;')}" class="Nepal fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Surname</h3><p>The Surname of the applicant must be entered, in the Surname field. For example, as per below passport: </p><img height="500" src="{!URLFOR($Resource.Passport_Firstname_NEP)}"/></div>'></i>
+                    <i style="{!IF(req.xcnc__c=='Philippines','','display:none;')}" class="Philippines fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Surname</h3><p>The Surname of the applicant must be entered, in the Surname field. For example, as per below passport: </p><img height="500" src="{!URLFOR($Resource.Passport_Firstname_PHIL)}"/></div>'></i>
+                    <i style="{!IF(req.xcnc__c=='Pakistan','','display:none;')}" class="Pakistan fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Surname</h3><p>The Surname of the applicant must be entered, in the Surname field.</p></div>'></i>
+                </label>
+                <apex:inputField styleClass="forDraft form-control alphaChar" value="{!req.xcln__c}" id="xcln__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xclnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcln__c']=document.getElementById('{!$Component.xcln__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 optLn" style="{!IF(CONTAINS(firstNameCountries,req.xcnc__c),'display:none;','')}">
+            <div class="form-group names">
+                <label>Surname in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xclnar__c}" id="xclnar__c"/>
+                <script type="text/javascript">
+                cs['xclnar__c']=document.getElementById('{!$Component.xclnar__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group names">
+                <label><elem class="fnLbl">{!IF(OR(CONTAINS(firstNameCountries,req.xcnc__c)),'Full name','Given name')}</elem> (As per passport)
+                    <i style="{!IF(req.xcnc__c=='India','','display:none;')}" class="India fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Given name</h3><p>The Given name of the applicant must be entered, in the Given name field. For example, as per below passport: </p><img src="{!URLFOR($Resource.Passport_Firstname_IND)}"/>'></i>
+                    <i style="{!IF(req.xcnc__c=='Nepal','','display:none;')}" class="Nepal fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Given name</h3><p>The Given name of the applicant must be entered, in the Given name field. For example, as per below passport: </p><img src="{!URLFOR($Resource.Passport_Firstname_NEP)}"/>'></i>
+                    <i style="{!IF(req.xcnc__c=='Philippines','','display:none;')}" class="Philippines fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Given name</h3><p>The Given name of the applicant must be entered, in the Given name field. For example, as per below passport: </p><img src="{!URLFOR($Resource.Passport_Firstname_PHIL)}"/>'></i>
+                    <i style="{!IF(req.xcnc__c=='Pakistan','','display:none;')}" class="Pakistan fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Given name</h3><p>The Given name of the applicant must be entered, in the Given name field. For example, as per below passport: </p>'></i>
+                    
+                </label> <!--onkeyup="validAlphaOnly(this)"-->
+                <apex:inputField styleClass="forDraft requiredFld form-control alphaChar" value="{!req.xcfn__c}" id="xcfn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcfnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcfn__c']=document.getElementById('{!$Component.xcfn__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label><elem class="fnLbl">{!IF(OR(CONTAINS(firstNameCountries,req.xcnc__c)),'Full name','Given name')}</elem> in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcfnar__c}" id="xcfnar__c"/>
+                <script type="text/javascript">
+                cs['xcfnar__c']=document.getElementById('{!$Component.xcfnar__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 mName" style="{!IF(req.xcnc__c=='Philippines','','display:none;')}"><!--,CONTAINS(firstNameCountries,req.xcnc__c)-->
+            <div class="form-group names">
+                <label>Middle name (as per passport)
+                    <i style="{!IF(req.xcnc__c=='Philippines','','display:none;')}" class="Philippines fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Middle Name</h3><p>The Middle name of the applicant must be entered, in the Middle name field. For example, as per below passport: </p><img height="500" src="{!URLFOR($Resource.Passport_Firstname_PHIL)}"/></div>'></i>
+                </label>
+                <apex:inputField styleClass="form-control alphaChar" value="{!req.xcmn__c}" id="xcmn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmnar__c}');"/>
+                <script type="text/javascript">
+                cs['xcmn__c']=document.getElementById('{!$Component.xcmn__c}')
+                </script>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mName" style="{!IF(req.xcnc__c=='Philippines','','display:none;')}">
+            <div class="form-group">
+                <label>Middle name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcmnar__c}" id="xcmnar__c"/>
+                <script type="text/javascript">
+                cs['xcmnar__c']=document.getElementById('{!$Component.xcmnar__c}');
+                </script>
+            </div>
+        </div>
+        
+        <!-- .col 
+        <div class="col-lg-12">
+            <div class="form-group">
+                <label>Full name (as per passport, In case if your father name is already included in your full name exclude it.)</label>
+                <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xengp__c}" id="xengp__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xengp__c}');"/>
+                <script type="text/javascript">
+                cs['xengp__c']=document.getElementById('{!$Component.xengp__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6 fthrnm">
+            <div class="form-group names">
+                <label>Full name of father (as per passport)
+                    <i style="{!IF(OR(req.xcnc__c=='India'),'','display:none;')}" class="India fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Father Name</h3><p>The entire name of the applicant’s father must be entered, in the Full name of father field. For example, as per below passport: </p><img src="{!URLFOR($Resource.Passport_Fathername_IND)}"/>'></i>
+                    <i style="{!IF(OR(req.xcnc__c=='Pakistan'),'','display:none;')}" class="Pakistan fa fa-question-circle text-primary" aria-hidden="true" 
+                       data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Father Name</h3><p>The entire name of the applicant’s father must be entered, in the Full name of father field. For example, as per below passport: </p><img src="{!URLFOR($Resource.Passport_Fathername_PAK)}"/>'></i>
+                </label>
+                <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xcfan__c}" id="xcfan__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcfanar__c}');"/>
+                <script type="text/javascript">
+                cs['xcfan__c']=document.getElementById('{!$Component.xcfan__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6 fthrnm">
+            <div class="form-group">
+                <label>Father's name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcfanar__c}" id="xcfanar__c"/>
+                <script type="text/javascript">
+                cs['xcfanar__c']=document.getElementById('{!$Component.xcfanar__c}');
+                </script>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Mother's name</label>
+                <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xcmon__c}" id="xcmon__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xcmonar__c}');"/>
+                <script type="text/javascript">
+                cs['xcmon__c']=document.getElementById('{!$Component.xcmon__c}');
+                </script>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Mother's name in Arabic (optional)</label>
+                <apex:inputField styleClass="form-control text-right" value="{!req.xcmonar__c}" id="xcmonar__c"/>
+                <script type="text/javascript">
+                cs['xcmonar__c']=document.getElementById('{!$Component.xcmonar__c}');
+                </script>
+            </div>
+        </div>
+        
+        
+        <div class="col-lg-6 spousename">
+            <div class="form-group">
+                <apex:outputPanel styleClass="none" rendered="{!shwspousenm}">
+                    <label>Full name of spouse (as per passport)
+                        <i class="fa fa-question-circle text-primary" aria-hidden="true" 
+                           data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><h3>Spouse full name</h3><p>The entire name of the applicant’s spouse must be entered, in the Full name of spouse field. For example, as per below passport: </p><img height="500" src="{!URLFOR($Resource.Passport_spouseName_PAK)}"/></div>'></i>
+                    </label>
+                    <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.xspn__c}" id="xspn__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.xspnar__c}');"/>
+                    <script type="text/javascript">
+                    cs['xspn__c']=document.getElementById('{!$Component.xspn__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        <div class="col-lg-6 spousename">
+            <div class="form-group">
+                <apex:outputPanel styleClass="none" rendered="{!shwspousenm}">
+                    <label>Spouse's name in Arabic (optional)</label>
+                    <apex:inputField styleClass="form-control text-right" value="{!req.xspnar__c}" id="xspnar__c"/>
+                    <script type="text/javascript">
+                    cs['xspnar__c']=document.getElementById('{!$Component.xspnar__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        
+        
+        <div class="col-lg-6 ntknm">
+            <div class="form-group">
+                <apex:outputPanel styleClass="none" rendered="{!shwspousenm}">
+                    <label>Next of kin name (father name as per passport) </label>
+                    <apex:inputField styleClass="requiredFld form-control alphaChar" value="{!req.ntk__c}" id="ntk__c" onkeypress="runOnKeypressfn(event,this.id,'{!$Component.ntkar__c}');"/>
+                    <script type="text/javascript">
+                    cs['ntk__c']=document.getElementById('{!$Component.ntk__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        <div class="col-lg-6 ntknm">
+            <div class="form-group">
+                <apex:outputPanel styleClass="none" rendered="{!shwspousenm}">
+                    <label>Next of kin name in Arabic (optional)</label>
+                    <apex:inputField styleClass="form-control text-right" value="{!req.ntkar__c}" id="ntkar__c"/>
+                    <script type="text/javascript">
+                    cs['ntkar__c']=document.getElementById('{!$Component.ntkar__c}');
+                    </script>
+                </apex:outputPanel>
+            </div>
+        </div>
+        
+        
+        <!-- .col -->
+        <div class="col-12">
+            <div class="form-group reqRadio">
+                <apex:outputPanel rendered="{!MartialStatus!=null}">
+                <label class="d-block">Marital status</label>
+                </apex:outputPanel>
+                <apex:repeat value="{!MartialStatus}" var="Mstatus">
+                    <apex:outputPanel style="display:inline-block" rendered="{!Mstatus.Value == req.xcms__c}" styleClass="mb-4">
+                        <label class="custom-radio mr-4">
+                            <input type="radio" checked="true" value="{!Mstatus.Value}" class="requiredFld" 
+                                   name="martialStatus" onchange="martialStatusOnchange();"/>
+                            <span>{!Mstatus.Label}</span>
+                        </label>
+                    </apex:outputPanel>
+                    <apex:outputPanel style="display:inline-block" rendered="{!Mstatus.Value != req.xcms__c}" styleClass="mb-4">
+                        <label class="custom-radio mr-4">
+                            <input type="radio" value="{!Mstatus.Value}" class="requiredFld" 
+                                   name="martialStatus" onchange="martialStatusOnchange();"/>
+                            <span>{!Mstatus.Label}</span>
+                        </label>
+                    </apex:outputPanel>
+                </apex:repeat>
+                
+                <apex:inputHidden id="xcms__c" value="{!req.xcms__c}" />
+                <div class="option-error frmErrMsg" style="display:none">Please select an option!!</div>
+                <script type="text/javascript">
+                cs['xcms__c']=document.getElementById('{!$Component.xcms__c}');
+                </script>
+            </div>
+            <!-- .form-group -->
+        </div>
+        
+        
+        <!-- .col -->
+    </div>
+    <div class="row row-lg">
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Date of birth</label>
+                <div class="input-datepicker-group input-group">
+                    <apex:inputHidden id="xcbd" value="{!req.xcbd__c}" />
+                    <input type="text" class="requiredFld form-control input-datepicker rorenwl" id="xcbd__c"
+                           data-toggle="datetimepicker" data-target="#xcbd__c" value="{!req.xcbd__c}"
+                           onchange = "assignfldVal(this.value,'xcbd');checkDate(this,'dob','{!IF(OR(req.srvc__r.uid__c='051',req.srvc__r.uid__c='054'),'onlyPast',req.srvc__r.uid__c)}','{!req.Gender__c}')"  validationname="dob"/>
+                    <script type="text/javascript">
+                    cs['xcbd__c']=document.getElementById('xcbd__c');
+                    dformat('{!req.xcbd__c}','xcbd__c');
+                    cs['xcbd']=getC('{!$Component.xcbd}');
+                    </script>
+                    <div class="input-group-append">
+                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcbd__c">
+                            <i class="icon-date"></i>
+                        </button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Country of birth</label>
+                <apex:inputField value="{!req.xcbc__c}" styleClass="requiredFld form-control dum input-select2-flat rorenwl"
+                                 id="xcbc__c" onchange="showEmirates(this)"/>
+                <script type="text/javascript">
+                cs['xcbc__c']=document.getElementById('{!$Component.xcbc__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <!--<div class="col-lg-6" id="qualemrt" style="display:none;" >-->
+        <div class="col-lg-6" id="qualemrt" style="{!if(req.xcbc__c == "United Arab Emirates","display:block;","display:none;")}" >
+            <div class="form-group">
+                <label>Place of birth - UAE</label>
+                <apex:inputField type="text" styleClass="requiredFld form-control input-select2-flat"
+                                 value="{!req.xcqemrt__c}" id="xcqemrt__c"/>
+                <script type="text/javascript">
+                    cs['xcqemrt__c']=document.getElementById('{!$Component.xcqemrt__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Place of birth</label>
+                <apex:inputField value="{!req.xcbp__c}" styleClass="requiredFld form-control alphaChar" id="xcbp__c"/>
+                <script type="text/javascript">
+                cs['xcbp__c']=document.getElementById('{!$Component.xcbp__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Current nationality </label>
+                <apex:inputField value="{!req.xcnc__c}" styleClass="forDraft requiredFld form-control dum input-select2-flat clsspNmchk rorenwl"
+                                 id="xcnc__c" /> <!--onchange="validateCurrenNationality(this);"-->
+                <script type="text/javascript">
+                         
+                cs['xcnc__c']=document.getElementById('{!$Component.xcnc__c}');
+                var typicalCountries = cs["firstNameCountries"].value;/*.split(';');*/
+                function validateCurrenNationality1(thisElement){
+                    var curNat = $(thisElement).val();
+                    $('.names i,.lnOptional,.PPNote,.mName').hide();
+                    $('.fnLbl').text('Given name');
+                    $('.optLn').show();
+                    if(typicalCountries.includes(cs["xcnc__c"].value)){
+                        $('.fnLbl').text('Full name');
+                        //$('.lnLbl').text('Last name');
+                        $('.optLn').hide();
+                    }
+                    if(['India','Nepal','Pakistan','Philippines'].includes(curNat) && shwspousenm){
+                        $('.PPNote, i.'+curNat).show();
+                        if(curNat == 'India'){
+                            $('.lnOptional').show();
+                        }
+                    }
+                    if(curNat=='Philippines' )/*||cs['xcmn__c'].value*/
+                        $('.mName').show();
+                }
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label>Previous nationality</label>
+                <apex:inputField value="{!req.xcnp__c}" styleClass="requiredFld form-control dum input-select2-flat rorenwl" id="xcnp__c"/>
+                <script type="text/javascript">
+                cs['xcnp__c']=document.getElementById('{!$Component.xcnp__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6" >
+            <div class="form-group">
+                <label>Religion</label>
+                <apex:inputField value="{!req.xcrlg__c}" styleClass="requiredFld form-control dum input-select2-flat"
+                                 id="xcrlg__c" />
+                <script type="text/javascript">
+                cs['xcrlg__c']=document.getElementById('{!$Component.xcrlg__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+        <div class="col-lg-6" >
+            <div class="form-group">
+                <label>Spoken languages</label>
+                <select id="spokenLng" class="form-control input-select2-tags dum requiredFld" multiple="multiple" 
+                        onChange="spokenLanguageOnchange()">
+                    <apex:repeat value="{!SpokenLanguages}" var="language">
+                        <apex:outputPanel rendered="{!IF(CONTAINS(req.xclng__c,language), true, false)}" >
+                            <option value="{!language}" selected="true">{!language}</option>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!!IF(CONTAINS(req.xclng__c,language), true, false)}">
+                            <option data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='Custom title' value="{!language}">{!language}</option>
+                        </apex:outputPanel>
+                    </apex:repeat>
+                </select>
+                <apex:inputHidden id="xclng__c" value="{!req.xclng__c}" />  <!--muni-->
+                <script type="text/javascript">
+                cs['xclng__c']=document.getElementById('{!$Component.xclng__c}');
+                </script>
+            </div>
+        </div>
+        <!-- .col -->
+    </div>
+    <!-- .row -->
+    <script type='text/javascript'>
+    function runOnKeypressfn(ev,id,arid){
+        /*var username = document.getElementById(id).value;
+        if(username.length >1){ 
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.ApplicantDetailController.getArabicName}',
+                username,
+                function(result, event){
+                    if (event.status) {
+                        // Get DOM IDs for HTML and Visualforce elements like this
+                        document.getElementById(arid).value = result;
+                    } else if (event.type === 'exception') {
+                        document.getElementById("responseErrors").innerHTML = 
+                            event.message + "<br/>\n<pre>" + event.where + "</pre>";
+                    } else {
+                        document.getElementById("responseErrors").innerHTML = event.message;
+                    }
+                }, 
+                {escape: true}
+            );
+        }*/
+    } 
+    </script>
+</apex:component>

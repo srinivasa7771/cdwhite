@@ -1,0 +1,146 @@
+<apex:page sidebar="false" controller="PDSearchCntrl" lightningStylesheets="true" readOnly="true" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+
+    
+    function searchDoc(x) {
+    var pass = x.value;
+            console.log('x >>'+pass.length);
+            if(pass.length>4)
+                qrydoc();
+            else
+                clean();
+    }
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            
+            <div class="slds-media slds-no-space slds-grow">
+                <div class="slds-media__figure">
+                    <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                        <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                    </svg>
+                </div>
+                <div class="slds-media__body">
+                    <p class="slds-text-title--caps slds-line-height--reset">DHA Docs</p>
+                    <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                </div>
+            </div>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+             <apex:pagemessages />
+        </head>
+        <body>
+     
+            <div class="slds-scope">  
+                <apex:form id="listForm">
+                    <apex:actionFunction name="qrydoc" action="{!queryReqDoc}" rerender="out1"/>
+                    <apex:actionFunction name="clean" action="{!cleanDataTable}" rerender="out1"/>
+    
+                    <apex:pageBlock id="out">
+                        <apex:pageBlockSection title="" collapsible="false">
+                            <div class="slds-grid slds-wrap">  
+        
+                                           
+                                <table >
+                                    <tr>
+                                        <td> <div styleClass="slds-form-element__label">Passport Number:</div>
+                                           <div styleClass="slds-form-element__control slds-input">  
+                                                <apex:inputText id="passPrt" value="{!passPrt}" onkeyup="searchDoc(this)" />
+                                                <script type="text/javascript">
+                                                    cs['passPrt']=getC('{!$Component.passPrt}');
+                                                    itmLst = '{!JSENCODE(passPrt)}';
+                                               </script>
+                                           </div> 
+                                        </td>
+                                    </tr>
+                                   
+                                </table> 
+                            </div>                            
+                        </apex:pageBlockSection>
+
+                        
+                        
+                        <apex:pageBlockSection collapsible="false" id="out1">
+                            <div class="slds-panel__section">  
+                          <!--<legend class="slds-form-element__label slds-text-title--caps"><b>{!nameList}</b></legend> -->
+                            </div>
+                            <script type="text/javascript" charset="utf8">
+                            var oTable;var currentNumberDisplayed = 500;
+                            $(document).ready(function() {
+                                $('#load').click( function () {
+                                    var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                                oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 200}); 
+                                
+                            });
+                            </script>
+                            
+                        <apex:actionstatus id="sts">
+                                <apex:facet name="start">
+                                    <div class="slds-spinner_container">
+                                        <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                            <span class="slds-assistive-text">Loading</span>
+                                            <div class="slds-spinner__dot-a"></div>
+                                            <div class="slds-spinner__dot-b"></div>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionstatus> 
+                            
+                            <apex:dataTable value="{!finalListRqDoc}" var="record" rendered="{! IF(ISBLANK(finalListRqDoc), false, true) }" captionClass="testTable" styleClass="slds-table slds-table--bordered slds-table--striped" id="testTable" cellspacing="5%" columnsWidth="13%" style="width:100%;float:left;">    
+                                
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Request#" /></apex:facet>
+                                    <apex:outputText value="{!record.rq.name}"/>
+                                </apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Applicant Name" /></apex:facet>
+                                    <apex:outputText value="{!record.rq.Con__r.flnm__c}"/>
+                                </apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Passport No" /></apex:facet>
+                                    <apex:outputText value="{!record.passportNo}"/>
+                                </apex:column>
+                               <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="File Name " /></apex:facet>
+                                    <apex:outputText value="{!record.doc.fileName}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Link " /></apex:facet>
+                                    <apex:outputLink value="/servlet/servlet.FileDownload?file={!record.doc.attid}" target="_blank">Click to Open </apex:outputLink>
+                                </apex:column>
+                                
+                                
+                            </apex:dataTable>
+                        </apex:pageBlockSection>   
+                    </apex:pageBlock>
+                    
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

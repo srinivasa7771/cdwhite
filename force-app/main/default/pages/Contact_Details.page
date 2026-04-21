@@ -1,0 +1,173 @@
+<apex:page standardController="Contact" extensions="Contact_Details_CTL" sidebar="false" showheader="false" docType="html-5.0">
+<apex:slds />
+<div class="slds-scope">
+<!--jQuery CDN-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<apex:includeScript value="/support/console/40.0/integration.js"/>
+<!--Salesforce Lightning Design System Static Resource-->
+<script>
+var j$ = jQuery.noConflict();
+</script>
+<div class="slds-tabs--default">
+  <ul class="slds-tabs--default__nav" role="tablist">      
+    <li class="slds-tabs--default__item slds-text-heading--label slds-active" title="Contact Cases" role="presentation">
+       <a class="slds-tabs--default__link" href="javascript:void(0);" role="tab" tabindex="0" aria-selected="true" aria-controls="tab-default-1" id="tab-default-1__item">Open Cases</a></li>
+    <li class="slds-tabs--default__item slds-text-heading--label" title="Requests as Applicant" role="presentation">
+       <a class="slds-tabs--default__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="false" aria-controls="tab-default-2" id="tab-default-2__item">Open Requests</a></li>
+<!--     <li class="slds-tabs--default__item slds-text-heading--label" title="Requests as Sponsor" role="presentation"> -->
+<!--        <a class="slds-tabs--default__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="false" aria-controls="tab-default-3" id="tab-default-3__item">Requests as Sponsor</a></li> -->
+<!--     <li class="slds-tabs--default__item slds-text-heading--label" title="Company Cases" role="presentation"> -->
+<!--        <a class="slds-tabs--default__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="false" aria-controls="tab-default-4" id="tab-default-4__item">Company Cases</a></li> -->
+<!--     <li class="slds-tabs--default__item slds-text-heading--label" title="Company Requests" role="presentation"> -->
+<!--        <a class="slds-tabs--default__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="false" aria-controls="tab-default-5" id="tab-default-5__item">Company Requests</a></li> -->
+  </ul>
+
+  <div id="tab-default-1" class="slds-tabs--default__content slds-show" role="tabpanel" aria-labelledby="tab-default-1__item">
+      <!--<apex:relatedList list="Cases" /> -->
+    <div class="slds-card">
+    <div class="slds-card__header slds-grid grid--flex-spread">
+        <h2 class="slds-text-heading--medium slds-truncate">Open Cases</h2>
+            </div>
+                <div class="slds-card__body">
+                    <table class="slds-table slds-table--bordered slds-no-row-hover">
+                        <thead>
+                            <tr class="slds-text-title_caps">
+                            <th scope="col"><span class="slds-truncate">Case Number</span></th>
+                            <th scope="col"><span class="slds-truncate">Subject</span></th>
+                            <th scope="col"><span class="slds-truncate">Origin</span></th>
+                            <th scope="col"><span class="slds-truncate">Category</span></th>
+                            <th scope="col"><span class="slds-truncate">Sub Category</span></th>
+                            <th scope="col"><span class="slds-truncate">Status</span></th>
+                            <th scope="col"><span class="slds-truncate">Created On</span></th>                                                  
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <apex:repeat value="{!lstCases}" var="item" id="allOpenCases">
+                                <apex:outputpanel rendered="{!item.Status !='Closed'}">
+                                <tr class="dataRow">
+                                    <td>
+                                    <A HREF="#" onClick="openObjectPrimaryTab('{!item.Id}','{!item.CaseNumber}','Case');return false;">{!item.CaseNumber}</A>
+                                        <!-- <apex:outputLink value="{!URLFOR($Action.Case.View,item.Id)}" target="_blank">{!item.CaseNumber}</apex:outputLink> -->
+                                    </td>
+                                    <td>{!item.Subject}</td>
+                                    <td>{!item.Origin}</td>
+                                    <td>{!item.Category__c}</td>
+                                    <td>{!item.Sub_Category__c}</td>
+                                    <td>{!item.Status}</td>                                    
+                                    <td><apex:outputText value="{0,date,dd/MM/yy}"><apex:param value="{!item.CreatedDate}" /></apex:outputText></td>                                    
+                                </tr>
+                                </apex:outputpanel>
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                </div>
+            </div>            
+  </div>
+  <div id="tab-default-2" class="slds-tabs--default__content slds-hide" role="tabpanel" aria-labelledby="tab-default-2__item">
+      <div class="slds-card">
+	    <div class="slds-card__header slds-grid grid--flex-spread">
+	        <h2 class="slds-text-heading--medium slds-truncate">Opened Requests</h2>
+	            </div>
+	                <div class="slds-card__body">
+	                    <table class="slds-table slds-table--bordered slds-no-row-hover" id="requiredDocsTable" >
+	                        <thead>
+	                            <tr class="slds-text-title_caps">
+	                            <th scope="col"><span class="slds-truncate">New Case</span></th>
+	                            <th scope="col"><span class="slds-truncate">Reference #</span></th>
+	                            <th scope="col"><span class="slds-truncate">Service</span></th>
+	                            <!--
+	                            <th scope="col"><span class="slds-truncate">Sponsor</span></th>
+	                            <th scope="col"><span class="slds-truncate">Applicant</span></th>
+	                            -->
+	                            <th scope="col"><span class="slds-truncate">Payment Date</span></th>
+	                            <th scope="col"><span class="slds-truncate">Status</span></th>
+	                            <!--<th scope="col"><span class="slds-truncate">Created Date</span></th>-->
+	                            </tr>
+	                        </thead>
+	                        <tbody>
+	                            <apex:repeat value="{!lstRequests}" var="item" id="companyRequestsRepeat">
+	                                <tr class="dataRow">
+	                                    <td> <!-- <apex:outputLink value="{!URLFOR($Action.Case.NewCase,null,['cas4'=item.Acc__r.Name,'CF00NN0000002KCu6'=item.Name,'cas3'= cont.Name])}" target="_top">New Case</apex:outputLink>  -->
+	<!--                                    <A HREF="#" onClick="sforce.console.openPrimaryTab(null,{!URLFOR($Action.Case.NewCase,null,['cas4'=item.Acc__r.Name,'CF00NN0000002KCu6'=item.Name])}, false, 'New Case', openSuccess, 'New Case');return false">Create New Case</A>  -->
+	 <!--<A HREF="#" onClick="testOpenSubtab();return false">New Case</A>-->
+	 <a HREF="#" onClick="newCaseTab('{!item.Acc__r.Name}','{!cont.Name}','{!item.Name}');return false;">New Case</a>
+	                                    </td>
+	                                    <td>
+	                                       <a HREF="#" onClick="openObjectPrimaryTab('{!item.Id}','{!item.Name}','Request');return false;">{!item.Name}</a>
+	                                       <!--  <apex:outputLink value="{!URLFOR($Action.g_Req__c.View,item.Id)}" target="_blank">{!item.Name}</apex:outputLink> -->
+	                                    </td>
+	                                    <td><apex:outputText value="{!item.Service__c}" escape="true" /></td>
+	                                    <!--  
+	                                    <td><apex:outputField value="{!item.Spr__c}"/></td>
+	                                    <td><apex:outputField value="{!item.Con__c}"/></td>
+	                                    -->
+	                                    <td><apex:outputField value="{!item.xfpc__c}"/></td>
+	                                    <td>{!item.STA__c}</td>
+	                                    <!--  <td><apex:outputText value="{0,date,dd/MM/yy}"><apex:param value="{!item.CreatedDate}" /></apex:outputText></td> -->                                    
+	                                </tr>
+	                            </apex:repeat>
+	                        </tbody>
+	                    </table>
+	                </div>
+	            </div>
+  </div>  
+</div>
+
+    <script type="text/javascript">
+       function testOpenSubtab() {
+            //First find the ID of the primary tab to put the new subtab in
+            //vals=valsx;
+            sforce.console.getEnclosingPrimaryTabId(openSubtab);
+        }
+        
+        function openObjectPrimaryTab(ObjectId,ObjectName,ObjectType) {
+            //Open a new primary tab with the Case Details in it
+            sforce.console.openPrimaryTab(null, ObjectId, true, ObjectName, openSuccess, ObjectId+'Tab');
+        }
+        
+        function newCaseTab(accountName,contactName,requestNumber) {
+            //Open a new primary tab with the Case Details in it
+            alert('I am in new Case Tab');
+            var params = 'cas4=' + accountName + '&CF00NN0000002KCu6=' + requestNumber + '&cas3=' + contactName;
+            var nameer = '{!URLFOR($Action.Case.NewCase)}' + '&' + params;
+            alert(nameer);
+            sforce.console.openPrimaryTab(null,nameer, true, 'New Case', openSuccess, accountName+'Tab');
+        }
+        
+        var openSubtab = function openSubtab(result) {
+            //Now that we have the primary tab ID, we can open a new subtab in it
+            var primaryTabId = result.id;
+            alert(result.id);
+            sforce.console.openSubtab(primaryTabId , '{!URLFOR($Action.Case.NewCase)}', true, 
+                'New Case', null, openSuccess, 'salesforceSubtab');
+        };
+        
+        var openSuccess = function openSuccess(result) {
+            //Report whether we succeeded in opening the subtab
+            if (result.success == true) {
+                alert('subtab successfully opened');
+            } else {
+                alert('subtab cannot be opened');
+            }
+        };
+        
+        
+  </script>
+
+
+<script>
+ 
+/*SLDS Tabs JS*/
+j$('.slds-tabs--default__link,.slds-tabs--scoped__link').click(function(){
+  j$(this).parent().parent().find('.slds-tabs--default__link,.slds-tabs--scoped__link').attr('aria-selected','false');
+  j$(this).attr('aria-selected','true');
+  j$(this).parent().parent().find('.slds-tabs--default__link,.slds-tabs--scoped__link').attr('tabindex','-1');
+  j$(this).attr('tabindex','0');
+  j$(this).parent().addClass('slds-active').siblings().removeClass('slds-active');
+  j$(this).parent().parent().parent().find('.'+j$(this).parent().parent().parent().find('.slds-tabs--default__content,.slds-tabs--scoped__content')[0].classList[0]).removeClass('slds-show').addClass('slds-hide');
+  j$(this).parent().parent().parent().find('#'+j$(this).attr('aria-controls')).removeClass('slds-hide').addClass('slds-show');
+}); 
+/*SLDS Tabs JS*/
+</script>
+</div>
+</apex:page>

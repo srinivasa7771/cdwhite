@@ -1,0 +1,626 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    <style>
+        .text-light {
+        color: #9B9B9B !important;
+        }
+        #scriptErr{
+        position: absolute;
+        background-color:#fff;
+        width:100%;
+        height:100%;
+        z-index: 10000;
+        }
+    </style>
+    
+    <apex:form >
+        <apex:actionFunction name="callWS1" action="{!getpkgCards}" oncomplete="createDD('{!JSENCODE(lstCardsStr)}')" status="theStatus" rerender="cardList" />
+        <apex:actionFunction name="saveReq_DR" status="theStatus" action="{!saveDraft}"  />
+        <apex:actionFunction name="attachmentSave" action="{!saveAtt}" oncomplete="errMsgScroll();enableAllatt();removeEmptyLables();" status="theStatus" rerender="docSec,VehicleCards1,random1,msg"/>
+        <apex:actionFunction name="saveAttachment_RC" action="{!saveAtt}" reRender="VehicleCards1,random1,msg"  oncomplete="window.open('/grqpy?id={!req.id}','_self')"/>
+        <apex:actionFunction name="saveReq_RC" action="{!SR_AddPrk}" oncomplete="window.open('/grqpy?id={!req.id}','_self')" reRender="msg"  />
+        <apex:actionFunction name="saveReq" action="{!saveReq}"  reRender="msg"  />
+        <apex:actionFunction name="saveReq_UR" action="{!saveReq1_UR}" reRender="msg" />
+        <apex:actionFunction name="copyApplicantInfo" action="{!saveReq1}" onbeforedomupdate="toggleGLoader()" oncomplete="window.open('/{!req.id}','_self')" reRender="msg" />
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <apex:inputHidden id="rmob__c" value="{!req.rmob__c}" />
+        <apex:inputHidden id="xceml__c" value="{!req.xceml__c}" />
+        <apex:inputHidden id="slaN__c" value="{!req.slaN__c}" />
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        <apex:inputHidden id="xcmta__c" value="{!req.xcmta__c}" />
+        <apex:inputHidden id="xss__c" value="{!req.xss__c}" />
+        <apex:inputHidden id="xrpid__c" value="{!req.xrpid__c}" />
+        <apex:inputHidden id="xuvdet__c" value="{!req.xuvdet__c}" />
+        <apex:inputHidden id="uid"  /> 
+        <script>
+        var cs={};
+        cs["uid"] = getC("{!$Component.uid}");
+        cs['xadh__c']=getC('{!$Component.xadh__c}');
+        cs['ias__c']=getC('{!$Component.ias__c}');
+        cs['rmob__c']=getC('{!$Component.rmob__c}');
+        cs['xceml__c']=getC('{!$Component.xceml__c}');
+        cs['slaN__c']=getC('{!$Component.slaN__c}');
+        cs['xadtx4__c']=getC('{!$Component.xadtx4__c}');
+        cs['xcmta__c']=getC('{!$Component.xcmta__c}');
+        cs['xss__c']=getC('{!$Component.xss__c}');
+        cs['xrpid__c']=getC('{!$Component.xrpid__c}');
+        cs['xuvdet__c']=getC('{!$Component.xuvdet__c}');
+        </script>
+        <apex:outputPanel rendered="{!!ispu}">
+            <c:onlyBOCss />
+        </apex:outputPanel>
+        <apex:outputPanel id="mainDiv">
+            <div id="main">
+                <b><apex:pageMessages id="msg"  /></b>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                {!srv.sdg__r.sd__c}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <h3 class="base-main-title" style="{!if(req.xadh__c ==  'vip;', 'display:none', 'display:block')}">Parking Renewal</h3>
+                                <div style="{!if(req.xadh__c ==  'vip;', 'display:none', 'display:block')}">
+                                    <apex:outputPanel id="cardList">
+                                        <script>
+                                        console.log('lstCardsStr -- '+'{!JSENCODE(lstCardsStr)}');
+                                        </script>
+                                        <!--lstCards-- {!lstCards}-->
+                                        <div class="form-group">
+                                            <p>Pending Parking Renewal Cards</p>
+                                            <div style="max-height: 400px; overflow-y: auto;"> 
+                                                <table class="table table-align-middle" id="table-parking" data-page-length='25'>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Select card<i class="fa text-primary"></i></th>
+                                                            <th>Card Number<i class="fa text-primary"></i></th>
+                                                            <th>Card Holder Name<i class="fa text-primary"></i></th>
+                                                            <th>Sector<i class="fa text-primary"></i></th>
+                                                            <th>Expiry Date<i class="fa text-primary"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <apex:repeat value="{!lstCards}" var="c">
+                                                            <tr>
+                                                                <td>
+                                                                    <label class="custom-checkbox mt-2">
+                                                                        <input type="checkbox" onchange="settoFld(this)" for="{!c.CardNumber}" class="cards" />
+                                                                        <span>&nbsp;</span>
+                                                                    </label>
+                                                                </td>
+                                                                <td>{!c.CardNumber}</td>
+                                                                <td>{!c.CardHolderName}</td>
+                                                                <td>{!c.SectorName}</td>
+                                                                <td>{!c.CardExpireDate}</td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <p>Renewed Parking Cards</p>
+                                            <div style="max-height: 400px; overflow-y: auto;"> 
+                                                <table class="table table-align-middle" id="table-parking" data-page-length='25'>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Card Number<i class="fa text-primary"></i></th>
+                                                            <th>Card Holder Name<i class="fa text-primary"></i></th>
+                                                            <th>Sector<i class="fa text-primary"></i></th>
+                                                            <th>Expiry Date<i class="fa text-primary"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <apex:repeat value="{!lstPaidCards}" var="c">
+                                                            <tr>
+                                                                <td>{!c.CardNumber}</td>
+                                                                <td>{!c.CardHolderName}</td>
+                                                                <td>{!c.SectorName}</td>
+                                                                <td>{!c.CardExpireDate}</td>
+                                                            </tr>
+                                                        </apex:repeat>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!req.AP__c>0}">
+                                        <div class="form-group" id="collapseGroup">
+                                            <div class="base-collapse pb-2">
+                                                <a aria-expanded="false" class="collapse-toggle collapsed" data-target="#payments_tab" data-toggle="collapse" href="#">
+                                                    <h5 class="mb-2" style="text-transform: capitalize;">PAYMENTS &amp; RECEIPTS</h5>
+                                                </a>
+                                                <div class="collapse" data-parent="#collapseGroup" id="payments_tab">
+                                                    <div class="collapse-content">
+                                                        <c:grqpaymenthistorycmp ispu="{!ispu}" req="{!req}" rendered="{!req.Transactions__r!=null}" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>
+                                <div id="selectedSector" style="">
+                                    <h4 class="mt-4" style="{!if(req.xadh__c ==  'vip;', 'display:none', 'display:block')}">Parking-Renewal Details</h4>
+                                    <h4 class="mt-4" style="{!if(req.xadh__c ==  'vip;', 'display:block', 'display:none')}">VIP Parking Details</h4>
+                                    <div class="row row-lg">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Lease Agreement Number</label>
+                                                <apex:inputField styleClass="form-control disabledApex" value="{!req.xanum__c}" id="xanum__c"/>
+                                                <script type="text/javascript">
+                                                cs['xanum__c']=document.getElementById('{!$Component.xanum__c}');
+                                                cs['xanum__c'].disabled = true;
+                                                </script>
+                                            </div>
+                                        </div>
+                                        <div class="col-6" style="{!if(req.xadh__c ==  'vip;', 'display:none', 'display:block')}">
+                                            <div class="form-group">
+                                                <label>Renewal Date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input type="text" class="forReadOnly dateCheck form-control input-datepicker forEdit" validationName="ped"
+                                                           fldName="Date of Expiry" id="datepicker3" value="{!req.xrpid__c}"
+                                                           data-toggle="datetimepicker" data-target="#datepicker3" placeholder="DD/MM/YYYY" onchange="updateAmount(this);" />
+                                                    <div class="input-group-append">
+                                                        <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Request Parking</label>
+                                                <apex:inputField type="text" onkeyup="validDigits(this)" onchange="updateReqPrk(this)" styleClass="disabledApex form-control numOnly jsnfld" value="{!req.xrap__c}" id="xrap__c"
+                                                                 />
+                                                <script type="text/javascript">
+                                                cs['xrap__c']=document.getElementById('{!$Component.xrap__c}');
+                                                </script>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Total Amount (AED)</label>
+                                                <apex:inputField styleClass="form-control disabledApex" value="{!req.xtpa__c}" id="xtpa__c"/>
+                                                <script type="text/javascript">
+                                                cs['xtpa__c']=document.getElementById('{!$Component.xtpa__c}');
+                                                cs['xtpa__c'].disabled = true;
+                                                var dAmt=parseFloat(cs['xtpa__c'].value.replaceAll(',',''));
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4"></div>
+                                    <div class="form-style">
+                                        <c:eContactInfo req="{!req}" noNotes="true"  id="conTactcmp" cmpTitle="Contact Details"/>
+                                    </div>
+                                </div>
+                                <div class="pb-5"></div>
+                            </div>
+                            <div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a class="btn btn-primary base-nav-next" onclick="submitPage(this,event)" style="color: #fff;">
+                                        PROCEED TO PAY 
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </apex:outputPanel>
+    </apex:form>
+    <script type="text/javascript">
+    var axs2CusomJS = "{!$Resource.AXS2CustomJs}";
+    var allJSON = {};
+    var allJSONStr = '';
+    var data = [];
+    var selectedJSON = [];
+    var uPrc = 0;
+    var currentVehicle = 1;
+    var serviceId = '{!JSENCODE(srv.uid__c)}';
+    var uid;
+    var fldToEIDAFlds = {'Name':'xchn__c','ID_Number':'xceidid__c','country2':'','emailid':'xceml__c','mobileid':'rmob__c'};
+    $(document).ready(function(){
+        cs["uid"].value = "{!srv.uid__c}";
+        cs['initial_xtpa__c'] = cs['xcmta__c'].value; 
+        cs['initial_xrap__c'] = cs['xss__c'].value;
+        
+        console.log('initial_xrap__c value'+ cs['initial_xrap__c']);
+        console.log('initial_xtpa__c value:'+ cs['initial_xtpa__c']);
+        
+        
+        var baseEndDateStr = "{!TEXT(req.xrpid__c)}";  
+        console.log('baseEndDateStr value:', baseEndDateStr);
+        console.log("Raw baseEndDateStr:", baseEndDateStr);
+        // Convert to Date object (safe parse)
+        var baseEndDate = new Date(baseEndDateStr + "T00:00:00");
+        
+        // Format for datepicker (yyyy-MM-dd)
+        var yyyy = baseEndDate.getFullYear();
+        var mm = String(baseEndDate.getMonth() + 1).padStart(2, '0');
+        var dd = String(baseEndDate.getDate()).padStart(2, '0');
+        var formattedDate = dd + '/' + mm + '/' + yyyy;
+        
+        console.log("Formatted for datepicker:", formattedDate);
+        cs['xrpid__c'].value = formattedDate;
+        // Assign to datepicker input
+        document.getElementById("datepicker3").value = formattedDate;
+        callWS();
+        $('#addEIDABtn').removeAttr('onclick').unbind().on('click',function(){
+            if(vaidateData()!=false){
+                cs['xchn__c'].value = $('#neName').val();
+                //cs['xoln__c'].value = '08061606161';
+                $('#modal_EIDA_confirm_information').find('input,select').each(function(){
+                    var v = $(this).val();
+                    var f = $(this).attr('fldname');
+                    if(f!=undefined && fldToEIDAFlds[f]!=''){
+                        cs[fldToEIDAFlds[f]].value = v;
+                    }
+                });
+                toggleGLoader();
+                saveReq_RC();
+            }
+        });
+        $('.btn').on('click',function(event){
+            event.preventDefault();
+        });
+        $('.btn-select-non-employee').click(function () {
+            $('#select_employee').hide();
+            $('#select_non_employee1').show();
+            //$('#modal_add_non_employee_1').modal('show');
+        });
+        $('.btn-select-employee').click(function () {
+            $('#select_employee').show();
+            $('#select_non_employee1').hide();
+        });
+        
+        $('.btn-add-vehicle-detail').click(function () {
+            if(cs['xadh__c'].value.includes('1np'))
+                return;
+            //$(this).before($('.vehicle-detail').html());
+            currentVehicle++;
+            if(currentVehicle>=2)
+                $(this).addClass('disabled');
+            cs['xadh__c'].value+='1np;'
+            saveReq_RC();
+            toggleGLoader();
+        });
+        setTimeout(function(){
+            const script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = axs2CusomJS;
+            document.head.appendChild(script);
+            
+            eval(script);
+            
+        },2000);
+    });
+    function callWS(){
+        console.log('call started');
+        setTimeout(function(){
+            callWS1();
+            console.log('call done');
+        },200);
+    }
+    function createDD(str){
+        allJSONStr = str;
+        allJSON = JSON.parse(str);
+        console.log('allJSON :'+JSON.stringify(allJSON));
+        if(allJSON){
+            for(i of allJSON){
+                if(i.isSelected){
+                    selectedJSON[i.CardNumber]= i;
+                    $('input.cards[for="' + i.CardNumber + '"]').prop('checked', 'true');
+                }
+            }
+        }
+    }
+    function loadPrevData(){
+        $('#cardDet').val( cs["xanum__c"].value).trigger('change');
+    }
+    var selectedCards = '';
+    function settoFld(e){
+        var baseEndDate = new Date('{!JSENCODE(req.xaed__c)}');
+        if(validateRenewalDate(baseEndDate,document.getElementById("datepicker3"))){
+            var cardNum = $(e).attr('for');
+            var isChecked = $(e).prop('checked');
+            if(!cardNum){
+                $('#selectedSector').hide();
+                $('.frmErrMsg').remove();
+                return;
+            }
+            console.log('json intial :'+JSON.stringify(allJSON));
+            for(i of allJSON){
+                if(cardNum == i.CardNumber){
+                    i.isSelected = isChecked;
+                    if(isChecked)
+                        selectedJSON[cardNum]=i;
+                    else
+                        selectedJSON[cardNum]={};
+                }
+            }
+            console.log('json after :'+JSON.stringify(allJSON));
+            console.log('selectedJSON after :'+JSON.stringify(selectedJSON));
+            var slots = 0; selectedCards = '';
+            for(i in selectedJSON){
+                console.log('json '+Object.keys(selectedJSON[i]));
+                if(Object.keys(selectedJSON[i]).length>0){
+                    selectedCards += i+';';
+                    slots++;
+                }
+            }
+            console.log('slots :'+slots);
+            console.log('selectedCards :'+selectedCards);
+            $(cs['xrap__c']).val(slots);
+            
+            // Initial calculation
+            updateAmount(document.getElementById("datepicker3"));
+        }
+        
+    }
+    
+    function updtAmnt(amnt) {
+        var s = parseInt(cs['xrap__c'].value);
+        var nAmt = (dAmt/(allJSON.length))*s;
+        cs['xtpa__c'].value = nAmt.toFixed(2);
+    }
+    
+    function updateAmount(dateInput) {
+        
+        // Get base start and end dates from fields
+        var startDate = new Date('{!JSENCODE(req.xfpc__c)}'); 
+        var baseEndDate = new Date('{!JSENCODE(req.xaed__c)}');
+        
+        if(dateInput && validateRenewalDate(baseEndDate,dateInput)){
+            removeValError(this);
+            var dateParts = dateInput.value.split("/");
+            var renewalDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+            console.log('renewalDate :'+renewalDate);
+            var slots = parseInt(cs['xrap__c'].value) || 0; // number of cards
+            console.log('slots :'+slots);
+            console.log('startDate :'+startDate);
+            console.log('baseEndDate :'+baseEndDate);
+            
+            // Use renewal date if selected, otherwise default to xaed__c
+            var endDate = renewalDate ? renewalDate : baseEndDate;
+            
+            // Calculate durations
+            var baseDays = Math.ceil((baseEndDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            var newDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            console.log('baseDays :'+baseDays);
+            console.log('newDays :'+newDays);
+            
+            if (newDays <= 0) {
+                cs['xtpa__c'].value = "0.00";
+                return;
+            }
+            console.log('value amt  :'+cs['initial_xtpa__c'] );
+            console.log('value slot  :'+cs['initial_xrap__c'] );
+            // Fixed rate for full base duration
+            var baseRate = parseFloat(cs['initial_xtpa__c'].replaceAll(',','')) / cs['initial_xrap__c'];
+            console.log('baseRate :'+baseRate);
+            
+            // Prorate
+            var proratedRate = (baseRate * newDays) / baseDays;
+            console.log('proratedRate :'+proratedRate);
+            // Final total
+            var nAmt = proratedRate * slots;
+            console.log('nAmt :'+nAmt);
+            
+            cs['xtpa__c'].value = nAmt.toFixed(2);
+        }
+    }
+    
+    function validateRenewalDate(baseEndDate, dateInput) {
+        var parts = dateInput.value.split("/");
+        var renewalDate = new Date(parts[2], parts[1] - 1, parts[0]);
+        var startDate = new Date('{!JSENCODE(req.xfpc__c)}'); 
+        removeValError(dateInput);
+        console.log('renewalDate :'+renewalDate);
+        
+        if (renewalDate > baseEndDate) {
+            addValError($(dateInput), 'You can only renew until the end of the current lease.');
+            return false;
+        }
+        
+        var oneYearLater = new Date(startDate);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+        if (renewalDate > oneYearLater) {
+            addValError($(dateInput), 'Renewal Date cannot be more than 1 year.');
+            return false;
+        }
+        
+        var oneMonthLater = new Date(startDate);
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 2);
+        
+        if (renewalDate < oneMonthLater) {
+            addValError($(dateInput), 'Renewal Date must be at least 2 month.');
+            return false;
+        }
+        return true;
+    }
+    
+    function updateReqPrk(e){
+        var m = parseInt($(e).attr('maxVal'));
+        var v = parseInt($(e).val());
+        if(v===''||isNaN(v)){
+            $(e).val(m);
+        }else if(v<1){
+            axsAlert('Alert','Requested parking slots should be minimum 1');
+            $(e).val('1');
+        }else if(v>m){
+            axsAlert('Alert','Requested parking slots exceeds total eligibility');
+            $(e).val(m);
+            // return;
+        }else{
+            showTempLoader_input($(cs['xrap__c']));
+            var t = cs['xtpa__c'].value;
+            var q = cs['xrap__c'].value;
+            getAmnt();
+        }
+    }
+    var ad4Data = {"ActionName":"updatepaymentstatus","AXSId":"","Cardlist":""};
+    
+    function submitPage(el,ev){
+        
+        $('input.cards').each(function() {
+            settoFld(this);
+        });
+        
+        ad4Data.Cardlist = selectedCards;
+        cs['slaN__c'].value = cs['xrap__c'].value;
+        var validated = true;
+        if(cs['xrap__c'].value<=0){
+            var errMsg = 'Please select atleast one card to proceed!';
+            axsAlert('Error',errMsg);
+            return;
+        }
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0));
+            return;
+        }
+        $('.requiredFld,.applMob').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined){
+                addValError($(this),'This field is required.');
+                scrollToDiv($(this));
+                validated = false;
+            }
+        });
+        if(validated){
+            console.log('allJSON before save :'+JSON.stringify(allJSON));
+            ad4Data['Cardlist'] = selectedCards;
+            ev.preventDefault();
+            cs['xadtx4__c'].value = JSON.stringify(ad4Data);
+            updateSelectedCards();
+            toggleGLoader()
+            saveReq_RC();
+        }
+    }
+    
+    function updateSelectedCards() {
+        if(cs['xuvdet__c'] && cs['xuvdet__c'].value){
+            let originalJson = JSON.parse(cs['xuvdet__c'].value);
+            
+            if (!Array.isArray(allJSON) || !originalJson.cardslist) return;
+            
+            const selectedSet = new Set(
+                allJSON
+                .filter(c => c.isSelected === true)
+                .map(c => c.CardNumber)
+            );
+            
+            originalJson.cardslist.forEach(c => {
+                if (selectedSet.has(c.CardNumber)) {
+                c.isSelected = true; 
+            } else {
+                                           c.isSelected = false;
+                                           }
+                                           });
+            cs['xuvdet__c'].value = JSON.stringify(originalJson);
+        }
+        
+        let originalDate = document.getElementById("datepicker3").value; // "08/10/2026"
+        
+        if (originalDate) {
+            const [day, month, year] = originalDate.split('/');
+            
+            const formattedDate = `${year}-${month}-${day}`;
+            
+            cs['xrpid__c'].value = originalDate;
+            
+            console.log('Formatted Date:', formattedDate);
+            
+        }
+    }
+    
+    
+    function vaidateData(){
+        isValidData = true;
+        $('.requiredFldPop').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        checkAllDates('vRegDate','152');
+        if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+            isValidData = false;
+            //return isValidData;
+        }
+        return isValidData;
+    }
+    
+    
+    // update in axs2customjs
+    
+    function showErrMsg(elem,elemType,errType){
+        if(errType == true){
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+            elem.next().find('.select2-selection').removeClass('is-invalid');
+            elem.removeClass('is-invalid');
+            return;
+        }
+        var errElem = '<div class="frmErrMsg">'+formErrMsgs1[elemType][errType]+'</div>';
+        elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+        elem.parents('.form-group').append(errElem);
+        elem.addClass('is-invalid');
+        return false;
+    }
+    
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            cs[id].value=$(el).val();
+    }
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    </script>
+</apex:page>

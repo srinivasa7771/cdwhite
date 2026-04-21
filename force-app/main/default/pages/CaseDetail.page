@@ -1,0 +1,164 @@
+<apex:page controller="MyCasesController"  docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" title="e-Government Services Portal" cache="false">
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <style>
+        .text-light {
+        color: #9B9B9B !important;
+        }
+        .textAreaColor{
+        background-color: #F5F5F5 !important;
+        border: #ECECEC !important;
+        }
+    </style>
+    <apex:form id="form">
+        <apex:pageBlock id="pb">
+            <div id="main">
+                
+                <div id="page_content">
+                    <div class="container">
+                        <div class="page-header">
+                            <ul class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="/apex/MyCases">My Tickets</a></li>
+                                <li class="breadcrumb-item">Ticket: {!detailCase.CaseNumber}</li>
+                            </ul>
+                            <!-- .breadcrumb -->
+                            
+                            
+
+                            <h1 class="page-title mr-auto">TICKET: {!detailCase.CaseNumber}</h1>
+                            <div class="panel ticket-details-header">
+                                <div class="panel-body">
+                                    <div class="data-info-wrapper">
+                                       
+                                        <div class="data-info" style="{!IF(detailCase.Request__r.Name != null , 'display:block' , 'display:none')}">
+                                            <div class="data-label">SR number</div>
+                                            <div class="data-value">{!detailCase.Request__r.Name}</div>
+                                        </div>
+                                        <div class="data-info" style="{!IF(detailCase.Request__r.Con__r.Name != null , 'display:block' , 'display:none')}">
+                                            <div class="data-label">Name</div>
+                                            <div class="data-value">{!detailCase.Request__r.Con__r.Name}</div>
+                                        </div>
+                                        <div class="data-info" style="{!IF(detailCase.Service_Type__c != null , 'display:block' , 'display:none')}">
+                                            <div class="data-label">Service</div>
+                                            <div class="data-value">{!detailCase.Service_Type__c}</div>
+                                        </div>
+                                        <div class="data-info" style="{!IF(detailCase.subject != null , 'display:block' , 'display:none')}">
+                                            <div class="data-label">Subject</div>
+                                            <div class="data-value">{!detailCase.subject }</div>
+                                        </div>
+                                        <div class="ticket-date">
+                                            <div class="data-info">
+                                                <div class="data-label">Date / time opened</div>
+                                                <div class="data-value">
+                                                    <apex:outputText value="{0, date, dd/MM/yyyy hh:mm}">
+                                                        <apex:param value="{!detailCase.CreatedDate}" /> 
+                                                    </apex:outputText>
+                                                </div>
+                                            </div>
+                                            <apex:outputPanel rendered="{!IF(detailCase.ClosedDate !=null, true,false)}">
+                                                <div class="data-info">
+                                                    <div class="data-label">Date / time closed</div>
+                                                    <div class="data-value">
+                                                        <apex:outputText value="{0, date, dd/MM/yyyy hh:mm}">
+                                                            <apex:param value="{!detailCase.ClosedDate}" /> 
+                                                        </apex:outputText>
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                            <div class="data-info ticket-status">
+                                                <div class="data-label">Status</div>
+                                                <div class="data-value">
+                                                    <apex:outputPanel rendered="{!if(detailCase.status == 'Open',true,false)}">
+                                                            <div class="badge-status">OPEN</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(detailCase.status == 'Reopened',true,false)}">
+                                                            <div class="badge-status">REOPENED</div>
+                                                        </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!IF(OR(detailCase.status == 'In Progress',detailCase.status == 'AXS Back Office - In Progress',detailCase.status == 'Call Center - In Progress'), true,false)}">
+                                                        <div class="badge-status badge-status-process">IN PROCESS</div>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!IF(OR(detailCase.status == 'Closed',detailCase.status == 'Resolved'), true,false)}">
+                                                        <div class="badge-status badge-status-completed">COMPLETED</div>
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-3">
+                                    <div class="panel">
+                                        <div class="panel-body">
+                                            <h5 class="text-light">DESCRIPTION</h5>
+                                            <p style="overflow-wrap: break-word;">
+                                                {!detailCase.Description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-9">
+                                    <div class="panel">
+                                        <div class="panel-body">
+                                            <apex:inputTextarea value="{!post.body}" styleClass="form-control ticket-textarea textAreaColor" html-placeholder="TYPE NEW MESSAGE HERE…"/>
+                                            <div class="text-right mt-3">
+                                                
+                                                <apex:commandButton action="{!cancel}" value="CANCEL"  styleClass="btn btn-secondary mr-2" oncomplete="window.location.reload();"/>
+                                                <apex:commandButton action="{!createChatter}" value="POST MESSAGE" styleClass="btn btn-primary" oncomplete="window.location.reload();"/>
+                                                
+                                            </div>
+                                            <h4 class="mt-3 mb-3">PREVIOUS MESSAGES</h4>
+                                             
+                                            <apex:outputPanel id="postPanel" >
+                                               
+                                                <div class="ticket-message-list">
+                                                    <apex:repeat value="{!feedDataList}" var="feed">
+                                                        <div class="ticket-message">
+                                                            <div class="ticket-message-header">
+                                                                {!feed.UserName}<br/>
+                                                                <apex:outputText value="{0, date, dd/MM/yyyy hh:mm}">
+                                                                    <apex:param value="{!feed.datetimeVal}" /> 
+                                                                </apex:outputText><br/>
+                                                            </div>
+                                                            <div class="ticket-message-body">
+                                                                <p style="word-break: break-word;">
+                                                                    <apex:outputText escape="true" value="{!feed.body}"></apex:outputText>   
+                                                                </p>
+                                                                <p>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </apex:repeat>
+                                                </div>
+                                            </apex:outputPanel>
+                                            <!-- .ticket-message-list -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .page-header -->
+                    </div>
+                    <!-- .container -->
+                </div>
+                <!--<c:addons ></c:addons>-->
+            </div>
+        </apex:pageBlock>
+    </apex:form>
+    <!-- main js -->
+    <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+    <script>
+    $(document).ready(function(){
+        $('.ticket-message-body p').each(function(){
+            if($(this).text().trim()=='Resolution: null'){
+                $(this).text('Resolution: N/A');
+            }
+        });
+    });
+    </script>
+</apex:page>

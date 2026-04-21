@@ -1,0 +1,572 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+            showHeader="true" standardStylesheets="false" >
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+    
+    
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <script type="text/javascript">
+        var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+        var cs = {};
+        
+        function valName(wsName){
+            wsFullName = wsName; 
+            if(wsFullName){
+                wsFullName = wsFullName.toUpperCase();
+                var fName = cs['xcfn__c'].value; var mName = cs['xcmn__c'].value; 
+                var lName = cs['xcln__c'].value; var fatherName = cs['xcfan__c'].value; 
+                
+                
+                // full name = first name + middle name + Last name + father's name
+                var reqFullName = fName; 
+                reqFullName+= mName!=""?' '+mName:''; 
+                reqFullName+= lName!=""? ' '+lName:''; 
+                reqFullName+= fatherName!=""?' '+fatherName:'';
+                
+                reqFullName = reqFullName.toUpperCase();
+                
+                console.log("reqFullName:: " + reqFullName + "  :: wsFullName:: " + wsFullName);
+                
+                if(wsFullName!=reqFullName){
+                    var msgBd='Ap per our records there\'s change in the name, do you want to proceed?';
+                    console.log("name mismatched");
+                    axsConfirmation('Applicant name mismatched',msgBd,false,'proccessNxt');
+                    return;
+                    //alert('There\'s change in name');
+                    //axsAlert('INFO','There\'s change in name');
+                }
+            }
+            proccessNxt();
+        }
+
+        function proccessNxt(){
+            toggleGLoader();
+            console.log('SAVING REQUEST');
+            next();
+        }        
+        
+       function dformat(dt,id){
+        var d = new Date(dt);//alert(d);
+            var m=d.getMonth()+1;
+            var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+            var mm=m>9?m:'0'+m;
+            var yy=d.getFullYear();
+            document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+        }
+        $(document).ready(function() {
+             $(cs['xeidav__c']).attr('disabled',true); 
+            mr();
+           /*$('.requiredFld').on('change',function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'This field is required !!');
+                }else{
+                    removeValError(this);  
+                }
+            });*/
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z ]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+        });
+        //Add validation error
+        /*function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(errElem);
+            }else{
+                elem.parent().append(errElem);
+            }
+        }*/
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+        }
+        //Validate Basic salary
+        function validateBasicSalary(thiselem){
+            var sal = $(thiselem).val();
+            if(sal < 500){ 
+                addValError(thiselem,'Minimum basic salary should be AED 500.','salVal');
+                return false;
+            }else{
+                // $(thiselem).parent().find('.frmErrMsg').remove();
+                removeValError(thiselem);
+            }
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            elem.parent().parent().append(warElem);
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        //Validate DOB
+        function checkValidDate(thisElement){
+            console.log('validDate:::');
+            var date = $(thisElement).val();
+            console.log('date:::'+date);
+            var date_regex = /^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}/;
+            var r = (date_regex.test(date))?true:'invalid';
+            console.log('r::::'+r);
+             if(r == 'invalid'){
+                removeWarningMsg(thisElement);
+                removeValError(thisElement);   
+                addValError(thisElement,'Please enter a valid Date(DD/MM/YYYY)');
+                return false;    
+            }else{
+                removeValError(thisElement);   
+                return r;
+            }
+        }
+        //Validate expiry and issue date  in the passport
+        function checkIssueAndExpiryDate(idElem,edElem){
+            var issueDate = new Date($(idElem).val());
+            var expiryDate = new Date($(edElem).val());
+            var today = new Date();
+            removeValError(idElem);  
+            removeValError(edElem);  
+            if(issueDate == 'Invalid Date' || issueDate>today){
+                addValError(idElem,'Please select a valid issue date!!');
+                return false;
+            }else if(expiryDate!= 'Invalid Date' && issueDate.setMonth(issueDate.getMonth()+6)>= expiryDate && issueDate != 'Invalid Date'){
+                addValError(edElem,'Passport Expiry should be 6 months after passport Issue !!');
+                return false;
+            }else{
+                removeValError(idElem);  
+                removeValError(edElem);   
+            }
+        }
+        //Validation for current Nationality if it is syria
+        function validateCurrenNationality(thisElement){
+        //This  validation  commented because it no more requires  by DNRD
+            /*var curNat = $(thisElement).val();
+            if(curNat == 'Syria'){
+                addValError(thisElement,'Applicants should be in country, salary should be above 10,000 AED, and job title should be Manager or Above.');
+                return false;
+            }else{
+                removeValError(thisElement);     
+            }*/
+        }
+        
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+         //Calulate Age 
+        function getAge(dob){
+            console.log('getAge::::');
+            var parts = dob.split("/");
+            var dob = new Date(parts[2], parts[1] - 1, parts[0]);
+            console.log('dob:::'+dob);
+            var today = new Date(); var nowyear = today.getFullYear(); var nowmonth = today.getMonth();var nowday = today.getDate();
+            var birthyear = dob.getFullYear(); var birthmonth = dob.getMonth();var birthday = dob.getDate();
+            var age = nowyear - birthyear;
+            console.log('age:::'+age);
+            return age;
+        }
+        //Validate DOB
+        function validateDOB(thisElement){
+            console.log('validateDOB::::');
+            if(checkValidDate(thisElement) == true){
+                var date = $(thisElement).val();
+                var age = getAge(date)
+                console.log('age:::'+age);
+                if(age<18 || age>60){
+                    removeWarningMsg(thisElement);
+                    removeValError(thisElement);   
+                    addWarningMsg(thisElement,'Applicant must be aged between 18 to 60 (Above 60 is subject to immigration discretion;only one year visa will be issued).');
+                    return false;
+                }else{
+                    console.log('correct::::');
+                    removeWarningMsg(thisElement);
+                    removeValError(thisElement);     
+                }
+            }
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            $('.lookup').each(function(){
+                let v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    addValError($(this).parent(),'This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this).parent();
+                }else{
+                    removeValError($(this).parent());  
+                }
+            });
+            $('.requiredFld:visible').each(function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+           
+            var salutation = $("input[name='salutation']:checked").val();
+            var martialStatus = $("input[name='martialStatus']:checked").val();
+            if(salutation == undefined){
+                //alert('Please select salutation');
+                $("input[name='salutation']").parent().parent().parent().find('.option-error').show();
+                validated =false;
+            }
+            
+            //alert('salutation v:'+validated);
+            if(martialStatus == undefined){
+                $("input[name='martialStatus']").parent().parent().parent().find('.option-error').show();
+                //alert('Please select martial status');
+                validated =false;
+            }//alert('martialStatus v:'+validated);
+             
+            if(validateBasicSalary( cs['xcmbs__c']) == false){   
+                validated =false;
+            }//alert('Basic salary v:'+validated);
+            if('{!JSENCODE(req.acc__r.Legal_Framework__c)}'=='Freelancer'){
+                var sal = parseFloat($(cs['xcmbs__c']).val().replace(',',''));
+                if($(cs['xcma__c']).val())
+                    sal =  sal + parseFloat($(cs['xcma__c']).val().replace(',',''));
+                if($(cs['xcmta__c']).val())
+                    sal =  sal + parseFloat($(cs['xcmta__c']).val().replace(',',''));
+                if($(cs['xcmoa__c']).val())
+                    sal =  sal + parseFloat($(cs['xcmoa__c']).val().replace(',',''));
+               if(sal > 10000){
+                    validated =false;
+                 axsAlert('Alert','Freelancer total Salary should NOT be more than AED 10,000');   
+                    
+                    }
+            }
+            if(validateCurrenNationality(cs['xcnc__c']) == false){
+                validated =false;
+            }//alert('current Nationality v'+validated);
+            
+            if(GCC_Nations.includes(cs["xcnc__c"].value)){
+                validated =false;
+                addValError(cs["xcnc__c"],'GCC nationals are not allowed !!');
+                scrollToDiv($(cs["xcnc__c"]));
+            }
+           
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+               scrollToDiv(elem);
+            }
+            
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                console.log('note:::'+cs['xcma__c'].value);
+                console.log('Issue Date:::'+cs['xcpid__c'].value);
+                //console.log('Expiry Date:::'+cs['xcped__c'].value);
+                //console.log('DOB:::'+cs['xcbd__c'].value);
+                next();
+                //alert("Req Updated::::::::::"); 
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        
+        </script>
+        <style>
+            .errField{
+                border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+                color: #E62D38;
+                font-style: italic;
+                padding-left: 0.8rem;
+                position: absolute;
+            }  
+            .warningMsg{
+                color:#004eff;
+                font-style: italic;
+                padding-left: 0.8rem;
+                position: absolute;
+                background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                
+                <apex:actionFunction name="getFullNmA" action="{!getFullNm}" oncomplete="hideGLoader();valName('{!JSENCODE(wsFullName)}');" />
+               
+                
+                <apex:actionFunction name="saveReqDraft3" action="{!saveDraft}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                    
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                     <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                    <!--<div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                                <!-- <a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a> -->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                     <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" id="comp" />
+                  
+                                         
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        
+                                        <div class="steps steps-desktop">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                    <div class="step-title">Additional Services</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                    <div class="step-title">Review &amp; Payment</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                        </div>
+                                        <!-- end .steps -->
+                                        
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                       
+
+                                         <b><apex:pageMessages id="msg"  />
+                                           
+                                        
+                                          </b>
+                                        
+                                        <c:passportdetails req="{!req}" id="ppdCmp"/>
+                                         <c:emiratesidinfo req="{!req}" id="EinfoCmp"/> 
+                                        <apex:outputText rendered="{!req.Acc__r.type == 'Customer - Outsourcing'}">
+                                        <c:OutsourcingCmp req="{!req}" />
+                                        </apex:outputText> 
+                                        <!-- .base-collapse -->
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                                <div class="collapse-title">Applicant Details</div>
+                                            </a>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        
+                                                           <div class="row row-lg">
+     
+       <div class="col-lg-6">
+         <div class="form-group">
+            <label>Previous Company Name</label>
+            <apex:inputField styleClass="form-control" value="{!req.xdedc__c}" id="xdedc__c" />
+             <script type="text/javascript">
+               cs['xdedc__c']=document.getElementById('{!$Component.xdedc__c}');
+              $(cs['xdedc__c']).attr('disabled',true); 
+             </script>
+         </div>
+      </div>                                                     
+     <div class="col-lg-6">
+         <div class="form-group">
+            <label>ID# </label>
+            <apex:inputField styleClass="form-control" value="{!req.xcid__c}" id="xcid__c" />
+             <script type="text/javascript">
+               cs['xcid__c']=document.getElementById('{!$Component.xcid__c}');
+              $(cs['xcid__c']).attr('disabled',true); 
+             </script>
+         </div>
+      </div>
+             </div>
+                                                          <c:personaldetail req="{!req}"     
+                                                                          Salutations="{!salutations}"  
+                                                                          MartialStatus="{!MartialStatus}" 
+                                                                          SpokenLanguages="{!spokenLanguages}" id="perDetail" />
+                                                     
+                                                            <c:contactinformation req="{!req}" id="conInfoCmp"/>
+                                                       
+                                                        <c:jobofferdetails req="{!req}" id="jobOffCmp"/>
+                                                           
+                                                        <c:educationqualification req="{!req}" id="qualificationCmp"/>
+                                                        
+                                                        <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp"/> 
+                                                    
+                                                            </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        
+                                        <div class="base-main-footer">
+                                            <div class="base-nav">
+                                                
+                                                <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                <a href="#" onClick="validateData()"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-footer -->
+                                        
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+            
+        </apex:form>
+    </html>    
+</apex:page>

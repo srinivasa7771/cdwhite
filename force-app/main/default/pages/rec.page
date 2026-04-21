@@ -1,0 +1,375 @@
+<apex:page id="x" rendered="{!AND(NOT(ISNULL(T)),T.STA__c='Completed',T.TP__c='Payment')}"  renderAs="pdf" sidebar="false" showHeader="false"  cache="false" expires="0" title="Receipt:{!T.Name}" standardController="g_Tran__c" extensions="gctlTrnPDF" >
+<apex:stylesheet value="/sCSS/48.0/sprites/1401037870000/Theme3/default/gc/elements.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401037870000/Theme3/default/gc/common.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401037870000/Theme3/default/gc/printableView.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1400172052000/Theme3/gc/dStandard.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401037870000/Theme3/default/gc/extended.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401037870000/Theme3/default/gc/zen-componentsCompatible.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom0.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom1.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom2.css"/>
+<apex:stylesheet value="/sCSS/48.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom3.css"/>
+<table border="0" cellpadding="0" cellspacing="0" style="width:100%">
+    <tr>  
+        <td nowrap="nowrap" style="width:1%;vertical-align:middle;"><apex:Image value="{!URLFOR($Resource.axsRS, '/images/Finance_Report.png')}" /></td>
+        <td nowrap="nowrap" style="vertical-align:middle;">           
+            <h1>&nbsp;&nbsp;Tax Invoice Receipt</h1><br/>
+           &nbsp;&nbsp;(Print Date:<apex:outputText value="{0, Date, dd-MMM-yyyy}"><apex:param value="{!TODAY()}"/></apex:outputText>)            
+        </td>
+        <td>
+        
+            <GMBLBC:barcode value="{!T.Name}" type="code128" /> 
+           
+        </td>
+        <td nowrap="nowrap" align="right">
+            <apex:image url="{!URLFOR($Resource.axsRS, '/images/axs_logo.png')}" width="100" height="40"/>         
+        </td>
+    </tr>
+     
+    <tr>
+        <td colspan="3"></td>
+        <td align="right" style="font-size:x-small;"><i>            
+            AXS FZ-LLC,<br/>
+            Dubai Knowledge Park,Block 8,<br/>
+            Ground Floor,Dubai, UAE.<br/>
+            Tax Registration No.: 100072771700003<br/><br/>
+            </i>
+         </td>
+    
+    </tr>
+    
+    
+</table> 
+<apex:variable var="discCnt" value="{!0}" />
+    <apex:variable var="vat" value="{!0}" />
+     <apex:variable var="vatGov" value="{!0}" />
+    <apex:variable var="gvtFee" value="{!0}" />
+    <apex:variable var="gvtFeeVAT" value="{!0}" />
+    <apex:variable var="nonGvtFee" value="{!0}" />
+    <apex:variable var="thrnonGvtFee" value="{!0}" />
+    <apex:variable var="nonGvtFee" value="{!0}" />
+    <apex:variable var="nonGvtFee" value="{!0}" />
+    <apex:variable var="pno" value="{!0}" />
+     <apex:variable var="thrnonGvtFee" value="{!0}" />
+     <apex:variable var="thvat" value="NA" /> 
+    <apex:variable var="thngSrv" value="Medical Insurance"/>
+    
+     <apex:variable var="govtSrv" value="Entry" /> 
+     <apex:variable var="ngSrv" value="ngSrv" /> 
+     <apex:variable var="serv" value="{!IF(T.RQ__r.srvc__r.uid__c=='ltc',T.RQ__r.xltr__c,T.RQ__r.srvc__r.lbl__c)}" />
+     <apex:variable var="govtserv" value="{!IF(T.RQ__r.srvc__r.uid__c=='208',' *Dubai Development Authority Licence Renewal Fee',' *Government Service')}" />
+     <apex:variable var="srvChrg" value="{!IF(AND(T.RQ__r.srvc__r.uid__c=='208',T.RQ__r.xppsfv__c),'TECOM Partner Service Fee','Service Charge')}" />
+    
+     
+<apex:pageBlock mode="edit"  tabStyle="Account" />   
+<apex:pageBlock mode="mainDetail"  tabStyle="Account" title="Receipt Details">       
+    <apex:pageBlockSection columns="2" collapsible="false" >
+        <apex:pageBlockSectionItem /><apex:pageBlockSectionItem />
+        <apex:outputfield value="{!T.Name}" />
+        <apex:outputfield value="{!T.A__c}" />
+        <apex:outputfield value="{!T.RQ__r.Name}" label="Request #"/>
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="{!$ObjectType.g_Tran__c.fields.dt__c.label}" />
+            <apex:outputText value="{0,date,dd-MMM-yyyy}"><apex:param value="{!T.dt__c}" /></apex:outputText>               
+        </apex:pageBlockSectionItem>        
+        <!--<apex:outputfield value="{!T.RQ__r.srvc__r.lbl__c}" label="Service"/>-->
+         <apex:outputText value="{!serv}" label="Service"/>
+        <apex:outputfield value="{!T.md__c}"/>
+        <apex:pageBlockSectionItem />
+        <apex:outputfield value="{!T.STA__c}"/> 
+    </apex:pageBlockSection>
+    <apex:pageBlockSection columns="2" collapsible="false" >           
+        <apex:outputfield value="{!T.Acc__r.Name}" label="Company Name" />    
+         <apex:pageBlockSectionItem rendered="{!NOT(ISBLANK(T.RQ__r.Con__r.Name))}">
+            <apex:outputLabel value="Applicant"/>
+            <apex:outputText value="{!T.RQ__r.Con__r.Name}" />               
+        </apex:pageBlockSectionItem>
+        <apex:outputfield value="{!T.Acc__r.lc__c}" />
+        <apex:outputfield value="{!T.Acc__r.BillingPostalCode}" label="P.O.Box"/>
+        <apex:outputfield value="{!T.Acc__r.BillingStreet}" label="Address"/>
+        <apex:outputfield value="{!T.Acc__r.Prk__c}" label="Zone"/>
+         <apex:pageBlockSectionItem >
+        <apex:outputLabel value="Printed By"/><apex:outputText value="{!$User.FirstName}" /> 
+        </apex:pageBlockSectionItem>
+         <apex:pageBlockSectionItem >
+        <apex:outputLabel value="Tax Registration No" style="white-space:nowrap"/><apex:outputText value="{!T.Acc__r.van__c}" /> 
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem rendered="{!AND(T.TP__c='Payment',T.md__c='Cash')}">
+        <!--<apex:outputLabel value="Cash Collected By"/><apex:outputText value="{!T.Updated_By__c}" /> -->
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>    
+     
+    <apex:repeat value="{!T.Items__r}" var="i">
+              <apex:outputPanel rendered="{!AND(i.TAX_TYPE__c == 'Non Government',i.TAX_CODE__c == 'STANDARD RATE TAX')}">
+                 <apex:variable var="nonGvtFee" value="{!nonGvtFee+(i.A__c-((i.A__c*5)/100))}" />
+                 <apex:variable var="vat" value="{!vat+((i.A__c*5)/100)}" /> 
+                 <apex:variable var="ngSrv" value="{!ngSrv+IF(AND(NOT(contains(ngSrv,IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)))),IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)+', ','')}" />  
+              </apex:outputPanel> 
+              <apex:outputPanel rendered="{!AND(i.TAX_TYPE__c == 'Third Party',i.TAX_CODE__c == 'OUT OF SCOPE')}">
+                 <apex:variable var="thrnonGvtFee" value="{!thrnonGvtFee+i.A__c}" />
+                 <apex:variable var="thvat" value="NA}" /> 
+                 <apex:variable var="thngSrv" value="{!IF(AND(NOT(contains(thngSrv,IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)))),IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)+' ','')}" />  
+              </apex:outputPanel> 
+              <apex:outputPanel rendered="{!NOT(AND(i.TAX_TYPE__c == 'Third Party',i.TAX_CODE__c == 'EXEMPTED'))}">
+              <apex:variable var="gvtFee" value="{!gvtFee+IF(AND(!i.ngs__c,i.VAT__c!=null,i.VAT__c<=0),i.A__c,0)}" />
+              <apex:variable var="gvtFeeVAT" value="{!gvtFeeVAT+IF(AND(!i.ngs__c,i.VAT__c!=null,i.VAT__c>0),i.A__c-i.VAT__c,0)}" />
+              
+               <apex:variable var="nonGvtFee" value="{!nonGvtFee+IF(AND(i.TAX_TYPE__c != 'Third Party',i.ngs__c),i.A__c-i.VAT__c,0)}" />
+                
+              <apex:variable var="vatGov" value="{!vatGov+IF(!i.ngs__c,i.VAT__c,0)}" />
+              <apex:variable var="vat" value="{!vat+IF(i.ngs__c,i.VAT__c,0)}" />
+              <apex:variable var="govtSrv" value="{!govtSrv+IF(AND(!i.ngs__c,NOT(contains(govtSrv,IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)))),IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)+', ','')}" />          
+              <apex:variable var="ngSrv" value="{!ngSrv+IF(AND(i.ngs__c,NOT(contains(ngSrv,IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)))),IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)+', ','')}" />          
+              <apex:variable var="discCnt" value="{!IF(AND(NOT(ISNULL(T.RQ__r.dsc__c)),i.itm__r.DscApp__c,NOT(ISNULL(i.itm__r.Dsc__c))),discCnt+1,discCnt)}" />
+             
+              </apex:outputPanel>    
+                                          
+         </apex:repeat> 
+   
+     
+   
+    <apex:pageBlockSection columns="1" collapsible="false" title="Line Items Details">      
+        <apex:pageBlockSectionItem >
+           
+            <apex:outputpanel styleClass="pbBody" style="width:1200px;">
+                <table class="list" border="0" cellpadding="0" cellspacing="0">
+                        <tr class="headerRow">
+                                    <th scope="col" width="50%" class="actionColumn c1">ITEM</th>
+                                    <th scope="col"  width="10%"  class="actionColumn CurrencyElement">AMOUNT</th>
+                                    <th scope="col"  width="10%" class="actionColumn CurrencyElement">VAT(%)</th>
+                                    <th scope="col"  width="10%" class="actionColumn CurrencyElement">VAT AMOUNT</th>
+                                    <th scope="col"  width="20%" class="actionColumn CurrencyElement">TOTAL</th>
+                                </tr>
+                       <apex:outputText rendered="{!gvtFee >0}">
+                          <tr class="dataRow"  >
+                                <td class="dataCell " style="border-top:none;width:3%" >
+                                    <apex:outputText value="{!govtserv}" />
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                    <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFee}"/>
+                                 </apex:outputText>
+                                                            
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   <apex:outputText value="NA" />                                  
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   NA                               
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                     <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFee}"/>
+                                 </apex:outputText>
+                                                                 
+                                </td>
+                          </tr>    
+                   </apex:outputText>
+                      <apex:outputText rendered="{!thrnonGvtFee >0}">
+                          <tr class="dataRow"  >
+                                <td class="dataCell " style="border-top:none;width:3%" >
+                                    <apex:outputText value="**{!thngSrv}" />
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                    <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!thrnonGvtFee}"/>
+                                 </apex:outputText>
+                                                            
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   <apex:outputText value="NA" />                                  
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   NA                                 
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                     <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!thrnonGvtFee}"/>
+                                 </apex:outputText>
+                                                                 
+                                </td>
+                          </tr>    
+                   </apex:outputText>
+                   <apex:outputText rendered="{!gvtFeeVAT >0}">
+                          <tr class="dataRow"  >
+                                <td class="dataCell " style="border-top:none;width:3%" >
+                                    Government Service with VAT
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                    <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFeeVAT}"/>
+                                 </apex:outputText>
+                                                            
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   <apex:outputText value="5" />                                  
+                                </td>
+                               <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   AED&nbsp;<apex:outputText value="{!vatGov}"  />                                  
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                     <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFeeVAT+vatGov}"/>
+                                 </apex:outputText>
+                                                                 
+                                </td>
+                          </tr>    
+                   </apex:outputText> 
+                       <apex:outputText rendered="{!nonGvtFee >0}">
+                        <tr class="dataRow" style="border-top:none;" >
+                                <td class="dataCell " style="border-top:none;" >
+                                    {!srvChrg} &nbsp; 
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                     <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!nonGvtFee}"/>
+                                 </apex:outputText>
+                                                                      
+                                </td> 
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                    <apex:outputText value="5"/>                                    
+                                </td>
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                    <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!vat}"/>
+                                 </apex:outputText>
+
+                                                                      
+                                </td> 
+                                <td class="dataCell CurrencyElement" style="border-top:none;" >
+                                   <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!nonGvtFee+vat}"/>
+                                 </apex:outputText>
+                                                                       
+                                </td> 
+                        </tr>
+                    </apex:outputText>
+                             
+                        <tr class="headerRow">
+                                 <td scope="col"   class="actionColumn c1">Total</td>
+                                 <td scope="col"  class="actionColumn c1 CurrencyElement">
+                                     <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFee+gvtFeeVAT+nonGvtFee+thrnonGvtFee}"/>
+                                 </apex:outputText>
+                                     </td>
+                                 <td scope="col" class="actionColumn c1 CurrencyElement">&nbsp;</td>
+                                  <td scope="col"  class="actionColumn c1 CurrencyElement">
+                                       <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!vat+vatGov}"/>
+                                 </apex:outputText>
+                                   </td>
+                                 <td scope="col"   class="actionColumn c1 CurrencyElement">
+                                      <apex:outputText value="AED{0,number, ###,##0.00}">
+                                        <apex:param value="{!gvtFee+gvtFeeVAT+nonGvtFee+thrnonGvtFee+vat+vatGov}"/>
+                                 </apex:outputText>
+                                     
+                                     </td>
+                                        
+                        </tr>
+                 
+                </table>
+                <br/>
+            </apex:outputpanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>        
+    <apex:pageBlockSection columns="1" collapsible="false">
+        <apex:pageBlockSectionItem >
+            <apex:outputText value="Notes" />
+             <apex:outputPanel >
+                <table class="list" border="0" cellpadding="0" cellspacing="0" style="border:none;">
+                    <tbody>
+                        <apex:outputPanel layout="none" rendered="{!AND(NOT(ISNULL(T.RQ__r.nt__c)),T.RQ__r.srvc__r.uid__c!='208')}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                   {!pno}) <apex:outputText value="{!T.RQ__r.nt__c}" />
+                                </td>
+                               
+                            </tr>
+                        </apex:outputPanel>
+                           <apex:outputText rendered="{!AND(govtSrv !=null,govtSrv !='Entry',T.RQ__r.srvc__r.uid__c=='208')}">
+                             <tr class="dataRow">
+                                 <td class="dataCell" style="border:none;font-style: italic;" >   
+                                    
+                                     <apex:variable var="pno" value="{!pno+1}" />
+                                  <apex:variable var="govtSrv" value="{!LEFT(govtSrv, LEN(govtSrv)-2)}" />
+                                  <apex:variable var="govtSrv" value="{!Right(govtSrv, LEN(govtSrv)-5)}" />
+                                  {!pno}) <apex:outputText value="{!govtserv}" /> includes Innovation Dirham, Knowledge Dirham.
+                                      
+  
+                                </td>
+                            </tr> 
+                            </apex:outputText>  
+                            <apex:outputText rendered="{!AND(govtSrv !=null,govtSrv !='Entry',T.RQ__r.srvc__r.uid__c!='208')}">
+                             <tr class="dataRow">
+                                 <td class="dataCell" style="border:none;font-style: italic;" > 
+                                     <apex:variable var="pno" value="{!pno+1}" />
+                                  <apex:variable var="govtSrv" value="{!LEFT(govtSrv, LEN(govtSrv)-2)}" />
+                                  <apex:variable var="govtSrv" value="{!Right(govtSrv, LEN(govtSrv)-5)}" />
+                                 {!pno}) <apex:outputText value="{!govtserv}" /> includes {!govtSrv}.
+                                    
+                                </td>
+                            </tr> 
+                            </apex:outputText>  
+                          <apex:outputPanel layout="none" rendered="{!AND(govtSrv =='Entry',nonGvtFee>0,ngSrv != null,ngSrv !='ngSrv')}">
+                           <tr class="dataRow">
+                                 <td class="dataCell" style="border:none;font-style: italic;" >
+                                      <apex:variable var="pno" value="{!pno+1}" />
+                                  <apex:variable var="ngSrv" value="{!LEFT(ngSrv, LEN(ngSrv)-2)}" />
+                                  <apex:variable var="ngSrv" value="{!Right(ngSrv, LEN(ngSrv)-5)}" />
+                                   {!pno}) *Service charge includes {!ngSrv}.
+                                </td>
+                            </tr> 
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="false">
+                            <tr class="dataRow">
+                               
+                                <td class="dataCell" style="border:none;" >                                    
+                                   **Applicable for VAT as per Article 66 of the Federal Decree-Law No. (8) of 2017 on Value Added Tax.
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!NOT(discCnt=0)}">
+                            <tr class="dataRow">
+                                
+                               <td class="dataCell" style="border:none;font-style: italic;">
+                                    <apex:outputText value="* Discounts are applied"/>
+                                    <apex:outputText value="{!T.RQ__r.srvc__r.payNt__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!IF(T.RQ__r.srvc__r.uid__c=='154',true,false)}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                   <apex:outputText value="Parking Payment for the period of {!DAY(T.dt__c)+2}/{!MONTH(T.dt__c)}/{!YEAR(T.dt__c)} to {!T.RQ__r.xaed__c}, Ref Ag. No:{!T.RQ__r.xanum__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                         <apex:outputPanel layout="none" rendered="{!IF(T.RQ__r.srvc__r.uid__c=='016',true,false)}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                   <apex:outputText value="Unused Transactions refund should be claimed within 90 days after payment." />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!IF(T.RQ__r.srvc__r.uid__c=='156',true,false)}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                   <apex:outputText value="Parking Payment till date {!T.RQ__r.xaed__c}, Ref Ag. No:{!T.RQ__r.xanum__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:repeat value="{!T.Items__r}" var="i">
+                             <apex:variable var="pno" value="{!pno+1}" />
+                            <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(i.itm__r.itm__r.payNt__c))}">
+                                <tr class="dataRow"><td class="dataCell" style="border:none;font-style: italic;">
+                                  {!pno})<apex:outputText escape="true" value="{!i.itm__r.itm__r.payNt__c}" /></td></tr>
+                            </apex:outputPanel>
+                        </apex:repeat>                                          
+                    </tbody>
+                </table>
+             </apex:outputPanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection> 
+ </apex:pageBlock>
+<apex:pageBlock mode="edit"  tabStyle="Account" /> 
+</apex:page>

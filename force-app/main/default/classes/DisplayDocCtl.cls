@@ -1,0 +1,7 @@
+public class DisplayDocCtl {
+    public String pdfStr {set;get;}
+    public DisplayDocCtl(){}  
+    public void docInfo(){ id recId = ApexPages.currentPage().getParameters().get('id'); String docName = ApexPages.currentPage().getParameters().get('dname');  DocumentInfo doc = new DocumentInfo(); try{ Http h = new Http(); HttpRequest request = new HttpRequest(); HttpResponse response   = new HttpResponse(); request.setHeader('Content-Type','application/json'); request.setHeader('accept','application/json'); /*request.setEndpoint('callout:CCRM_UAT/apexrest/accinfo');*/ request.setEndpoint('callout:'+Label.CRM_Instance+'/apexrest/createdoc/docinfo'); /*request.setEndpoint('callout:CCRM/apexrest/accinfo');*/ docName = 'Offer Letter'; request.setHeader('recId',recId); request.setHeader('docName',docName); request.setTimeout(90000);request.setMethod('GET');  response = h.send(request); if(response.getStatusCode()==200){  System.debug('response: ' + response.getBody()); if(response.getBody()!=null) { Map<String, Object> metadata_Map = (Map<String, Object>) JSON.deserializeUntyped(response.getBody()); system.debug('map::'+metadata_Map); pdfStr=(String)metadata_Map.get('fileBody');  }  }   } catch(exception ex) { system.debug('Exception ex:'+ex.getStackTraceString()); }   }
+    public class DocumentInfo{ public String respMsg; public boolean isSuccess; public string fileBody; public string fileName; public string fileType; public string docId; }
+    
+}

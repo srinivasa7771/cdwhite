@@ -1,0 +1,101 @@
+<apex:page sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+    
+    <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['timeline']}]}"></script>
+    <apex:variable var="c" value="{!0}" />
+    <apex:variable var="prev" value="" />
+   
+<apex:outputPanel layout="none" rendered="{!c>0}">
+    <script type="text/javascript">
+    google.setOnLoadCallback(drawChart);
+    function drawChart() {
+        var chart = new google.visualization.Timeline(document.getElementById('divMilestone'));
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn({type:'string',id:'Item'});
+        dataTable.addColumn({type:'string',id:'Milestone'});
+        dataTable.addColumn({type:'date',id:'Start'});
+        dataTable.addColumn({type:'date',id:'End'});
+        var dFrom;var dTo; var arrColors=[];
+        <apex:variable var="clrIP" value="#3366cc" />
+        <apex:variable var="prev" value="" />
+        <apex:repeat value="{!rq.Status_History__r}" var="m">
+          <apex:outputPanel layout="none" rendered="{!OR(AND(ispu,m.kstp__c),NOT(ispu))}">
+            <apex:variable var="clrIP" value="{!IF(prev=m.itm__r.itm__r.Name,IF(clrIP='#3366cc','#7094db','#3366cc'),'#3366cc')}" />
+            <apex:variable var="prev" value="{!m.itm__r.itm__r.Name}" />
+            dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.acts__c}"/></apex:outputText>'));
+            dTo = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.actE__c}"/></apex:outputText>'));
+            dFrom.setHours(dFrom.getHours()+4);
+            dTo.setHours(dTo.getHours()+4);
+            dataTable.addRows([['{!IF(ispu,m.itm__r.itm__r.lbl__c,m.itm__r.itm__r.Name)}','{!IF(ispu,m.t__r.lbl__c,m.t__r.Name)}',dFrom,dTo]]);
+            arrColors.push("{!IF(m.t__r.Tp__c=='Open',clrIP,IF(m.t__r.Tp__c=='Completed','#00b300','#dc3912'))}");         
+          </apex:outputPanel>
+        </apex:repeat>
+        
+        dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!rq.CreatedDate}"/></apex:outputText>'));
+        dFrom.setHours(dFrom.getHours()+4);
+        dFrom= new Date(dFrom.getTime()-24*60*60*1000); 
+        dTo=dFrom;
+        dataTable.addRows([['Request','',dFrom,dTo]]);
+        arrColors.push("#fffff9");
+        
+        dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!rq.CreatedDate}"/></apex:outputText>'));
+        dTo = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!IF(OR(rq.STA__c='Completed',rq.STA__c='Rejected',rq.STA__c='Cancelled'),rq.LastModifiedDate,NOW())}"/></apex:outputText>'));
+        dFrom.setHours(dFrom.getHours()+4);
+        dTo.setHours(dTo.getHours()+4);
+        dataTable.addRows([['Request','{!JSENCODE(rq.STA__c)}',dFrom,dTo]]);
+        arrColors.push("{!IF(rq.STA__c='Completed','#00b300',IF(OR(rq.STA__c='Rejected',rq.STA__c='Cancelled'),'#dc3912','#3366cc'))}");
+        
+        dFrom = dTo;
+        dFrom.setHours(dFrom.getHours()+4);
+        dFrom= new Date(dFrom.getTime()+24*60*60*1000); 
+        dTo=dFrom;
+        dataTable.addRows([['Request','',dFrom,dTo]]);
+        arrColors.push("#fffff9");
+        
+        
+        
+        var options = {avoidOverlappingGridLines:true,
+        timeline:{rowLabelStyle: {fontSize:10,color:'#2c3539'},barLabelStyle: {fontSize:10,color:'#2C3539'},},        
+        height:{!(c+2)*34.16+20},
+        width: 850,
+        backgroundColor:'#fffff9',colors:arrColors};
+        chart.draw(dataTable,options);      
+        var elems = document.getElementById('divMilestone').getElementsByTagName('text');
+        for(var i=0;i<elems.length;i++){elems[i].style.fontSize='x-small';}       
+    }
+    </script>   
+</apex:outputPanel> 
+<apex:pageBlock >
+    <apex:pageBlockSection title="Status History" collapsible="true" columns="1" rendered="{!c>0}">
+        <apex:pageBlockSectionItem rendered="{!c>0}">
+            <apex:outputLabel value="" />
+            <div id="divMilestone"></div>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+    <apex:pageBlockSection title="System Information" collapsible="true" columns="2">
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Created By" />
+            <apex:outputPanel >
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><apex:outputField value="{!rq.CreatedById}" /></td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td><apex:outputField value="{!rq.CreatedDate}" /></td>
+                    </tr>
+                </table>
+            </apex:outputPanel>
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Last Modified By" />
+            <apex:outputPanel >
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><apex:outputField value="{!rq.LastModifiedById}" /></td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td><apex:outputField value="{!rq.LastModifiedDate}" /></td>
+                    </tr>
+                </table>
+            </apex:outputPanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:page>

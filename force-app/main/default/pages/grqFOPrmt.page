@@ -1,0 +1,1532 @@
+<apex:page standardStylesheets="false" sidebar="false" showHeader="true" cache="false" expires="0" action="{!getPrmtReqs}" 
+           title="{!srv.sdg__r.slbl__c}" controller="ApplicantDetailController">
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <script src="/soap/ajax/32.0/connection.js" type="text/javascript"></script> 
+    <script src="/soap/ajax/32.0/apex.js" type="text/javascript"></script>
+    
+    <style>
+        .text-light {
+        color: #9B9B9B !important; 
+        }
+        .frmErrMsg,.serErr,.frmErrMsg1 {
+        font-size: 0.8rem !important;
+        color:#E62D38;font-weight:500;
+        }
+        table tbody td > .icon {
+        color : black;
+        font-size: 0.75rem;
+        }
+        
+    </style>    
+    
+    <script type="text/javascript">
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}; var isgu={!isgu}; 
+    var lf='',af='',adf='',aif,adif,cif,fnxPg; var mcol = new String(); var mx=1;var my; 
+    var lstActiveReq = new Array(); var jsonAllVals ={}; var isEditBO = false; 
+    
+    function assignFldValue(element){
+        $(element).each(function(){ 
+            var val = $(this).val();
+            var eid = $(this).attr('id');
+            var a = eid.split(':'); eid = a[a.length-1]; eid = eid.replace('__c','');
+            
+            //update format for date fields
+            if($(this).hasClass('input-datepicker')){
+                var dt2 = val.split('/') ;
+                if(dt2.length==3){val = dt2[2].trim() +'-'+ dt2[1].trim() +'-'+  dt2[0].trim();}
+            }else if($(this).hasClass('jsnfldMultipic') && val!=null){
+                val=$(this).val().join(';');
+            }
+            jsonAllVals[eid+'__c'] = val;
+        });
+        //### cs["dummyadh"].value = JSON.stringify(jsonAllVals);
+    }
+    
+    $(document).ready(function(){
+        hideGLoader();
+        $(".inputTimeMaxLength").attr('maxlength', '5');    
+        $(".jsnfld,  .jsnfldMultipic, .input-datepicker" ).change(function() { assignFldValue($(this));});
+        $('.alphaNum').bind('keyup', function(e) {
+            $(this).val($(this).val().replace(/[^a-zA-Z0-9 ]/g, ''));
+            if (e.which >= 97 && e.which <= 122) {
+                var newKey = e.which - 32;
+                e.keyCode = newKey;
+                e.charCode = newKey;
+            }
+            $(this).val(($(this).val()));
+        });
+        
+        if(!ispu && !isgu){
+            var urlParam = getAxsURLParam('m');
+            if(urlParam=='edit'){
+                $(".disableBoEdit").attr("disabled","true");
+            }
+        }
+        
+        loadContData();loadData();assignLoc();
+        if(lstActiveReq.length==0){$("#mapActiveReq").hide();}
+        
+        
+        setTimeout(function(){
+            var strLocList = '{!JSENCODE(strLocList)}';
+            if(strLocList==null || strLocList==''|| strLocList=='[]'){
+                $("#xaloc").select2({
+                    language: {
+                        inputTooShort: function (args) {
+                            return "Please enter your office address";
+                        }
+                    },minimumInputLength: 5,tags:true}); }
+        },500);
+        
+       
+        
+        
+    });
+    function loadContData(){
+        if(cs["xadtx2__c"].value ){
+            $('.fitJson').each(function(){
+                let k = $(this).attr('jsonKey');
+                let v = $(this).val();
+                $(this).val(JSON.parse(cs["xadtx2__c"].value)[k]);
+            });
+            if(JSON.parse(cs["xadtx2__c"].value).selectedUnits != undefined){
+                let seldUnits = JSON.parse(cs["xadtx2__c"].value).selectedUnits;
+                if(seldUnits.length > 0){
+                    for(let i = 0;i < seldUnits.length ;i++){
+                        // $('#unit').val(''+ seldUnits[i] +'').prop("selected", true); 
+                         $("#unit option[value='"+ seldUnits[i] +"']").prop("selected", true);
+                    }
+                }
+            }
+            if(JSON.parse(cs["xadtx2__c"].value).tecomAcc != undefined){
+                $("#totar").val('2000');
+            	$("#gen").prop("checked", true).trigger("click"); $("#minrad").hide();$("#genrad").show();
+            }
+            if(JSON.parse(cs["xadtx2__c"].value).activities != undefined){
+                let activityArr = JSON.parse(cs["xadtx2__c"].value).activities.split(';');
+                console.log('fitoutarea'+$("#fitar").val());
+                if(JSON.parse(cs["xadtx2__c"].value).fitOutType == "Minor"){
+                    $("#min").prop("checked", true).trigger("click"); $("#genrad").hide();$("#minrad").show();
+                    console.log('obj' + typeof JSON.parse(cs["xadtx2__c"].value).subCatg);
+                    let subCateg = JSON.parse(cs["xadtx2__c"].value).subCatg;
+                    if(subCateg.archAct.length > 0){
+                        for(let i = 0;i < subCateg.archAct.length ;i++){
+                            let trow = {};
+                            trow.subActivity = subCateg.archAct[i];
+                            trow.activity ='Architectural' ;
+                            trow.selId = 'arsubCat';
+                            tabledata.push(trow);
+                            $('#arsubCat').val(''+ subCateg.archAct[i] +'').select2();
+                        }
+                    }
+                    if(subCateg.mepAct.length > 0){
+                        for(let i = 0;i < subCateg.mepAct.length ;i++){
+                            let trow = {};
+                            trow.subActivity = subCateg.mepAct[i];
+                            trow.activity ='MEP' ;
+                            trow.selId = 'mepsubCat';
+                            tabledata.push(trow);
+                            $('#mepsubCat').val(''+ subCateg.mepAct[i] +'').select2();
+                        }
+                    }
+                    if(tabledata.length > 0){formTable(tabledata);}
+                }else{
+                    $("#gen").prop("checked", true).trigger("click"); $("#minrad").hide();$("#genrad").show();
+                }
+                console.log('index' + activityArr.indexOf('Architectural',0));
+                if(activityArr.indexOf('Architectural',0) >= 0){
+                    $("#arch").prop("checked", true).trigger("change");
+                }
+                if(activityArr.indexOf('Mechnical',0) >= 0){
+                    $("#mep").prop("checked", true).trigger("change");
+                }
+                if(activityArr.indexOf('Structural',0) >= 0){
+                    $("#struct").prop("checked", true).trigger("change");
+                }
+            }
+            
+        }
+        if({!isRetailCat}){
+			 $("#gen").prop("checked", true).trigger("click"); $("#minrad").hide();$("#genrad").show();
+		}
+    }
+    
+    function loadData(){shwOther(false);removeVal();assignFldValue(".jsnfld, .jsnfldMultipic"); setTimeOnLoad('xst');setTimeOnLoad('xet'); } 
+    function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):!0}
+    function hsSnc(nSTA){return false;} 
+    function hErr(nSTA){return false;}
+    
+    function hRq(nSTA) {
+        var brq = false; 
+        fldErr('xst__c',null,!0);fldErr('xet__c',null,!0);fldErr('xcpid__c',null,!0);fldErr('xcped__c',null,!0);fldErr('xchn__c',null,!0);fldErr('xcmob__c',null,!0);fldErr('csp__c',null,!0);fldErr('prf__c',null,!0);fldErr('xrap__c',null,!0);fldErr('xaloc__c',null,!0);fldErr('xceml__c',null,!0);
+        brq = fldReq('csp__c',cs)||brq;  brq = fldReq('prf__c',cs)||brq;  brq = fldReq('xrap__c',cs)||brq; brq = fldReq('xaloc__c',cs)||brq;  brq = fldReq('xcpid__c',cs)||brq;  brq = fldReq('xcped__c',cs)||brq; brq = fldReq('xchn__c',cs)||brq; brq = fldReq('xcmob__c',cs)||brq;brq = fldReq('xceml__c',cs)||brq;
+        var brk = valDates() || valTime('xst__c') || valTime('xet__c'); 
+        
+        brq= brk||brq;
+        brq = fldReq('xst__c',cs)||brq;brq = fldReq('xet__c',cs)||brq;
+        if(cs['xrap__c'].value != null && (cs['xrap__c'].value == 0 || cs['xrap__c'].value > 98)){
+            addValError(cs['xrap__c'], "Please Enter a valid Numeric Value");brq = true;    
+        }
+        
+        return brq;
+    }
+    
+    function isAlphabet(evt) {
+        evt = (evt) ? evt : window.event;var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (!(charCode == 32 || (charCode > 64 && charCode < 91) || (charCode > 96 && charCode < 123))) {
+            //addValError(cs['xchn__c'], "Please Enter only Alphabetical characters");  
+            return false; 
+        }
+        return true;
+    }
+    
+    function isNumber(evt) {
+        var r = true;
+        evt = (evt) ? evt : window.event;var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            //addValError(cs['xrap__c'], "Please Enter a Numeric Value"); 
+            r = false;
+        }
+        return r;
+    }
+    
+    
+    function shwOther(clearVals){
+        var prf = cs['prf__c'].value;
+        if(prf=='Others' || prf=='Events/Promotions (AVMS Requests)'){ 
+            cs['Reason__c'].style.display='block'; cs['Reason__cl'].style.display='block';
+            getC('hpr__cRI').style.display='none';
+        }else{
+            cs['Reason__c'].style.display='none';cs['Reason__cl'].style.display='none';
+            getC('hpr__cRI').style.display='block';
+        }
+        
+        /* clear picklist only onchange*/
+        if(clearVals){cs['hpr__c'].value = ''; $('#hpr').val(null).trigger('change');};
+    }
+    
+    
+    function removeVal(){
+        var prf = cs['prf__c'].value; getC('hpr__cRI').style.display='block';var selectobject= getC('hpr'); 
+        selectobject.length = 0;
+        var list = ['Grease traps more than 2M deep','Confined space entry ( shaft, manhole)','Fire alarm system isolation for more than 8 hours','Handling of chemicals / dangerous goods','Hot-work (activity which generate sparks/Naked flames)','Mechanical lifting, usage of crane, boom lift, cherry picket etc.','Spray painting','Sprinkler system isolation for more than 8 hours','Work at height using scaffolding more than 2 meters high'];
+        for(var i=0; i<list.length;i++){var newOption = new Option(list[i], list[i], true, cs['hpr__c'].value.includes(list[i]));$('#hpr').append(newOption);}
+        
+        if(prf=='Grease Trap Cleaning'){
+            for(var i=0; i<selectobject.length; i++){ var val=selectobject.options[i].value;if(val != 'Grease traps more than 2M deep'){ selectobject.remove(i);i--;}}
+        }else if(prf=='Access Control, CCTV and Other Devices Fixing'){
+            for(var i=0; i<selectobject.length; i++){ var val=selectobject.options[i].value; if(val!= 'Hot-work (activity which generate sparks/Naked flames)' && val != 'Work at height using scaffolding more than 2 meters high'){ selectobject.remove(i); i--; }}
+        }else if(prf=='Furniture / Office Asset Removal' || prf=='Move In (Furniture and Office Equipment Delivery) After Completion Of Fit-Out' || prf=='Office Accessories Fixing (TV, Projector, Screen etc.)'){
+            for(var i=0; i<selectobject.length; i++){ var val=selectobject.options[i].value; if(val != 'Work at height using scaffolding more than 2 meters high'){selectobject.remove(i); i--;}}
+        }else if(prf=='IT Related Works (Network Cabling, Computer, Printer)'){
+            for(var i=0; i<selectobject.length; i++){ var val=selectobject.options[i].value; if(val != 'Fire alarm system isolation for more than 8 hours' && val != 'Sprinkler system isolation for more than 8 hours'){selectobject.remove(i);i--;}}
+        }else if(prf=='Telecommunication Services'){
+            for(var i=0; i<selectobject.length; i++){ var val=selectobject.options[i].value; if(val != 'Confined space entry ( shaft, manhole)' && val != 'Mechanical lifting, usage of crane, boom lift, cherry picket etc.' && val != 'Work at height using scaffolding more than 2 meters high'){selectobject.remove(i);i--;}}
+        }else if(prf=='Antenna Installation' || prf=='External signage fixing' || prf=='Film Shooting' || prf=='Fixing Signage In Internal Common Area, Building Directory Update' || prf=='Major Fit-Out Work' || prf=='Minor Fit-Out Work' || prf=='Fit-Out Mobilazation' || prf=='Technical Maintenance Of BP Owned Assets' || prf=='Film shooting'){
+            for(var i=0; i<selectobject.length; i++){  var val=selectobject.options[i].value; if(val== 'Grease traps more than 2M deep'){selectobject.remove(i);break;}}
+        }else if(prf=='' || prf=='Events/Promotions (AVMS Requests)' || prf=='Pest Control'  || prf=='Others'){getC('hpr__cRI').style.display='none'; }
+        
+        var newOption = new Option('Not applicable','', true, false ); $('#hpr').append(newOption);
+    }
+    
+    function NumberLimit(n) {
+        var num = parseInt(n.value); var brk = false; removeValError(cs['xrap__c']);
+        if(num <=  0 ){addValError(cs['xrap__c'],'Value should be greater than 0'); brk=true;} 
+        if(num > 98 ){addValError(cs['xrap__c'],'Value should be less than 99'); brk=true;}
+        return brk;
+    }
+    
+    function cpyDates(d) { cs[d+'__c'].value = cs[d].value;  assignFldValue($('#'+d));}
+    
+    function valDates() { 
+        var brk=false, stDtErr=false, endDtErr=false;
+        if(cs['xcpid__c'].value==""){stDtErr=true;}
+        if(cs['xcped__c'].value==""){endDtErr=true;}
+        var stDate = cs['xcpid__c'].value; var splitDt = stDate.split("/");
+        if (splitDt != "" && splitDt.length == 3) {stDate = splitDt[2] + '-' + splitDt[1] + '-' + splitDt[0];}
+        
+        var date = new Date(); var today1 = date.getTime();
+        stDate = new Date(stDate).getTime();
+        if(stDate < today1) { addValError(cs['xcpid'], "Start Date should be future date"); brk=true; stDtErr=true;}
+        
+        var expDate = cs['xcped__c'].value; var splitDt2 = expDate.split("/");
+        if (splitDt2 != "" && splitDt2.length == 3) {expDate = splitDt2[2] + '-' + splitDt2[1] + '-' + splitDt2[0];}
+        
+        expDate = new Date(expDate).getTime();
+        if(expDate < today1) { addValError(cs['xcped'], "End Date should be future date"); brk=true;endDtErr=true; }
+        if (expDate < stDate) { addValError(cs['xcped'], "End Date must be greater than start date"); brk=true;endDtErr=true;}
+        
+        if(!endDtErr){removeValError(cs['xcped']);}
+        if(!stDtErr){removeValError(cs['xcpid']);}
+        valTime(); 
+        return brk; 
+    }
+    
+    function formatTimeHHMM(xtime,keycd){
+        var st = cs[xtime].value;
+        if(keycd!=8 && keycd!=46 && st!='' && st.length>=2 && !st.includes(":")){ st = [st.slice(0, 2), ':', st.slice(2)].join('');cs[xtime].value = st;}        
+    }
+    
+    // set the time values
+    function setTime(eId) {
+        cs[eId+'__c'].value = $('#'+eId).val() + ' ' + $('#'+eId+'s').val(); 
+        $(cs[eId+'__c']).trigger('change'); valTime();
+    }
+    
+    // set the UI fields 
+    function setTimeOnLoad(eId) {
+        var t =  cs[eId+'__c'].value; 
+        if(t!=undefined && t!=""){
+            var t2 = t.split(" "); $('#'+eId).val(t2[0]); $('#'+eId+'s').val(t2[1]);
+            $('#'+eId).trigger('change');  $('#'+eId+'s').trigger('change'); 
+        }else{
+            setTime(eId);
+        }
+    }
+    
+    function valTime_Bk(xtime){
+        formatTime(); 
+        var st = cs[xtime].value; var brk = false;
+        if(st!='' ){
+            if(!st.includes(":") && st.length==3){st='0'+st;}
+            if(!st.includes(":") && st.length==4){st = ''+st[0]+st[1]+':'+st[2]+st[3];cs[xtime].value = st;}
+            
+            var isValid = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/.test(st);
+            if (!isValid){
+                addValError(cs[xtime], "Invalid time (time range - 00:00 to 23:59)");  brk = true;
+            }else if(cs['xcpid__c'].value==cs['xcped__c'].value && cs['xst__c'].value !="" && cs['xet__c'].value!="" && (cs['xst__c'].value >= cs['xet__c'].value)){
+                addValError(cs['xet__c'], "End time must be later than start time");  brk = true;
+            }
+            
+        }else{brk=true;}
+        
+        if(!brk){removeValError(cs[xtime]);}
+        return brk;
+    }
+    
+    function valTime(xtime){
+        var brk = false;
+        
+        if(cs['xcpid__c'].value!="" && cs['xcped__c'].value!="" && cs['xcpid__c'].value==cs['xcped__c'].value && ($('#xst').val() >= $('#xet').val() && ($('#xsts').val()==$('#xets').val() )|| ($('#xsts').val()=='PM' && $('#xets').val()=='AM') )){
+            addValError($('#xet'), "End time must be later than start time");  brk = true;
+        }
+        
+        if(!brk){removeValError($('#xet'));}
+        return brk;
+    }
+    
+    function formatTime() {
+        var st = cs['xst__c'].value;var et =cs['xet__c'].value;
+        if(st!=null && st!=''){st = st.split(":"); if(st[1]!=undefined){cs['xst__c'].value= st[0]+":"+st[1];}}
+        if(et!=null && et!=''){et = et.split(":"); if(et[1]!=undefined){cs['xet__c'].value= et[0]+":"+et[1];}} 
+    }
+    
+    
+    function setRenewalDetails(e,reqId,num){
+        if(e.checked){
+            cs["renewalRqId"].value = reqId; cs["xrap__c"].value = num;
+            getC('newpermit').style.display="none"; getC('permitdets').style.display="none";  //getC('newdocs').style.display="none"; 
+            $(".newpermit").hide();
+            for(var i=0; i<lstActiveReq.length; i++){if(lstActiveReq[i]!=reqId){ getC(lstActiveReq[i]).checked = false;}}
+        }else{
+            getC('newpermit').style.display=""; getC('permitdets').style.display="";  $(".newpermit").show();//getC('newdocs').style.display="";
+            cs["renewalRqId"].value = ''; cs["xrap__c"].value = "";}
+    }
+    
+    function saveDetails(){
+        //var brk = vflds('.requiredFld');        
+        //if(cs["renewalRqId"].value==''){brk = /***chkDocs() ||***/ valDates() || valTime() || NumberLimit(cs['xrap__c']) || brk;}        
+        //if(!brk){
+            // if(cs["xbrnd__c"].value==''){cs["xbrnd__c"].value = '{!JSENCODE(xbrand)}';}
+        // toggleGLoader(); 
+        // if(cs["renewalRqId"].value!=''){afup();}else{afso1();}}
+        bpdocs();
+    }
+    
+    
+    function chkDocs(){
+        var brk = false;
+        if('{!JSENCODE(req.id)}'==''){
+            $('#requiredDoc').show();
+            brk=true;
+        }
+        return brk;
+    }
+    
+    
+    function vflds(clsName){
+        var brk = false;var elem = '';
+        /* if($('.frmErrMsg').length > 0){
+                   brk=true;elem = $(this);return brk;
+                } */
+        $(clsName).each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){
+                if( $(this).hasClass('is-invalid') || $(this).parents('.form-group').find('.frmErrMsg').length > 0 ){
+                    brk=true; $('html,body').animate({ scrollTop: ($(this).offset().top-60)}, 100); $(this).focus();
+                }else{ if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                        brk=true; addValError(this,'Value is required!'); 
+                        if(elem==''){ elem = $(this);}
+                    }else{ removeValError(this);}
+                    if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+                }
+            }
+        });
+        return brk;
+    }
+    
+    /*function addValError(thiselem,message){
+        var elem = $(thiselem);
+        elem.parents('.form-group').find('.frmErrMsg').remove();
+        var errElem = '<div class="frmErrMsg">'+message+'</div>';
+        elem.parents('.form-group').append(errElem);
+    }*/
+    
+    function activitiesOnchange(){
+        if($('#hpr').val()!=null) {var activities = $('#hpr').val().join(';'); cs['hpr__c'].value=activities; }
+    }
+    var tabledata = [];
+    var propertyUnitNum = '';
+    var totalArea = 2000;
+    var srplotNumber;var buildingName;
+    var tecomAcc;
+    function unitsOnChange(){
+        totalArea = 0;
+        propertyUnitNum = '';
+        var areaArr = [];
+        removeValError($("#unit"));
+        if($('#unit').val()!=null) {
+            var unitArray = $('#unit').val();
+            var plotNumber;
+            for(var j=0;j<unitArray.length;j++){
+                 if(j > 0 && unitArray[j].split(',')[2] != plotNumber){
+                	addValError($('#unit'),'Selected units should be located within the same plot.');
+                    axsAlert('Selected units should be located within the same plot.');
+                    return;
+                }               
+                totalArea = totalArea + parseInt(unitArray[j].split(',')[1]);
+                propertyUnitNum = propertyUnitNum + unitArray[j].split(',')[0] + ';';
+                plotNumber = unitArray[j].split(',')[2];
+                buildingName = unitArray[j].split(',')[3];
+            }
+            srplotNumber = plotNumber;
+        }
+        //removeValError($("#unit"));
+        $("#totar").val(totalArea);
+    }
+    function tecomUnits(){
+        if($('#tecomoff').val() != null){
+            tecomAcc = true;
+            propertyUnitNum = $('#tecomoff').val();
+        }
+    }
+    var tabledata = [];
+    
+    function subActOnChange(elem){
+        var add = true;
+        if($(elem).val()!= '--None--') {
+            for(var j=0;j<tabledata.length;j++){
+                if(tabledata[j].subActivity == $(elem).val()){
+                    add = false;
+                }
+            }
+            if(add){
+                var trow = {};
+                trow.subActivity = $(elem).val();
+                trow.activity = $(elem).attr('id') == 'arsubCat' ? 'Architectural' :  $(elem).attr('id') == 'mepsubCat' ? 'MEP' : 'Structural';
+                trow.selId = $(elem).attr('id');
+                tabledata.push(trow);
+                formTable(tabledata);
+            }
+        }
+    }
+    function updateSubAct(row,index){
+        var subAct = tabledata[index].subActivity;
+        var selId = tabledata[index].selId;
+        if( tabledata[index].subActivity == $('#' + selId + '').val()){
+            console.log('removingsel');
+            $('#' + selId + '').val('--None--').select2();
+        }
+        tabledata.splice(index,1);
+        
+        for(var j=0;j<tabledata.length;j++){
+            if(tabledata[j].activity == row){
+                $('#' + selId + '').val(''+ tabledata[j].subActivity +'').select2();  
+            }
+        }
+        formTable(tabledata);
+    }
+    function formTable(tabdata){
+        console.log('tabledata');
+        var tabledata = '';
+        if(tabdata.length == 0){$('#actTable').hide();return;}
+        for(var j=0;j<tabdata.length;j++){
+            var tr = '<tr style="cursor:pointer;"><td ><label class="custom-checkbox custom-checkbox-2 custom-checkbox-no-label"><input type="checkbox" name="sel" checked="checked"/><span></span></label></td><td>' + tabdata[j].activity + '</td><td>' + tabdata[j].subActivity + 
+                '</td><td style="vertical-align: middle;"><a onclick="updateSubAct(\'' +  tabdata[j].activity + '\',\'' + j + '\')" class="delete"><i class="icon-close" style="font-size: 10px;"></i> </a></td><td>Document</td> </tr>'
+            tabledata += tr;        }
+        $('#actTable').find('tbody').html(tabledata);
+        $('#actTable').show();
+    }
+    function bpdocs(){
+        var dcd = false;var dda = false;var noc = false;
+        cs['xcddocs__c'].value = '';
+        for(var j=0;j<tabledata.length;j++){
+            if((tabledata[j].subActivity.startsWith('Warehouse and Installation') || tabledata[j].subActivity == 'Fire Protection Works' ||  tabledata[j].subActivity == 'Kitchen Installations' || tabledata[j].subActivity =='Retail Installations') && !dcd){
+                cs['xcddocs__c'].value +=  'Initial approval from DCD;';
+                dcd = true;
+            }
+            if(tabledata[j].subActivity == 'Retail Installations' && !noc){
+                cs['xcddocs__c'].value +=  'Business park NOC;';
+                noc = true;
+            }            
+        }
+        if($("#gen").is(":checked")){
+            cs['xcddocs__c'].value +=  'DDA Registration Letter;';
+        }
+        if($("#struct").is(":checked") && !noc){
+            cs['xcddocs__c'].value +=  'Business park NOC;';
+        }
+        if($("#arch").is(":checked") && !dcd){
+            cs['xcddocs__c'].value +=  'Initial approval from DCD;';
+        }
+        
+        cs['xadh__c'].value='fit;';
+        var brk = vflds('.ctrequiredFld');
+        if(!$("#gen").is(":checked") && !$("#min").is(":checked")){
+            addValError($("#gen"),'Please select Fit Out Category!');
+            brk = true;
+        }else{removeValError($("#gen"));
+             }
+        if(!$("#arch").is(":checked") && !$("#mep").is(":checked") && !$("#struct").is(":checked")){
+            addValError($("#arch"),'Please select Fit Out Activities!');
+            brk = true;
+        }else{removeValError($("#arch"));
+             }
+        if(!brk){
+            let fitoutstr = '';
+            let fitoutJSON = JSON.parse(cs["xadtx2__c"].value);
+            //$('.fitJson').
+            /*fitoutJSON.ddatradelic = $('#ddatradLic').val();
+            fitoutJSON.fitoutarea =  $('#fitar').val();
+            fitoutJSON.notes =  $('#notes').val();
+            fitoutJSON.licNumber = $('#tradLic').val(); */
+            $('.fitJson').each(function(){
+                let k = $(this).attr('jsonKey');
+                let v = $(this).val();
+                fitoutJSON[k]=v;
+            });
+
+            fitoutJSON.fitOutType = $("#gen").is(":checked") ? 'General' : 'Minor';
+            fitoutJSON.activities = fitOutScope;
+            let subCtaegories = {};
+            let architectural = [];
+            let mechanical = [];
+            let structural = [];
+            if(fitoutJSON.fitOutType == 'Minor'){
+                
+                for(var j=0;j<tabledata.length;j++){
+                    if(tabledata[j].activity == 'Architectural'){
+                        architectural.push(tabledata[j].subActivity);  
+                    }else if(tabledata[j].activity == 'MEP'){
+                        mechanical.push(tabledata[j].subActivity); 
+                    }else {
+                        structural.push(tabledata[j].subActivity); 
+                    }
+                }
+            }
+            subCtaegories.archAct = architectural;
+            subCtaegories.mepAct = mechanical;
+            subCtaegories.structAct = structural;
+            
+            fitoutJSON.subCatg = subCtaegories;
+            cs['xfb__c'].value =  fitoutJSON.fitOutType;
+            fitoutstr = JSON.stringify(fitoutJSON);
+            cs['xadtx2__c'].value =  fitoutstr;
+            console.log('json'+fitoutstr);
+            toggleGLoader();
+            afso1();
+            
+        }
+        
+    }
+    
+    function contFormd(){
+        $("#contForm").show();
+        $("#contDocs").hide();
+    }
+    
+    function checkExpDate(elem){
+        var date1 = $(elem).val();
+        var date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+        var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+        removeValError(elem);
+        if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+           addValError(elem,'Invalid date format,please use this format : DD/MM/YYYY');
+            return;
+        }
+        var r = true;
+        console.log('days'+days);
+        if(days > -0.1){
+            console.log('days11'+days);
+            var errElem = '<div class="frmErrMsg">License should be valid!</div>';
+            $(elem).parents('.form-group').find('.frmErrMsg').remove();
+            $(elem).parents('.form-group').eq(0).append(errElem);
+            $(elem).addClass('is-invalid');
+        }else{
+            $(elem).parents('.form-group').find('.frmErrMsg').eq(0).remove();
+            $(elem).removeClass('is-invalid');
+            $(elem).next().find('.select2-selection').removeClass('is-invalid');
+        }
+        
+    }
+    function checkcontValid(ele){
+        console.log('contval'+$(ele).val());
+        if($(ele).val() != ''){
+            showGLoader();
+            setTimeout(function(){
+                sforce.connection.sessionId='{!$Api.Session_ID}';
+                console.log('$(ele).val()'+$(ele).val());
+                var WSResponse = sforce.apex.execute("Contractorvalidation","validateContractor",{licNumber:$(ele).val()});
+                $(ele).parents('.form-group').find('.frmErrMsg').remove();$(ele).removeClass('is-invalid')
+                if(WSResponse == 'Contractor is not registered with DDA.' ){
+                    var errElem = '<div class="frmErrMsg">To proceed with this fit-out, the contractor must be registered with DDA.</div>';                
+                    $(ele).parents('.form-group').eq(0).append(errElem);
+                    $(ele).addClass('is-invalid');
+                }
+                console.log('respObj'+WSResponse);
+                hideGLoader();
+            },1000);
+        }
+        
+    }
+    function textCh(elem){
+        console.log('ctName'+$(elem).val() );
+        if($(elem).val() == null || $(elem).val() == ''){
+            addValError(elem,'Value is required!');
+            return false;
+        }else{
+            removeValError(elem);
+        }
+    }
+    function faval(elem){
+        console.log('$("#fitar").val()'+ $("#fitar").val());
+        console.log('$("#totar").val()'+typeof $("#totar").val());
+        if(JSON.parse(cs["xadtx2__c"].value).tecomAcc == undefined){
+            if($("#fitar").val().length==0){
+                $("input[name=ftType]").prop("checked",false);
+                $("#genrad").show();$("#minrad").show();
+                $("#ddatrd").hide(); $("#act").hide(); $("#structcheck").hide();
+                $("#archSub").hide(); $("#mepSub").hide(); $('#scpnote').hide();$("#actTable").hide();
+            }
+            if((parseInt($("#fitar").val()) < 1000 && parseInt($("#totar").val()) > 1000) || parseInt($("#totar").val()) < 1000){
+                $("#min").prop("checked", true).trigger("click"); $("#genrad").hide();$("#minrad").show();
+            }
+            console.log('isretcat'+ {!isRetailCat});
+            if((parseInt($("#fitar").val()) >= 1000 && parseInt($("#totar").val())) > 1000 || {!isRetailCat}){
+                $("#gen").prop("checked", true).trigger("click"); $("#minrad").hide();$("#genrad").show();
+            }
+        }
+        
+        
+        if(parseInt($("#fitar").val()) > parseInt($("#totar").val())){
+            console.log('inside if');
+            addValError(elem,'Fit Out Area should be less than Total Area');$(elem).addClass('is-invalid');
+        }else{removeValError(elem);$(elem).removeClass('is-invalid');
+             }
+        
+    }
+    function ddatrdlic(elem){
+        var v = $(elem).val();
+         if (v == '' || v == null || v == undefined){
+         addValError(elem,'Value is required!');return false;
+         }else{
+             removeValError(elem);
+             }
+    }
+    
+    function termc(elem){
+        if(!$("#terCondit").is(':checked')){
+            addValError(elem,'Please agree to the terms and conditions!');
+            return false;
+        }else{
+            removeValError(elem);
+        }
+    }
+    
+    function svRDrft(){
+            let fitoutstr = '';
+            let fitoutJSON = {};
+            fitoutJSON.contrName =$('#contrName').val();
+            fitoutJSON.ctcName = $('#contName').val();
+            fitoutJSON.ctcEmail = $('#contEmail').val();
+            fitoutJSON.ctcPhone = $('#contPhone').val();
+            fitoutJSON.ctcSecPhone = $('#contSecPhone').val();
+            fitoutJSON.bpEmail = $('#tentEmail').val();
+            fitoutJSON.bpphone = $('#bpphone').val();
+            fitoutJSON.totalarea = totalArea; 
+            fitoutJSON.unitNumber = propertyUnitNum;
+            fitoutJSON.selectedUnits = $('#unit').val();
+            fitoutJSON.bpName = "{!u.contact.account.Name}";
+            fitoutJSON.businessPark = "{!u.contact.account.Prk__c}";
+        	fitoutJSON.plotNumber = srplotNumber;
+            fitoutstr = JSON.stringify(fitoutJSON);
+            cs['xadtx2__c'].value =  fitoutstr;            
+            sd1();
+    }
+    
+    function contForm(){
+        var brk = vflds('.bprequiredFld');
+        if(!$("#terCondit").is(':checked')){
+            addValError($("#terCondit"),'Please agree to the terms and conditions!');
+            brk = true;
+        }else{removeValError($("#terCondit"));
+             }
+        if(!brk){
+            let fitoutstr = '';
+            let fitoutJSON = {};
+            fitoutJSON.contrName =$('#contrName').val();
+            fitoutJSON.ctcName = $('#contName').val();
+            fitoutJSON.ctcEmail = $('#contEmail').val();
+            fitoutJSON.ctcPhone = $('#contPhone').val();
+            fitoutJSON.ctcSecPhone = $('#contSecPhone').val();
+            fitoutJSON.bpEmail = $('#tentEmail').val();
+            fitoutJSON.bpphone = $('#bpphone').val();
+            fitoutJSON.totalarea = totalArea; 
+            fitoutJSON.unitNumber = propertyUnitNum;
+            fitoutJSON.bpName = "{!u.contact.account.Name}";
+            fitoutJSON.businessPark = "{!u.contact.account.Prk__c}";
+            fitoutJSON.plotNumber = srplotNumber;
+            fitoutJSON.buildingName = buildingName;
+            fitoutJSON.tecomAcc = tecomAcc;
+            fitoutstr = JSON.stringify(fitoutJSON);
+            cs['xadtx2__c'].value =  fitoutstr;
+            cs['os__c'].value = 'Contractor Appointed';
+            cs['xceml__c'].value = $('#contEmail').val();
+            cs['xcmob__c'].value = $('#contPhone').val();
+            cs['xaccbrand__c'].value = "{!u.contact.account.Prk__c}";
+            cs['xvtyp__c'].value = "{!leaseType}";
+            cs['xcfan__c'].value = $('#contrName').val();
+            cs['xave__c'].value = $('#tentEmail').val();
+            cs['csp__c'].value = 'ABC Contracting Company';
+            cs['xchn__c'].value = 'Ahmed Mohammed';
+            cs['xbrnd__c'].value = "{!u.contact.account.Prk__c}";
+            cs['xbn__c'].value = buildingName;
+            cs['xaloc__c'].value = propertyUnitNum;
+            toggleGLoader();
+            afso1();
+        }
+    }
+    function bpForm(){
+        $("#contApp").show();
+        $("#contForm").hide();
+    }
+    
+    function assignLoc(){
+        //cs['xaloc__c'].value = $('#xaloc').val(); 
+    }
+    function prntPDF() {var rqid = '{!JSENCODE(req.Id)}';window.open("/apex/grqAPPdf?id="+rqid, "_new");return false;}
+    function ifrm(){}
+    function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+    function pvc2(){window.open("/apex/gcp?id={!req.Con__c}","gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",false);}
+    function blink() { if(mx%2) { mcol = "rgb(255,0,0)"; } else{ mcol = "rgb(236,245,253)"; } amd.style.color=mcol;mx++;if(mx>2){mx=1};setTimeout("blink()",1800);  }
+    
+    </script>
+    <apex:pageMessages id="msg" escape="false"/>
+    <apex:form styleClass="pbform" rendered="{!NOT(Acc.lcsnc__c)}">
+        <!--
+        <apex:outputText rendered="{!req.bprk__c=='D3'}">
+         <c:guheader uid="{!srv.uid__c}" heading="FIT OUT SUBMISSION" br="ddd" rendered="{!isFContU}"/>
+        </apex:outputText>
+        <apex:outputText rendered="{!req.bprk__c!='D3'}">
+         <c:guheader uid="{!srv.uid__c}" heading="FIT OUT SUBMISSION" br="" rendered="{!isFContU}"/>
+		<!-- {!LOWER(req.bprk__c)} -->
+        <!--</apex:outputText>-->
+ 
+        <body class="base">
+            <div id="main"> 
+                <!-- <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>-->
+                <apex:actionFunction name="sd" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();removeTempLoader();errMsgScroll();"/>
+                <apex:actionFunction name="afso1" action="{!saveReq}" status="theStatus" rerender="msg" oncomplete="toggleGLoader();removeTempLoader();errMsgScroll();"/>
+                <apex:actionFunction name="afup" action="{!updateRenewalReq}" status="theStatus" rerender="msg" oncomplete="toggleGLoader();removeTempLoader();errMsgScroll();"/>
+                <apex:actionFunction name="rerenderReq" reRender="hprpb" status="theStatus" oncomplete="removeVal();" />    
+                
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="sd1" action="{!saveDraft}" status="theStatus" rerender="msg" oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+             <!--
+                <apex:actionFunction name="svRDrft2" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                -->
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                <apex:outputText rendered="{!isFContU}">Service Request # </apex:outputText><apex:outputText rendered="{!!isFContU}"> SR # </apex:outputText><span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        
+                        <!--<c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+<c:drftCnclBtns req="{!req}"/>-->
+                        
+                        <!--<apex:outputPanel rendered="{!req.id==''}">
+<a style="color:#fff;" onclick="toggleGLoader();afsd();" class="btn btn-black">
+SAVE DRAFT
+</a>
+</apex:outputPanel>-->
+                        
+                        <c:drftCnclBtns req="{!req}" shwCncl="{!!isFContU}" shwDraft="{!IF(AND(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),srv.uid__c!='327'),true,false)}"/>
+                        
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                </div>
+                                <div >
+                                    <h3 class="text-primary d-md-block d-none">Download Sample</h3> 
+                                    <div class="upload-list">
+                                        <div class="upload-list-item box box-white box-padding">
+                                            <a href="/servlet/servlet.FileDownload?file=0150I000009fFiL" class="upload-item-title text-li" onclick="window.open(this.href, '_blank');return false;">
+                                                <u>Method Statement and Risk Assessment</u><!-- 0155D000000NUU0 -->
+                                            </a>
+                                        </div>
+                                    </div> 
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:variable var="fnxPg" value="grqei" />
+                                <div id="contApp" style="{!IF(showContForm==true,'display:none;','display:block;')}">
+                                    <div id="leaseErr" style="{!IF(OR(leaseType != null,Acc.Name == 'TECOM Investments FZ-LLC'),'display:none;','display:block;')}">
+                                       <h2 style="color:red;">
+                                           You should have active lease to apply for this service.</h2>
+                                    </div>
+                                    <div id="contAppForm" style="{!IF(OR(leaseType != null,Acc.Name == 'TECOM Investments FZ-LLC'),'display:block;','display:none;')}">
+                                    <h3 class="base-main-title">Fit-out Contractor Appointment</h3>
+                                    <div class="row row-lg form-style">
+                                        <div class="form-group col-lg-12">
+                                            <label >Name of Contracting Company</label>
+                                            <input maxLength='50' jsonKey='contrName' type="text" id="contrName" class="fitJson form-control bprequiredFld alphaChar"  onkeyup="textCh(this);"/>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label >Contractor (Point Of Contact)</label>
+                                                <input maxLength='40' jsonKey='ctcName' type="text" id="contName" class="fitJson form-control bprequiredFld alphaChar" onkeyup="textCh(this);"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label >Contractor (Point Of Contact Email)</label>
+                                                <input type="text" jsonKey='ctcEmail' id="contEmail" class="fitJson form-control bprequiredFld"  onchange="checkEmail(this);"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label >Contractor (Primary Phone Number)</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis: 100px;width:70px;"/>
+                                                <input type="text" jsonKey='ctcPhone' maxlength="9" id="contPhone" class="fitJson form-control bprequiredFld numOnly applMob"  onchange="isUAEMobNum(this);"/><!--onchange="isUAEMobNum(this);" -->
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label >Contractor (Secondary Phone Number)(optional)</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis: 100px;width:70px;"/>
+                                                <input type="text" jsonKey='ctcSecPhone' maxlength="9" id="contSecPhone" class="fitJson form-control numOnly" onchange="isUAEMobNum(this);"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label >Your Company (Point Of Contact Email)</label>
+                                                <input jsonKey='bpEmail' type="text" id="tentEmail" class="fitJson form-control bprequiredFld" value="{!u.contact.account.Email__c}" onchange="checkEmail(this);"  />
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label >Your Company (Point of Contact Phone Number)</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis: 100px;width:70px;"/>
+                                                <input jsonKey='bpphone' type="text" id="bpphone" class="fitJson form-control bprequiredFld numOnly applMob" value="{!u.contact.account.Phone}" />
+                                            </div>
+                                        </div>
+                                        
+                                            <div  class="form-group col-lg-12" style="{!if(Acc.Name == 'TECOM Investments FZ-LLC','display:block;','display:none;')}">
+                                                <label >Office Location</label>
+                                                <input type="text" id="tecomoff" class="form-control bprequiredFld"  onchange="tecomUnits();"/>
+                                            </div>
+                                        
+                                        <div class="form-group col-lg-12" style="{!if(Acc.Name == 'TECOM Investments FZ-LLC','display:none;','display:block;')}">                                            
+                                            <label>Select your office location where fit out work would be carried (You can select multiple Units)</label>
+                                            <select id="unit" class="form-control input-select2-tags bprequiredFld" multiple="multiple" onclick="unitsOnChange();" onchange="unitsOnChange();">
+                                                <apex:repeat value="{!actLeaseLoc}" var="a">
+                                                    <option value='{!actLeaseLoc[a].ProductName}, {!actLeaseLoc[a].UnitArea}, {!actLeaseLoc[a].PlotNumer}, {!actLeaseLoc[a].buildingName}' >{!actLeaseLoc[a].ProductName}, Plot# : {!actLeaseLoc[a].PlotNumer} </option>
+                                                </apex:repeat>
+                                            </select>
+                                        </div>
+                                        
+                                        
+                                        <div class="form-group col-lg-12">
+                                            
+                                            
+                                            <label class="custom-checkbox">
+                                                <input type="checkbox" class="focus bprequiredFld" id="terCondit" onclick="termc(this);"/>
+                                                
+                                                <span>We hereby confirm that above mentioned contractor  is appointed
+                                                    as the Fit-out Contractor for our above premises. to carry out the proposed Fit-out works
+                                                    in accordance with the process, requirements and guidelines of TECOM, DDA and other
+                                                    local authorities. <!--a href="/servlet/servlet.FileDownload?file=015Ik000000kWaE" target="new" class="text-000 text-underline">Click here to read 
+                                                    </a--></span>
+                                            </label>
+                                            
+                                        </div>
+                                        <div class="form-group col-lg-12">
+                                            <div class="text-right">
+                                                <a onclick="contForm();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                                    Submit
+                                                </a>
+                                            </div> 
+                                        </div>
+                                    </div></div>
+                                </div>
+                                <div id="contForm" style="{!IF(AND(showContForm==true,isFContU),'display:block;','display:none;')}">
+                                                                  
+                                    <h3 class="base-main-title">Client Details</h3>
+                                    <b>{!req.Acc__r.name}</b>, has appointed  {!req.xcfan__c} as the approved contractor to carry out the fit-out services. Kindly ensure that all relevant details are accurately updated. If you are opting for general fit-out services, make sure you are registered with the DDA as a valid fit-out contractor.
+                                    <br/><br/>
+                                    <div class="row row-lg form-style">
+                                      <div class="form-group col-lg-12">
+                                            <label >Client Name</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="form-control mr-1" value="{!req.Acc__r.name}" disabled="true" />
+                                                
+                                            </div>
+                                        </div>
+                                         <div class="form-group col-lg-6">
+                                            <label >Client Point Of Contact Email</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="fitJson form-control mr-1" jsonKey='bpEmail' disabled="true" />
+                                                
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label >Client Point Of Contcat Mobile</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="fitJson form-control mr-1" jsonKey='bpphone'  disabled="true" />
+                                                
+                                            </div>
+                                        </div>
+                                        <h3 class="base-main-title">Share the details about fitout work</h3>
+                                    <p>Share the details  of fitout work that is been carried out in client  premises, choose appropriate activities and sub activities and upload all relevant documents as suggested.</p>
+     
+                                        <div class="form-group col-lg-6">
+                                            <label>Contractor Trade License Number</label>
+                                            <input maxLength='9' jsonKey='licNumber' Class="fitJson form-control ctrequiredFld numOnly" id="tradLic" onkeyup="textCh(this);"/>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label>Contractor License Expiry Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input onchange="checkExpDate(this);" jsonKey='licexpiry' type="text" class="fitJson dateCheck ctrequiredFld form-control input-datepicker forEdit" validationName="pid" fldName="Contractor License Expiry Date" id="licexpdate"
+                                                       data-toggle="datetimepicker" data-target="#licexpdate" />
+                                                <div class="input-group-append">
+                                                    <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#licexpdate">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label>Total Leased Area</label>
+                                            <input readonly="true" Class="form-control ctrequiredFld numOnly jsnfld" id="totar" value="{!totalArea}"/>
+                                        </div>
+                                        <div class="form-group col-lg-6">
+                                            <label>Enter the affected fit out area (in sqft)</label>
+                                            <input  maxLength='10' jsonKey ='fitoutarea' Class="fitJson form-control ctrequiredFld numOnly" id="fitar" onblur="faval(this);" />
+                                        </div>
+                                        <div class="form-group">
+                                            <p class="fs-18">Choose the  type of Fit Out you would like to apply?</p>
+                                            <div >
+                                                <label id="genrad" class="custom-radio mr-4">
+                                                    <input type="radio" id="gen" class="ftType" name="ftType" value="general" />
+                                                    <span>General</span>
+                                                </label>
+                                                <label id="minrad" class="custom-radio mr-4">
+                                                    <input type="radio" id="min" class="ftType" name="ftType" value="minor" />
+                                                    <span>Minor</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div id="ddatrd" class="form-group col-lg-12" style="display:none">
+                                            <label>DDA Registration Number</label>
+                                            <input maxLength='9' jsonKey='ddatradelic' Class="fitJson form-control numOnly jsnfld" id="ddatradLic"  onblur="ddatrdlic(this);" onkeypress="return isNumber(event);"/>
+                                        </div>
+                                        <div id="act" class="form-group" style="display:none">
+                                            <p class="fs-18">Choose the Fit Out activities your are carring out in your premises?</p>
+                                            <div>
+                                                <label class="custom-checkbox mr-4">
+                                                    <input type="checkbox" class="scope" id="arch" value="Architectural" />
+                                                    <span>Architectural</span>
+                                                </label>
+                                                <label class="custom-checkbox mr-4">
+                                                    <input type="checkbox" class="scope" id="mep" value="Mechnical"/>
+                                                    <span>Mechnical, Electrical and Plumbing (MEP)</span>
+                                                </label>
+                                                <label class="custom-checkbox mr-4" id="structcheck">
+                                                    <input type="checkbox" class="scope" id="struct" value="Structural"/>
+                                                    <span>Structural</span>
+                                                </label>
+                                            </div>
+                                        </div>       
+                                        <div id="archSub" style="display:none" class="form-group col-lg-12 "> 
+                                            <label>Choose the sub activies  under architectural </label>
+                                            <select id="arsubCat" class="form-control disableBoEdit input-select2-flat"  onchange="subActOnChange(this);">
+                                                <option id="none" value=""  data-value="" >--None--</option>
+                                                <apex:repeat value="{!archSubCat}" var="arch">
+                                                    <option value="{!arch}">{!arch}</option>
+                                                </apex:repeat>
+                                            </select>
+                                        </div>
+                                        
+                                        <div id="mepSub" style="display:none" class="form-group col-lg-12"> 
+                                            <label>Choose the sub activies  under Mechnical, Electrical and Plumbing (MEP) Sub Categories</label>
+                                            <select id="mepsubCat" class="form-control disableBoEdit input-select2-flat" onchange="subActOnChange(this);">
+                                                <option id="none" value=""  data-value="" >--None--</option>
+                                                <apex:repeat value="{!mepSubCat}" var="mep">
+                                                    <option value="{!mep}">{!mep}</option>
+                                                </apex:repeat>
+                                            </select>
+                                        </div>
+                                        <div id="strSub" style="display:none" class="form-group col-lg-12"> 
+                                            <label>Choose the sub activies under structural</label>
+                                            <select id="strsubCat" class="form-control disableBoEdit input-select2-flat"  onchange="subActOnChange(this);">
+                                                <option id="none" value=""  data-value="" >--None--</option>
+                                                <apex:repeat value="{!struSubCat}" var="struct">
+                                                    <option value="{!struct}">{!struct}</option>
+                                                </apex:repeat>
+                                            </select>
+                                        </div>
+                                        <div id="scpnote" class="col-lg-12" style="display:none">
+                                            <div class="form-group">
+                                                <label >Scope of work</label>
+                                                <textarea maxlength="255" rows="5" cols="33" jsonKey='notes' id="notes" class="fitJson form-control ctrequiredFld" onkeyup="textCh(this);"/>
+                                                <!--<input maxlength="255" type="text" jsonKey='notes' id="notes" class="fitJson form-control ctrequiredFld" onkeyup="textCh(this);"/>-->
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0" >
+                                            <table class="table table-hover table-responsive-sticky table-list m-0" id="actTable" style="display:none">
+                                                <thead>
+                                                    <tr>
+                                                        <th tdClass="sticky-col"></th>
+                                                        <th>Activity</th>
+                                                        <th tdClass="sticky-col" class="sticky-col">Sub Activity</th>                                                        
+                                                        <th></th>
+                                                        <th>Document</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!--div class="form-group col-lg-6">
+                                            <a onclick="bpForm();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                                PREVIOUS
+                                            </a>
+                                        </div-->
+                                        <!--div class="form-group col-lg-6 text-right">
+                                            <a onclick="bpdocs();" class="btn btn-primary base-nav-next " style="color: #fff;">
+                                                NEXT
+                                            </a>
+                                        </div-->
+                                    </div>
+                                </div>
+                                <div id="contDocs" style="display:none">
+                                    <div class="form-group col-lg-6">
+                                        <a onclick="contFormd();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                            PREVIOUS
+                                        </a>
+                                    </div>
+                                </div>
+                                <apex:pageBlock id="pbMain" rendered="false">
+                                    <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>                                    
+                                    <p class="fs-18">You can either renew existing permits or apply for a new one</p>
+                                    <!-- locList2 --- {!locList2} srv.uid__c --- {!srv.uid__c} -->
+                                    
+                                    <!--<div class="form-group form-style">
+<label>Select from your offices to apply for the permit</label>
+<select id="xaloc" class="form-control requiredFld input-select2-flat jsnfld" value="{!req.xaloc__c}" onchange="assignLoc();">
+<apex:repeat value="{!strLocList}" var="loc">
+<option value="{!loc}">{!loc}</option>
+</apex:repeat>
+</select>
+<apex:inputHidden id="xaloc__c" value="{!req.xaloc__c}" />
+<script type="text/javascript">cs['xaloc__c']=getC('{!$Component.xaloc__c}');
+</script>
+</div>-->
+                                    
+                                    
+                                    <apex:outputPanel rendered="{!mapActiveReq!=null && req.id==''}">
+                                        <div class="form-group" id="mapActiveReq">
+                                            <label>Recent Permits</label>
+                                            <div class="row row-lg">
+                                                <apex:repeat value="{!mapActiveReq}" var="ar">
+                                                    <div class="col-lg-6">
+                                                        <label class="box-check">
+                                                            <input id="{!mapActiveReq[ar].Id}" type="checkbox" name="recent_permit" onclick="setRenewalDetails(this,'{!JSENCODE(mapActiveReq[ar].Id)}','{!JSENCODE(mapActiveReq[ar].xrap__c)}');"/>
+                                                            <div class="box box-padding box-hover" style="min-height: 80px;">
+                                                                <span class="box-title font-weight-medium fs-18">
+                                                                    {!mapActiveReq[ar].prf__c} 
+                                                                </span>
+                                                                <div class="d-flex justify-content-between">
+                                                                    <div class="fs-14">
+                                                                        <span class="text-light">Ref# : </span>
+                                                                        <apex:outputField value="{!mapActiveReq[ar].Name}"/> 
+                                                                    </div>
+                                                                    <span class="text-light fs-14">{!mapActiveReq[ar].xrap__c} Persons</span>
+                                                                </div>
+                                                                
+                                                                <div class="d-flex justify-content-between">
+                                                                    <div class="fs-14">
+                                                                        <span class="text-light">Valid Till: </span>
+                                                                        <apex:outputField value="{!mapActiveReq[ar].xcped__c}"/> 
+                                                                    </div>
+                                                                    <div class="fs-14">
+                                                                        <span class="text-light">End Time: </span>
+                                                                        <apex:outputField value="{!mapActiveReq[ar].xet__c}"/> 
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </label>
+                                                        <script type="text/javascript"> 
+                                                        lstActiveReq.push('{!JSENCODE(mapActiveReq[ar].Id)}'); 
+                                                        </script>
+                                                    </div>
+                                                </apex:repeat>
+                                            </div>
+                                            
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    
+                                    <div id="newpermit" class="newpermit">
+                                        <p class="fs-18">Apply for a new permit</p>
+                                        <div class="row row-lg form-style">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Contractor / Service provider</label>
+                                                    <apex:inputField styleClass="form-control requiredFld jsnfld disableBoEdit alphaNum" id="csp__c" value="{!req.csp__c}" />
+                                                    <script type="text/javascript">cs['csp__c']=getC('{!$Component.csp__c}');
+                                                    </script> 
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Contact name</label>
+                                                    <apex:inputField styleClass="form-control requiredFld jsnfld disableBoEdit alphaNum" id="xchn__c" value="{!req.xchn__c}" onkeypress="return isAlphabet(event)"/> 
+                                                    <script type="text/javascript">cs['xchn__c']=getC('{!$Component.xchn__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="row">
+                                                    <div class="col-md-5">
+                                                        <div class="form-group">
+                                                            <label>Number of persons permitted</label>
+                                                            <apex:inputField style="width: 76px;" styleClass="form-control requiredFld numOnly jsnfld" id="xrap__c" value="{!req.xrap__c}" onblur="NumberLimit(this)" onkeypress="NumberLimit(this);return isNumber(event);"/>
+                                                            <script type="text/javascript"> cs['xrap__c']=getC('{!$Component.xrap__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-7">
+                                                        <div class="form-group">
+                                                            <label class="mt-4">Contact number (mobile)</label>
+                                                            <div class="d-flex">
+                                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis: 100px;width:70px;"/>
+                                                                <apex:inputField styleClass="form-control requiredFld numOnly jsnfld applMob disableBoEdit" id="xcmob__c" value="{!req.xcmob__c}" onchange="isUAEMobNum(this);"/> 
+                                                                <script type="text/javascript"> cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                                                </script> 
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-lg-6">
+                                                <div class="form-group">                                        
+                                                    <label class="mt-4">Email</label>
+                                                    <apex:inputField styleClass="form-control requiredFld jsnfld disableBoEdit" id="xceml__c" value="{!req.xceml__c}" onchange="checkEmail(this);"/>
+                                                    <script type="text/javascript">cif='{!$Component.xceml__c}_lkid'; cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                                    </script>  
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="pb-4"></div>
+                                        <div id="permitdets">
+                                            <p class="fs-18">Permit Details</p>
+                                            <div class="form-style">
+                                                <div class="form-group">
+                                                    <label>Select the reason for the permit</label>
+                                                    <apex:inputField styleClass="form-control requiredFld  input-select2-flat jsnfld disableBoEdit" id="prf__c" value="{!req.prf__c}" onchange="shwOther(true);removeVal();" />
+                                                    <script type="text/javascript"> cs['prf__c']=getC('{!$Component.prf__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="form-style">
+                                                <div class="form-group form-style">
+                                                    <div id="Reason__cl" style="display:none;">
+                                                        <label>Permit Description</label>
+                                                        <apex:inputField styleClass="form-control requiredFld jsnfld disableBoEdit" id="Reason__c" value="{!req.xuvdet__c}" style="display:none;"/>
+                                                        <script type="text/javascript"> cs['Reason__c']=getC('{!$Component.Reason__c}');  cs['Reason__cl']=getC('Reason__cl');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="hpr__cRI" style="display:none;">
+                                                <div class="row" >
+                                                    <div class="form-group form-style col-lg-12"> 
+                                                        <label>Choose activities (optional) - You can select multiple activities</label>
+                                                        
+                                                        <select id="hpr" class="form-control disableBoEdit input-select2-tags dum jsnfldMultipic" multiple="multiple" onclick="activitiesOnchange();" onchange="activitiesOnchange();">
+                                                            <apex:repeat value="{!lstActivities}" var="a">
+                                                                <apex:outputPanel rendered="{!IF(CONTAINS(req.hpr__c,a), true, false)}" >
+                                                                    <option value="{!a}" selected="true">{!a}</option>
+                                                                </apex:outputPanel>
+                                                            </apex:repeat>
+                                                        </select>
+                                                        <apex:inputHidden id="hpr__c" value="{!req.hpr__c}"  />
+                                                        <script type="text/javascript">
+                                                        cs['hpr__c']=getC('{!$Component.hpr__c}');  cs['hpr__cl']=getC('hpr__cl');
+                                                        cs['hpr__uns']=getC('{!$Component.hpr__c}'+'_unselected'); cs['hpr__sel']=getC('{!$Component.hpr__c}'+'_selected');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-style">
+                                        <div class="row">
+                                            <div class=" form-group col-xl-3 col-lg-6">
+                                                <label>Permission From</label>
+                                                <div class="input-datepicker-group input-group mr-3">
+                                                    <input type="text" class="requiredFld form-control input-datepicker" onchange="cpyDates('xcpid'); valDates();" id="xcpid" data-toggle="datetimepicker" data-target="#xcpid" value="{!req.xcpid__c}"/>
+                                                    <div class="input-group-append">
+                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcpid">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <apex:inputHidden id="xcpid__c" value="{!req.xcpid__c}"/>
+                                                <script type="text/javascript"> 
+                                                cs['xcpid__c']=getC('{!$Component.xcpid__c}');
+                                                cs['xcpid']=getC('xcpid');
+                                                dformat('{!JSENCODE(req.xcpid__c)}','xcpid');
+                                                </script>
+                                            </div>
+                                            <div class="form-group col-xl-3 col-lg-6">
+                                                <label>Permission Till</label>
+                                                <div class="input-datepicker-group input-group mr-3">
+                                                    <input type="text" class="requiredFld form-control input-datepicker" id="xcped" data-toggle="datetimepicker" data-target="#xcped" value="{!req.xcped__c}"  onchange="cpyDates('xcped');valDates();"/>
+                                                    <div class="input-group-append">
+                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <apex:inputHidden id="xcped__c" value="{!req.xcped__c}"/>
+                                                <script type="text/javascript">
+                                                cs['xcped__c']=getC('{!$Component.xcped__c}');
+                                                cs['xcped']=getC('xcped');
+                                                dformat('{!JSENCODE(req.xcped__c)}','xcped');
+                                                </script>
+                                            </div>
+                                            <div class="col-xl-3 col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Start time (everyday)</label>
+                                                    <div class="d-flex">
+                                                        <div class="w-100 mr-2">
+                                                            <select id="xst" class="form-control requiredFld input-select2-flat" onchange="setTime('xst');">
+                                                                <option value="00:00">12:00</option>
+                                                                <option value="00:30">12:30</option>
+                                                                <option value="01:00">01:00</option>
+                                                                <option value="01:00">01:30</option>
+                                                                <option value="01:00">02:00</option>
+                                                                <option value="02:30">02:30</option>
+                                                                <option value="02:00">03:00</option>
+                                                                <option value="03:30">03:30</option>
+                                                                <option value="04:00">04:00</option>
+                                                                <option value="04:30">04:30</option>
+                                                                <option value="05:00">05:00</option>
+                                                                <option value="05:30">05:30</option>
+                                                                <option value="06:00">06:00</option>
+                                                                <option value="06:30">06:30</option>
+                                                                <option value="07:00">07:00</option>
+                                                                <option value="07:30">07:30</option>
+                                                                <option value="08:00">08:00</option>
+                                                                <option value="08:30">08:30</option>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="09:30">09:30</option>
+                                                                <option value="10:00">10:00</option>
+                                                                <option value="10:30">10:30</option>
+                                                                <option value="11:00">11:00</option>
+                                                                <option value="11:30">11:30</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="w-100">
+                                                            <select id="xsts" class="form-control input-select2-flat" onchange="setTime('xst');">
+                                                                <option value="AM">AM</option>
+                                                                <option value="PM">PM</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- /.d-flex -->
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-xl-3 col-lg-6">
+                                                <div class="form-group">
+                                                    <label>End time (everyday)</label>
+                                                    <div class="d-flex">
+                                                        <div class="w-100 mr-2">
+                                                            <select id="xet" class="form-control requiredFld input-select2-flat" onchange="setTime('xet');">
+                                                                <option value="00:00">12:00</option>
+                                                                <option value="00:30">12:30</option>
+                                                                <option value="01:00">01:00</option>
+                                                                <option value="01:00">01:30</option>
+                                                                <option value="01:00">02:00</option>
+                                                                <option value="02:30">02:30</option>
+                                                                <option value="02:00">03:00</option>
+                                                                <option value="03:30">03:30</option>
+                                                                <option value="04:00">04:00</option>
+                                                                <option value="04:30">04:30</option>
+                                                                <option value="05:00">05:00</option>
+                                                                <option value="05:30">05:30</option>
+                                                                <option value="06:00">06:00</option>
+                                                                <option value="06:30">06:30</option>
+                                                                <option value="07:00">07:00</option>
+                                                                <option value="07:30">07:30</option>
+                                                                <option value="08:00">08:00</option>
+                                                                <option value="08:30">08:30</option>
+                                                                <option value="09:00">09:00</option>
+                                                                <option value="09:30">09:30</option>
+                                                                <option value="10:00">10:00</option>
+                                                                <option value="10:30">10:30</option>
+                                                                <option value="11:00">11:00</option>
+                                                                <option value="11:30">11:30</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="w-100">
+                                                            <select id="xets" class="form-control input-select2-flat" onchange="setTime('xet');">
+                                                                <option value="AM">AM</option>
+                                                                <option value="PM">PM</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!--<div class="col-xl-3 col-lg-6">
+<div class="form-group">
+<label>Start Time</label>
+<apex:inputField styleClass="form-control requiredFld inputTimeMaxLength numOnly jsnfld" id="xst__c" value="{!req.xst__c}" onkeyup="formatTimeHHMM('xst__c',event.keyCode);" onchange="valTime('xst__c');"/> 
+<script type="text/javascript">cs['xst__c']=getC('{!$Component.xst__c}');
+</script>
+</div>
+</div>
+<div class="col-xl-3 col-lg-6">
+<div class="form-group">
+<label>End Time</label>
+<apex:inputField styleClass="form-control requiredFld inputTimeMaxLength numOnly jsnfld" id="xet__c" value="{!req.xet__c}" onkeyup="formatTimeHHMM('xet__c',event.keyCode);" onchange="valTime('xet__c');"/> 
+<script type="text/javascript">cs['xet__c']=getC('{!$Component.xet__c}'); 
+</script>
+</div>
+</div>-->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="newpermit">
+                                        <p class="fs-18">Address details</p>
+                                        <div class="row row-lg form-style">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <Label>Business park</Label>
+                                                    <apex:inputField onchange="createDepDds()" styleClass="jsnfld ddValidation requiredFld disableBoEdit form-control input-select2-tags" value="{!req.xbrnd__c}" id="xbrnd__c"/>
+                                                    <script type="text/javascript">
+                                                    cs['xbrnd__c']=document.getElementById('{!$Component.xbrnd__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Building name</label>
+                                                    <apex:inputField styleClass="jsnfld ddValidation depDD requiredFld disableBoEdit form-control input-select2-tags" value="{!req.xbn__c}" id="xbn__c"/>
+                                                    <script type="text/javascript">
+                                                    cs['xbn__c']=document.getElementById('{!$Component.xbn__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <!--<label>Delivery Location</label>-->
+                                                    <Label>Office address</Label>
+                                                    <apex:inputField styleClass="jsnfld requiredFld form-control" style="height:52px;" value="{!req.xaloc__c}" id="xaloc__c"/>
+                                                    <script type="text/javascript">
+                                                    cs['xaloc__c']=document.getElementById('{!$Component.xaloc__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!--<div id="newdocs">
+<div class="mt-5">
+<h4>Please upload required documents</h4>
+<label class="frmErrMsg1" id="requiredDoc" style="display:none;">Attachments are required.</label>   
+<apex:outputPanel id="upld2">
+<c:grqsupd id="uploadcmp" Dim="SH"  req="{!req}" PayDone="false"  SDocs="{!IF(req.id!='',null,'Contractor Trade License:Contractor Trade License;')}" onlyDoc="true"/>
+</apex:outputPanel> 
+</div>
+</div>-->
+                                    <script type="text/javascript">ifrm();
+                                    </script>
+                                </apex:pageBlock>
+                            </div>
+                            
+                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}" req="{!req}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <apex:inputHidden id="renewalRqId" value="{!renewalRqId}" />
+            <apex:inputHidden id="xbrnd__c" value="{!req.xbrnd__c}" />
+            <apex:inputField styleClass="jsnfld" id="xst__c" value="{!req.xst__c}" style="display:none;" />
+            <apex:inputField styleClass="jsnfld" id="xet__c" value="{!req.xet__c}" style="display:none;"/>
+            <apex:inputHidden id="xcddocs__c" value="{!req.xcddocs__c}" />
+            <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+            <apex:inputHidden id="xadtx2__c" value="{!req.xadtx2__c}" />
+            <apex:inputHidden id="os__c" value="{!req.os__c}" />
+            <apex:inputHidden id="xceml__c" value="{!req.xceml__c}" />
+            <apex:inputHidden id="xcmob__c" value="{!req.xcmob__c}" />
+            <apex:inputHidden id="xaccbrand__c" value="{!req.xaccbrand__c}" />
+            <apex:inputHidden id="xvtyp__c" value="{!req.xvtyp__c}" />
+            <apex:inputHidden id="xfb__c" value="{!req.xfb__c}" />
+            <apex:inputHidden id="xcfan__c" value="{!req.xcfan__c}" />
+            <apex:inputHidden id="xave__c" value="{!req.xave__c}" />
+            <apex:inputHidden id="csp__c" value="{!req.csp__c}"/> 
+            <apex:inputHidden id="xchn__c" value="{!req.xchn__c}"/>
+            <apex:inputHidden id="xbn__c" value="{!req.xbn__c}"/>
+            <apex:inputHidden id="xaloc__c" value="{!req.xaloc__c}"/>
+            
+            <script type="text/javascript"> 
+            cs["renewalRqId"] = getC('{!$Component.renewalRqId}');
+            cs["xbrnd__c"] = getC('{!$Component.xbrnd__c}');
+            cs["xst__c"] = getC('{!$Component.xst__c}');
+            cs["xet__c"] = getC('{!$Component.xet__c}');
+            cs["xcddocs__c"] = getC('{!$Component.xcddocs__c}');
+            cs["xadtx2__c"] = getC('{!$Component.xadtx2__c}');
+            cs["xadh__c"] = getC('{!$Component.xadh__c}');
+            cs["os__c"] = getC('{!$Component.os__c}');
+            cs["xceml__c"] = getC('{!$Component.xceml__c}');
+            cs["xcmob__c"] = getC('{!$Component.xcmob__c}');
+            cs["xaccbrand__c"] = getC('{!$Component.xaccbrand__c}');
+            cs["xvtyp__c"] = getC('{!$Component.xvtyp__c}');
+            cs["xfb__c"] = getC('{!$Component.xfb__c}');
+            cs["xcfan__c"] = getC('{!$Component.xcfan__c}');
+            cs["xave__c"] = getC('{!$Component.xave__c}');
+            cs["csp__c"] = getC('{!$Component.csp__c}');
+            cs["xchn__c"] = getC('{!$Component.xchn__c}');
+            cs["xbn__c"] = getC('{!$Component.xbn__c}');
+            cs["xaloc__c"] = getC('{!$Component.xaloc__c}');
+            </script>
+            
+            <!--  <c:fileuploadPopUpNew13 R="{!req}"/>-->
+        </body>
+        
+        <script>
+        $(".ftType").on("click",function(e){
+            if($("#fitar").val().length==0 && !{!isRetailCat} && JSON.parse(cs["xadtx2__c"].value).tecomAcc == undefined){
+                $("input[name=ftType]").prop("checked",false);
+                addValError($("#gen"),'Please enter fit out area before selecting the fit out type!!');
+                return;
+            }
+            if($("#gen").is(":checked")){
+                removeValError($("#gen"));$('#scpnote').show();$("#structcheck").show();
+                $("#ddatradLic").addClass('ctrequiredFld');
+                $('#actTable').hide(); $("#ddatrd").show(); $("#act").show();
+                $("#archSub").hide(); $("#mepSub").hide(); $("#strSub").hide();
+            }
+            else{
+                 $("#ddatradLic").removeClass('ctrequiredFld');
+                 removeValError($("#gen"));$('#scpnote').show();
+                /*$("#ddatrd").hide(); $("#act").show(); $("#structcheck").hide();
+                if($("#struct").is(":checked")){
+                     fitOutScope = fitOutScope.replaceAll('Structural;','');
+                }
+                if ($("#arch").is(":checked")){
+                    $("#archSub").show();$("#arsubCat").addClass('ctrequiredFld');         
+                } if($("#mep").is(":checked")){
+                    $("#mepSub").show();$("#mepsubCat").addClass('ctrequiredFld');
+                } 
+                if(tabledata.length > 0)$('#actTable').show();*/
+                
+                $('#actTable').hide(); $("#ddatrd").hide(); $("#act").show();
+                $("#archSub").hide(); $("#mepSub").hide(); $("#strSub").hide();
+            }         
+        });
+        let fitOutScope = '';
+        $(".scope").on("change",function(e){
+            let v = $(this).val();
+            console.log('v***'+v + 'is checked' + $(this).is(':checked'));
+            if($(this).is(':checked'))
+                fitOutScope += v+';';
+            else
+                fitOutScope = fitOutScope.replaceAll(v+';','');
+            if($("#min").is(":checked")){
+                /*  if ($("#arch").is(":checked")){
+                    $("#archSub").show();$("#arsubCat").addClass('ctrequiredFld');         
+                } if($("#mep").is(":checked")){
+                    $("#mepSub").show();$("#mepsubCat").addClass('ctrequiredFld');
+                } if($("#struct").is(":checked")){
+                    $("#strSub").show();
+                }*/
+            }
+            
+            if($("#arch").is(":checked") || $("#mep").is(":checked") || $("#struct").is(":checked")){
+                removeValError($("#arch"));
+            }else if(!$("#arch").is(":checked") && !$("#mep").is(":checked") && !$("#struct").is(":checked")){
+                addValError($("#arch"),'Please select Fit Out Activities!');
+            }
+        })
+        
+        $(window).on('load', function() {
+    if('{!JSENCODE(isFContU)}'=='true'){
+            $(".open-request-modal").hide();
+            $(".main-navbar-nav").hide();
+            $(".connect-buttons-toggle").hide();
+            $(".btn-notification").hide();
+            $(".mr-auto").hide();
+            $(".top-navbar-menu").hide();
+            $(".badge-status").hide();
+            $("#searchForm").hide();
+            $("#nxtRen").text('{!JSENCODE(req.Acc__r.name)}');            
+        }
+});
+       
+        </script>
+    </apex:form>
+</apex:page>

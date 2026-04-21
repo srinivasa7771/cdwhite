@@ -1,0 +1,262 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="lAmdCtlReq" docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false">
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    
+    <script type="text/javascript">
+    
+    var ispu={!ispu},sta='{!JSENCODE(req.STA__c)}',cs={}, empInd;
+    var selectedUnit ;
+    function validateData(e){
+          e.preventDefault();
+      
+        if('{!JSENCODE(rq.xvtyp__c)}' == 'New and Amendment')
+         cs['xadh__c'].value = 'dra;amd;psf;';   
+        else if('{!JSENCODE(rq.xvtyp__c)}' == 'New')
+         cs['xadh__c'].value = 'dr;amd;psf;'; 
+        else if('{!JSENCODE(rq.xvtyp__c)}' == 'Amendment')
+         cs['xadh__c'].value = 'drt;amd;';
+        $('#preloader').fadeIn();
+        afso(); 
+     }
+    
+    function setSelectedUnit(e){
+        selectedUnit = $(e).attr('for');
+        cs['xopn__c'].value = selectedUnit;
+    }
+    
+    $(document).ready(function () {    
+      
+    });
+    
+    
+    </script> 
+    
+    <apex:form styleClass="pbform">
+         <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" oncomplete="$('#preloader').fadeOut();" onbeforedomupdate="javascript: toggle_inputs();">
+                <apex:param name="nextPage"  value="lrqup" />
+         </apex:actionFunction> 
+        <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+         <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+         <apex:inputHidden id="xopn__c" value="{!rq.xopn__c}"/>
+        <script type="text/javascript">
+           cs['xadh__c']=getC('{!$Component.xadh__c}');
+           cs['xopn__c']=getC('{!$Component.xopn__c}');
+        </script>
+        <body class="base">
+            <div id="main"> 
+                
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!(rq.id!='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!rq.Name} </span>
+                                <!--<div class="user-title">{!req.STA__c}</div>-->
+                            </span>
+                        </apex:outputPanel>
+                        
+                        <!--<apex:outputPanel rendered="{!req.id==''}">
+                            <a style="color:#fff;" onclick="assignDataToFields();afsd();" class="btn btn-black">
+                                SAVE DRAFT
+                            </a>
+                        </apex:outputPanel>-->
+                        <c:drftCnclBtns req="{!rq}" shwCncl="true" shwDraft="false"/>
+
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                     <c:srvdefcmp srv="{!srv}"/>
+                                    
+                                    <!--<apex:outputPanel rendered="{!IF(req.id!='',false,true)}">
+                                        <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                        <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                            <div class="collapse-content">
+                                                <p class="text-000">
+                                                   Apply for new P.O. Box from Emirates Post. 
+                                                </p>
+                                                <p class="text-000 mb-0">
+                                                  Please note: P.O. Box is a mandatory service required for all official communication addressed to the business. 
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel id="compupload" rendered="{!IF(req.id!='',true,false)}">
+                                        <c:grqupd Dim="V" PayDone="{!if(req.AP__c>0,true,false)}"/>  
+                                    </apex:outputPanel>-->
+                                    <apex:outputText rendered="{!acc.Legal_Framework__c != 'Freelancer'}">
+                                        <c:leaserencmp segStr="{!pid }" R="{!rq}" LicMap="{!licpriceMap}" /> 
+                                    </apex:outputText>  
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    {!rq.xadh__c}
+                                    <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                   
+                                   <div class="slds-align_absolute-center">
+                                   <div class="base">
+                                     <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                        data-target="#passport_details">
+                                         <div class="collapse-title">Account Info</div>
+                                      </a>
+                                  <div id="passport_details" class="collapse show">
+                                 <div class="collapse-content">
+                                   <div class="row">
+                                   <div class="col-sm-6">
+                                     <div class="data-info">
+                                      <div class="data-label">Account Name</div>
+                                      <div class="data-value"><apex:outputField value="{!acc.name}" /></div>
+                                      <div class="data-label">Operating Name (Arabic)</div>
+                                      <div class="data-value"><apex:outputField value="{!acc.onar__c}" /></div>
+                           
+                                     </div>
+                                   </div>
+                                   <div class="col-sm-6">
+                                       <div class="data-info">
+                                       <div class="data-label">License #</div>
+                                       <div class="data-value"><apex:outputField value="{!acc.lc__c}" /></div>
+                                       <div class="data-label">License Expiry Date</div>
+                                       <div class="data-value"><apex:outputText value="{0,date,dd/MM/yyyy}"  >
+                                          <apex:param value="{!acc.lcedt__c}" />
+                                          </apex:outputText>
+                                       </div>
+                           
+                                         </div>
+                                     </div>
+                    
+                                </div>
+                                 <!-- .row -->
+                                 </div>
+                                 <div class="pb-4"></div>
+                                  </div>
+                                  </div>
+                                  </div>  
+                                    <apex:outputPanel rendered="{!AND(ejariLeaseFlg)}">
+                                        <p style="font-size: 1.125rem;">
+                                           Tecom Partner Service Fee calculated as per below lease area as per 
+                                            Amended PMS Leases at EJARI.
+                                        </p>
+                                        <div class="onboarding-review-table onboarding-review-table-static">
+                                            <div id="popupfees">
+                                                <div class="onboarding-review-toggle">
+                                                    <div class="onboarding-review-row">
+                                                        <span class="onboarding-review-label">Total Lease Area (SQFT)</span>
+                                                        <span class="onboarding-review-value">
+                                                            {!rq.xsvn__c}
+                                                        </span>
+                                                    </div>
+                                                    <div class="onboarding-review-row">
+                                                        <span class="onboarding-review-label">Partner Service Fee (with VAT) </span>
+                                                        <span class="onboarding-review-value">
+                                                            AED {!rq.xvnum__c}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                    
+                                            </div>
+                                        </div>
+                                        <br/>
+                                    </apex:outputPanel>
+                                    <div>
+                                        <p style="font-size: 1.125rem;">
+                                            Amended PMS Leases at EJARI
+                                        </p>
+                                        
+                                        <table class="table table-align-middle table-ejari" id="table-ejari" data-page-length='25'>
+                                <thead>
+                                    <tr>
+                                        <!--<th>SELECT<i class="fa text-primary"></i></th> -->
+                                        <th>UNIT NUMBER<i class="fa text-primary"></i></th>
+                                        <th>Building<i class="fa text-primary"></i></th>
+                                        <th>Contract No<i class="fa text-primary"></i></th>
+                                        <th>AREA (Sqmt)<i class="fa text-primary"></i></th>
+                                        <th>AREA (Sqft)<i class="fa text-primary"></i></th>
+                                        <th>Status<i class="fa text-primary"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!pmsLeaseLst}" var="lease">
+                                        <apex:outputText rendered="{!lease.sts!='M'}">
+                                    <tr>
+                                        <!--<td>
+                                            
+                                            <label class="custom-radio mt-2"><input name="unitCheck" type="radio" onchange="setSelectedUnit(this)" for="{!lease.unitNoEn}" class="cards" /><span>&nbsp;</span></label>
+                                            
+                                        </td> -->
+                                        <td>{!lease.unitNoEn}</td>
+                                        <td>{!lease.building}</td>
+                                        <td>{!lease.contractNo}</td>
+                                        <td>{!lease.areaSm}</td>
+                                        <td>{!lease.areaSft}</td>
+                                        <td>
+                                           
+                                            <apex:outputText value="New" rendered="{!lease.sts == 'N'}"></apex:outputText>
+                                            <apex:outputText value="Exsiting" rendered="{!lease.sts == 'A'}"></apex:outputText>
+                                            <apex:outputText value="Terminated" rendered="{!lease.sts == 'T'}"></apex:outputText>
+                                        </td>
+                                    </tr>
+                                            </apex:outputText>
+                                   </apex:repeat>
+                                </tbody>
+                            </table>
+                                    </div>
+                                   
+                                    
+                                </apex:pageBlock>
+                            </div>
+                            
+                            <apex:outputPanel id="btnid">
+                                        <div class="base-main-footer">
+                                            <div class="base-nav">
+                                                
+                                                <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                <a href="#" onClick="validateData(event)"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-footer -->
+                                    </apex:outputPanel> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+           <!-- <c:fileuploadpopupnew13 R="{!req}" /> -->
+        </body>
+        
+        
+        
+    </apex:form> 
+     
+</apex:page>

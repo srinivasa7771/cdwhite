@@ -1,0 +1,190 @@
+<apex:component allowDML="true" id="ppDetail">
+    
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="cmpTitle" description="Component Title" type="String" required="false" default="Passport details"/>
+    <apex:attribute name="isFl" description="Is Freelancer" type="Boolean" />
+    
+    <apex:inputHidden id="issueDate" value="{!req.xcpic__c}" /><!--Issue Date-->
+    
+    <script>
+    function updateDate(){
+        console.log('updateIDate:::::');
+        issueDate = $('#xcpid__c').val();
+        console.log('issueDate::::'+issueDate);
+    }
+    
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    
+    </script>
+    <div class="slds-align_absolute-center">
+        <div class="base-collapse">
+            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+               data-target="#passport_details">
+                <div class="collapse-title">{!cmpTitle}</div>
+            </a>
+            <div id="passport_details" class="collapse show">
+                <div class="collapse-content">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Passport number</label>
+                                <apex:inputField styleClass="forDraft requiredFld form-control" ignoreEditPermissionForRendering="true" value="{!req.xcp__c}" id="xcp__c"/>
+                                <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+                                <script type="text/javascript">
+                                cs['xcp__c']=document.getElementById('{!$Component.xcp__c}');
+                                cs["xadh__c"]=document.getElementById("{!$Component.xadh__c}");
+                                $(cs['xcp__c']).attr('maxlength','15');
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Passport issuing country</label>
+                                <apex:inputField styleClass="requiredFld form-control input-select2-flat clsspNmchk" value="{!req.xcpic__c}" id="xcpic__c"/>
+                                <script type="text/javascript">
+                                cs['xcpic__c']=document.getElementById('{!$Component.xcpic__c}');
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Issue date</label>
+                                <div class="input-datepicker-group input-group">
+                                    <apex:inputHidden id="xcpid" value="{!req.xcpid__c}" />
+                                    <input type="text" class="requiredFld form-control input-datepicker" id="xcpid__c"
+                                           data-toggle="datetimepicker" data-target="#xcpid__c" value="{!req.xcpid__c}"
+                                           onchange = "assignfldVal(this.value,'xcpid'); checkDate(this,'pid')" oncomplete="updateIDate()" validationname="pid" />
+                                    <script type="text/javascript">
+                                    cs['xcpid__c']=document.getElementById('xcpid__c');
+                                    dformat('{!req.xcpid__c}','xcpid__c');
+                                    cs['xcpid']=getC('{!$Component.xcpid}');
+                                    </script>
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcpid__c">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                    
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Expiry date</label>
+                                <div class="input-datepicker-group input-group">
+                                    <apex:inputHidden id="xcped" value="{!req.xcped__c}" />
+                                    <input type="text" class="requiredFld form-control input-datepicker" id="xcped__c"
+                                           data-toggle="datetimepicker" data-target="#xcped__c" value="{!req.xcped__c}"
+                                           onchange = "assignfldVal(this.value,'xcped');check_PED_Date(this,'ped','{!req.srvc__r.uid__c}')" />
+                                    <!--onchange="checkIssueAndExpiryDate(this,document.getElementById('xcped__c'))"/>-->
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped__c">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <script type="text/javascript">
+                                cs['xcped__c']=document.getElementById('xcped__c');
+                                dformat('{!req.xcped__c}','xcped__c');
+                                cs['xcped']=getC('{!$Component.xcped}');
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Place of issue</label>
+                                <apex:inputField html-maxlength="50" styleClass="requiredFld form-control alphaChar" value="{!req.xcpip__c}" id="xcpip__c" />
+                                <script type="text/javascript">
+                                cs['xcpip__c']=document.getElementById('{!$Component.xcpip__c}');
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6" id="ptpParent" style="{!if(CONTAINS(req.xcnc__c,'Palestine'),'','display:none;')}">
+                            <div class="form-group">
+                                <label>Passport type</label>
+                                <apex:inputField onchange="togglextdt(this)" styleClass="requiredFld form-control input-select2-flat" value="{!req.ptp__c}" id="ptp__c"/>
+                                <script type="text/javascript">
+                                cs['ptp__c']=document.getElementById('{!$Component.ptp__c}');
+                                function togglextdt(e){
+                                    let v = $(e).val();
+                                    $('#xtdtParent').hide();
+                                    if(v&&v=='Travel Documents'){
+                                        $('#xtdtParent').show();
+                                    }
+                                }
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-lg-6" id="xtdtParent" style="{!if(req.ptp__c='Travel Documents','','display:none;')}">
+                            <div class="form-group">
+                                <label>Travel document issuing country</label>
+                                <apex:inputField styleClass="requiredFld form-control input-select2-flat" value="{!req.xtdt__c}" id="xtdt__c"/>
+                                <script type="text/javascript">
+                                cs['xtdt__c']=document.getElementById('{!$Component.xtdt__c}');
+                                </script>
+                            </div>
+                        </div>
+                        <!--<div class="col-lg-6" style="{!IF(OR(isFl,req.inUAE__c),'','display:none;')}">
+<div class="form-group">
+<Label>Emirates ID number </Label>
+<apex:inputField onkeydown="eidCheck(this,event)" onchange="checkEid(this)" styleClass="{!IF(req.inUAE__c,'requiredFld ','')}addRqrd form-control numOnly" value="{!req.xceidid__c}" id="xceidid__c"/>
+<script type="text/javascript">
+cs['xceidid__c']=document.getElementById('{!$Component.xceidid__c}');
+function eidCheck(elem,event){
+    $(elem).parent().find('.frmErrMsg').remove();
+    $(elem).attr('maxlength',18);
+    if(event.keyCode == 8)
+        return;
+    let v = $(elem).val();
+    let l = $(elem).val().length;
+    if(l==3 || l==8 || l==16 ){
+        $(elem).val(v+'-');
+    }
+}
+function checkEid(elem){
+    if(!validateEmiratesId($(elem).val())){
+        addValError(elem,'Invalid Emirates id!');
+    }else{
+        removeValError($(elem));
+    }
+}
+</script>
+</div>
+</div>-->
+                    </div>
+                    <!-- .row -->
+                </div>
+                <div class="pb-4"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function check_PED_Date(elem,type,uid,gdr){ /**Ex: <input type="text" onchange="checkDate(this,'dob')" /> second argument is type of date.**/
+        var e = $(elem);
+        var date;
+        var date1 = e.val();
+        date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+        var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+        var r = true;
+        removeValError(elem);
+        if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+            addValError(elem,'Invalid date format!');
+        }
+        if(uid=='016' || uid == '055' || uid == '305'){
+            if((days*-1)<(90)){
+                addValError(elem,'Validity should be atleast 3 months!');
+            }
+        }
+        else if((days*-1)<(180)){
+            addValError(elem,'Validity should be atleast 6 months!');
+        }
+        if(r!=true){
+            e.focus();
+        }
+    }
+    
+    </script>
+    <!-- .base-collapse -->
+</apex:component>

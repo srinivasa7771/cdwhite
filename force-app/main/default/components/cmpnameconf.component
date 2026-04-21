@@ -1,0 +1,663 @@
+<apex:component >
+    
+    <apex:attribute name="rq" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="attCoiId" description="Attachment" type="Attachment"/>
+    <style>
+        .busineseTypeInfo{display:none;}
+    </style>
+    <script>
+    function assignFields(e){
+        var fid = e.id +'__c';
+        cs[fid].value = document.getElementById(e.id).value;
+    }
+    function hideError(e){
+        $(e).parent().find('.invalid-feedback').hide();
+        $(e).parent().find('.valid-feedback').hide();
+    }
+    </script>
+    <apex:outputText id="dummy"></apex:outputText>
+    <div id="cmpConfirmBlock">
+        <c:popupwb />
+        <div id="cmpNameConf">
+            <h3 class="base-main-title">Review and confirm your license information</h3>
+            <div class="form-group mb-2">
+                <label class="fs-18 mb-1">License type</label>
+                <div class="row">
+                    <!-- <div class="col-lg-4 col-sm-6">
+                        <label class="box-check">
+                            <apex:outputText rendered="{!contains(rq.xfb__c,'FZ-LLC')}">
+                                <input type="radio" name="frmwrk" value="yes" checked='true' frm="Free Zone Limited Liability company" onclick="updateFormation1('FZ-LLC');"/>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!!contains(rq.xfb__c,'FZ-LLC')}">
+                                <input type="radio" name="frmwrk" value="yes" frm="Free Zone Limited Liability company"  onclick="updateFormation1('FZ-LLC');"/>
+                            </apex:outputText>
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">
+                                    Freezone license issued by
+                                    <apex:outputText rendered="{!NOT(contains(rq.xfb__c,'DED'))}">
+                                        DDA (Dubai Development Authority)
+                                    </apex:outputText>
+                                    <apex:outputText rendered="{!contains(rq.xfb__c,'DED')}">
+                                        DED (Department of Economic Development)
+                                    </apex:outputText>
+                                </span>
+                            </div>
+                        </label>
+                    </div> -->
+                   <apex:outputText rendered="{!OR(rq.acc__r.lctp__c == 'DDA',AND(rq.acc__r.lctp__c == 'DED',rq.Location_Brand__c == 'Dubai Design District'))}">
+                    <div class="col-lg-5 col-sm-6">
+                        <label class="box-check">
+                            <apex:outputText rendered="{!rq.acc__r.lctp__c == 'DDA'}" >
+                                <input type="radio" name="frmwrk" value="DDA" checked='true' class="forReadOnly" frm="Free Zone Limited Liability company" /> <!--rq.acc__r.lctp__c == '' -->
+                            </apex:outputText> 
+                            <apex:outputText rendered="{!rq.acc__r.lctp__c == 'DED'}">
+                                <input type="radio" name="frmwrk" value="DDA"  frm="Free Zone Limited Liability company" /> <!--rq.acc__r.lctp__c == '' -->
+                            </apex:outputText> 
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">
+                                    License issued by DDA (Dubai Development Authority)
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                   </apex:outputText>
+                    <apex:outputText rendered="{!rq.acc__r.lctp__c == 'DED'}">
+                    <div class="col-lg-5 col-sm-6">
+                        <label class="box-check">
+                            
+                            <input type="radio" name="frmwrk" value="DED"  class="forReadOnly"  checked='true' frm="Free Zone Limited Liability company" /> <!--rq.acc__r.lctp__c == '' -->
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">
+                                    License issued by DED (Department of Economic Development)
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                   </apex:outputText>
+                </div>
+            </div>
+            <!-- .form-group -->
+            
+            <div id="" class="form-group mb-2" >
+                <label class="fs-18">Your business is </label>
+                <div class="row">
+                    <div class="col-lg-5 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="business_1" att1="bnew" value="new"   class="forReadOnly" />
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Free Zone Limited Liability Company (FZ-LLC)</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-lg-5 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="business_1" att1="bested" value="established" class="forReadOnly"  />
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Branch of a Foreign or a UAE company</span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-12">
+                        <p class="busineseTypeInfo" id="fzInfo" style="{!IF(rq.xfb__c=='FZ-LLC','display:block;','display:none;')}">
+                            <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>&nbsp;&nbsp;
+                            <span>A Free Zone Limited Liability Company (FZ-LLC) is formed as a separate legal entity, with shareholders as individuals and/or corporates. The minimum capital requirement for incorporation depends on the business activity.</span>
+                        </p>
+                        <p class="busineseTypeInfo" id="brInfo" style="display:none;">
+                            <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>&nbsp;&nbsp;
+                            <span>A Branch of a Foreign or a UAE company is not a legal entity separate from its parent but is considered a place of business that forms a legally dependent part of the parent company and conducts all or some of the operations inherent in the parent’s business. No share capital is required to set up as a branch.</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="serErr">Please choose business type!</div>
+            </div>
+            <!-- .form-group -->
+             <div id="ltypeId" class="dedcls form-group mb-2" style="display: none;">
+                <label class="fs-18">Select from business setup options below</label>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="licenseType" att1="dedbranch" value="Branch Of DED License"   class="forReadOnly" />
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Setup a branch of UAE business</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="licenseType" att1="relocate" value="DED Relocate"   class="forReadOnly"  />
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">Relocate</span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </div>
+                <div class="serErr">Please choose license type!</div>
+            </div>
+               <div id="newid" class="dedcls form-group mb-2" style="display: none;">
+                   <div class="row row-lg form-style">
+                    <div class="form-group col-md-6">
+                    <div class="newlc" style="display: none;">
+                        <label>Approved trade name </label>
+                    </div>    
+                     <div class="extlc" style="display: none;">
+                        <label>Company name</label>
+                    </div>   
+                    <input type="text" id="xcfn" class="forReadOnly form-control no-blank" onkeyup="hideError(this);" onchange="assignFields(this);" /> <!--required-->
+                     <div id="rtacnError"  class="invalid-feedback"></div>
+                   </div>
+                   <div class="form-group col-md-6">
+                    <div class="newlc" style="display: none;">
+                        <label>Approved trade name (Arabic) </label>
+                    </div>    
+                     <div class="extlc" style="display: none;">
+                        <label>Company name (Arabic)</label>
+                    </div>   
+                    <input type="text" id="xcna" class="forReadOnly form-control no-blank" onkeyup="hideError(this);" onchange="assignFields(this);" /> <!--required-->
+                     <div id="xcnaError"  class="invalid-feedback"></div>
+                   </div>                       
+                    <div class="form-group col-md-6">
+                      <div class="newlc" style="display: none;">
+                        <label>Initial approval number</label>
+                      </div> 
+                      <div class="extlc" style="display: none;">
+                        <label>License number</label>
+                      </div> 
+                    <apex:inputField styleClass="forReadOnly form-control no-blank" value="{!rq.xdedln__c}" id="xdedln__c"/>
+                    <script type="text/javascript">
+                    cs['xdedln__c']=document.getElementById('{!$Component.xdedln__c}');
+                    </script>
+                    <div id="xdedlnError"  class="invalid-feedback"></div>
+                  </div>
+                       <div class="col-xl-6 col-lg-8">
+                    <div class="box box-block bg-grey-light mt-3">
+                        
+                        <label class="fs-18">
+                            <div class="newlc" style="display: none;">
+                                DED Name Reservation Certificate
+                            </div>
+                            <div class="extlc" style="display: none;">
+                                DED Commercial License Copy
+                            </div>
+                            
+                        </label>
+                        
+                        <apex:outputPanel rendered="{!attCoiId==null}">
+                            <div class="upload-field d-flex">
+                                <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                    <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                    <span>Choose File to Upload</span>
+                                </div>
+                                <div>
+                                    <button id="coibtn" class="btn btn-outline-primary btn-outline-primary-3" onclick="hideError($('#incorpDocError'));$('#modal_upload_passport').modal('show');return false;">BROWSE</button>
+                                </div>
+                            </div>
+                            <div id="incorpDocError"  class="invalid-feedback"></div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!attCoiId!=null}">
+                            <div class="upload-list">
+                                <div class="upload-list-item box box-white box-padding">
+                                    <i class="fa fa-check-circle text-success"></i>
+                                    <a onclick="window.open('/servlet/servlet.FileDownload?file='+'{!attCoiId}','_blank')" 
+                                       style="cursor:pointer" class="upload-item-title text-li">
+                                    <div class="newlc" style="display: none;">
+                                <u>DED Name Reservation Certificate</u>
+                                   </div>
+                           <div class="extlc" style="display: none;">
+                                <u>DED Commercial License Copy</u>
+                           </div>
+                                        </a>
+                                    <a btnFor="GMD" onclick="deleteAOADocs1('{!attCoiId}')" class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                   </div>
+               </div>
+               <div class="modal fade modal-base" id="modal_upload_passport"  tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 993px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12 order-md-2">
+                                <div class="d-flex flex-column h-100">
+                                    <div class="mb-auto">
+                                        <h2 class="upHead mb-4">Upload Certificate</h2>
+                                        <!--<p>
+                                            Note: Please upload a relevant Certificate
+                                        </p>-->
+                                        <p>
+                                            Note: Please ensure that the Certificate to be uploaded is in colour and the proper
+                                            orientation (all documents should be in pdf or jpg format and a maximum size of 4MB.)
+                                        </p>
+                                        <p id="saveText" style="display:none">
+                                            File uploaded please click on <b>SAVE</b> to Proceed.
+                                        </p>
+                                        <input type="file" class="files" onchange="checkFile1(this)" id="files" name="files" style="display: none;"/>
+                                        <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                                style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick1();">
+                                            UPLOAD DOCUMENT
+                                        </button>
+                                    </div>
+                                    <div class="text-right d-none d-md-block" >
+                                        <a onclick="saveAttachment1(this);" style="color: #fff;" 
+                                           class="saveAtt btn btn-primary disabled">
+                                            SAVE
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right d-block d-md-none mt-4">
+                            <a onclick="saveAttachment1(this);" style="color: #fff;" 
+                               class="saveAtt btn btn-primary disabled">
+                                SAVE
+                            </a>
+                        </div>
+                    </div>
+                    <!-- .modal-body -->
+                </div>
+            </div>
+        </div>
+            <div id="brnchid" class="ddacls form-group mb-2" style="display: none;">
+                <label class="fs-18">Business legal framework </label>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <!--<apex:outputText rendered="{!rq.xfb__c!='Branch of a UAE Company'}">
+                                <input type="radio" name="frmwrk" value="" frm="Branch of a UAE Company" onclick="updateFormation1('Branch of a UAE Company');"/>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!rq.xfb__c='Branch of a UAE Company'}">
+                                <input type="radio" name="frmwrk" value="" frm="Branch of a UAE Company" checked='true' onclick="updateFormation1('Branch of a UAE Company');"/>
+                            </apex:outputText> -->
+                           <input type="radio" name="brnch" value="Branch of a UAE Company" frm="Branch of a UAE Company" onclick="updateFormation1('Branch of a UAE Company');"/>
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium">UAE </span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <!--<apex:outputText rendered="{!rq.xfb__c!='Branch of Foreign Company'}">
+                                <input type="radio" name="frmwrk" value="" frm="Branch of Foreign Company" onclick="updateFormation1('Branch of Foreign Company');"/>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!rq.xfb__c='Branch of Foreign Company'}">
+                                <input type="radio" name="frmwrk" value="" checked='true' frm="Branch of Foreign Company" onclick="updateFormation1('Branch of Foreign Company');" />
+                            </apex:outputText> -->
+                            <input type="radio" name="brnch" value="Branch of Foreign Company" frm="Branch of Foreign Company" onclick="updateFormation1('Branch of Foreign Company');"/>
+                            <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                <span class="box-title font-weight-medium"> Foreign </span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </div>
+                <div class="serErr">Please choose Business establishment type!</div>
+            </div>
+            
+            <div id="bstpid" class="form-group mb-2" style="display:none;">
+                <label class="fs-18">UAE business setup type</label>
+                <div class="mb-1">Select the type of shareholding for UAE business</div>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="business_3" value="single" />
+                            <div class="box box-center box-padding box-hover" style="min-height: 5.5rem;">
+                                <span class="box-title font-weight-medium">UAE establishment (single shareholder)</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <label class="box-check">
+                            <input type="radio" name="business_3" value="multiple" />
+                            <div class="box box-center box-padding box-hover" style="min-height: 5.5rem;">
+                                <span class="box-title font-weight-medium">UAE establishment (multiple shareholders)</span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- .col -->
+                </div>
+                <div class="serErr">Please choose business setup type!</div>
+            </div>
+            <!-- .form-group -->
+            
+            <div class="ddaclsd form-group mb-2" style="display: none;">
+                <label class="fs-18 mb-1">Industry</label>
+                <div class="row">
+                    <div class="col-lg-4 col-sm-6">
+                        <input type="text" id="xchn" class="form-control" disabled="true" value="{!rq.xchn__c}" />
+                    </div>
+                </div>
+            </div>
+            
+            <!--<p class="base-footer-info">
+                <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                You can change your license type by consulting with your partner relations manager.
+            </p>-->
+        </div>
+        <div class="text-right">
+            <apex:outputPanel rendered="{!(rq.os__c != 'Name Approval Re-Review')}">
+                <a  onclick="showTempLoader($('.onboarding-nav-prev'));drftPg('draftPage');" style="color: #fff; float:left"  class="forReadOnly btn btn-primary onboarding-nav-prev ">
+                     <i class="fa fa-angle-left"></i> <span>BACK</span>
+                </a>
+                <a id="nmvalidateid" style="color: #fff;"  class="forReadOnly btn btn-primary onboarding-nav-next ">
+                     <span>NEXT</span> <i class="fa fa-angle-right"></i> 
+                </a>
+            </apex:outputPanel>
+        </div>
+        
+    </div>
+    
+    <!--<div id="cmpRegBlock" style="display:none">
+        <c:CmpNameReg rq="{!rq}" attCoi="{!attCoi}"/>
+    </div>-->
+    <script>
+    var frameWork = '{!rq.xfb__c}';
+    
+    $(document).ready(function(){
+        
+        console.log('this1');
+        $('label').each(function(){
+            if($(this).children().length>1||$(this).children().length<1||$(this).next().length<1) return;
+            else{
+                var e = $(this).next();
+                $(this).next().remove();
+                $(this).append(e);
+            }
+        });
+        
+        $('#xchn').attr('disabled','true');
+
+        if($('[name="frmwrk"]:checked').val() == 'DDA'){
+            if('{!rq.xfb__c}' == 'FZ-LLC'){
+                $('[att1="bnew"]').prop('checked',true).trigger('change');
+            }else{
+                $('[att1="bested"]').prop('checked',true).trigger('change');
+                $('.ddacls').show();
+                if('{!rq.xfb__c}' == 'Branch of a UAE Company' || '{!rq.xfb__c}' == 'Branch of UAE Company'){
+                    $('[frm="Branch of a UAE Company"]').prop('checked',true);
+                     $('#bstpid').show(); 
+                } else {
+                    $('[frm="Branch of Foreign Company"]').prop('checked',true);
+                }
+            }
+        }
+        
+        
+        if("{!rq.xcfn__c}" != '' && frameWork!='FZ-LLC' && cs['xltp__c'].value != ''){
+            if(cs['xltp__c'].value == 'New DED License'){
+                $('[att1="bnew"]').prop('checked',true).trigger('change');
+                $('#newid').show();$('.newlc').show();$('.extlc').hide();
+                
+            }else {
+                $('[att1="bested"]').prop('checked',true).trigger('change');$('#ltypeId').show();
+                if(cs['xltp__c'].value == 'Branch Of DED License'){
+                    $('[att1="dedbranch"]').prop('checked',true);
+                }
+                else{
+                    $('[att1="relocate"]').prop('checked',true);
+                }
+                $('#newid').show();$('.newlc').hide();$('.extlc').show();
+                
+            }
+            
+            getC('xcfn').value = cs['xcfn__c'].value;
+            getC('xcna').value = cs['xcna__c'].value;
+        }
+        
+        $('[name="brnch"]').on('change',function(){
+            $('.ddacls').show();
+        });
+        $('[name="licenseType"]').on('change',function(){
+            $('[name="licenseType"]').parent().parent().parent().parent().find('.serErr').hide();
+            cs['xltp__c'].value = $('[name="licenseType"]:checked').val();
+        });
+        
+        
+        $('[name="brnch"]').on('change',function(){ 
+            if($('[name="brnch"]:checked').val() == 'Branch of a UAE Company'){
+                $('#bstpid').show(); 
+            }else{
+                $('#bstpid').hide(); 
+            }
+        }); 
+        
+        $('[name="business_3"]').on('change',function(){
+           cs['xvch__c'].value = $('[name="business_3"]:checked').val();
+           $(this).parent().parent().parent().parent().find('.serErr').hide();
+        });
+             
+        $('[name="business_1"]').on('change',function(){
+            $('.busineseTypeInfo').hide();
+            $(this).parent().parent().parent().parent().find('.serErr').hide();
+            $('#ltypeId').hide();$('#bstpid').hide(); 
+            $('.ddacls').hide(); $('.dedcls').hide();
+            if($('[name="business_1"]:checked').val() == 'established'){ 
+                $('#brInfo').show();
+                console.log('lc type::'+cs['xvtyp__c'].value);
+                if( cs['xvtyp__c'].value == 'DDA') {
+                    $('#brnchid').show();
+                    
+                    //$('#bstpid').show();
+                    if($('[name="brnch"]:checked').val() == 'Branch of a UAE Company'){
+                      $('#bstpid').show(); 
+                   }
+                    $('.ddacls').show();}
+                else{
+                    $('#ltypeId').show();$('.dedcls').show(); $('#newid').show();$('.newlc').hide();$('.extlc').show(); updateFormation1('Branch of Foreign Company');
+                    cs['xltp__c'].value = '';
+                }
+                
+            }
+            else{
+                $('#fzInfo').show();
+                if( cs['xvtyp__c'].value == 'DDA') {
+                    $('.ddacls').show(); $('#brnchid').hide();$('#bstpid').hide();updateFormation1('FZ-LLC');
+                    $('[frm="Branch of a UAE Company"]').prop('checked',false);$('[frm="Branch of Foreign Company"]').prop('checked',false);
+                }
+                else{
+                    $('#newid').show();$('.newlc').show();$('.extlc').hide();updateFormation1('Branch of a UAE Company');$('.dedcls').show();$('#bstpid').hide();
+                    $('#ltypeId').hide();cs['xltp__c'].value = 'New DED License';
+                }
+            }
+        });
+        $('[name="frmwrk"]').on('change',function(){
+            $(this).parent().parent().parent().parent().find('.serErr').hide();
+            $('.dedcls').hide(); $('.ddacls').hide();
+            $('[att1="bnew"]').prop('checked',false);$('[att1="bested"]').prop('checked',false);
+            if($('[name="frmwrk"]:checked').val() == 'DED')
+            {
+                cs['xvtyp__c'].value = 'DED';
+            }
+            else{
+                cs['xvtyp__c'].value = 'DDA';
+            }
+        });
+        $('#nmvalidateid').click(function (ev) {
+            var proceed = false;
+            if($('[name="business_1"]:checked').val()==undefined){
+                $('[name="business_1"]').parent().parent().parent().parent().find('.serErr').show();
+                console.log('tst11');
+                return;
+            }
+            if($('[name="business_1"]:checked').val() == 'established' && cs['xvtyp__c'].value  == 'DDA' && $('[name="brnch"]:checked').val()==undefined){
+                $('[name="brnch"]').parent().parent().parent().parent().find('.serErr').show();
+                console.log('tst12:'+'{!rq.acc__r.lctp__c}');
+                return;
+            }
+            if($('[name="business_1"]:checked').val() == 'established' && cs['xvtyp__c'].value  == 'DED' && $('[name="licenseType"]:checked').val()==undefined){
+                $('[name="licenseType"]').parent().parent().parent().parent().find('.serErr').show();
+                console.log('tst12:'+'{!rq.acc__r.lctp__c}');
+                return;
+            }
+            if($('input[name=brnch]:checked').val()!=undefined && $('input[name=brnch]:checked').val().includes('UAE Company') && $('[name="business_3"]:checked').val()==undefined){
+                $('[name="business_3"]').parent().parent().parent().parent().find('.serErr').show();
+                return;
+            }
+            
+            if(cs['xvtyp__c'].value  == 'DED'){
+                console.log('tst13:'+'{!rq.acc__r.lctp__c}');
+                if(cs['xcfn__c'].value!="" && cs['xdedln__c'].value!="")
+                    nextpg('segments');
+                else{
+                    $('.no-blank').each(function(){
+                        let v = $(this).val();  let l = $(this).parent().find('label').text();
+                        if($(this).is(':visible')){   
+                            if(v==""||v.length<1){ $(this).parent().find('.invalid-feedback').html('* This field is required!').show();}
+                        }
+                    });
+                }
+            }
+            else{ isnextPgnameReg=true; nextpg('businessName');}
+                
+        });
+        
+        var editMode = (sta == 'Draft' || sta == 'Open' || obSta == "Name Approval Re-Review") ? true : false;
+        //var editMode = (sta == 'Under Review' ||  obSta == "Name Approval Re-Review") ? false : true;
+        if(editMode == false){
+            makeReadOnly('forReadOnly');
+        }
+        /*$('[name="frmwrk"]').on('change',function(){
+            var v = $(this).attr('frm');
+            frameWork = v;
+        });*/
+        
+        /*$('.onboarding-nav a').on('click',function(){
+            var val =$(this).data("value");
+            if( val =='businessName'){
+                showTempLoader($('.onboarding-nav-prev'));
+                nextpg1('businessName');
+            }
+        });*/
+    });
+    
+    function removeInnerLables(elem){
+        $(elem).each(function(){
+            if($(elem).find(elem).length>0);
+            {
+                var h = $(this).find(elem).html()
+                $(this).find(elem).parent().append(h);
+                $(this).find(elem).remove();
+            }
+        })
+    }
+    function hideFWBlock(e){
+        if(frameWork != '{!rq.xfb__c}')
+            justSave();
+        $('#cmpConfirmBlock').hide();
+        $('#cmpRegBlock').show();
+        if(lfb=='FZ-LLC'){
+            shwBusinessNames(true);
+        }else{
+            hdBusinessNames(); showParentCompDetails();
+        }
+        scrollToDiv($('.onboarding-main-content'));
+    }
+    function showFWBlock(){
+        $('#cmpRegBlock').hide();
+        $('#cmpConfirmBlock').show();
+        scrollToDiv($('.onboarding-main-content'));
+    }
+    
+    function updateFormation1(val){ 
+        cs['xfb__c'].value = val;
+        
+        if(val == 'Branch of Foreign Company'){
+           document.getElementById('bstpid').style.display='none';
+        }else if(val=='Branch of a UAE Company'){
+           document.getElementById('bstpid').style.display='block';
+        }
+        // nextpg1('businessName');
+    }
+    </script>
+    <script type="text/javascript"> 
+    
+    
+    function handleBrowseClick1(){
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    
+    function saveAttachment1(elem) {
+        if($(elem).hasClass('disabled')) return;
+        
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect1();
+        } else {
+            axsAlert('Alert','The File APIs are not fully supported in this browser.');
+        }
+    }
+    
+    /* function checkFile1(e){
+        $('#saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0) showPrview1(e);
+    }*/
+    function checkFile1(e){
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ 
+            $('#saveText').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    
+    function showPrview1(elem) {
+        if (elem.files && elem.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image-area div').hide();
+                $('#image-area img').show().attr('src', e.target.result);
+            }
+            reader.readAsDataURL(elem.files[0]);
+        }
+        $('#uploadDel').unbind().on('click',function(){
+            if($('.image-area div').is(":visible")) $('#uploadToolsValidation').modal("show");
+            document.getElementById('files').value = '';
+            $('#image-area div').show();
+            $('#image-area img').hide();
+            $('#saveAtt').addClass('disabled');
+        });
+    }
+    
+    function handleFileSelect1(evt) {
+        
+        var f = $('#files')[0].files[0]
+        var reader = new FileReader();
+        
+        reader.onload = function(theFile) {
+            return function(e) { 
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                cs["imageBase64"].value = base64String; //.pdf
+                //cs["docname"].value = 'Franchise Agreement/Incorporation Letter';
+                if($('[name="business_1"]:checked').val() == 'new')
+                  cs["docname"].value = 'DED Name Reservation Certificate & Initial Approval Letter';
+                if($('[name="business_1"]:checked').val() == 'established')
+                  cs["docname"].value = 'DED Commercial License Copy';
+                //alert(cs["imageBase64"].value);
+                $('#modal_upload_passport').modal('hide');
+                showTempLoader($('#coibtn'));
+                //attachmentSave();
+                attachmentSave_q();
+            };
+        }(f);
+        
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(f);
+    }
+    
+    
+    //VMKR
+    
+    
+    </script>
+    
+</apex:component>

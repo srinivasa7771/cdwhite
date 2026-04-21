@@ -1,0 +1,59 @@
+<apex:component >
+    <apex:attribute name="notificationRqs3" description="notification lst" type="g_Req__c[]"  />
+    <!-- notification  -->
+    <div class="main-header-notifications">
+        <button class="btn btn-notification">
+            <div class="icon icon-appointment-reminders"></div>
+            <span>{!if(notificationRqs3==null,0,notificationRqs3.size)}</span>
+        </button>
+        
+        <div class="notifications-dropdown">
+            <div class="notifications-dropdown-header">
+                <span>{!notificationRqs3.size} NEW NOTIFICATIONS</span>
+                <!--<a href="/pagepastrequests?flg=pndg" target="_blank"><strong>VIEW ALL</strong></a>-->
+            </div>
+            <div class="notifications-dropdown-body custom-scroll">
+                <div class="notification-dropdown-list">
+                    <apex:repeat value="{!notificationRqs3}" var="n">
+                        <a href="/{!n.id}" target="_blank" class="notification-dropdown-item unread">
+                            <div class="notification-title"><span class="bull">&bull; </span>Service Request {!n.Name}</div>
+                            <div class="notification-body" adhval='{!n.xadh__c}'>
+                                {!n.bamsgs__c}
+                            </div>
+                            <div class="notification-time">
+                                <apex:outputField value="{!n.LastModifiedDate}" />
+                            </div>
+                        </a>
+                    </apex:repeat>
+                    <!-- .notification-dropdown-item -->
+                </div>
+                <!-- .notification-dropdown-list -->
+            </div>
+            <!-- .notifications-dropdown-body -->
+        </div>
+        <!-- .notifications-dropdown -->
+    </div>
+    
+    
+    
+    <script>
+    $(document).ready(function(){
+        var str; 
+        var ids= document.getElementsByClassName('notification-body');
+        for(var i=0;i<ids.length;i++){
+            str=ids[i].innerHTML;
+            var adhVal = ids[i].getAttribute('adhval');
+            if(adhVal==null || adhVal==undefined){adhVal='';}
+            if(adhVal != '' && adhVal.includes('ef;')){
+                str = str.replace('#ptype','Express').replace('#pdays','3');
+            }else if(adhVal != '' && adhVal.includes('pf;')){
+                str = str.replace('#ptype','Platinum').replace('#pdays','1');
+            }else{
+                str = str.replace('#ptype','Normal').replace('#pdays','5');
+            }
+            ids[i].innerHTML=str;         
+        }
+    });
+    </script>
+    
+</apex:component>

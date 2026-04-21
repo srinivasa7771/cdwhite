@@ -1,0 +1,372 @@
+<apex:component controller="gulkpCtrl2"  >
+    <style>
+        .hidden_elem{
+        display: none !important;
+        }
+        .selectData1{
+        display:block;
+        max-height : 24em;
+        overflow-y:scroll;
+        }
+    </style>
+    <!--<apex:attribute name="req" description="request" type="g_Req__c" required="false" assignTo="{!rq}" />-->
+    <div class="jbCustLookup">
+        <!-- Modal -->
+        <div class="modal fade modal-base" id="modal_lookup_values" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body pt-5 pb-5">
+                        <div class="mb-4 d-flex">
+                            <h3 class="modal-title">
+                                Available Banks
+                            </h3>
+                            
+                            <div class="search-field mb-0 ml-5" style="width: auto;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" style="min-width:10em;" placeholder="Search for Bank" id="searchJT" />
+                                    <div class="input-group-append">
+                                        <div class="btn"  onclick="searchJTWithVal()">
+                                            <div class="icon-search"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="frmErrMsg2" class="frmErrMsg1" style="display:none;padding-left:0px;">
+                                    Minimun 3 characters needed to search!
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <apex:outputPanel styleClass="selectData1" id="selectData1">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%;">NAME</th>
+                                        <th style="width: 25%;">BRANCH</th>
+                                        <th style="width: 25%;">BIC Code</th>
+                                        <th style="width: 25%;">COUNTRY</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!bNameList}" var="j">
+                                        <tr style="cursor: pointer;" cCode="{!j.ccode__c}" onclick="setData(this);" jId="{!j.id}">
+                                            <td>{!j.name}</td>
+                                            <td>{!j.Branch_Name__c}</td>
+                                            <td>{!j.bcode__c}</td>
+                                            <td>{!j.Country__c}</td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 jtLkp">
+                <div class="form-group">
+                    <div class="input-group input-group-transparent" data-toggle="modal" id="jd" data-target="#modal_lookup_values">
+                        <input readonly="true" type="text" class="lookup form-control pointer requiredFld" id="serachVal" />
+                        <div class="pointer input-group-append" id=""><!-- jtLkpSearch -->
+                            <span class="input-group-text">
+                                <i class="icon-request-preference text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="frmErrMsg1" class="frmErrMsg1" style="display:none">
+                        
+                    </div>
+                </div>
+            </div>
+            <apex:outputText rendered="{!AND(req.srvc__r.uid__c != '068',req.srvc__r.uid__c != '071',req.srvc__r.uid__c != '050',req.srvc__r.uid__c != '123',req.srvc__r.uid__c != '301',req.srvc__r.uid__c != '302')}">
+                <div id="vfslabel" class="form-group" style="display:none">
+                    <div class="col-lg-12">
+                        <div class="text-primary mb-auto fs-15">                               
+                            <b>
+                                AXS has forged a partnership with VFS to expedite your visa processing. Applicant no longer need to wait for an attested degree certificate while applying for an employment visa.
+                                We, in collaboration with VFS, will simultaneously handle your degree attestation alongside with the visa processing. 
+                                The attestation process will not affect your visa processing timeline.  
+                            </b>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12" id="vfsOpt" style="display:none">
+                    <div class="d-block">Would you like to apply for attestation through VFS ? </div>
+                    <div class="col-lg-12">
+                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                            <label class="custom-radio mr-4">
+                                <input type="radio" value="Yes" id="vfsYes" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                <span>Yes</span>
+                            </label>
+                        </apex:outputPanel>
+                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                            <label class="custom-radio mr-4">
+                                <input type="radio" value="No" id="vfsNo" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                <span>No</span>
+                            </label>
+                        </apex:outputPanel>
+                    </div>
+                </div> 
+            </apex:outputText>        
+            
+        </div>
+        
+        
+        <apex:outputPanel id="selectData">
+            <apex:actionFunction name="loadData_jt" action="{!init}" oncomplete="removeEmptyLables();" rerender="dummy,selectData1,attDetail">
+            </apex:actionFunction>
+            <apex:actionFunction name="dummy"  action="{!updateRequest}" oncomplete="setData()" rerender="selectData">
+            </apex:actionFunction>
+            <apex:actionFunction name="jobSrch" action="{!searchBankNames}"  oncomplete="showLkpModel();hideTempLoader_input();" rerender="selectData,selectData1"><!-- changed -->
+                <apex:param name="title" assignTo="{!title}" value=""/>
+            </apex:actionFunction>
+        </apex:outputPanel>
+        <apex:outputPanel id="dummy">
+            
+            <apex:inputHidden id="jobString" value="{!jobString}"/>
+            <apex:inputHidden id="selectedJobTitle" value="{!selectedJobTitle}"/>
+            
+            <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+            <apex:inputHidden id="xcjb__c" value="{!rq.xcjb__c}" />
+            <apex:inputHidden id="vfsFlag__c" value="{!rq.vfsFlag__c}" />
+            <apex:inputHidden id="rc__c" value="{!requiresCert}" />
+            <apex:inputHidden id="bandb__c" />
+            <br />
+            <script>
+            cs["xcjb__c"] = document.getElementById("{!$Component.xcjb__c}");
+            cs['attDetail']=document.getElementById('{!$Component.attDetail}');
+            cs['jobString']=document.getElementById('{!$Component.jobString}');
+            cs['selectedJobTitle']=document.getElementById('{!$Component.selectedJobTitle}');
+            cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+            cs["vfsFlag__c"] = document.getElementById("{!$Component.vfsFlag__c}");
+            cs["rc__c"] = document.getElementById("{!$Component.rc__c}");
+            cs["bandb__c"] = document.getElementById("{!$Component.bandb__c}");
+            </script>
+        </apex:outputPanel>
+    </div>
+    <script>
+    
+    $(document).ready(function(){
+        //setTimeout(function(){loadData_jt();},500);
+        
+    });
+    
+    $('#jtLkpSearch').unbind().on('click',function(){
+        showLkpModel();
+        showTempLoader_input('#serachVal');
+        let sv = $('#serachVal').val();
+        console.log('in jtl...!');
+        $("#searchJT").val(sv);
+        //jobSrch(sv);
+    });
+    function showLkpModel(){
+        if(!$('#modal_lookup_values').is(':visible'));
+        $('#modal_lookup_values').modal('show');
+    }
+    function searchJTWithVal(elem){
+        let v = $("#searchJT").val();
+        if(v!=undefined&&v!=null&&v.length>2){
+            $('#frmErrMsg2').hide();
+            console.log('before job srch');
+            jobSrch(v);
+            console.log('after job srch');
+            showTempLoader_input('#searchJT');
+            
+        }
+        else
+            $('#frmErrMsg2').show();
+    }
+    var selectedBankDetails = {};
+    var selectedBankId = '',selectedBankName = '';
+    function setData(elem){
+        removeValError($('#serachVal'));
+        let id = $(elem).attr('jId');
+        let n = $(elem).find('td').eq(0).text();
+        let bic = $(elem).find('td').eq(2).text();
+        let cntry = $(elem).find('td').eq(3).text();
+        selectedBankDetails.id = id;
+        selectedBankDetails.name = n;
+        selectedBankDetails.bic = bic;
+        selectedBankDetails.cntry = cntry;
+        $('.countryOptions option').each(function(){
+            if(cntry == $(this).text().trim()){
+                $(this).prop('selected',true);
+                $('.countryOptions').trigger('change');
+            }
+        });
+        $('#swiftcode').val(bic);
+        $('#serachVal').val(n);
+        $('.modal-backdrop').hide();
+        $('#modal_lookup_values').modal('hide');
+        cs['bandb__c'].value = id;
+    }
+    function getData(){
+        
+        if(!cs["jobString"].value){
+            $('#jd').attr('data-target','#modal_lookup_values');
+            return;
+        }
+        let jobData = JSON.parse(cs["jobString"].value)[0];
+        let id = jobData.Id;
+        let requires_certificate = jobData.rc__c;
+        let n = jobData.Name;
+        //var requires_certificate = cs["rc__c"].value;
+        console.log('before reqid');         
+        var req_uid = '{!rq.srvc__r.uid__c}';
+        console.log('reqid' + req_uid);
+        if(requires_certificate && (req_uid != '306' && req_uid != '105' && req_uid != '106' && req_uid != '016' && req_uid != '055' && req_uid != '305')){
+            $('#vfslabel,#vfsOpt').show();
+            //document.getElementById("vfslabel").style.display='block';
+            //document.getElementById("vfsOpt").style.display='block';  
+            //check if vfs flag field is yes or no and check the one of them (for draft and open requests) 
+            if (cs["vfsFlag__c"].value === 'true'){
+                //update the vfs input radio with checked  
+                $('#vfsYes').prop('checked',true);
+                //var vfsYes = document.getElementById("vfsYes");
+                //vfsYes.checked = true;
+            }
+            if (cs["vfsFlag__c"].value === 'false'){
+                //update the vfs input radio with checked
+                $('#vfsNo').prop('checked',true);
+                //var vfsNo = document.getElementById("vfsNo");
+                //vfsNo.checked = true;
+            }
+        }
+        //if(('{!rq.acc__r.Legal_Framework__c}'!='Freelancer')||('{!rq.acc__r.Legal_Framework__c}'=='Freelancer'  && jobData.aff__c == true) ){
+        $('#serachVal').val(n);
+        $('#modal_lookup_values').modal('hide');
+        cs['selectedJobTitle'].value = n;
+        cs['xcjb__c'].value = id;
+        if(c==true){
+            
+            //$('.fileAtt').removeClass('hidden_elem');
+        }
+        else{
+            $('.fileAtt').addClass('hidden_elem');
+        }
+        //('{!rq.acc__r.Legal_Framework__c}'=='Freelancer')?$('#jd').attr('data-target','#modal_lookup_values'):'';
+        /*}
+        else{
+            $('#jd').attr('data-target','#modal_lookup_values');
+        }*/
+    }
+    function delAtt(){
+        var f = $('#files')[0].files[0];
+        var ch="Are You sure to <b>Delete</b>";
+        var cb="Once you delete this attachment, you may need to re upload!";
+        axsConfirmation(ch,cb,true,'deleteAtt',[]);
+        /*if (r == true) {
+            $('body').css('pointer-events','none;');
+            deleteAtt();
+        }*/
+    }
+    function sdraft(){
+        let v = $('#serachVal').val();
+        let v1 = cs['selectedJobTitle'].value;
+        
+        if(v!=v1){
+            $('.jtLkp').find('#frmErrMsg1').html('** Selected look up value has changed!').show();
+        }
+        else{
+            
+            $('#preloader').fadeIn();
+            sdraft1(cs["xcjb__c"].value);
+            $('.jtLkp').find('#frmErrMsg1').hide();
+        }
+    }
+    
+    // for document upload
+    var base64String;
+    function handleBrowseClick_jt(){
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    function checkFile_jt(e){
+        //showPrview(e);
+        var f = $('#files')[0].files[0];
+        let ext = f.name.split('.')[f.name.split('.').length-1];
+        if(ext!='pdf'&&ext!=='jpg'&&ext!=='jpeg'){
+            $('#saveText').css('color','#E62D38').html('Only <b>PDF</b>,<b>JPG</b> and <b>JPEG</b> Formats allowed.').fadeIn().fadeOut().fadeIn().fadeOut().fadeIn();
+            return;
+        }
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ //showPrview(e);
+            $('#saveText').css('color','#000').html('File uploaded please click on <b>SAVE</b> to Proceed.').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    function showPrview_jt(elem) {
+        var f = $('#files')[0].files[0];
+        var t;
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                t =f.name.split('.')[1];
+            }
+        }(f);
+        reader.readAsBinaryString(f);
+    }
+    function saveAttachment_jt(elem) {
+        if($(elem).hasClass('disabled')) return;
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_jt();
+            //document.getElementById('files').addEventListener('change', handleFileSelect, false);
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function delAtt(){
+        var f = $('#files')[0].files[0];
+        var ch="Are You sure to <b>Delete</b>";
+        var cb="Once you delete this attachment, you may need to re upload!";
+        axsConfirmation(ch,cb,true,'deleteAtt',[]);
+    }
+    function handleFileSelect_jt(evt) {
+        var f = $('#files')[0].files[0];
+        $('[forLoad="Attested Certificate"]').find('.loader_img').show();
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                var binaryData = e.target.result;
+                base64String = window.btoa(binaryData);
+                cs["imageBase64"].value = base64String;
+                $('#fName').html(f.name);
+                $('#fileAttDet').show();
+                insertAtt();
+                $('#modal_upload_passport_jt').modal('hide');
+                $('.modal-backdrop').remove();
+            }
+        }(f);
+        reader.readAsBinaryString(f);
+    }
+    
+    
+    function vfsOnChange(){ 
+        console.log('---------entering on change method------'); 
+        var vfsOption = $("input[name='vfsOption']:checked").val();
+        cs["vfsFlag__c"] .value=false;
+        if(vfsOption=='Yes'){
+            cs["vfsFlag__c"] .value=true;
+            //July 26 2024
+            if (cs['xadh__c'] != null) {
+                var adh = cs['xadh__c'].value;
+                if (!adh.includes('vfs;')) {
+                    cs['xadh__c'].value += 'vfs;';
+                    console.log('adhocvalues::' + cs['xadh__c'].value);
+                }
+            }
+        }
+        console.log('vfs option returned'+ cs["vfsFlag__c"] .value);
+    }
+    
+    
+    </script>
+</apex:component>

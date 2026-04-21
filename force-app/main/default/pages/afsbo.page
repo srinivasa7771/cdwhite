@@ -1,0 +1,156 @@
+<apex:page cache="false" controller="leAMLCtl" docType="html-5.0" standardStylesheets="false" showHeader="false" sidebar="false"  title="AXS - Home" >
+    <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <style>
+        .base-main-footer{display:none;}
+        .table-container_afs {
+        max-height: 20em;
+        overflow-y: auto;
+        }
+        
+        .table-container_afs table {
+        width: 100%;
+        border-collapse: collapse;
+        }
+        
+        .table-container_afs th, .table-container_afs td {
+        border: 1px solid #999;
+        padding: 8px;
+        text-align: left;
+        padding: 10px !important;
+        }
+        
+        .table-container_afs th {
+        background: #f4f4f4;
+        position: sticky;  
+        top: 0;
+        z-index: 2;
+        border: 1px solid #ccc !important;
+        }
+    </style>
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main" >
+                <c:guheader heading="AFS Request"/> 
+                <apex:actionFunction name="saveRq" action="{!createAFSReq_BO}" status="theStatus" rerender="msg,msg2, itemDetails" oncomplete="toggleGLoader();" >
+                     <apex:param name="accId" value="" /> 
+                </apex:actionFunction>
+                <input type="hidden" id="accInp" value="{!$Label.DHRE_Accounts}" />
+                <input type="hidden" id="currUserReqs" value="{!currUserReqsJSON}" />
+                <input type="hidden" id="wrapperList" value="{!wrapperList}" />
+                <script>
+                var cs=[];
+                //var accs = '{!$Label.DHRE_Accounts}';
+                //cs["DHREAcc"] = document.getElementById("{!$Component.DHREAcc}");
+                </script>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <p>Select account to create AFS request</p>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:outputPanel id="srList" rendered="{!currUserReqs!=null}">
+                                    <div class="form-group">
+                                        <h3>Submitted requests</h3>
+                                        <div class="table-container_afs">
+                                            <table class="table table-align-middle" id="table-oldsr" data-page-length='25'>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Service Request<i class="fa text-primary"></i></th>
+                                                        <th>Account<i class="fa text-primary"></i></th>
+                                                        <th>Status<i class="fa text-primary"></i></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <apex:repeat value="{!currUserReqs}" var="r">
+                                                        <tr>
+                                                            <td>
+                                                                <a href="/{!r.id}" target="_blank">{!r.name}</a>
+                                                            </td>
+                                                            <td>{!r.Account_Name__c}</td>
+                                                            <td>{!r.STA__c}</td>
+                                                        </tr>
+                                                    </apex:repeat>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel id="msg">
+                                    <apex:pageMessages id="msg2" escape="false"/>
+                                </apex:outputPanel>
+                                <div class="form-group mb-3 mt-2">
+                                    <div class="row">
+                                        <div class="col-lg-6 col-sm-6">
+                                            <h4 class="box-check">
+                                                Choose account
+                                            </h4>
+                                            <select id="accLkup" class="form-control input-select2-tags dum requiredFld" onChange="accLkpOnchange(this)">
+                                                <option value="">--None--</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <div class="base-main-footer">
+                                    <apex:outputPanel styleClass="base-nav">
+                                        <a href="#" onClick="proceed();" id="uprqbtn"  class="btn btn-primary uprqbtn base-nav-next">
+                                            Create request
+                                        </a>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+            console.log('currUserReqsJSON -- '+'{!JSENCODE(afsBOAccsStr)}')
+            let currUser = '{!$User.Id}';
+            let selectedAccId ;
+            $(document).ready(function(){
+                createDD1('{!JSENCODE(afsBOAccsStr)}');
+            });
+            function createDD1(data){
+                let options = '';
+                for(v of JSON.parse(data)){
+                    if(v){
+                        let n = v.Name;
+                        let lc = v.lc__c;
+                        let id = v.Id;
+                        let o = "<option value='"+id+"'>"+n+"</option>";
+                        options+=o;
+                    }
+                }
+                $('#accLkup').append(options);
+            }
+            function accLkpOnchange(e){
+                selectedAccId='';
+                $('.base-main-footer').hide();
+                if(!$(e).val() || $(e).val()=='--None--'){
+                    return;
+                }
+                selectedAccId = $(e).val();
+                $('.base-main-footer').show();
+            }
+            function proceed(){
+                if(selectedAccId){
+                    showGLoader();
+                    saveRq(selectedAccId);
+                }
+            }
+            </script>
+        </body>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,536 @@
+<apex:component allowDML="true">
+    
+     <apex:attribute name="rqDraft" description="request" required="true" type="g_Req__c" />
+    
+    <style> 
+        .divWait{ 
+            z-index:9999;
+            background-color: #ffffff;
+            background-image: url("/resource/1583658416000/assets_NUI/images/ip_loader.gif");
+            background-size: 25px 25px;
+            background-position:right center;
+            background-repeat : no-repeat;
+        }
+        
+        .tempLoader_input {    
+             background-color: #ffffff;
+             background-image: url("/resource/1583658416000/assets_NUI/images/ip_loader.gif");
+             background-size: 25px 25px;
+             background-position:right center;
+             background-repeat : no-repeat;
+         }
+        
+         .loadingProgress{
+            cursor: wait !important;
+            pointer-events: none !important;
+         }
+        
+    </style>
+    
+     <script>
+    var policyTypes = ['Basic','Bronze','Silver','Gold','Platinum'];
+    var allPolicies = '';  var fAmount; 
+    var ageabove65 = false; //JSON. parse('{!rqDraft.xuvdet__c}'); //test reqID = a0Ep0000005cs6YEAQ 
+    
+    
+    $(document).ready(function () {   
+        isAdnic = true; 
+        if(bCallAdnic=='true'){
+            activePolicyMsg();
+            //showAgeInfo();
+            checkIdFormat(); showPrgStatus(); 
+            setInsOptions(); assignInsTypeOnLoad(); setStudentPolicy();
+        }else{
+            var pol = '{!rqDraft.xuvdet__c}'; 
+            if(pol!=''){
+                var xPolicy = '{!rqDraft.xintp__c}';
+                allPolicies = JSON.parse(pol);
+                setPremium(reqType, xPolicy);
+                getC('adnicIns').checked=true;  getC('instype').disabled = true;
+                setPopupDetails(xPolicy);
+            }
+        }
+    });
+    
+    
+    /**
+    * renders pre-selected policy details if payment is done 
+    **/
+    function setPremium(reqType, xPolicy){
+        var selectobject=getC('instype'); selectobject.length = 0;
+        var option2 = document.createElement('option');option2.text = option2.value = option2.id =xPolicy;selectobject.add(option2,0);
+        getC(xPolicy).setAttribute("data-value",'AED '+allPolicies[xPolicy].pFinalPremiumAmt);
+    }
+    
+    
+    /**
+    * sets insurance policy picklist w.r.t. type of the applicant
+    **/
+    function setInsOptions(){
+        if(reqType=="new" || reqType=="empRnwl" || reqType=="stln"){
+            // Calculate the total salary  
+            var xcmbs='{!rqDraft.xcmbs__c}', xcma='{!rqDraft.xcma__c}', xcmta='{!rqDraft.xcmta__c}', xcmoa='{!rqDraft.xcmoa__c}';
+            var c1 = parseInt(xcmbs.replace(/,/g, "")) + parseInt(xcma.replace(/,/g, "")) + parseInt(xcmta.replace(/,/g, "")) + parseInt(xcmoa.replace(/,/g, ""));
+            c1 = c1.toFixed(2);
+            
+            // remove basic option from the picklist if total salary is more than 4k
+            if(c1>4000){rmInsOption('Basic');}
+        }    
+        
+        // remove Basic Insurance Policy and higher policies than the sponsor for dependents
+        var tp = '';var selectobject=getC('instype');  
+        if(isDependentApp){ tp='{!rqDraft.Spr__r.intp__c}'; rmInsOption('Basic');}
+        
+        if(tp!=null && tp!=""){
+            var ind=null;for(var i=0; i<selectobject.length; i++){if(selectobject.options[i].value.toUpperCase()==tp){  ind=i;break; }}
+            if(ind!=null){for(var i=ind+1; i<selectobject.length; i++){selectobject.remove(i);i--;}}
+        }
+    }
+    
+    
+    /**
+    * remove a value from picklist
+    **/
+    function rmInsOption(val){
+        var ind = null; 
+        var selectobject=getC('instype'); 
+        for (var i = 0; i < selectobject.length; i++) { if (selectobject.options[i].value == val) {ind = i; break;}}
+
+        if (ind != null) {if (getC('instype').value == val) { getC('instype').value == '';}selectobject.remove(ind);}
+    }
+    
+    
+    function setStudentPolicy(){
+        var appRol = '{!rqDraft.Con__r.rol__c}';
+        if(appRol == 'Student' || reqType=='stunew'){
+            var selectobject=getC('instype'); selectobject.length = 0;
+            var option = document.createElement('option');option.text = '--None--';option.value ='';selectobject.add(option,0);
+            var option2 = document.createElement('option');option2.text = option2.value = option2.id ='Students';selectobject.add(option2,1);
+            option2.setAttribute("data-value",'AED '+insStudent);
+        }
+    }
+    
+    
+    /**
+    * add value to picklist at provided index 
+    **/
+    function addInsOption(val, pos){
+        var ind = null;  var selectobject=getC('instype'); 
+        if(pos=='' || pos==null){pos=1;}
+        for(var i = 0; i < selectobject.length; i++) {if (selectobject.options[i].value == val) {ind = i; break;}}
+
+        if(ind == null){
+            var option=document.createElement('option'); option.text=option.value=val; selectobject.add(option,pos);
+        }
+    }
+    
+    /*
+    * set selected plan on page
+    */
+    function assignInsTypeOnLoad(){
+        
+        var isInsSelected = {!rqDraft.InsChk__c};
+        cs['ins'].checked = isInsSelected; getC('adnicIns').checked = isInsSelected;
+        
+        if(cs['xintp__c'].value!="" && cs['xintp__c'].value!=null){
+            getC('instype').value = cs['xintp__c'].value; //cs['ins'].checked = true; getC('adnicIns').checked = true;
+            setPopupDetails(cs['xintp__c'].value);
+            checkReqdFields(cs['xintp__c'].value);
+        }else{
+            getC('instype').value = "--None--"; //cs['ins'].checked = false; getC('adnicIns').checked = false;
+        }
+         updateAdhoc();
+        
+    }
+    
+    
+    function checkReqdFields(policyType, isPrgStatChanged){
+        
+        showTempLoader_input1(getC('adnicIns'));
+        if(getC('instype').value =='--None--' || getC('instype').value ==""){hideTempLoader_input();  return; }
+        getC('prgmsg').style.display = 'none'; 
+        
+        if('{!rqDraft.xcslt__c}'=="Mrs." && '{!rqDraft.xcms__c}'=="Married" && '{!rqDraft.Con__r.rol__c}'!='Student'){
+            if(cs['xpgs__c'].value=='' || cs['xpgs__c'].value == null){
+                getC('prgmsg').style.display = 'block';  getC('instype').value = '--None--'; $('#instype').trigger('change');
+                hideTempLoader_input();
+                return false;
+            }
+        }
+        
+        /*if(reqType!='' && (isPrgStatChanged || allPolicies[policyType]==null || allPolicies[policyType]=='')){
+            callAdnicWS();
+        }else{
+            setFinalPremium(policyType);hideTempLoader_input();
+        }*/callAdnicWS();
+    }
+    
+    
+    function reassignPolicyInfo(p){
+        
+        if(p!=null && p!=""){allPolicies = JSON.parse(p);}
+        var selectedPolicy = getC('instype').value;
+        setPopupDetails(selectedPolicy);
+        setFinalPremium(selectedPolicy);
+        hideTempLoader_input();
+    }
+    
+    
+    function setFinalPremium(selectedPolicy){
+        
+        fAmount = allPolicies[selectedPolicy]!=null?allPolicies[selectedPolicy].pFinalPremiumAmt:'--';
+        $('#select2-instype-container').html('<span style="display: block;margin-top: -5px;">'+selectedPolicy+'<span class="text-primary" style="display: block;margin-top: -11px;">AED '+fAmount+'</span></span>');
+        
+        if(fAmount=='--'){
+            var adh = cs['xadh__c'].value;
+            if(adh.includes('inr;')){ cs['xadh__c'].value = adh.replace('inr;', '');}
+            cs['xintp__c'].value = "";
+        }
+    }
+    
+    
+    function assignInsType(policyType){
+        
+        if(policyType!='' && policyType!=null && policyType!='--None--'){
+            cs['xintp__c'].value = policyType; cs['ins'].checked = true; getC('adnicIns').checked = true;
+            setPopupDetails(policyType);
+        }else{
+            cs['xintp__c'].value = ""; cs['ins'].checked = false;getC('adnicIns').checked = false; fAmount='';
+        }
+        updateAdhoc(); 
+    }
+    
+    
+    /**
+    * show pregnancy status for females
+    **/
+    function showPrgStatus(){
+        if('{!rqDraft.xcslt__c}'=="Mrs." && '{!rqDraft.xcms__c}'=="Married" && '{!rqDraft.Con__r.rol__c}'!='Student'){
+            getC('prstatus').style.display='block';
+        }
+    }
+    
+    
+    /**
+    * show age error message if age is greater than 64 years 
+    **/
+    function showAgeInfo(){
+        var d64, bd; 
+        var bdt = new Date('{!rqDraft.xcbd__c }');
+        bdt = bdt.toISOString().substring(0, 10); 
+        if(bdt!=null && bdt!=''){
+            d64 = new Date; d64.setMonth(d64.getMonth()-768);bd = dtParse(bdt, 'sv_SE');
+            if(bd<=d64 ){
+                getC('agemsg').style.display='block'; $('#btndetails').hide(); getC('adnicIns').disabled= 'true';
+
+                cs['xintp__c'].value = ""; cs['ins'].checked = false;getC('adnicIns').checked = false; getC('instype').disabled = true; cs['xpgs__c'].disabled = true;
+                ageabove65 = true;
+            }else if(bd>d64){ getC('agemsg').style.display='none';}
+            
+        }
+    }
+    
+    
+    /**
+    * show active policy info message if ADNIC policy is active for selected applicant 
+    **/
+    function activePolicyMsg(){
+        var isPolicyActive = false;
+        if(reqType=='stln' || reqType.includes('Rnwl')){
+            var today, expirydate; 
+            if('{!rqDraft.Con__r.xped__c }'!=null && '{!rqDraft.Con__r.xped__c }'!=''){
+                var bdt = new Date('{!rqDraft.Con__r.xped__c}');
+                bdt.setDate(bdt.getDate()-30);  
+                bdt = bdt.toISOString().substring(0, 10); 
+                if(bdt!=null && bdt!=''){
+                    today = new Date; expirydate = dtParse(bdt, 'sv_SE'); 
+                    if(expirydate>=today ){     
+                        getC('enddatemsg').style.display='block'; cs['xintp__c'].value = ""; cs['ins'].checked = false;getC('adnicIns').checked = false;getC('instype').disabled = true;
+                        $('#btndetails').hide(); getC('adnicIns').disabled= 'true';
+                        isPolicyActive = true; return isPolicyActive;
+                    }else if(expirydate<today){
+                        getC('enddatemsg').style.display='none';
+                        $('#btndetails').show();
+                        return isPolicyActive;
+                    } 
+                }
+            }
+        }
+    }
+    
+    
+    /**
+    * show Emirates-ID error message if ID is not in the proper format 
+    **/
+    function checkIdFormat(){
+        var isValidId = true;
+        if(!ageabove65 && (reqType=='stln' || reqType.includes('Rnwl'))){
+            var applicantEId  = '{!rqDraft.xceidid__c}';
+            if((applicantEId== null) || (applicantEId != null && !applicantEId.includes('-') && applicantEId.length !=15 ) || (applicantEId != null && applicantEId.includes('-') && (applicantEId.length !=18 || applicantEId.split('-').length != 4)) ){
+                getC('emiratesidmsg').style.display='block'; 
+                cs['xintp__c'].value = ""; cs['ins'].checked = false;getC('adnicIns').checked = false; getC('instype').disabled = true;
+                isValidId = false; $('#btndetails').hide(); return isValidId;
+                
+            }
+        }
+        return isValidId;
+    }
+    
+    
+    
+    function setPopupDetails(policyType) {
+        
+        getC('pop_policydetails').innerText = 'Policy Type: ' +policyType ; 
+        var insWriteUps =  (policyType=='BASIC') ? '{!$Label["ADNIC_Write_Up_BASIC"]}' : (policyType=='ELITE') ? '{!$Label["ADNIC_Write_Up_ELITE"]}': (policyType=='PREMIUM') ? '{!$Label["ADNIC_Write_Up_PREMIUM"]}': (policyType=='STANDARD') ? '{!$Label["ADNIC_Write_Up_STANDARD"]}': (policyType=='SUPERIOR') ? '{!$Label["ADNIC_Write_Up_SUPERIOR"]}':(policyType=='Students') ? '{!$Label["ADNIC_Write_Up_Students"]}': '';
+        getC('policyWriteUp').innerText = insWriteUps; 
+        
+        if(allPolicies[policyType]!=null){
+            var grossPr = allPolicies[policyType].pBasmahFund + allPolicies[policyType].pGrossPremiumAmt;
+            getC('pop_gross').innerText = 'AED ' + grossPr;
+            getC('pop_vat').innerText = 'AED ' + allPolicies[policyType].pVATAmt;
+            getC('pop_final').innerText = 'AED ' + allPolicies[policyType].pFinalPremiumAmt;
+            getC('pop_discount').innerText = 'AED ' +  allPolicies[policyType].pDiscountAmt;
+        }else{
+            getC('pop_gross').innerText = 'AED --'; getC('pop_vat').innerText = 'AED --';
+            getC('pop_final').innerText = 'AED --'; getC('pop_discount').innerText = 'AED --';
+        }
+        
+        var insBenefits =  (policyType=='BASIC') ? '{!$Label["Insurance_Plan_BASIC"]}' : (policyType=='ELITE') ? '{!$Label["AdnicElite"]}': (policyType=='PREMIUM') ? '{!$Label["AdnicPremium"]}': (policyType=='STANDARD') ? '{!$Label["AdnicStandard"]}': (policyType=='SUPERIOR') ? '{!$Label["AdnicSuperior"]}':(policyType=='Students') ? '{!$Label["AdnicStudents"]}': '';
+        var insNetworks =  (policyType=='ELITE')||(policyType=='PREMIUM')||(policyType=='STANDARD')||(policyType=='SUPERIOR')||(policyType=='Students') ? '{!$Label["ADNIC_Hospital_Network_Link_All"]}': (policyType=='BASIC')? '{!$Label["ADNIC_Hospital_Network_Link_EBP"]}': '';
+        getC('insPlanPDF').href=insBenefits; getC('insPlanPDF').innerText = "Click here to know the Insurance benefits";
+        getC('insNetworks').href=insNetworks; getC('insNetworks').innerText = "Click here to know the Network Hospitals";
+    }
+    
+    
+    function updateAdhoc() {
+        if(cs['ins'].checked){ 
+            if(cs['xadh__c'] != null) { var adh = cs['xadh__c'].value; if(!adh.includes('inr;')) { cs['xadh__c'].value += 'inr;';}}
+        }else{
+            if(cs['xadh__c'] != null){ var adh = cs['xadh__c'].value; if (adh.includes('inr;')) { cs['xadh__c'].value = adh.replace('inr;', '');}}
+        }
+    }
+    
+    
+    /*function saveReq(){
+        var selectedpol = cs['xintp__c'].value; var insSelected = getC("adnicIns").checked;
+        if((selectedpol==null || selectedpol=='') && (insSelected || cs['xpgs__c'].value!="")){
+            getC("adnicIns").checked = true;
+            $('#modal_insurance_selected').modal('show'); hideTempLoader_input(); return;
+        }    
+        
+        saveRequest();
+    }*/
+    
+    
+    function toggleCheckbox(){
+        var selectedpol = cs['xintp__c'].value;
+        if((selectedpol!=null && selectedpol!='') || ((reqType=="stunew" || reqType=="stuRnwl")&& fAmount=='--')){ getC("adnicIns").checked = true;}
+        
+        if((reqType=="stunew" || reqType=="stuRnwl") && (selectedpol!="Students" && fAmount!='--')){
+            if(!activePolicyMsg() && checkIdFormat()){
+                getC("adnicIns").checked = true;setFinalPremium('Students');
+                getC("instype").value = 'Students'; getC("instype").onchange(); $('.select2-results').hide();
+            }
+        }else{
+             $('.select2-results').show();
+        }
+        
+    }
+    
+    function showTempLoader_input1(e){
+        showTempLoader_input($('#instype').parent().find('.select2-selection--single'));
+        $('.select2-container').on('click',function(){
+            $('.loadingProgress').removeClass('loadingProgress'); 
+        });
+    }
+    
+    function hideTempLoader_input(){ $('.tempLoader_input').removeClass('tempLoader_input'); $('.loadingProgress').removeClass('loadingProgress');}
+    
+    function removeTempLoader(){ $('*').removeClass('loadingProgress'); $('.loader_temp').remove();}
+    
+    
+    function showInfoMsg(infomsg){
+        var el = '<div class="input-info" id="dynainfomsg" style="display:none;"> <i class="fa fa-exclamation-circle text-info"></i>&nbsp;'+ infomsg + '</div>';
+    }
+    
+    
+    </script>
+    
+    <div class="modal fade modal-base" id="modal_insurance_selected" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 500px;">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <h3 class="mb-4">
+                        <i class="fa fa-exclamation-circle text-warning"></i>
+                        Opted for ADNIC Insurance 
+                    </h3> 
+                    <div class="input-info">
+                        <p>
+                            Please select an insurance policy or unselect the insurance 
+                            <apex:outputText value=" and pregnancy status" rendered="{!AND(rqDraft.xcslt__c=='Mrs.',rqDraft.xcms__c=='Married',rqDraft.Con__r.rol__c!='Student')}" />
+                            to proceed with application.  
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   <!--## <div>-->
+         <!--<div class=" mt-4 mb-3"> 
+           <div class="col-lg-6"> -->
+                <label class="box-check">
+                    <input id='adnicIns' type="checkbox" name="service" onclick="toggleCheckbox();" />
+                    <div class="box box-grey box-grey-block addon-service-box">
+                        <div class="addon-service-img">
+                            <img src="{!URLFOR($Resource.assets_NUI, '/images/service1.png') }" alt=""/>
+                        </div>
+                        <div class="box-grey-label">Medical insurance - ADNIC</div>
+                        
+                        <div id="prstatus" style="display:none;">
+                            <div class="d-sm-flex justify-content-between">
+                                <div class="flex-fill flex-shrink-1">
+                                    <apex:inputField styleClass="requiredFld form-control select2-service" value="{!rqDraft.xpgs__c}" id="xpgs__c" onchange="assignInsType(getC('instype').value); return checkReqdFields(getC('instype').value,true);"/>
+                                    <script type="text/javascript">
+                                    cs['xpgs__c']=getC('{!$Component.xpgs__c}');
+                                    </script>
+                                </div>
+                                <div style="flex: 0 0 150px" class="ml-sm-auto text-sm-right">
+                                    <button type="button" class="btn btn-link pr-0 pl-2 mt-2 mt-sm-0" onclick="return false;">
+                                        is Pregnant ?
+                                    </button>
+                                </div>
+                            </div> 
+                            <apex:outputLabel > </apex:outputLabel>
+                        </div>
+                        
+                        <div class="d-sm-flex justify-content-between">
+                            <div class="flex-fill flex-shrink-1">
+                                <select id='instype' class="form-control select2-service" onchange="assignInsType(this.value); return checkReqdFields(this.value,false);"> 
+                                    <option id="none" value=""  data-value="" >--None--</option>
+                                    <option id="Basic" value="BASIC" data-value=""> Basic</option>
+                                    <option id="STANDARD" value="STANDARD" data-value=""> Standard</option>
+                                    <option id="SUPERIOR" value="SUPERIOR" data-value=""> Superior</option>
+                                    <option id="PREMIUM" value="PREMIUM" data-value=""> Premium</option>
+                                    <option id="ELITE" value="ELITE" data-value=""> Elite</option>
+                                    
+                                    
+                                    <!--
+                                    <option id="Bronze" value="Bronze" data-value="">Bronze</option>
+                                    <option id="Silver" value="Silver" data-value="">Silver</option>
+                                    <option id="Gold" value="Gold" data-value="">Gold</option>
+                                    <option id="Platinum" value="Platinum" data-value="">Platinum</option>
+                                    -->
+                                </select>
+
+                            </div>
+                            <div style="flex: 0 0 150px" class="ml-sm-auto text-sm-right">
+                                <button id="btndetails" type="button" class="btn btn-link pr-0 pl-2 mt-2 mt-sm-0" data-toggle="modal" data-target="#modal_insurance_details" onclick="return false;">
+                                    <i class="icon-info text-primary"></i> VIEW DETAILS
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- use method showInfoMsg to render these msgs dynamically -->
+                        <div class="input-info" id="agemsg" style="display:none;">
+                            <i class="fa fa-exclamation-circle text-info"></i>&nbsp;
+                            For age above 65, please contact ADNIC for Insurance.
+                        </div>
+                        <div class="input-info" id="prgmsg" style="display:none;">
+                            <i class="fa fa-exclamation-circle text-info"></i>&nbsp;
+                            Pregnancy status cannot be blank.
+                        </div>
+                        <div class="input-info" id="enddatemsg" style="display:none;">
+                            <i class="fa fa-exclamation-circle text-info"></i>&nbsp;
+                            ADNIC Insurance Policy for this applicant is still active and will expire on - <apex:outputField value="{!rqDraft.con__r.xped__c}"/>
+                        </div>
+                        <div class="input-info" id="emiratesidmsg" style="display:none;">
+                            <i class="fa fa-exclamation-circle text-info"></i>&nbsp;
+                            Emirates-ID is blank or it has invalid format. Please update Emirates ID and retry.
+                            <br/><br/> Format Example: 012-0123-0123456-0
+                        </div>
+                    </div>
+                </label>
+            <!--</div>-->
+       
+        
+        
+        <div class="modal fade modal-base" id="modal_insurance_details" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 1000px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <div class="text-center pt-2">
+                            <p class="mb-1" >Policy Details</p>
+                            <p style="font-size: 1.125rem;font-weight: 500;"></p>
+                            <div>
+                                <div class="relationship-manager-line"></div>
+                                <div>
+                                    <h4 id="pop_policydetails"></h4>
+                                    <p id="policyWriteUp" style="padding-top: 1%;"></p>
+                                    <div class="panel">
+                                        <div class="panel-body">
+                                            <div class="table-responsive table-responsive-lg">
+                                                <table class="table ui-table">
+                                                    <tr>
+                                                        <td> Gross Premium</td>
+                                                        <td><h5 id="pop_gross">AED --</h5></td>
+                                                    </tr>
+                                                    <tr> 
+                                                        <td> Discount</td>
+                                                        <td><h5 id="pop_discount">AED --</h5></td>
+                                                    </tr>
+                                                    <tr>   
+                                                        <td> VAT </td>
+                                                        <td><h5 id="pop_vat">AED --</h5></td>
+                                                    </tr>
+                                                    <tr>   
+                                                        <td> Final Premium</td>
+                                                        <td><h5 id="pop_final">AED --</h5></td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                <p>In view of the special arrangement between AXS and ADNIC, all Health Insurance plans are offered with Teleconsultation Benefit through TruDoc 24X7: </p>
+                               <ul style="display: inline-block;text-align: initial;">
+                                <li>24X7 access to highly trained and licensed Doctor’s &amp; wellness experts.</li>
+                                <li>Medication delivery, wherever applicable and within the regulatory framework.</li>
+                                <li>Support for Healthy Life style and support for Acute and Chronic Conditions.</li>
+                                <li>Appointment booking, on your behalf, within your network.</li>
+                                </ul>
+                                </div>
+                                <div class="relationship-manager-col">
+                                    <h4>Related Links</h4>
+                                    <div class="d-flex justify-content-around">
+                                        <div>
+                                            <a id="insPlanPDF" href="" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;" style="color:#3a87d0;"> </a>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-around">
+                                        <div>
+                                            <a id="insNetworks" href="" onclick="window.open(this.href, '_blank');return false;" style="color:#3a87d0;"> </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+       
+        <apex:inputHidden id="xintp__c" value="{!rqDraft.xintp__c}" />
+        <apex:inputField id="ins" value="{!rqDraft.InsChk__c}" onclick="updateAdhoc();" style="display:none;" />
+        <script type="text/javascript">
+        cs['xintp__c']=getC('{!$Component.xintp__c}');cs['ins']=getC('{!$Component.ins}');
+        </script> 
+    <!--## </div>-->
+    
+</apex:component>

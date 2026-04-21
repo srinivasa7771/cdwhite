@@ -1,0 +1,293 @@
+<apex:page cache="false" controller="ctrlgetEDRScase" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="EDRS Cases" action="{!getCaseList}">
+    <style>
+        .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link {
+        background-color: #e7e8ef !important;
+        }
+        .nav-pagination li{
+        cursor: pointer;
+        }
+        #reqTable_length,#reqTable_filter{display:none !important;}
+        #reqTable{width:100% !important;}
+        .recommended-services-slider-wrapper .swiper-button-next {
+        right: -10px;
+        }
+        .bodyDiv.brdPalette.brandPrimaryBrd {
+        width: 100%;
+        }
+        
+        table#bodyTable {
+        table-layout: fixed;
+        width: inherit;
+        }
+        #reqTable th, #reqTable td {
+        width: 185px !important;
+        }
+        @media (max-width: 767.98px){
+        #reqTable th, #reqTable td {
+        width:auto !important;
+        }
+        }
+        .m_title:first-letter {
+        text-transform: uppercase
+        }
+        #reqTable ul{
+        padding:0px !important;
+        }
+        #reqTable th {
+        border-bottom: none !important;
+        }
+        
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.axs2MandateCss)}" />
+    
+    <apex:form >
+        <apex:actionFunction name="getCaseHist1" action="{!getCaseHistory}" oncomplete="showHistoryModal('{!JSENCODE(edrsCaseHistory)}')" >
+            <apex:param name="cn" value="" />
+        </apex:actionFunction>
+    </apex:form>
+    <apex:pageMessages />
+    <div id="main" data-aos="zoom-in">
+        <div id="page_content">
+            <div class="container">
+                <div class="page-header">
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li> 
+                        <li class="breadcrumb-item"><a href="/pagecompanyinfo">Company Info</a></li> 
+                        <li class="breadcrumb-item">EDRS Cases</li>
+                    </ul>
+                    <div class="d-lg-flex flex-wrap align-items-center">
+                        <h1 class="page-title mr-auto">EMPLOYER DISPUTES REQUESTS</h1>
+                        <apex:outputPanel id="tid" rendered="{!showData}">
+                                <div class="table-form-wrapper">
+                                    <!-- search field  -->
+                                    <div class="table-form-col col-6">
+                                        <div class="search-field mb-0">
+                                            <div class="input-group">
+                                                <input type="text" onkeyup="srch4prsn()" class="form-control" placeholder="Search" id="p"  />
+                                                <div class="input-group-append srchDiv">
+                                                    <button class="btn" type="button">
+                                                        <div class="icon-search" onclick='srch4prsn()'></div>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <!-- dropdown status filter -->
+                                    <div class="table-form-col col-12">
+                                        <div class="mb-0">
+                                            <select class="dropdown-filter form-control input-select2-flat" id="staFilter" placeholder="Select Status Type" onchange='stFilter(this)'>
+                                                <!--<option search="all" value="all">Select Status Type</option>-->
+                                                <option value="all">All</option>
+                                                <option value="Under Review">Under Review</option>
+                                                <option value="Rejected">Rejected</option>
+                                                <option value="Waiting customer response">Waiting Customer Response</option>
+                                                <option value="Intimation Letter Issued">Intimation Letter Issued</option>
+                                               <option value="Meeting Scheduled">Meeting Scheduled</option>
+                                                <option value="Meeting Re-Scheduled">Meeting Re-Scheduled</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                                <option value="Pending for Decision">Pending for Decision</option>
+                                                <option value="Dispute Resolved">Dispute Resolved</option>
+                                                <option value="Referred to Court">Referred to Court</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- end .dropdown status filter -->
+                                    
+                                </div>
+                            </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-body pb-1">
+                        <apex:outputPanel rendered="{!showData}">
+                        <div class="table-people table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0" style="">
+                            <table class="table table-hover table-responsive-sticky table-list m-0" id="reqTable">
+                                <thead>
+                                    <tr>
+                                        <!--th field="forAlpha" width="20%" style="display:none !important;">DUMMY</th-->
+                                        <th field="name" width="20%"><span>Case Number</span></th>
+                                        <th field="name" width="20%"><span>Employee Name</span></th>
+                                        <th field="name" width="20%" ><span>Raised By</span></th>
+                                        <th field="name" width="20%"><span>Status</span></th>
+                                        <th field="name" width="20%"><span>Last Modified Date</span></th>
+                                        <!--th field="name" width="20%"><span>Closed Date</span></th-->
+                                        <th field="name" width="20%"><span>Related Documents</span></th>
+                                        <th field="name" width="20%"><span>Case History</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!infoList}" var="info">
+                                        <tr>
+                                            <td><span>{!info.caseno}</span></td>
+                                            <td ><span>{!info.empName}</span></td>
+                                            <td ><span>{!info.personName}</span></td>
+                                            <td><span><b>{!info.status}</b></span></td>
+                                            <td class='datesToFormat'><span>{!info.created}</span></td>
+                                            <!--td class='datesToFormat'><span>{!IF(ISBLANK(info.closed),'NA',info.closed)}</span></td-->
+                                            <td>
+                                                <ul>
+                                                    <apex:repeat value="{!info.docs}" var="doc">
+                                                        <li>
+                                                            <a href="/apex/edrsDocs?docId={!doc.docId}&parentId={!info.edrsId}" target="_blank">{!doc.docType}</a>
+                                                        </li>
+                                                    </apex:repeat>
+                                                </ul>
+                                                
+                                            </td>
+                                            <td>
+                                                <span
+                                                    case-num="{!info.caseno}" id="chID" onclick="getCaseHist('{!JSENCODE(info.caseno)}')" class="text-primary pointer" href="#">View
+                                                </span>
+                                                
+                                            </td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                            </apex:outputPanel>
+                        <apex:outputPanel rendered="{!!showData}">
+                        <h2 style="color:red;">
+                                                No Data available!
+                                            </h2>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="hist" tabindex="-1" role="dialog" aria-hidden="true" > 
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>     
+                <div class="modal-body" style="padding: 50px 40px;padding-bottom: 0px !important;">
+                    <h3>
+                        Status history for <elem></elem>
+                    </h3>
+                    <table class="table table-hover table-responsive-sticky table-list m-0" id="hisTb">
+                        <thead>
+                            <tr>
+                                <th field="name" width="20%"><span>Status</span></th>
+                                <th field="name" width="20%"><span>Started</span></th>
+                                <th field="name" width="20%"><span>Completed</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+                </div>           
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    var table;
+    $(document).ready(function(){
+        $('.datesToFormat').each(function(){
+            v = $(this).text();
+            if(v && v!='NA'){
+                $(this).text(getFormattedDate(v));
+            }
+        });
+         table = $('#reqTable').DataTable({
+            dom: 'Alfrtip',
+            language: {
+                'paginate': {
+                    'previous': '<i class="fa fa-long-arrow-left"></i><span> PREV</span>',
+                    'next': '<span>NEXT </span><i class="fa fa-long-arrow-right"></i>'
+                }
+            }
+        });
+    });
+    var caseHisObj;
+    caseHisObj = JSON.parse('{!JSENCODE(infoListStr)}');
+    var cH, currCaseNum;
+    //cH=JSON.parse('{!JSENCODE(edrsCaseHistory)}');
+    function getCaseHist(cn){
+        if(cn){
+            cH = {};
+            currCaseNum = cn;
+            showTempLoader();
+            getCaseHist1(cn);
+        }
+    }
+    
+    function showHistoryModal(caseHist){
+        removeTempLoader();
+        cH=JSON.parse(caseHist);
+        if(cH){
+            $('#hisTb').find('tbody').empty();
+            var tBody = '';
+            for([i,v] of cH.entries()){
+                var trow = '<tr>';
+                var tData='<td>'+v.status+'</td>';
+                tData+='<td>'+getFormattedDateTime(v.started)+'</td>';
+                tData+='<td>'+getFormattedDateTime(v.completed)+'</td>';
+                trow+=tData;
+                tBody+=trow;
+            }
+            $('#hisTb').find('tbody').html(tBody);
+            $('#hist').find('elem').html(currCaseNum);
+            $('#hist').modal('show');
+        }
+    }
+    
+     
+    function getFormattedDateTime(d) {
+        if(d){
+            let date = new Date(d.replace('+0000','Z'));
+            let m = date .getMonth() + 1;
+            m = m<10?'0'+m:m
+            let dt = date .getDate()<10?'0'+date .getDate():date .getDate();
+            let y = date .getFullYear();
+            let retDate = dt + "/" + m + "/" + y;
+            let seconds = appendZero(date.getSeconds());
+            let minutes = appendZero(date.getMinutes());
+            let hours = appendZero(date.getUTCHours());
+            let time = hours+':'+minutes+':'+seconds;
+            return time+' on '+retDate;
+        }
+        return 'NA';
+    }
+    /* Data Table Code Starts*/
+    function srch4prsn(){
+        var p = document.getElementById('p').value;
+        dataTableSearch('#reqTable',p);
+    }
+    function stFilter(s){
+        var att = $(s).find('option:selected').val();
+        if(att == "all")
+            att = '';
+        var t = $(s).val().toUpperCase();
+        
+        $('.page-title').text(t+' CASES');
+        dataTableSearchByCol('#reqTable',4,att);
+    }
+    function dataTableSearch(tableId,srchCrt){ // to search entire table
+        $(tableId).dataTable().api().data().search(srchCrt).draw();
+    }
+    function dataTableSearchByCol(tableId,columnIndex,srchCrt){ // to search each column(colIndex have to be given)
+        //$(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt,false,true,false).draw();  // for Case Sesitive
+        $(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt).draw();  // for Case In-Sesitive
+    }
+    /* Data Table code Ends*/
+    /*
+    arrow function to add 0 for number less than 10
+    always keep this in last, to beautify page😊
+    */
+    let appendZero = (v) =>v<10?'0'+v:v;
+    </script>
+</apex:page>

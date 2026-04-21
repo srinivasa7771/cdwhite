@@ -1,0 +1,173 @@
+<apex:page controller="ClaimValidate" contentType="application/vnd.ms-excel#SalesForceExport.xls" cache="true">
+   <apex:outputPanel rendered="{!fileLevel == '1'}">
+     <apex:variable var="dAmt" value="{!0}" />
+      <apex:variable var="amt" value="{!0}" />
+      <apex:variable var="dCnt" value="{!0}" />
+      <apex:variable var="dMCnt" value="{!0}" /> 
+       <apex:repeat value="{!trnLst}" var="i">
+           <apex:variable var="dAmt" value="{!dAmt+IF(i.isDp,VALUE(i.amntDiff),0)}" />
+           <apex:variable var="dCnt" value="{!dCnt+IF(i.isDp,1,0)}" />  
+       </apex:repeat>
+       <apex:variable var="amt" value="{!(amt+(ttlDiffAmount+((ttlMCnt-dCnt)*3.15)))-dAmt}" />  
+        <apex:variable var="dMCnt" value="{!(ttlMCnt-dCnt)}" />
+    <apex:pageBlock title="Matched Records" >
+        <apex:pageblockTable value="{!trnLst}" var="item" id="theTable" styleClass="opp-table">
+             <apex:column headervalue="Full Name" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.appName}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!dMCnt} 
+                 </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Account Name" rendered="{!NOT(item.isDp)}" >
+                 <b>{!item.accName}</b>
+             </apex:column>
+            <apex:column headervalue="RequestItem Name" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.itmName}</b>
+             </apex:column>
+            <apex:column headervalue="Brand" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.brand}</b>
+             </apex:column>
+            <apex:column headervalue="Department" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.department}</b>
+             </apex:column>
+            <apex:column headervalue="Amount" rendered="{!NOT(item.isDp)}" >
+                 <b>{!item.amount}</b>
+            </apex:column>
+             <apex:column headervalue="Reference Amount" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.amntDiff}</b>
+               <apex:facet name="footer">
+                  Total :  {!amt} 
+                </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Reference #" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.reqNo}</b>
+             </apex:column>
+            <apex:column headervalue="Transaction Name" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.tranNo}</b>
+             </apex:column>
+             <apex:column headervalue="Item Ref #" rendered="{!NOT(item.isDp)}">
+                 <b><apex:outputText escape="true">_{!item.refNo}</apex:outputText></b>
+             </apex:column>
+            <apex:column headervalue="Noqodi Ref#" rendered="{!NOT(item.isDp)}">
+                 <b><apex:outputText escape="true">{!item.appNo}</apex:outputText></b>
+             </apex:column>
+            <apex:column headervalue="CreatedBy" rendered="{!NOT(item.isDp)}">
+                 <b>{!item.ownerName}</b>
+            </apex:column>
+        </apex:pageblockTable>
+         
+    </apex:pageBlock> 
+     <apex:pageBlock title="Not Matched Records" >
+        <apex:pageblockTable value="{!trnUnMatchLst}" var="item" id="theTable" styleClass="opp-table">
+             <apex:column headervalue="Full Name" >
+                 <b>{!item.appName}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!ttlNMCnt} 
+                 </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Account Name" >
+                 <b>{!item.accName}</b>
+             </apex:column>
+            <apex:column headervalue="RequestItem Name" >
+                 <b>{!item.itmName}</b>
+             </apex:column>
+            <apex:column headervalue="Brand" >
+                 <b>{!item.brand}</b>
+             </apex:column>
+            <apex:column headervalue="Department" >
+                 <b>{!item.department}</b>
+             </apex:column>
+             <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlNMAmount} 
+                </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Reference #" >
+                 <b>{!item.reqNo}</b>
+             </apex:column>
+            <apex:column headervalue="Transaction Name" >
+                 <b>{!item.tranNo}</b>
+             </apex:column>
+             <apex:column headervalue="Item Ref #" >
+                 <b><apex:outputText escape="true">_{!item.refNo}</apex:outputText></b>
+             </apex:column>
+            <apex:column headervalue="CreatedBy" >
+                 <b>{!item.ownerName}</b>
+            </apex:column>
+         </apex:pageblockTable>
+    </apex:pageBlock>    
+    </apex:outputPanel>
+   <apex:outputPanel rendered="{!fileLevel == '2'}">
+    <apex:pageBlock title="Matched Records" >
+        <apex:pageblockTable value="{!trnLst}" var="item" id="theTable" styleClass="opp-table">
+             <apex:column headervalue="Trans No" >
+                 <b>{!item.appNo}</b>
+                <apex:facet name="footer">
+                  Total Count :  {!ttlMCnt} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+             </apex:column>
+             <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlMAmount} 
+                </apex:facet>
+             </apex:column>
+             <apex:column headervalue="Reference Amount" >
+                 <b>{!item.amntDiff}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlDiffAmount} 
+                </apex:facet>
+             </apex:column> 
+        </apex:pageblockTable>
+        </apex:pageBlock>
+     <apex:pageBlock title="Not Matched Records" >
+        <apex:pageblockTable value="{!trnUnMatchLst}" var="item" id="theTable" styleClass="opp-table">
+             <apex:column headervalue="Trans No" >
+                 <b>{!item.appNo}</b>
+                <apex:facet name="footer">
+                  Total Count :  {!ttlNMCnt} 
+                </apex:facet>
+             </apex:column> 
+             <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+             </apex:column>
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlNMAmount} 
+                </apex:facet>
+             </apex:column> 
+          </apex:pageblockTable>
+    </apex:pageBlock>    
+    </apex:outputPanel>
+   
+     <apex:pageBlock title="Not Matched from Statement" > 
+         <apex:pageblockTable value="{!appUnMatchLst}" var="item" id="theTable" styleClass="opp-table">
+             
+             <apex:column headervalue="Application No" >
+                 <b>{!item.appNo}</b>
+                 <apex:facet name="footer">
+                  Total Count :  {!ttlappNMCnt} 
+                </apex:facet>
+             </apex:column> 
+             
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+               <apex:facet name="footer">
+                  Total :  {!ttlappNMAmount} 
+                </apex:facet>
+             </apex:column> 
+              <apex:column headervalue="Ref No" >
+                 <b><apex:outputText escape="true">_{!item.refNo}</apex:outputText></b>
+              </apex:column>
+              <apex:column headervalue="Applicant Name" >
+                 <b>{!item.appName}</b>
+             </apex:column> 
+           </apex:pageblockTable>
+    </apex:pageBlock>
+    
+</apex:page>

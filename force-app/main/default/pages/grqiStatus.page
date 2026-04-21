@@ -1,0 +1,930 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="gctlReqStatus" docType="html-5.0" standardStylesheets="false"  showHeader="{!IF(isgu=true,false,true)}" sidebar="false" title="{!rq.srvc__r.lbl__c}"  action="{!authenticateUser}">
+    
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    
+    <style>
+        
+        i.selectPay {
+        position: relative;
+        padding: 5px 5px 0px 0px;
+        cursor: pointer;
+        }
+    </style>
+    <script>
+    function showTempLoader(e){
+        var loader = '<span class="loader_temp">';
+        loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+        loader += '</span>';
+        $(e).find('.loader_temp').remove();
+        $(e).append(loader);
+        $('*').addClass('loadingProgress');
+    }
+    function removeTempLoader(){
+        $('*').removeClass('loadingProgress');
+        $('.loader_temp').remove();
+    }
+    </script>
+    
+    <body>
+        
+        
+        <div id="main">
+            <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/font-awesome/css/font-awesome.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/aos/dist/aos.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/swiper/css/swiper.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/daterangepicker/daterangepicker.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/select2/dist/css/select2.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/easy-autocomplete/dist/easy-autocomplete.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/easy-autocomplete/dist/easy-autocomplete.themes.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/chart.js/dist/Chart.min.css"/>
+                <link rel="stylesheet" href="/resource/1/vendors_NUI/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css"/>
+                <!-- icons -->
+                <link href="/resource/1/assets_NUI/fonts/icomoon/style.css" rel="stylesheet" />
+                <link href="/resource/1/assets_NUI/css/style.css" rel="stylesheet"/>
+                <link href="/resource/assets_NUI/css/brand-axs.css" rel="stylesheet" />
+                <!--<script type="text/javascript" src="/resource/1/vendors_NUI/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/aos/dist/aos.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/swiper/js/swiper.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/moment/min/moment.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/daterangepicker/daterangepicker.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/select2/dist/js/select2.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/easy-autocomplete/dist/jquery.easy-autocomplete.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/chart.js/dist/Chart.min.js"></script>
+<script type="text/javascript" src="/resource/1/vendors_NUI/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js"></script>
+
+
+<script type="text/javascript" src="/resource/1/assets_NUI/js/script.js?v=1.2.0-2">
+</script> -->
+                <style>
+                    .bodyDiv{background-color:#F5F5F5 !important}
+                    
+                    .btn {
+                    display: inline-block !important;
+                    font-weight: 500 !important;
+                    color: #241F28 !important;
+                    text-align: center !important;
+                    vertical-align: middle !important;
+                    cursor: pointer !important;
+                    user-select: none !important;
+                    background-color: transparent !important;
+                    border: 1px solid transparent !important;
+                    padding: 0.5rem 1rem !important;
+                    font-size: 0.875rem !important;
+                    line-height: 1.5 !important;
+                    border-radius: 1.5rem !important;
+                    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+                    background-image: none !important;
+                    }
+                    
+                    .btn-outline-primary,.btn-primary {
+                    color: #fff !important;
+                    border-color: #3e528a !important;
+                    background-color: #3e528a !important;
+                    }
+                    
+                    
+                    
+                    .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary.focus, .btn-outline-primary:active, .btn-outline-primary:active:focus, .btn-outline-primary:not(:disabled):not(.disabled):active {
+                    color: #FFF !important;
+                    background-color: #3e528a !important;
+                    font-weight: bolder !important;
+                    }
+                    
+                </style>
+                
+            </apex:outputPanel>
+            <script type="text/javascript">
+           
+            
+            var cs = {};
+            var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+            function dformat(dt,id){
+                var d = new Date(dt);//alert(d);
+                var m=d.getMonth()+1;
+                var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+                var mm=m>9?m:'0'+m;
+                var yy=d.getFullYear();
+                document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+            }
+            function scrollToDiv(e){
+                $('html,body').animate({
+                    scrollTop: (e.offset().top-60)
+                }, 100);
+                e.focus();
+            }
+            //Validate Data on click of next button
+            function validateData(){
+                let elem = '';
+                let validated = true;
+                $('#serachVal').addClass('requiredFld');
+                if($('.frmErrMsg').is(':visible')){
+                    scrollToDiv($('.frmErrMsg').eq(0).parent());
+                    return;
+                }
+                if(GCC_Nations.includes(cs["xcnc__c"].value)){
+                    validated =false;
+                    addValError(cs["xcnc__c"],'GCC nationals are not allowed !!');
+                    scrollToDiv($(cs["xcnc__c"]));
+                }
+                $('.requiredFld').each(function(){
+                    if(!$(this).is(':visible'))
+                        return;
+                    var v = $(this).val();
+                    if(v==''||v==null||v==undefined||v.lenght<1){
+                        if(elem=='')
+                            elem = $(this);
+                        addValError($(this),'This field is required');
+                        validated =  false;
+                    }
+                    else
+                        removeValError($(this));
+                    var onc = $(this).attr('onchange');
+                    if(onc){ $(this).trigger('onchange')}
+                });
+                //alert('requiredFld v:'+validated);
+                console.log('validated::::'+validated);
+                if(elem!=''){
+                    scrollToDiv(elem);
+                }
+                
+                
+                if(validated == true){
+                    //showTempLoader(event.target);
+                    //toggleGLoader();
+                    //console.log('Expiry Date:::'+cs['xcped__c'].value);
+                    //console.log('DOB:::'+cs['xcbd__c'].value);
+                    // next();
+                    //alert("Req Updated::::::::::");
+                    addItm('');
+                }
+            }
+            
+            function enableItm(itmCd){
+                
+                if(itmCd == 'eci' || itmCd == 'eca'){
+                    cs["itmCdId"].value=itmCd;
+                   
+                    $('#modal_item_information').modal('show');
+                }
+                else{
+                     $('#preloader').fadeIn();
+                    createItm(itmCd); 
+                }
+                /*else if(itmCd == 'exu') {
+                                  cs["itmCdId"].value=itmCd;
+                                  $('#modal_Cancel').modal('show');
+                              }*/
+                
+            }
+            function createItem(){
+                
+                addItm('');$('#preloader').fadeIn();
+            }
+            function addItm(itmCd){
+                if(itmCd == null || itmCd == ''){
+                    itmCd = cs["itmCdId"].value;
+                }
+                if($('#xcbd1__c').val() != null)
+                {
+                    cs["xcbd2__c"].value=$('#xcbd1__c').val();
+                }
+                
+                $('#modal_item_information').modal('hide');
+                $('#modal_Cancel').modal('hide');
+                
+                if(itmCd == 'ai'){
+                    var invalData = false;
+                    if($('#datepicker1').val() == null || $('#datepicker1').val() == ''){
+                        axsAlert('Validation Error.','Please update Arrival Date.');
+                        return;
+                    } 
+                    if($('.frmErrMsg').length >1  || $('.frmErrMsg').is(':visible')){
+                        invalData = true; 
+                    }
+                    if(invalData){
+                        axsAlert('Validation Error.','Arrival Date should not be today/future date.');
+                        return;
+                    }
+                    
+                    cs["xad__c"].value=$('#datepicker1').val();
+                    
+                }
+                if(itmCd == 'exu'){
+                    cs["xad__c"].value=$('#datepicker2').val();
+                }
+                $('#preloader').fadeIn();
+                console.log('xad__c::'+cs["xad__c"].value);
+                createItm(itmCd);
+            }
+            
+            function downloadDoc(){    
+                var srv_uid = '{!rq.srvc__r.uid__c}';
+                if(srv_uid =='apt' && new Date('{!rq.xcped__c}')>=new Date()){
+                    window.open('/apex/grqAPPdf?id={!rq.id}','_blank');
+                }else if(srv_uid=='162' || srv_uid=='198' || srv_uid=='199' || srv_uid=='212' ){
+                    window.open(polLink,'_blank');
+                }else{
+                    $('[href="#documents_tab_this"]').trigger('click');
+                }
+            }
+            
+            /*function downloadDoc(){
+                $('[href="#documents_tab_this"]').trigger('click');
+            }*/
+            </script>
+            <div class="mb-4"></div>
+            
+            <apex:form id="pmain">
+                
+                
+                <apex:actionFunction name="afcr"  action="{!CancelR}"  rerender="fid" />
+                <apex:actionFunction name="updateAdhoc"  action="{!updateAdhocItems}"  oncomplete="location.reload(true);">
+                    <apex:param name="itmCd" value=""/> 
+                </apex:actionFunction>
+                <apex:actionFunction name="createItm"  action="{!addItem}" status="theStatus" rerender="fid" oncomplete="location.reload(true); ">
+                    <apex:param name="itmCd" value=""/> 
+                </apex:actionFunction>
+                
+                <apex:actionFunction name="removeItm"  action="{!removeItem}" status="theStatus"  rerender="fid,docId" oncomplete="$('#preloader').fadeOut();">
+                    <apex:param name="itmId" value=""/> 
+                    <apex:param name="itmCd" value=""/>
+                </apex:actionFunction>
+                <apex:actionFunction name="addExpItm"  action="{!addExpItm}" status="theStatus"  rerender="fid,docId" oncomplete="$('#preloader').fadeOut();">
+                    <apex:param name="itmId" value=""/> 
+                    <apex:param name="itmCd" value=""/>
+                </apex:actionFunction>
+                <apex:actionFunction name="removeExpItm"  action="{!removeExpItm}" status="theStatus"  rerender="fid,docId" oncomplete="$('#preloader').fadeOut();">
+                    <apex:param name="itmId" value=""/> 
+                    <apex:param name="itmCd" value=""/>
+                </apex:actionFunction>
+                <apex:actionFunction name="editItm"  action="{!editItem}" status="theStatus" rerender="fid" oncomplete="$('#preloader').fadeOut();openEditModel();">
+                    <apex:param name="itmId" value=""/> 
+                </apex:actionFunction>
+                <apex:actionFunction name="cancelT"  action="{!cancelPayment}" status="theStatus" rerender="fid" oncomplete="$('#preloader').fadeOut();">
+                    <apex:param name="tid" value=""/> 
+                </apex:actionFunction>
+                <apex:actionFunction name="submitCR"  action="{!submitCorrection}"  rerender="docId" oncomplete="$('#preloader').fadeOut();"/> 
+                <apex:actionFunction name="nextPage"  action="{!nextPg}"  rerender="docId" oncomplete="$('#preloader').fadeOut();"/> 
+                <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false" />  
+                <apex:inputHidden id="xad__c" value="{!arDate}" /><!--Arrival date--> 
+                <apex:inputHidden id="itmCdId"/><!--Arrival date-->  
+                <apex:inputHidden id="xcbd2__c" value="{!ri.xcbd__c}" /><!--Birth date-->
+                <apex:inputHidden id="xaed1__c" value="{!ri.xaed__c}" /><!--exit date-->
+                <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+                
+                <apex:outputPanel rendered="{!isgu}">
+                    <c:HeaderInternal heading="Visa Application" uid="001" con="{!emp}" />
+                </apex:outputPanel>
+                <script>
+                cs["xad__c"] = document.getElementById("{!$Component.xad__c}");
+                cs["itmCdId"] = document.getElementById("{!$Component.itmCdId}");
+                cs["xcbd2__c"] = document.getElementById("{!$Component.xcbd2__c}");
+                cs["xaed1__c"] = document.getElementById("{!$Component.xaed1__c}");
+                cs["xadh__c"] = document.getElementById("{!$Component.xadh__c}");
+                </script>
+                
+                <apex:outputPanel id="docId">
+                    
+                    <script>
+                    $('[href="#documents_tab_this"]').trigger('click');
+                    </script>
+                </apex:outputPanel> 
+                <apex:outputPanel id="fid">  
+                    <script>
+                    function openEditModel(){
+                        cs["itmCdId"].value='{!ri.itm__r.cd__c}';
+                        $('#{!ri.itm__r.mv__c}').modal('show');
+                        
+                    }
+                    </script>
+                    <div class="container">
+                        
+                        
+                        
+                        <c:grqapplicantinfocmp req="{!rq}"/>
+                        <!-- .user-bar -->
+                        <b><apex:pageMessages id="msg" /></b>
+                        <div class="tabs accordion-tabs">
+                            
+                            <div class="right-actions text-light-2 right-actions-text" style="position: relative;">
+                                <span>SR # <span class="text-000 font-weight-medium">{!rq.name}</span></span>
+                                <!--<span class="label"><h4>{!rq.STA__c}</h4></span> -->
+                            </div>
+                            
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-toggle="tab" href="#status_actions_tab">STATUS &amp; ACTIONS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <apex:outputText rendered="{!AND(rq.srvc__r.uid__c != '059',rq.srvc__r.uid__c != '060')}">
+                                        <a class="nav-link" data-toggle="tab" href="#application_details_tab">APPLICATION DETAILS</a>
+                                    </apex:outputText> 
+                                    <apex:outputText rendered="{!OR(rq.srvc__r.uid__c == '059',rq.srvc__r.uid__c == '060')}">
+                                        <a class="nav-link" data-toggle="tab" href="#application_details_tab">REQUEST DETAILS</a>
+                                    </apex:outputText> 
+                                    
+                                </li>
+                                <!--<apex:outputText rendered="{!AND(rq.srvc__r.uid__c != '142',rq.srvc__r.uid__c != '109',rq.srvc__r.uid__c != '150',rq.srvc__r.uid__c != 'ltp',rq.srvc__r.uid__c != '162',rq.srvc__r.uid__c != '198',rq.srvc__r.uid__c != '148',rq.srvc__r.uid__c != '199',rq.srvc__r.uid__c != '212',rq.srvc__r.uid__c != '086',rq.srvc__r.uid__c != '073',rq.srvc__r.uid__c != '200')}">-->
+                                <apex:outputText rendered="{!showDocumentTab}">   
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-toggle="tab" href="#documents_tab_this">DOCUMENTS</a>
+                                    </li>
+                                </apex:outputText>
+                                  
+                            </ul>
+                            <!-- .nav-tabs -->
+                           
+                            <div class="accordion" id="app_accordion">
+                                <div class="tab-content">
+                                    <div class="accordion-item open tab-pane fade show active" id="status_actions_tab">
+                                        <div class="accordion-toggle">
+                                            <a href="#" class="collapsed" data-toggle="collapse" data-target="#status_actions_collapse">
+                                                STATUS &amp; ACTIONS
+                                                <i class="fa fa-angle-down"></i>
+                                            </a>
+                                        </div>
+                                        <div id="status_actions_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                            <div class="accordion-content-inner px-xl-5">
+                                                
+                                                <div class="text-right mb-4">
+                                                    
+                                                    
+                                                    <c:qrbtnscmp isgu="{!isgu}" ispu="{!ispu}" R="{!rq}"></c:qrbtnscmp>
+                                                </div>
+                                                
+                                                
+                                                <!-- .status-collapse -->
+                                                <!-- <c:gJTLookup req="{!rq}"/> -->
+                                                <div class="mb-5"></div>
+                                                <apex:variable var="cshopn" value="no" />
+                                                
+                                                <apex:variable var="index" value="{!0}" />
+                                                <apex:variable var="aiVal" value="" />
+                                                <apex:repeat value="{!aiMp}" var="ai">
+                                                    <apex:outputText rendered="{!ai == 'ai'}">
+                                                        <apex:variable var="aiVal" value="ai" />
+                                                    </apex:outputText>   
+                                                </apex:repeat>    
+                                                <div class="row">
+                                                    <apex:repeat value="{!stpLst}" var="stage">
+                                                      
+                                                        <apex:outputPanel rendered="{!stpLst.size==1}" styleClass="col-xl-4 col-lg-6"></apex:outputPanel>
+                                                        <div class="col-xl-4 col-lg-6">
+                                                            <div class="box status-box aos-init aos-animate"  style="{!if(mstMp[stage]=='Draft','background-color: #fff','background-color: #f4f4f4')}"  id="stsMsgId">
+                                                                <apex:outputText rendered="{!AND(index == 0,cshopn == 'yes')}">
+                                                                    <div class="status-box-icon">
+                                                                        <i class="icon-high-priority warning-icon-high-priority"></i>
+                                                                    </div>
+                                                                </apex:outputText> 
+                                                                <apex:outputText rendered="{!AND(mstMp != null,mstMp[stage] != null)}">
+                                                                    <apex:outputText rendered="{!AND(cshopn != 'yes', mstMp[stage] == 'Completed')}">
+                                                                        <div class="status-box-icon">
+                                                                            <i class="icon-ok circle-icon-ok"></i>
+                                                                        </div>
+                                                                    </apex:outputText>
+                                                                    <apex:outputText rendered="{!AND(cshopn != 'yes', or(mstMp[stage] == 'Open'))}">
+                                                                        <div class="status-box-icon">
+                                                                            <i class="icon-high-priority warning-icon-high-priority"></i>
+                                                                        </div>
+                                                                    </apex:outputText>
+                                                                    <apex:outputText rendered="{!AND(cshopn != 'yes', or(mstMp[stage] == 'Cancelled' , mstMp[stage] == 'Rejected'))}">
+                                                                        <div class="status-box-icon">
+                                                                            <i class="icon-high-priority warning-icon-high-priority" style="background-color: darkred;"></i>
+                                                                        </div>
+                                                                    </apex:outputText>
+                                                                </apex:outputText>
+                                                                <h4>{!IF(rq.srvc__r.uid__c='tbg',rq.srvc__r.name,stgMp[stage])}</h4><!--{!IF(rq.srvc__r.uid__c='tbg',rq.srvc__r.name,stgMp[stage])-->
+                                                                
+                                                                <apex:outputText rendered="true"> <!-- {!AND(ri == null)} -->
+                                                                    <p>
+                                                                        <apex:outputText rendered="{!AND(rq.AOP__c > 0,rq.AP__c == 0)}">
+                                                                            <apex:outputText rendered="{!AND(index == 0)}">
+                                                                                Payment Pending
+                                                                                <div class="fs-16">
+                                                                                    <p>
+                                                                                        You have opted to pay by
+                                                                                        <apex:outputText rendered="{!AND(rq.srvc__r.uid__c != 'tbg',rq.srvc__r.uid__c != 'tad')}">
+                                                                                            <strong>
+                                                                                                'Cash payment'
+                                                                                            </strong>.
+                                                                                        </apex:outputText>
+                                                                                        <apex:outputText rendered="{!OR(rq.srvc__r.uid__c == 'tbg',rq.srvc__r.uid__c == 'tad')}" >
+                                                                                            <strong>
+                                                                                                <apex:repeat value="{!rq.Transactions__r}" var="tr">
+                                                                                                    <apex:outputText rendered="{!AND(tr.TP__c == 'Payment',tr.STA__c == 'Open')}" >
+                                                                                                        '{!tr.md__c} payment'
+                                                                                                    </apex:outputText>
+                                                                                                </apex:repeat>
+                                                                                            </strong>.
+                                                                                        </apex:outputText>
+                                                                                        Once the payment is received we will proceed to start the application process.
+                                                                                    </p>
+                                                                                    <p>You can view all invoices and receipts in the PAYMENTS &amp; RECEIPTS tab.</p>
+                                                                                </div>   
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(index !=0)}">
+                                                                                {!msgMp[stage].itm__r.Name} : NA
+                                                                            </apex:outputText>
+                                                                            <apex:variable var="index" value="{!index+1}" />
+                                                                        </apex:outputText>   
+                                                                        <apex:outputText rendered="{!AND(OR(rq.AP__c != 0,AND(rq.AOP__c ==0,rq.AP__c == 0)),OR(aiVal == '',AND(aiVal != '', itmMp[aiVal] != stage)))}">   
+                                                                         
+                                                                            <!--special cases start-->
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c='MEDIA1',contains(rq.xadh__c,'ef;'))}">                       
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<=15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA115, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA117, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA118, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA1',contains(rq.xadh__c,'pf;'))}">                      
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA115, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA117, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA118, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA1',NOT(contains(rq.xadh__c,'ef;')),NOT(contains(rq.xadh__c,'pf;')))}">                     
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<=15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA115, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA117, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA118, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA2',contains(rq.xadh__c,'ef;'))}">                      
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA215, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA217, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA218, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA2',contains(rq.xadh__c,'pf;'))}">                      
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA215, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA217, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA218, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA2',NOT(contains(rq.xadh__c,'ef;')),NOT(contains(rq.xadh__c,'pf;')))}">                     
+                                                                                
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<15)}">   
+                                                                                    
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA215, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>=15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">  
+                                                                                    
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA217, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}"> 
+                                                                                    
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA218, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA3',contains(rq.xadh__c,'ef;'))}">                      
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<=15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA315, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA317, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA318, '#pdays', '3'),
+                                                                                                            '#ptype', 'Express '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                </apex:outputText>
+                                                                                
+                                                                            </apex:outputText>
+                                                                            
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA3',contains(rq.xadh__c,'pf;'))}">                      
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<=15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA315, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA317, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA318, '#pdays', '1'),
+                                                                                                            '#ptype', 'Platinum '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c=='MEDIA3',NOT(contains(rq.xadh__c,'ef;')),NOT(contains(rq.xadh__c,'pf;')))}">                     
+                                                                                <apex:outputText rendered="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))<=15)}">                       
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA315, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!AND(((YEAR(TODAY())-YEAR(rq.xcbd__c))>15),((YEAR(TODAY())-YEAR(rq.xcbd__c))<18))}">                       
+                                                                                    
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA317, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>
+                                                                                
+                                                                                <apex:outputText rendered ="{!((YEAR(TODAY())-YEAR(rq.xcbd__c))>=18)}">                     
+                                                                                    <apex:outputText value="{!
+                                                                                                            SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($Label.MEDIA318, '#pdays', '5'),
+                                                                                                            '#ptype', 'Normal '),'#reason', msgMp[stage].xr__c),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="true"/>
+                                                                                    
+                                                                                </apex:outputText>                      
+                                                                            </apex:outputText>
+                                                                            
+                                                                            <!--special cases end--> 
+                                                                            
+                                                                            
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c != '',msgMp[stage].sta__r.amsgs__c!='EPAFT', msgMp[stage].sta__r.amsgs__c!='MEDIA1',msgMp[stage].sta__r.amsgs__c!='MEDIA2',msgMp[stage].sta__r.amsgs__c!='MEDIA3', contains(rq.xadh__c,'ef;'))}"> 
+                                                                                <apex:outputText value="{!
+                                                                                                        SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(msgMp[stage].sta__r.amsgs__c, '#pdays', '3'),
+                                                                                                        '#ptype', 'Express '),'#reason', '<br/><b>'+msgMp[stage].xr__c+'</b>'),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="false"/>
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c != '',msgMp[stage].sta__r.amsgs__c!='EPAFT',msgMp[stage].sta__r.amsgs__c!='MEDIA1',msgMp[stage].sta__r.amsgs__c!='MEDIA2',msgMp[stage].sta__r.amsgs__c!='MEDIA3', contains(rq.xadh__c,'pf;'))}"> 
+                                                                                <apex:outputText value="{!
+                                                                                                        SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(msgMp[stage].sta__r.amsgs__c, '#pdays', '1'),
+                                                                                                        '#ptype', 'Platinum '),'#reason','<br/><b>'+msgMp[stage].xr__c+'</b>'),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="false"/>
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c != '',msgMp[stage].sta__r.amsgs__c!='EPAFT',msgMp[stage].sta__r.amsgs__c!='MEDIA1',msgMp[stage].sta__r.amsgs__c!='MEDIA2',msgMp[stage].sta__r.amsgs__c!='MEDIA3', OR(rq.xadh__c=='',AND(NOT(contains(rq.xadh__c,'ef;')),NOT(contains(rq.xadh__c,'pf;')))))}"> 
+                                                                             <!-- updated
+                                                                                <apex:outputText value="{!
+                                                                                                        SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(msgMp[stage].sta__r.amsgs__c, '#pdays', '5'),
+                                                                                                        '#ptype', 'Normal '),'#reason', '<br/><b>'+msgMp[stage].xr__c+'</b>'),'#awb',''),'#docs',msgMp[stage].xcdocs__c)}" escape="false"/>
+                                                                           
+                                                                              
+                                                                                
+                                                                              -->
+                                                                                <apex:outputText value="{!
+SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(msgMp[stage].sta__r.amsgs__c, '#pdays', '5'),
+'#ptype', 'Normal '),'#reason', '<br/><b>'+msgMp[stage].xr__c+'</b>'),'#awb',''),'#docs',msgMp[stage].xcdocs__c),'#damt',TEXT(rq.AUP__c)),'#amdty',rq.xcamdt__c),'#vech1',msgMp[stage].Rq__r.xpveh__c),'#vech2',msgMp[stage].Rq__r.xsvn__c),'#tamt',TEXT(msgMp[stage].Rq__r.Ap__c))}" escape="false"/>                                                                            </apex:outputText>  
+                                                                            
+<apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c == 'EPAFT',contains(rq.xadh__c,'la;'))}">
+{!$Label.EPAFTLA}
+</apex:outputText>
+<apex:outputText rendered="{!AND(msgMp[stage].sta__r.amsgs__c == 'EPAFT',NOT(contains(rq.xadh__c,'la;')))}">
+{!$Label.EPAFTAI}
+</apex:outputText>
+                                                                            <apex:outputText rendered="{!msgMp[stage].sta__r.amsgs__c == ''}">
+                                                                                
+                                                                                <apex:outputText rendered="{!AND(OR(rq.srvc__r.uid__c == '011',rq.srvc__r.uid__c == '006',rq.srvc__r.uid__c == '140'),OR(AND(msgMp[stage].itm__r.cd__c == 'la',msgMp[stage].sta__r.cd__c == 'ii'),AND(msgMp[stage].itm__r.cd__c == 'ai',or(msgMp[stage].sta__r.cd__c == 'n',msgMp[stage].sta__r.cd__c == 'dr'))),((YEAR(TODAY())-YEAR(rq.xcbd__c))<17.5) )}">
+                                                                                    Emirates ID application is in process. It usually takes #pdays working days for #ptype priority applications.
+                                                                                </apex:outputText>
+                                                                                <apex:outputText rendered="{!AND(OR(rq.srvc__r.uid__c == '011',rq.srvc__r.uid__c == '006',rq.srvc__r.uid__c == '140'),OR(AND(msgMp[stage].itm__r.cd__c == 'la',msgMp[stage].sta__r.cd__c == 'ii'),AND(msgMp[stage].itm__r.cd__c == 'ai',or(msgMp[stage].sta__r.cd__c == 'n',msgMp[stage].sta__r.cd__c == 'dr'))),((YEAR(TODAY())-YEAR(rq.xcbd__c))>17.5) )}">
+                                                                                    Medical and Emirates ID applications are in process. It usually takes #pdays working days for #ptype priority applications.
+                                                                                </apex:outputText>
+                                                                                <apex:outputText rendered="{!OR(AND(rq.srvc__r.uid__c != '011',rq.srvc__r.uid__c != '006',rq.srvc__r.uid__c != '140'), AND(OR(rq.srvc__r.uid__c == '011',rq.srvc__r.uid__c == '006',rq.srvc__r.uid__c == '140'),OR(AND(msgMp[stage].itm__r.cd__c != 'la',msgMp[stage].itm__r.cd__c != 'ai'),AND(msgMp[stage].itm__r.cd__c == 'ai',msgMp[stage].sta__r.cd__c != 'n',msgMp[stage].sta__r.cd__c != 'dr'),AND(msgMp[stage].itm__r.cd__c == 'la',msgMp[stage].sta__r.cd__c != 'ii'))))}">
+                                                                                    Application for {!msgMp[stage].itm__r.Name} has been {!msgMp[stage].sta__r.name} for more information contact<br/>
+                                                                                    800 4 (AXS)
+                                                                                </apex:outputText>
+                                                                            </apex:outputText>
+                                                                              <apex:outputPanel rendered="{!AND(NOT(ISBLANK(msgMp[stage].sta__r.amsgs__c)),contains(msgMp[stage].sta__r.amsgs__c,'#awb'))}">
+                                                                                  
+                                                                            <div class="box box-white box-padding fs-16 mt-3"> <div class="text-000"> Empost Airway Bill Number </div> <div class="text-000 fs-20 font-weight-bold">{!TEXT(msgMp[stage].xcawb__c)} </div> <div>You can track the delivery by visiting  <a href="https://emiratespost.ae">emiratespost.ae</a></div> </div> 
+                                                                           </apex:outputPanel>
+                                                                            
+                                                                        </apex:outputText>    
+                                                                        
+                                                                        <!--<apex:outputText rendered="{!AND(ri != null , ri.sta__r.statype__c == 'Correction', ri.sta__r.Milestone__c == stage)}">-->
+                                                                                
+                                                                           <apex:outputText rendered="{!AND(ri != null , OR(ri.sta__r.statype__c == 'Correction',NOT(IsBlank(ri.xr__c))), ri.sta__r.Milestone__c == stage)}">
+                                                                            <!--
+<p>
+Correction required at {!ri.Name}  
+</p>
+-->
+                                                                            <!--
+                                                                            <apex:outputText rendered="{!AND(ri.xr__c != null, ri.xr__c != '',ri.xr__c != 'Others')}"> 
+                                                                                <br/><span class="text-danger">Correction Reason : </span> <apex:outputText value="{!ri.xr__c} " escape="true" /><br/>
+                                                                            </apex:outputText>
+-->
+                                                                            <apex:outputText rendered="{!AND(ri.xcnotes__c!= null, ri.xcnotes__c!= '')}">
+                                                                              
+                                                                                <br/><br/>  <span>Notes: </span><i><apex:outputText value="{!ri.xcnotes__c}<br/>" escape="false" rendered="{!AND(ri.xcnotes__c!= null, ri.xcnotes__c!= '')}"/></i>
+                                                                               
+                                                                                
+                                                                               
+                                                                            </apex:outputText> 
+                                                                               <apex:outputText rendered="{!AND(ri.xr__c != null, ri.xr__c != '',ri.xr__c == 'On Hold for customer to resubmit')}"> 
+                                                                                <br/><a onclick="submitCR();$('#preloader').fadeIn();"  href="#" class="btn btn-primary" >Submit</a>
+                                                                            </apex:outputText> 
+                                                                            
+                                                                        </apex:outputText>
+                                                                        <!-- Rejection Note  -->
+                                                                        <!--<apex:outputText > 
+                                                                            <br/><span class="text-danger">Notes: </span> <apex:outputText value="{!ri.xcnotes__c} " escape="true" /><br/>
+                                                                        </apex:outputText>-->
+                                                                       
+                                                                        
+                                                                    </p> 
+                                                                    <c:docdownload ri="{!msgMp[stage]}" rq="{!rq}"/>
+                                                                    <apex:repeat value="{!aiMp}" var="ai">
+                                                                        <apex:outputText rendered="{!itmMp[ai] == stage}">
+                                                                            <apex:outputText rendered="{!ai == 'ai'}">
+                                                                                
+                                                                                <c:arrivalintimation ritm="{!ri}" itmCode="{!ai}" rq="{!rq}"/>
+                                                                            </apex:outputText>
+                                                                            <apex:outputText rendered="{!ai != 'ai'}">
+                                                                                <apex:outputText rendered="{!or(ai == 'eca',ai=='eci') }">For any corrections to the Entry Permit<br/><br/></apex:outputText>
+                                                                                <a onclick="enableItm('{!ai}');" href="#" class="btn btn-primary" Style="font-size: 0.775rem !important;"> {!aiMp[ai]}</a>
+                                                                            </apex:outputText>    
+                                                                        </apex:outputText>
+                                                                    </apex:repeat>    
+                                                                </apex:outputText>  
+                                                                <apex:outputText rendered="{!OR(AND(msgMp[stage].sta__r.amsgs__c != '',CONTAINS(msgMp[stage].sta__r.amsgs__c,'#upload')),AND(docMilestone != '' , docMilestone == stage,OR(rq.STA__c == 'Open',rq.STA__c == 'Under Review',rq.STA__c == 'In Process')))}">
+                                                                    <a onclick="nextPage();$('#preloader').fadeIn();"  href="#" class="btn btn-primary" >UPLOAD DOCUMENTS</a>
+                                                                </apex:outputText> 
+                                                                
+                                                            </div>
+                                                        </div>
+                                                        <apex:outputPanel rendered="{!stpLst.size==1}" styleClass="col-xl-4 col-lg-6"></apex:outputPanel>
+                                                    </apex:repeat>
+                                                    
+                                                    <!-- .col -->
+                                                </div>
+                                                <!-- .row -->
+                                               
+                                          
+                                                    
+                                                <!-- pending payment items -->
+                                            </div>
+                                            <!-- .accordion-content-inner -->
+                                        </div>
+                                        <!-- .accordion-content -->
+                                    </div>
+                                    <!-- #status_actions_tab -->
+                                    
+                                    <div class="accordion-item tab-pane fade" id="application_details_tab">
+                                        <div class="accordion-toggle">
+                                            <a href="#" data-toggle="collapse" data-target="#application_details_collapse">
+                                                Application Details
+                                                <i class="fa fa-angle-down"></i>
+                                            </a>
+                                        </div>
+                                        <div id="application_details_collapse" class="accordion-content collapse" data-parent="#app_accordion">
+                                            
+                                            <c:applicationdetails />
+                                            <!-- .accordion-content-inner -->
+                                        </div>
+                                        <!-- .accordion-content -->
+                                    </div>          
+                                    <div class="accordion-item tab-pane fade" id="documents_tab_this">
+                                        <apex:outputPanel rendered="{!rq.srvc__r.uid__c != 'ltp'}">
+                                            <c:grqupd Dim="H" PayDone="{!if(rq.AP__c>0,true,false)}" id="docs"/>
+                                        </apex:outputPanel>
+                                    </div>
+                                    <!-- #application_details_tab -->
+                                    <!--
+<div class="accordion-item tab-pane fade" id="documents_tab2">
+
+<div id="documents_collapse" class="accordion-content collapse" data-parent="#app_accordion">
+
+<apex:outputPanel >
+<div class="accordion-content-inner px-xl-5">
+<div class="pt-4"></div>
+<apex:outputText rendered="{!nD}">
+<div class="box box-danger box-padding mb-lg-5 mb-4">
+{!$Label.msgMoreDocs}
+</div>
+</apex:outputText>
+<c:grqupd Dim="H" PayDone="false"/>
+<!-- .row ->
+<div class="pt-4"></div>
+<div class="base-nav">
+<a onclick="nextPage();" href="#" class="btn btn-primary base-nav-next">Next</a>
+</div>
+</div>
+</apex:outputPanel>    
+</div>
+</div>
+-->
+                                    
+                                    
+                                </div>
+                                <!-- .tab-content -->
+                            </div>
+                            <!-- .accordion -->
+                        </div>
+                        <!-- .accordion-tabs -->
+                        
+                    </div>
+                    
+                </apex:outputPanel> 
+                
+                <!-- .container -->
+            </apex:form>
+            
+            
+            
+            <!-- .site-footer-wrapper -->
+        </div>
+        
+        
+        
+        <!-- main js -->
+        <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+        
+        
+        
+        
+    </body>
+    <script>
+    $(document).ready(function(){
+        $('.requiredFld').on('keyup change',function(){
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            showErrMsg($(this),'rqrd',true);
+            var v = $(this).val();
+            if(v==''||v==null||v==undefined||v.lenght<1){
+                if(elem=='')
+                    elem = $(this);
+                addValError($(this),'This field is required');
+                validated =  false;
+            }
+            else
+                removeValError($(this));
+        });
+        var tbname = '{tb}';
+        if(tbname == 'p'){
+            $('[href="#payments_tab"]').trigger('click');
+        }
+        /* var msg='{!successMsg}';
+                                if(msg=='true'){
+                                    axsAlert('Thank you for submmiting the request.','Your request has been forwared to back office for futher process.');
+                                }else if(msg=='false'){
+                                    axsAlert('Request Saved.','Your changes have been saved.');
+                                }*/
+        $('select').on('change',function(){
+            removeValError($(this));
+        });
+        setTimeout(function(){
+            $('.input-datepicker').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+        },500);
+        var str; /*box status-box bg-white*/
+        var ids= document.getElementsByClassName('box status-box aos-init aos-animate');
+        for(var i=0;i<ids.length;i++){
+            
+            str=ids[i].innerHTML;
+            str = str.replace('#download','<br/><a onclick="downloadDoc();" href="#" class="btn btn-primary" >DOWNLOAD</a><br/>');
+            str = str.replace('#sla1','{!rq.slaN__c}');
+            str = str.replace('#sla','{!rq.slaN__c}');
+            str = str.replace('#upload','');
+            var adhVal = '{!rq.xadh__c}';
+            if(adhVal != '' && adhVal.includes('ef;'))
+                str = str.replace('#ptype','Express Priority').replace('#pdays','3');
+            else if(adhVal != '' && adhVal.includes('pf;'))
+                str = str.replace('#ptype','Platinum Priority').replace('#pdays','1');
+                else
+                    str = str.replace('#ptype','Normal Priority').replace('#pdays','5');
+            var md = '{!rq.Acc__r.mtc__c}';
+            if(md != 'MOH')
+                str = str.replace('#medcet',' Dubai Knowledge Park');
+            else if(md == 'MOH')
+                str = str.replace('#medcet','Dubai International Academic City');
+            
+            ids[i].innerHTML=str;         
+        }
+        
+        var srv_uid2 = '{!rq.srvc__r.uid__c}';
+        if(srv_uid2=='162' || srv_uid2=='198' || srv_uid2=='199' || srv_uid2=='212'){
+            $(".staddontab").hide();
+        }
+        /*$('.data-value a').css('cursor','default').unbind().on('click',function(e){
+            e.preventDefault();
+        });*/
+    });
+    </script>
+    <apex:form id="uploadFrm">
+        <c:fileuploadpopupnew13 R="{!rq}"  />
+    </apex:form>
+        <!-- Vendor js 
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />-->
+</apex:page>

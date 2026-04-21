@@ -1,0 +1,246 @@
+<apex:page cache="false" controller="ApplicantDetailController"  docType="html-5.0"
+           standardStylesheets="false" showHeader="true" sidebar="false" title="Check Golden Visa eligibility">
+    
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:form id="frm1" styleClass="pbform">
+        <script>
+        var cs = {};
+        </script>
+        <body class="base">
+            <div id="main">
+                
+                <apex:actionFunction name="createGVReq" action="{!createGVRequest}" status="theStatus" />
+                <apex:actionFunction name="chkElg" action="{!checkGVElg}" status="theStatus" rerender="gvOpt,msg" oncomplete="toggleErr();" >
+                    <apex:param name="conid" value="" />
+                </apex:actionFunction>
+                <apex:inputHidden id="gvConId" value="{!gvConId}"/>
+                <script type="text/javascript">
+                cs['gvConId']=document.getElementById('{!$Component.gvConId}');
+                </script>
+                
+                <div id="p">      
+                    <div class="container">
+                        <div class="base-layout">
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <div>
+                                        
+                                        <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                           data-target="#base_side_content_1">
+                                            
+                                        </a>
+                                        <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                                            <div class="collapse-content">
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="base-main">
+                                <b><apex:pageMessages id="msg1"/></b>
+                                <div class="base-main-content form-style"> <!--  -->
+                                    <h2 class="mb-2">
+                                        Select your employee to verify their eligibility
+                                    </h2>
+                                    <c:gconlookup id="conlookup" role="Employee" accId="{!acc.id}" sta="Active" heading='<p class="mb-2"><i class="icon-info-circle text-primary mr-2"></i>Managers and senior executives who have completed a minimum of two years of employment residency with the company are now eligible to apply for the Golden Visa, which is valid for 10 years.</p>' /> 
+                                    <apex:outputPanel id="gvOpt">
+                                        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+                                        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+                                        
+                                        <apex:inputHidden id="selectedConData" value="{!selectedConData}"/>
+                                        <script type="text/javascript">
+                                        cs['selectedConData']=document.getElementById('{!$Component.selectedConData}');
+                                        </script>
+                                        <apex:outputPanel rendered="{!And(gvElbl,Acc.lc__c!='16789')}">
+                                            <div class="form-group" id='successMsg'>
+                                                
+                                                <h3 class="text-center" >
+                                                    The selected applicant is eligible for Golden Visa.
+                                                </h3>
+                                                <div class="mt-4">
+                                                    <h5 class="text-primary d-md-block d-none">Required documents</h5>
+                                                    <div class="">
+                                                        <ul class="ul-style">
+                                                            <li>Passport - first page</li>
+                                                            <li>Passport - last page (if applicable)</li>
+                                                            <li>Recent passport size photo (white background)</li>
+                                                            <li>Attested Degree Certificate</li>
+                                                            <li>Existing residence visa page</li>
+                                                            <li>Employment contract </li>
+                                                            <li>NOC from the sponsored Company</li>
+                                                            <li>Health insurance card or certificate (or opt for ADNIC Insurance during this application)</li>
+                                                            <li>Six months bank statement</li>
+                                                            <li>Equivalency certificate</li>  
+                                                        </ul>
+                                                        <p>JPG / JPEG / PDF / PNG / TIFF Formats (max 4 MB each)</p>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="base-main-footer">
+                                                        <div class="base-nav">
+                                                            <button class="base-nav-prev btn btn-primary" onclick="clearAll(event)">Check for another applicant</button>
+                                                            <button class="base-nav-next btn btn-primary" onclick="applyGV(event)">Click to apply for golden visa</button>
+                                                        </div>
+                                                        <!-- .col -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        
+                                        <apex:outputText rendered="{!Acc.lc__c=='16789'}">
+                                            <div class="form-group" id='errMsg' style="display:none;" >
+                                                <div class="text-center">
+                                                    <h3 class="text-center" >
+                                                        The selected applicant is not eligible for Golden Visa
+                                                    </h3>
+                                                    
+                                                    <p class="text-primary">For further assistance, please contact <b>800 4 AXS(297)</b></p>
+                                                </div>
+                                            </div>
+                                        </apex:outputText>
+                                        
+                                        <apex:outputText rendered="{!AND(!gvElbl,Acc.lc__c!='16789')}">
+                                            <div class="form-group" id='errMsg' style="display:none;" >
+                                                <div class="text-center">
+                                                    <h3 class="text-center" >
+                                                        The selected applicant is not eligible for Golden Visa
+                                                    </h3>
+                                                    <div class="table-responsive table-responsive-lg">
+                                                        <table class="table ui-table gvTable">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>CRITERIA</th>
+                                                                    
+                                                                    <th></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <p class="text-primary">For further assistance, please contact <b>800 4 AXS(297)</b></p>
+                                                </div>
+                                                <div class="base-main-footer">
+                                                    <div class="base-nav">
+                                                        <button class="base-nav-next btn btn-primary" onclick="clearAll(event)">Check for another applicant</button>
+                                                    </div>
+                                                    <!-- .col -->
+                                                </div>
+                                            </div>                                            
+                                        </apex:outputText>
+                                        
+                                    </apex:outputPanel>
+                                </div>
+                                
+                            </div> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade modal-base" id="modal_alert_gv" role="dialog" tabindex="-1" aria-modal="true">
+                <div class="modal-dialog" role="document" style="width: 607px;">
+                    <div class="modal-content">
+                        <div class="modal-body text-center pt-5 pb-5">
+                            <div class="row">
+                                <div class="col-12 order-md-2">
+                                    <div class="d-flex flex-column h-100">
+                                        <div class="mb-auto">
+                                            <h2 class="mb-4" style="text-align:center;">Your company must have at least 10 active sponsored employees to proceed with a Golden Visa application.</h2>
+                                            <p style="text-align: center;"></p>
+                                            <p class="col-xl-12 col-lg-12" style="text-align: right;">
+                                                <a class="col-xl-2 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" href="/gpm" id="cYes">OK</a>
+                                                <br class="" />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        
+        <script>
+        $(document).ready(function() {
+            
+            if('{!U.contact.account.vcspe__c}'<10){/*&&'{!JSENCODE(U.contact.account.lc__c)}'!='20847'*/
+                if('{!U.contact.account.agv__c}'=='Allowed')
+                    return;
+                $('#main').remove();
+                $('#modal_alert_gv').modal('show');
+            }
+        });
+        let conId;
+        function clearAll(e){
+            e.preventDefault();
+            $('#conSerachVal,#searchCON').val('');
+            $('#conLkpSearch').trigger('click');
+            $('#errMsg,#successMsg').html('');
+        }
+        function setData_con(elem){
+            conId = $(elem).attr('cid');
+            cs['gvConId'].value = conId;
+            let n = $(elem).find('td').eq(1).text();
+            $('#conSerachVal').val(n);
+            $('#modal_lookup_values_con').modal('hide');
+            chkElg(conId);
+        }
+        function applyGV(e){
+            e.preventDefault();
+            //cs['gvSrvId'].value = conId;
+            createGVReq();
+            //window.open('/grqsdr?sid=a292y000000kon8&conId='+conId,'_blank');
+        }
+        function toggleErr(){
+            let res ='{!JSENCODE(gvElbl)}';
+            if(res=='false'){
+                $('#errMsg').show();
+                showCriteriaDetails();
+            }
+        }
+        let conData='',tbody='';let fieldsToDisplay = [{"Job_Title_Formula__c":"Applicant must hold a managerial position or higher"},{"jd__c":"Applicant should have completed a minimum of 2 years in the current company"},{"rped__c":"Applicant's visa should be valid for at least 30 days"},{"mbs__c":"Applicant's basic salary should be a minimum of 30,000 Dirhams"}];
+        function showCriteriaDetails(){
+            conData = '',tbody='';
+            $('.gvTable tbody').html('');
+            conData = JSON.parse(cs['selectedConData'].value);
+            for(let i of fieldsToDisplay){
+                let k = Object.keys(i)[0];
+                let dv = Object.values(i)[0];
+                let v = (k=='jd__c'||k=='rped__c')?formatDate_LA(conData[k]):conData[k];
+                let tooltip = '';
+                let check = '';
+                let matchedCheck = '<elem style="color: green;">Matched</elem>';
+                if(k=='jd__c'){
+                    tooltip = 'Applicant should have completed a minimum of 2 years in the current company';
+                    if((new Date()-new Date(conData[k]))/(1000*60*60*24)>725)
+                        check = matchedCheck;
+                }else if(k=='rped__c'){
+                    tooltip = "Applicant's visa should be valid for at least 30 days";
+                    if((new Date(conData[k])-new Date())/(1000*60*60*24)>29)
+                        check = matchedCheck;
+                }else if(k=='Job_Title_Formula__c'){
+                    tooltip = 'Applicant should be a Manager or a Senior Executive';
+                    if(conData.jb__r.mgr__c)
+                        check = matchedCheck;
+                }else if(k=='mbs__c'){
+                    tooltip = "Applicant's salary should be a minimum of 30,000 Dirhams";
+                    if(v>30000)
+                        check = matchedCheck;
+                }
+                if(!check)
+                    check = '<elem style="color:red">Unmatched<i data-toggle="tooltip" data-placement="top" title="'+tooltip+'" class="pl-1 fa fa-question-circle text-primary"></i></elem>';
+                let tr = '<tr><td align="left">'+dv+'</td>';
+                
+                tr+= '<td align="left">'+check+'</td></tr>';
+                tbody+=tr;
+            }
+            $('.gvTable tbody').html(tbody);
+        }
+        </script>
+    </apex:form>  
+</apex:page>

@@ -1,0 +1,1 @@
+global  class scheduleCourStaCol implements Schedulable{  global void execute(SchedulableContext sc) { tecomBatch_CourStaColl b = new tecomBatch_CourStaColl (); database.executebatch(b, 1); }   }

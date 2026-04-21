@@ -1,0 +1,261 @@
+<apex:page id="page" standardStylesheets="true" lightningStylesheets="true" sidebar="false" showHeader="true" deferLastCommandUntilReady="true"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    <script type="text/javascript"> var cs={};</script> 
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {margin-left: 0.5em;margin-bottom: 0.6em;} 
+        .lookupInput {display: inline;white-space: nowrap;vertical-align: middle;display: -webkit-box;}
+    </style>
+    
+    <script> 
+   
+        /*
+        **ToDo : Use staticResource for JS/jQuery
+        */
+       
+      function letterclick(){
+        var rqId = '{!JSENCODE(rq.id)}';
+        window.open("/apex/displayLetter?id="+rqId, "_blank", "directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=950, height=600,top=50, left=200");
+    }
+
+    
+    
+        function  nonRenewlaYears(lsdt,lcno) { 
+        //alert(lcno);
+        if(lcno!=null && lcno!=''){
+        cs['xdedln__c'].value = lcno;
+        }
+        if(lsdt!=null){ 
+            var renewaldate= new Date(lsdt);
+            var renDifMs = Date.now() - renewaldate.getTime();
+            var renDate = new Date(renDifMs); // miliseconds from epoch
+            
+            var yrs=Math.abs(renDate.getUTCFullYear() - 1970);
+            if(yrs!=null){
+                cs['xnry__c'].value=yrs;
+            }
+            if(yrs>1){
+                alert('Please make sure lience need to be renewed for'+yrs+' years');
+            }
+            
+        }
+        else{
+            cs['xnry__c'].value=1;
+        }
+    }
+        
+    
+        function isAlphaNumeric(e) {
+            var keyCode = e.keyCode == 0 ? e.charCode : e.keyCode;
+            var ret = ((keyCode >= 48 && keyCode <= 57) || (keyCode >= 65 && keyCode <= 90) || (keyCode >= 97 && keyCode <= 122));
+            return ret;
+        }
+        
+        
+    
+        function blockflds(){
+            
+        }
+        
+        var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={};
+        var lf='',af='',adf='',aif,adif,cif;
+        function vfrm(nSTA){
+            return hsSnc(nSTA)?!1:!0}
+        function hsSnc(nSTA){return false;}
+        function hErr(nSTA){return false;}
+        function ifrm(){}
+       
+       
+        
+        function hRq(nSTA) {
+                     
+            return false;
+        }               
+    </script>
+  
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!pt}" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="{!pDsc}" STA="{!rq.STA__c}"/>
+    <chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" rendered="{!AND(NOT(pgHide),OR(md.isEdit,md.isView))}" />
+    
+    <apex:form id="form" >  
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+        <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+        <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>    
+        <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();" >
+        </apex:actionFunction>
+        <apex:actionFunction name="renderActCmp" rerender="activityId"/>
+        <apex:actionFunction name="nonRenewal" action="{!getAcc2}" oncomplete="nonRenewlaYears('{!Acc.lrd__c}','{!Acc.dedlic__c}');" />
+        
+        <apex:pageBlock mode="{!IF(md.isView,'detail','edit')}" id="pbMain" tabStyle="g_Req__c" >
+            <apex:pageBlockButtons location="top"> 
+                <apex:variable var="rp_da" value="{!IF(true,false,false)}" />
+                <apex:variable var="addInfo" value=""/>   
+                <apex:repeat value="{!rq.Items__r}" var="i">
+                    <apex:variable var="rp_da" value="{!IF(AND(i.itm__r.cd__c='rp',i.sta__r.cd__c='dcc'),true,rp_da)}" />
+                </apex:repeat>
+                <c:qrbtns rendered="{!st}" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" addInfo="{!addInfo}" nxtPg="grqup"/>
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockButtons location="bottom">
+                <c:qrbtns rendered="{!st}" showInfo="false" isNew="{!md.isNew}"  isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" nxtPg="grqup"/>
+            </apex:pageBlockButtons>
+            
+            <apex:pageMessages id="msg" escape="false"/>       
+            <apex:pageBlockSection columns="2" collapsible="false"  rendered="{!NOT(ispu)}" title="Account Info">
+                <apex:pageBlockSectionItem rendered="{!ISNULL(rq.Acc__c)}">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                    <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="acc__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="acc__c" value="{!rq.Acc__c}" required="true"  onchange="renderActCmp();nonRenewal();"/>
+                            <script type="text/javascript">
+                            cs['acc__c']=getC('{!$Component.acc__c}');
+                            </script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem> 
+                <apex:pageBlockSectionItem rendered="{!NOT(ISNULL(rq.Acc__c))}">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                    <apex:outputPanel layout="none" >
+                        <div id="acc__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:outputField value="{!rq.Acc__c}"/>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem> 
+                <apex:pageBlockSectionItem helpText="License No">
+                        <apex:outputLabel value="License No" />
+                        <apex:outputPanel layout="none">
+                            <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                <div class="requiredInput" id="xdedln__c">
+                                    <div class="requiredBlock"></div>
+                                    <apex:inputField id="xdedln__c" value="{!rq.xdedln__c}" />
+                                    <script type="text/javascript">
+                                    //  cif='{!$Component.xcfnar__c}_lkid';
+                                    cs['xdedln__c']=getC('{!$Component.xdedln__c}');
+                                    </script>
+                                </div>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!md.isView}">
+                                <div id="xdedln__c">
+                                    <div class="requiredBlock"></div>
+                                    <apex:outputField value="{!rq.xdedln__c}" />
+                                </div>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem helpText="Non Renewal years">
+                        <apex:outputLabel value="Non Renewal years" />
+                        <apex:outputPanel layout="none">
+                            <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                <div class="requiredInput" id="xnry__c">
+                                    <div class="requiredBlock"></div>
+                                    <apex:inputField id="xnry__c" value="{!rq.xnry__c}" />
+                                    <script type="text/javascript">
+                                    //  cif='{!$Component.xcfnar__c}_lkid';
+                                    cs['xnry__c']=getC('{!$Component.xnry__c}');
+                                    </script>
+                                </div>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!md.isView}">
+                                <div id="xnry__c">
+                                    <div class="requiredBlock"></div>
+                                    <apex:outputField value="{!rq.xnry__c}" />
+                                </div>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                                        <apex:pageBlockSectionItem helptext="Notes.">
+                        <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.nt__c.label}" />
+                        <apex:outputPanel layout="none">
+                            <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                <div  id="nt__c">
+                                    <apex:inputField id="nt__c" value="{!rq.nt__c}" style="width:60%" />
+                                    <script type="text/javascript">
+                                    // cs['nt__c]=getC('{!$Component.nt__c}');
+                                    </script>
+                                </div>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!md.isView}">
+                                <div id="nt__cRI">
+                                    <div class="requiredBlock"></div>
+                                    <apex:outputField value="{!rq.nt__c}" />
+                                </div>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem rendered="{!AND(rq.STA__c=='Completed')}">
+         <apex:outputLabel >Print the letter</apex:outputLabel>
+          <a href="#" onClick="letterclick();return false;"  ><u> Print </u></a> <br/> 
+        <!--<apex:repeat value="{!rq.Attachments}" var="string" id="theRepeat">
+            <a href="https://axs.force.com/servlet/servlet.FileDownload?file={!string.id}" target="_blank"><b>Print letter</b></a>
+         </apex:repeat>  -->
+           
+    </apex:pageBlockSectionItem>
+    
+                
+                   <apex:pageBlockSectionItem rendered="{!AND(rq.STA__c=='Completed',md.isView,NOT(ispu))}">
+                    <apex:outputLabel value="Re-Print after data correction" />
+                    <apex:outputPanel layout="none" >
+                        <div id="print__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:outputField value="{!rq.Print__c}"/>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem>  
+                                  
+            </apex:pageBlockSection>
+           
+            <apex:pageBlockSection id="activityId"  columns="1" collapsible="true" title="Activity Change" >
+                <apex:outputPanel rendered="{!rq.Acc__c != null}" >
+                    <c:dedActivityCmp id="actComp" acc="{!rq.Acc__c}" draftReq="{!rq}" pgType="r" isEd="{!md.isEdit}" isVw="{!md.isView}"/>
+                </apex:outputPanel>  
+            </apex:pageBlockSection>
+           
+            <c:grms id="Milestones" ispu="{!ispu}" R="{!rq}" rendered="{!md.isView}"/>  
+            
+            <apex:outputPanel >
+            <apex:inputHidden id="xltr__c" value="{!rq.xltr__c}"/>
+            <script type="text/javascript">
+            cs['xltr__c']=getC('{!$Component.xltr__c}');
+        </script>
+        </apex:outputPanel>
+        
+      <apex:outputPanel >
+            <apex:inputHidden id="xlt__c" value="{!rq.xlt__c}"/>
+            <script type="text/javascript">
+            cs['xlt__c']=getC('{!$Component.xlt__c}');
+        </script>
+        </apex:outputPanel>
+            <apex:outputPanel >
+            <apex:inputHidden id="xla2l__c" value="{!rq.xla2l__c}"/>
+            <script type="text/javascript">
+            cs['xla2l__c']=getC('{!$Component.xla2l__c}');
+        </script>
+        </apex:outputPanel>
+        <apex:outputPanel >
+            <apex:inputHidden id="xuvdet__c" value="{!rq.xuvdet__c}"/>
+            <script type="text/javascript">
+            cs['xuvdet__c']=getC('{!$Component.xuvdet__c}');
+        </script>
+        </apex:outputPanel>
+        
+            <script type="text/javascript">
+               cs['xltr__c'].value='Corporate';
+                cs['xlt__c'].value='DEDACNOCRen';
+                cs['xla2l__c'].value='a0G0I00001RWN1j';
+                </script>
+            
+        </apex:pageBlock>                    
+       <c:qrlstr id="pbRelated" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!rq}" pg="{!pg}"/>
+
+    </apex:form>
+</apex:page>

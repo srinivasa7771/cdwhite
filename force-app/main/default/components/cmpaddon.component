@@ -1,0 +1,63 @@
+<apex:component controller="cmpAddOnController" >
+    
+    <apex:attribute name="req" description="request" type="g_Req__c"/>
+    
+    <div class="accordion-content-inner px-xl-5 mt-5">
+        <div class="row">
+            <apex:outputPanel rendered="{!NOT(AND(contains(rq.xadh__c,'inr;'),contains(rq.xadh__c,'vfs;')))}" styleClass="col-xl-4 col-lg-6"/>
+            <input type="text" class="d-none" id="rqItems" value="{!rq.Items__r}" />
+            <apex:repeat value="{!rq.Items__r}" var="i"> 
+                <apex:outputPanel styleClass="col-xl-4 col-lg-6" rendered="{!AND(i.itm__r.cd__c == 'inr')}">
+                    <div class="box status-box" style="background-color:#fff">
+                        <div>
+                            <div class="status-box-icon">
+                                <i class="{!IF(AND(i.sta__r.cd__c == 'ok'),'icon-ok circle-icon-ok','')}"></i>
+                            </div>
+                            <h4>ADNIC INSURANCE</h4><br/>
+                            <apex:outputPanel rendered="{!AND(NOT(i.sta__r.cd__c == 'ok'),NOT(i.sta__r.cd__c == 'c'))}">
+                                <p class="mb-4">Application submitted and under process</p> 
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!AND(i.sta__r.cd__c == 'c')}">
+                                <p class="mb-4">Application has been cancelled.</p> 
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!AND(i.sta__r.cd__c == 'ok')}">
+                                <p class="mb-4">Insurance Policy is generated and can be downloaded here</p>
+                                <a href="{!i.xpdl__c}" target="_blank" class="btn btn-outline-primary"><i class="fa fa-arrow-down"></i> DOWNLOAD</a>
+                                <script> var polLink = '{!i.xpdl__c}'; 
+                                </script>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!AND(i.xpdl__c=='',NOT(i.xcnotes__c==''))}">
+                                <div class="collapse-title">
+                                    <p class="mb-4">
+                                        <br/>  Technical Error while generating the policy.<br/> Please contact AXS Backoffice. <br/>  
+                                    </p>
+                                    <p style="color:red;" >
+                                        Details: {!i.xcnotes__c}  
+                                    </p>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <apex:outputPanel styleClass="col-xl-4 col-lg-6" rendered="{!AND(i.itm__r.cd__c == 'vfs')}">
+                    <div class="box status-box" style="background-color:#fff">
+                        <div>
+                            <div class="status-box-icon">
+                                <i class="{!IF(AND(NOT(i.xpdl__c==''),i.sta__r.cd__c == 'ok'),'icon-ok circle-icon-ok','')}"></i>
+                            </div>
+                            <h4>VFS ATTESTATION</h4><br/>
+                            <apex:outputPanel rendered="{!AND(NOT(i.sta__r.cd__c == 'ok'))}">
+                                <p class="mb-4">Application submitted and under process</p> 
+                            </apex:outputPanel>
+                            <div class="collapse-title">
+                                
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+            </apex:repeat>
+        </div>
+    </div>
+    
+    
+</apex:component>

@@ -1,0 +1,247 @@
+<apex:page id="x" sidebar="false" cache="false" expires="0" tabStyle="g_Tran__c"  title="{!T.name}" standardController="g_Tran__c" extensions="gctlT">
+<script type="text/javascript">var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={};</script>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+<c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!T.TP__c} Details" subtitle="{!T.Name}" description="" STA="{!T.STA__c}"/>
+<chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:variable var="cnSv" value="{!T.STA__c ='Open'}"/>
+
+<apex:variable var="shRcp" value="{!AND(T.STA__c ='Completed',NOT(ispu),T.TP__c='Payment',T.md__c='Cash')}"/>
+
+
+<apex:variable var="cnSvSTA" value="{!T.STA__c ='Open'}"/>
+<script type="text/javascript">
+function vfrm(nSTA){
+    if("{!oldSTA}"!="Cancelled"&&cs["STA__c"].value=="Cancelled"){return confirm("Do you want to continue with payment cancellation?");}
+    return hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):!0;
+}
+function hRq(nSTA){    
+    var brq = false;    
+    if({!cnSv}){        
+        fldErr('STA__c',null,!0);fldErr('cq__c',null,!0);fldErr('ci__c',null,!0);fldErr('cdt__c',null,!0);fldErr('Bnk__c',null,!0);fldErr('md__c',null,!0);fldErr('op__c',null,!1);
+        if({!AND(cnSv,cnSvSTA,T.TP__c='Refund',NOT(T.fwc__c))}){<apex:repeat value="{!T.Items__r}" var="I">fldErr('{!I.Id}A__c',null,!0);</apex:repeat>}      
+        if({!cnSvSTA}){             
+            brq=fldReq('STA__c',cs);
+            if(cs['md__c']!=null){brq=fldReq('md__c',cs)||brq;}
+            //if(cs['op__c']!=null){brq=fldReq('op__c',cs)||brq;}         
+            if({!AND(cnSv,cnSvSTA,T.TP__c='Refund',NOT(T.fwc__c))}){<apex:repeat value="{!T.Items__r}" var="I">brq=fldReq('{!I.Id}A__c',cs)||brq;</apex:repeat>}
+        }       
+        if('{!JSENCODE(T.md__c)}'=='Cheque'||'{!JSENCODE(T.md__c)}'=='Wire Transfer'||'{!JSENCODE(T.md__c)}'=='Bank Letter'){brq = fldReq('cq__c',cs)||brq;brq = fldReq('ci__c',cs)||brq;brq = fldReq('cdt__c',cs)||brq;brq = fldReq('Bnk__c',cs)||brq;}
+    }   
+    return brq;
+}
+</script>
+<apex:form id="f"> 
+    <apex:pageBlock mode="{!IF(cnSv,'edit',IF(ispu,'detail','mainDetail'))}" id="p" >
+        <apex:actionFunction name="afc" action="{!cancel}" status="theStatus" rerender="p,sH,msg" onbeforedomupdate="javascript:toggle_inputs();"/>
+        <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="p,sH,msg" onbeforedomupdate="javascript:toggle_inputs();"/>        
+        <apex:pageBlockButtons location="top">
+            <c:qrbtns isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqt" R="{!rq}" A="{!rq.acc__r}" T="{!T}" Stp="6"/>
+        </apex:pageBlockButtons>
+         <apex:pageBlockButtons location="bottom">
+            <c:qrbtns showInfo="false" isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqt" R="{!rq}" A="{!rq.acc__r}" T="{!T}" Stp="6"/>
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="msg"  escape="false"/>
+        <apex:outputpanel layout="none" rendered="{!AND(NOT(ISNULL(T)),NOT(pgHide))}">           
+             <apex:pageBlockSection collapsible="false" columns="2" title="{!T.TP__c} Details">
+                <apex:outputField value="{!T.Name}"/>               
+                <apex:pageBlockSectionItem rendered="{!AND(cnSv,cnSvSTA)}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.STA__c.label}" />
+                    <apex:outputPanel >
+                        <div id="STA__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="STA__c" value="{!T.STA__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">
+                                cs['STA__c']=getC('{!$Component.STA__c}');
+                                if({!ispu}){for (var i=cs['STA__c'].options.length-1;i>=0;i--){if(cs['STA__c'].options[i].value=='Completed'||cs['STA__c'].options[i].value=='Failed'){cs['STA__c'].remove(i);}}} 
+                                else {for (var i=cs['STA__c'].options.length-1;i>=0;i--){if(cs['STA__c'].options[i].value=='Failed'){cs['STA__c'].remove(i);}}}
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:outputField value="{!T.STA__c}" rendered="{!NOT(AND(cnSv,cnSvSTA))}"/>
+                <apex:outputField value="{!T.RQ__c}"/>
+                <apex:pageBlockSectionItem rendered="{!AND(cnSv,cnSvSTA,T.TP__c='Refund',NOT(T.fwc__c))}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.md__c.label}" />
+                    <apex:outputPanel >
+                        <div id="md__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="md__c" value="{!T.md__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">
+                                cs['md__c']=getC('{!$Component.md__c}');
+                                for (var i=cs['md__c'].options.length-1;i>=0;i--){if(cs['md__c'].options[i].value!='Cash'&&cs['md__c'].options[i].value!='Customer Deposit'){cs['md__c'].remove(i);}}
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                
+                <apex:outputField value="{!T.md__c}" rendered="{!NOT(AND(AND(cnSv,NOT(T.fwc__c)),cnSvSTA,T.TP__c='Refund'))}"/>                
+                <apex:outputField value="{!T.dt__c}"/> 
+                 
+                <apex:pageBlockSectionItem rendered="{!AND(cnSv,cnSvSTA,T.TP__c='Refund',NOT(T.fwc__c))}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.op__c.label}" />
+                    <apex:outputPanel >
+                        <div id="op__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:outputPanel style="display:none"><apex:inputField value="{!T.RQ__c}" style="display:none"/></apex:outputPanel>
+                            <apex:inputField id="op__c" value="{!T.op__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">cs['op__c']=getC('{!$Component.op__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                    </apex:pageBlockSectionItem>    
+                    
+                       
+                     <apex:pageBlockSectionItem rendered="{!AND(cnSv,cnSvSTA,T.TP__c='Refund')}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.fwf__c.label}" />
+                    <apex:outputPanel >
+                        <div id="fwf__cRI" >
+                            <div class="requiredBlock">
+                            <apex:inputField id="fwf__c" value="{!T.fwf__c}" style="font-size:11px;"/>
+                            </div>
+                            
+                        </div>
+                    </apex:outputPanel>
+                   </apex:pageBlockSectionItem>  
+                            
+                  <apex:pageBlockSectionItem rendered="{!AND(cnSv,cnSvSTA,T.TP__c='Refund')}">
+                     <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.fwc__c.label}" />
+                    <apex:outputPanel >
+                        <div id="fwc__cRI" >
+                            <div class="requiredBlock">
+                            <apex:inputField id="fwc__c" value="{!T.fwc__c}" style="font-size:11px;"/>
+                            </div>                            
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>  
+                            
+                <apex:outputField value="{!T.op__c}" rendered="{!AND(NOT(AND(cnSv,NOT(T.fwc__c),cnSvSTA)),T.TP__c='Refund')}"/>
+                <apex:outputField value="{!T.TP__c}"/>
+                <apex:outputField value="{!T.A__c}"/>                 
+                <apex:outputField value="{!T.Acc__c}" rendered="{!NOT(ispu)}"/>
+                <apex:outputField value="{!T.Acc__r.Prk__c}" rendered="{!NOT(ispu)}"/>
+            </apex:pageBlockSection>            
+            
+            <apex:pageBlockSection collapsible="false" columns="1" rendered="{!NOT(ispu)}" >
+                <apex:pageBlockSectionItem rendered="{!cnSv}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.nt__c.label}" />
+                    <apex:outputPanel >
+                        <div id="nt__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField value="{!T.nt__c}" style="width:75%;font-size:11px;"/>
+                            <script type="text/javascript">cs['nt__c']=getC('{!$Component.nt__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:outputField value="{!T.nt__c}" rendered="{!NOT(cnSv)}"/>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection collapsible="false" columns="1" rendered="{!shRcp}" >
+                <apex:pageBlockSectionItem >
+                    <apex:outputPanel >
+                        <apex:outputLabel value="Receipt" />
+                    </apex:outputPanel>
+                    <apex:outputPanel >                      
+                        <apex:outputLink value="/apex/gtrcpt?id={!T.Id}" target="_blank" >View Receipt</apex:outputLink>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                
+            </apex:pageBlockSection>
+             
+             <apex:pageBlockSection collapsible="true" columns="2" title="Cheque Details" rendered="{!OR(T.md__c='Cheque',T.md__c='Wire Transfer',T.md__c='Bank Letter')}">
+                <apex:pageBlockSectionItem rendered="{!cnSv}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.cq__c.label}" />
+                    <apex:outputPanel >
+                        <div id="cq__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="cq__c" value="{!T.cq__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">cs['cq__c']=getC('{!$Component.cq__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!cnSv}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.ci__c.label}" />
+                    <apex:outputPanel >
+                        <div id="ci__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="ci__c" value="{!T.ci__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">cs['ci__c']=getC('{!$Component.ci__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!cnSv}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.cdt__c.label}" />
+                    <apex:outputPanel >
+                        <div id="cdt__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="cdt__c" value="{!T.cdt__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">cs['cdt__c']=getC('{!$Component.cdt__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!cnSv}">
+                    <apex:outputLabel value="{!$ObjectType.g_Tran__c.Fields.Bnk__c.label}" />
+                    <apex:outputPanel >
+                        <div id="Bnk__cRI" class="requiredInput">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="Bnk__c" value="{!T.Bnk__c}" style="font-size:11px;"/>
+                            <script type="text/javascript">cs['Bnk__c']=getC('{!$Component.Bnk__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                
+                <apex:outputField value="{!T.cq__c}" rendered="{!NOT(cnSv)}"/>              
+                <apex:outputField value="{!T.ci__c}" rendered="{!NOT(cnSv)}"/>              
+                <apex:outputField value="{!T.cdt__c}" rendered="{!NOT(cnSv)}"/>
+                <apex:outputField value="{!T.Bnk__c}" rendered="{!NOT(cnSv)}"/>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection collapsible="true" columns="2" title="Payment Gateway Info" rendered="{!AND(OR(T.md__c='Credit / Debit Card',NOT(ISNULL(T.gwcd__c))),NOT(ispu))}">
+                <apex:outputField value="{!T.gwmsg__c}"/>
+                <apex:outputField value="{!T.gwdt__c}"/>
+                <apex:outputField value="{!T.gwcd__c}"/>
+                <apex:outputField value="{!T.gwrf__c}"/>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection collapsible="false" columns="1" rendered="{!AND(NOT(ISNULL(T)),NOT(pgHide),T.Items__r.size>0)}">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Items" />
+                    <apex:outputPanel >
+                        <table class="list" border="0" cellpadding="0" cellspacing="0" style="font-size:11px;">
+                             <tbody>
+                                <tr class="headerRow">
+                                    <th scope="col">{!$ObjectType.g_reqitem__c.label}</th>
+                                    <th scope="col" >{!$ObjectType.g_TranItem__c.fields.exp__c.label}</th>
+                                    <th scope="col" class="{!IF(AND(cnSv,cnSvSTA,T.TP__c='Refund'),'','CurrencyElement')}">
+                                    {!if(NOT(ispu),$ObjectType.g_TranItem__c.fields.A__c.label,'')}
+                                    
+                                    </th>
+                                    <th scope="col"></th>
+                                </tr>
+                                <apex:repeat value="{!T.Items__r}" var="I">
+                                    <tr class="dataRow">
+                                        <td class="dataCell" style="width:1%;white-space:nowrap;">
+                                            <apex:outputField value="{!I.itm__r.itm__r.Name}" rendered="{!NOT(ispu)}" />
+                                            <apex:outputField value="{!I.itm__r.itm__r.lbl__c}" rendered="{!ispu}" />                                   
+                                        </td>
+                                        <td class="dataCell" style="width:1%;white-space:nowrap;">
+                                            <apex:outputField value="{!I.exp__c}" />
+                                        </td>                               
+                                        <td class="dataCell {!IF(AND(cnSv,cnSvSTA,T.TP__c='Refund'),'','CurrencyElement')}" style="width:1%;white-space:nowrap;">                                           
+                                            <apex:outputPanel layout="none" rendered="{!AND(cnSv,cnSvSTA,T.TP__c='Refund',NOT(T.fwc__c))}">
+                                            <div id="{!I.Id}A__cRI" class="requiredInput">
+                                                <div class="requiredBlock"></div>
+                                                <apex:inputField id="A__c" value="{!I.A__c}" style="font-size:11px;"/>
+                                                <script type="text/javascript">cs['{!I.Id}A__c']=getC('{!$Component.A__c}');</script>
+                                            </div>
+                                            </apex:outputPanel>                                     
+                                            <apex:outputField value="{!I.A__c}" rendered="{!AND(NOT(AND(AND(cnSv,NOT(T.fwc__c),cnSvSTA),T.TP__c='Refund')),NOT(ispu))}"/>
+                                        </td>
+                                        <td class="dataCell"></td>                                      
+                                    </tr>
+                                </apex:repeat>
+                             </tbody>
+                        </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:outputpanel>
+    </apex:pageBlock>
+</apex:form>
+</apex:page>

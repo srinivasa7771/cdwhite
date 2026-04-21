@@ -1,0 +1,400 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+    </style>
+    
+    
+    <script type="text/javascript">
+    var cs = {};
+    var ad4 = {"ActionName":"insertparkingrequest","OracleID":"","AgNo":"","AXSId":"","reason":"","CardNumber":"","Eligibility":"","RequestType":"Parking Card","BusinessPark":"","SectorLocationId":"","Sector":"","CardRequestType":"Lost","ParkingType":"Paid","EndDate":"","CardsDetail":[{"cardHolderName":"","Email":"","Mobile":"","Phone":"","Vehicles":[]}]};
+    
+    function saveDetails(){
+        
+        //cs['ias__c'].value='0np';
+        if(!$('#cardDet').val()){
+            addValError($('#cardDet'),'Please select a card');
+            return;
+        }
+        cs['xadh__c'].value='0np';
+        cs['xpveh__c'].value=selectedJSON[0].vehicleNumber;
+        cs['xchn__c'].value=selectedJSON[0].cHolderNm;
+        cs['xppor__c'].value=selectedJSON[0].pPlaceOfReg;
+        cs['xps__c'].value=selectedJSON[0].sector;        
+        createAD4();
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0));
+            return;
+        }
+        var brk = vflds('.requiredFld,.applMob', true);
+        var mob = isUAEMobNum($(".applMob"));
+        if(mob==false){
+            brk = true;
+        }
+        if(!brk){toggleGLoader(); afso(); }
+    }
+    
+    function createAD4(){
+        ad4.CardNumber = $('#cardDet').val();
+        ad4.Sector= selectedJSON[0].sector;
+        ad4.SectorLocationId = selectedJSON[0].sectorId;
+        var dt = selectedJSON[0].expDate.split('/')[2]+'-'+selectedJSON[0].expDate.split('/')[1]+'-'+selectedJSON[0].expDate.split('/')[0];
+        ad4.EndDate = dt;
+        ad4['reason']=cs['Reason__c'].value;
+        ad4['CardRequestType']=cs['Reason__c'].value;
+        ad4['Eligibility'] = selectedJSON[0].EligibilityName;
+        ad4['ParkingType'] = selectedJSON[0].cardType;
+        cs['xadtx4__c'].value = JSON.stringify(ad4);
+    }
+    
+    function vflds(clsName){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){ 
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'This field is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        return brk;
+    }
+    
+    
+    </script> 
+    
+    <apex:form styleClass="pbform" id="prkMain">
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="createDD();aftrLoad();loadVehicles1();" status="theStatus" rerender="prkTable" />
+        <apex:actionFunction name="loadVehicles" action="{!loadPNums}" oncomplete="toggleGLoader();loadSelected();" status="theStatus" rerender="prkTable" />
+        
+        <body class="base">
+            <div id="main">
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="msg2"  oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                <apex:outputText value="{!srv.sdg__r.sd__c}" escape="true"></apex:outputText>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    <h3 class="base-main-title">Replace Parking Permit<!--{!srv.sdg__r.Name}--></h3>
+                                    <p class="fs-18">Select the permit number to request the replacement for</p><!-- Review the parking space details to report Lost/Damage for a card -->
+                                    <!--<div class="form-group form-style mb-3" style="width: 335px;">
+<select class="prkOpt form-control input-select2-flat" onchange="settoFld(this)">
+<option value="">--None--</option>
+<apex:repeat value="{!lst_pd}" var="p">
+<option value="{!p.cardNum}">{!p.cardNum}</option>
+</apex:repeat>
+</select>
+</div>-->
+                                    <apex:outputPanel id="prkTable">
+                                        <apex:inputHidden id="parkingString" value="{!parkingString}"/>
+                                        <!--parkingString -- {!parkingString} <br />-->
+                                        <script>
+                                        cs['parkingString']=getC('{!$Component.parkingString}'); 
+                                        var allJSON = {};
+                                        var allJSONStr = '';
+                                        var data = [];
+                                        setTimeout(function(){
+                                            
+                                            $('.ddValidation').on('change',function(){
+                                                $('.depDD').select2({
+                                                    enableSearch:true
+                                                });
+                                                $('.depDD').on('change',function(){
+                                                    removeValError(this);
+                                                });
+                                            });
+                                            
+                                        },1000);
+                                        </script>
+                                        
+                                        <!-- drop down -->
+                                        <div class="form-group">
+                                            <select id="cardDet" class="form-control input-select-member" onchange="settoFld(this)"
+                                                    data-placeholder="Start typing the name of employee or select from the list">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- drop down -->
+                                        
+                                        <div class="" style="max-height:300px;overflow:hidden;overflow-y:auto;" >
+                                            <!--<table class="table table-align-middle table-parking">
+<thead>
+<tr>
+<th>SELECT</th>
+<th>PLATE NUMBER</th>
+<th>CITY</th>
+<th>VEHICLE OWNER</th>
+<th>CONTACT NUMBER</th>
+<th>EXPIRY</th>
+<th>CARD NUMBER</th>
+</tr>
+</thead>
+<tbody>
+<apex:repeat value="{!lst_pd}" var="p">
+<tr>
+<td>
+<label class="custom-radio">
+<input num="{!p.cardNum}" type="radio" name="Vehicle number" onchange="settoFld(this)" /><span></span>
+</label>
+</td>
+<td>
+<div class="vehicle-number mb-1">
+{!p.vehicleNumber}
+</div>
+</td>
+<td>{!p.pPlaceOfReg}</td>
+<td>
+<apex:outputText rendered="{!ISBLANK(p.cHolderNm)}"><b style="color: #E62D38;">NA</b></apex:outputText>
+<apex:outputText rendered="{!!ISBLANK(p.cHolderNm)}">{!p.cHolderNm}</apex:outputText>
+</td>
+<td><b style="color: #E62D38;">NA</b></td>
+<td>{!p.expDate}</td>
+<td>{!p.cardNum}</td>
+</tr>
+</apex:repeat>
+</tbody>
+</table>-->
+                                        </div>
+                                    </apex:outputPanel>
+                                    <div class="mb-4">
+                                        <label class="mb-3 fs-18">Reason for replacement</label>
+                                        <div class="form-group">
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="reason" r='l' checked="true" value="Lost" />
+                                                <span>Lost</span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="reason" r='d' value="Damaged" />
+                                                <span>Damaged</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4"></div>
+                                    <div class="form-style">
+                                        <c:eContactInfo req="{!req}" noNotes="true"  id="conTactcmp" cmpTitle="Contact Details"/>
+                                        <!-- <c:collectionanddeliveryinfo noNotes="true" req="{!req}" id="collDelcmp" cmpTitle="Delivery Information"/>  -->
+                                    </div>
+                                    
+                                </apex:pageBlock>
+                            </div>
+                            <div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a onclick="saveDetails();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                        PROCEED TO PAY
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </body>
+        
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <apex:inputHidden id="Reason__c" value="{!req.Reason__c}" />
+        <apex:inputHidden id="rtacn__c" value="{!req.rtacn__c}" />
+        <apex:inputHidden id="xpveh__c" value="{!req.xpveh__c}" />
+        <apex:inputHidden id="xppor__c" value="{!req.xppor__c}" />
+        <apex:inputHidden id="xchn__c" value="{!req.xchn__c}" />
+        <apex:inputHidden id="xps__c" value="{!req.xps__c}" />
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        
+        <script type="text/javascript">
+        cs['xadh__c']=getC('{!$Component.xadh__c}'); 
+        cs['Reason__c']=getC('{!$Component.Reason__c}'); 
+        cs['rtacn__c']=getC('{!$Component.rtacn__c}'); 
+        cs['ias__c']=getC('{!$Component.ias__c}'); 
+        cs['xpveh__c']=getC('{!$Component.xpveh__c}'); 
+        cs['xppor__c']=getC('{!$Component.xppor__c}'); 
+        cs['xchn__c']=getC('{!$Component.xchn__c}'); 
+        cs['xadtx4__c']=getC('{!$Component.xadtx4__c}'); 
+        cs['xps__c']=getC('{!$Component.xps__c}');//Sector
+        </script> 
+    </apex:form> 
+    <script>
+    var selectedJSON = [];
+    var reqId = '', cNum='', reason='';
+    $(document).ready(function(){
+        cNum = getUrlParameter('c');
+        reason = getUrlParameter('r');  
+        callWS();
+        reqId = '{!req.id}';
+        if(cNum == '')
+            cNum = '{!req.rtacn__c}';
+        //Axs2CustomJS
+        
+    });
+    function createDD(){
+        let str = cs['parkingString'].value;
+        allJSONStr = str.replaceAll('\t', ' ');        
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        var allJSONObj = JSON.parse(allJSONStr);
+        for(i of allJSONObj){
+            var d ={};
+            d.text = i.cardNum;
+            d.cardNum = i.cardNum;
+            d.cHolderNm = (i.cHolderNm==null)?'NA':i.cHolderNm;
+            d.expDate = i.expDate;
+            d.id = i.cardNum;
+            d.cardId = i.cardId;
+            //console.log(i.cardNum+' -- '+i.actStat);
+            if(i.actStat=='Inactive'||i.actStat=='Active')
+                data.push(d);
+        }
+        $('.input-select-member').change(function () {
+            if ($(this).val() === '') {
+                $(this).next('.select2').removeClass('selected');
+            } else {
+                $(this).next('.select2').addClass('selected');
+            }
+        });
+        $('.input-select-member').select2({
+            data: data,
+            allowClear: true,
+            escapeMarkup: function (markup) {
+                return markup;
+            },
+            templateResult: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.cardNum;
+                }
+                
+                var html = '<div class="user-title-media user-title-media-sm">' +
+                    '<div>' +
+                    '<div class="user-name mb-2">' + data.cardNum + '</div>' +
+                    '<div class="user-title font-weight-normal">Vehicle owned by ' + data.cHolderNm +
+                    ' - Expires on '+data.expDate+'</div>' +
+                    '</div>' +
+                    '</div>';
+                return html;
+            },
+            templateSelection: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.cardNum;
+                }
+                
+                var html = '<div class="user-title-media user-title-media-sm">' +
+                    '<div>' +
+                    '<div class="user-name mb-2">' + data.cardNum + '</div>' +
+                    '<div class="user-title font-weight-normal">Vehicle owned by ' + data.cHolderNm +
+                    ' - Expires on '+data.expDate+'</div>' +
+                    '</div>' +
+                    '</div>';
+                return html;
+            }
+        });
+        if(cs['rtacn__c'].value!=''&&cs['rtacn__c'].value!=undefined)
+            $('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+        setTimeout(function () {
+            $('.input-select-member').trigger('change');
+        }, 100);
+        
+    }
+    function loadVehicles1(){
+        if(cNum!='' ){
+            $('.input-select-member').val(cNum).trigger('change');
+            /*console.log('cNum -- '+cNum+' && reason -- '+reason);
+            toggleGLoader();
+            loadVehicles();*/
+        }
+    }
+    function loadSelected(){
+        let l = cs['parkingString'].value;
+        $('[r="'+reason+'"]').prop('checked',true).trigger('change');
+        $('[num="'+cNum+'"]').prop('checked',true).trigger('change');
+        var s=l.replace("\"Items\"",'\'Items\'')
+        selectedJSON = JSON.parse(s);
+    }
+    function loadPrevData(){
+        // $('[num="'+cs['rtacn__c'].value+'"]').prop('checked',true).trigger('change');
+        $('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+    }
+    function aftrLoad(){
+        cs['Reason__c'].value = "Lost";
+        $('.prkOpt').select2({enableSearch:true});
+        $('[name="reason"]').on('change',function(){
+            var v = $('[name="reason"]:checked').val();
+            cs['Reason__c'].value = v;
+        });
+        if(reqId!='')
+            loadPrevData();
+    }
+    function settoFld(e){
+        var cardNum = $(e).val();
+        removeValError($('#cardDet'));
+        //var cardNum = $(e).attr('num');
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        if(allJSONStr.length>0){
+            allJSON = JSON.parse(allJSONStr);
+            for(i=0;i<allJSON.length;i++){
+                if(cardNum == allJSON[i].cardNum){
+                    selectedJSON[0] = allJSON[i];
+                }
+            }
+        }
+        console.log('selectedJSON[0]====',selectedJSON[0]);
+        cs['rtacn__c'].value = cardNum;
+        var refMob = (selectedJSON[0]?.refMobile)?selectedJSON[0].refMobile:cs["rmob__c"].value;
+        if( refMob.startsWith('+971'))
+        {
+            refMob = refMob.substring(4);
+        }  
+        cs["rmob__c"].value=refMob;
+        
+        //cs["rmob__c"].value=refMob;https://axs2--axsstg.sandbox.my.salesforce.com/_ui/common/apex/debug/ApexCSIPage#//(selectedJSON[0]?.refMobile)?selectedJSON[0].refMobile:cs["rmob__c"].value;
+        //cs["xceml__c"].value = selectedJSON[0].email;
+        $('.table-parking').parent().parent().find('.frmErrMsg').remove();
+    }
+    
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    
+    
+    </script>
+</apex:page>

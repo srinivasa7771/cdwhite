@@ -1,0 +1,801 @@
+<apex:page sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<script type="text/javascript">
+var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={},bdo;
+var em1='{!$Label.msgAgeRange}',em2='{!$Label.msgNationality}',em3='{!$Label.msgInvalidDateRange}',em4='{!$Label.msgPassportValid6}';
+function copyC(a){var b = a.options[a.selectedIndex].value;"" != b && ("" == cs['xcnc__c'].value & cs['xcnc__c'].id != a.id && (cs['xcnc__c'].value = b), "" == cs['xcnp__c'].value & cs['xcnp__c'].id != a.id && (cs['xcnp__c'].value = b), "" == cs['xcbc__c'].value & cs['xcbc__c'].id != a.id && (cs['xcbc__c'].value = b), "" == cs['xcpic__c'].value & cs['xcpic__c'].id != a.id && (cs['xcpic__c'].value = b));ckN(cs['xcnc__c'].value);}
+function ckBD(a) {
+var tlt=cs['xcslt__c'].value; 
+   if(ckBdt(lcl,'xcbd__c',cs['xcbd__c'].value)){
+    d60 = new Date;   
+    d60 = d60.setYear(d60.getYear() - 60);  
+    d25 = new Date;
+    d25 = d25.setYear(d25.getYear() - 25);      
+    bd = dtParse(a, lcl);
+    fldWarn("xcbd__c", null, {!md.isView } ? !1 : !0);    
+    
+    if(bd <= d60){
+    fldWarn("xcbd__c",'Applicants above 60 years are subject to immigration discretion.', {!md.isView } ? !1 : !0);
+    }
+    if((tlt=='Mrs.' || tlt=='Ms.')&&  bd > d25){   
+    fldWarn("xcbd__c",'Female applicants below 25 years are subject to immigration discretion.', {!md.isView } ? !1 : !0);
+    }       
+    
+  }
+ return true;
+}
+function ckN(a){fldWarn("xcnc__c", null,{!md.isView}?!1:!0); 
+if('Syria' == a){fldWarn("xcnc__c",'Visa issuance subject to Immigration discretion',{!md.isView}?!1:!0);}return true;}
+
+var oeidid='',oeididt='',oeidedt='';
+
+function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):!0}
+function hsSnc(nSTA){
+    if(nSTA=='Open'&&'{!JSENCODE(rq.STA__c)}'=='Draft'){              
+        if({!Acc.lcsnc__c}){alrt('Cannot process request','{!Acc.lcsncnt__c}');return true;}
+        if({!Acc.psasnc__c}){alrt('Cannot process request','{!Acc.psasncnt__c}');return true;}
+        if({!Acc.ecsnc__c}){alrt('Cannot process request','{!Acc.ecsncnt__c}');return true;}
+        if({!Acc.cosnc__c}){alrt('Cannot process request','{!Acc.cosncnt__c}');return true;}        
+    }
+    return false;
+}
+function hErr(nSTA){
+    var ber = false;   
+    ber = vMob('rmob__c',cs,true)||ber;
+    ber = vMob('xcmob__c',cs,false)||ber;
+    ber = !(vIntPh('xchph__c',cs,false))||ber;    
+    if(!epckPD(lcl,'xcped__c','xcpid__c',true,cs['xcpid__c'].value,cs['xcped__c'].value,em3,em4)){cs['xcped__c'].focus();ber=true;}
+    if(!ckBD(cs['xcbd__c'].value)){cs['xcbd__c'].focus();ber=true;}  
+    return !ber;
+}
+function hRq(nSTA){
+
+    fldErr('xcslt__c',null,!0);fldErr('xcfn__c',null,!0);fldErr('xcln__c',null,!0);
+    fldErr('xcfan__c',null,!0);
+    fldErr('xcmon__c',null,!0);fldErr('xcms__c',null,!0);fldErr('xcrlg__c',null,!0);fldErr('xcbd__c',null,!0);
+    fldErr('xcnc__c',null,!0);fldErr('xcbp__c',null,!0);fldErr('xcnp__c',null,!0);
+    fldErr('xcbc__c',null,!0);fldErr('xclng__c',null,!0);fldErr('xcp__c',null,!0);fldErr('xcpid__c',null,!0);
+    fldErr('xcpip__c',null,!0);fldErr('xcped__c',null,!0);fldErr('xcpic__c',null,!0);
+    fldErr('rmob__c',null,!0);fldErr('xaloc__c',null,!0); fldErr('xbrnd__c',null,!0);fldErr('xbn__c',null,!0); 
+    if(!ispu){fldErr('xcfnar__c',null,!0);fldErr('xclnar__c',null,!0);}
+    else{fldErr('xcfnar__c',null,!1);fldErr('xclnar__c',null,!1);}          
+    var brq = false;
+    brq = fldReq('xcslt__c',cs)||brq;brq = fldReq('xcfn__c',cs)||brq;brq = fldReq('xcln__c',cs)||brq;
+    brq=!(epckPD(lcl,'xcped__c','xcpid__c',true,cs['xcpid__c'].value,cs['xcped__c'].value,em3,em4))||brq;
+    brq = !(vIntPh('xchph__c',cs,true))||brq;  
+    brq=!vEml('xceml__c',cs,false)||brq;
+    brq =!(vMob('rmob__c',cs,true))||brq;
+    brq=!(vMob('xcmob__c',cs,false))||brq;
+    if(nSTA=='Open'||nSTA=='Under Review'||nSTA=='In Process'){   
+        brq = fldReq('xcfan__c',cs)||brq;brq = fldReq('xcmon__c',cs)||brq;
+        brq = fldReq('xcms__c',cs)||brq;brq = fldReq('xcrlg__c',cs)||brq;
+         brq=!(ckBD(cs['xcbd__c'].value))||brq;
+        brq = fldReq('xcbd__c',cs)||brq;brq = fldReq('xcnc__c',cs)||brq;brq = fldReq('xcbp__c',cs)||brq;
+        brq = fldReq('xcnp__c',cs)||brq;brq = fldReq('xcbc__c',cs)||brq;brq = fldReq('xclng__c',cs)||brq;
+        brq = fldReq('xcp__c',cs)||brq;brq = fldReq('xcpid__c',cs)||brq;brq = fldReq('xcpip__c',cs)||brq;
+        brq = fldReq('xcped__c',cs)||brq;brq = fldReq('xcpic__c',cs)||brq;;
+        brq = fldReq('xcha__c',cs)||brq;
+        brq = fldReq('rmob__c',cs)||brq;brq = fldReq('xaloc__c',cs)||brq;       
+         brq = fldReq('xbrnd__c',cs)||brq;
+        if(!ispu){brq = fldReq('xcfnar__c',cs)||brq;brq = fldReq('xclnar__c',cs)||brq;}   
+       
+        
+    }
+    return brq;
+}
+function ifrm(){
+    if({!pgHide}){return;}
+    if(!ispu){mrkFldreq('xcfnar__c',{!md.isView}?!1:!0);mrkFldreq('xclnar__c',{!md.isView}?!1:!0);}
+    if(sta=='Draft'||sta=='Open'||sta=='Under Review'||sta=='In Process'){                
+        ckBD({!md.isView}?bdo.innerHTML:cs['xcbd__c'].value);
+           ckN('{!JSENCODE(rq.xcnc__c)}');
+        epckPD(lcl,'xcped__c','xcpid__c',{!md.isView}?!1:!0,'{!JSENCODE(rq.xcpid__c)}','{!JSENCODE(rq.xcped__c)}',em3,em4);             
+    }
+}
+</script>
+<apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+<c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!pt}" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="{!pDsc}" STA="{!rq.STA__c}"/>
+<chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" rendered="{!AND(NOT(pgHide),OR(md.isEdit,md.isView))}" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:form >
+    <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+    <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+    <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+    <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+    <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>    
+    <apex:pageBlock mode="{!IF(md.isView,'detail','edit')}" id="pbMain" tabStyle="g_Req__c" title="Request Details">
+        <apex:pageBlockButtons location="top">                                
+            <apex:variable var="addInfo" value="{!IF(rq.spCh__c,'<li>'+$Label.msgAddVisaChrg+'</li>',null)}"/>               
+            <apex:variable var="addInfo" value="{!IF(NOT(ISBLANK(Acc.vbtemp__c)),IF(Acc.vbtemp__c<=0,addInfo+'<li>'+$Label.msgNoVisaLimit+'</li>',addInfo),addInfo)}"/>
+            <apex:variable var="addInfo" value="{!IF(NOT(ISBLANK(Acc.bgsncnt__c)),addInfo+'<li>'+Acc.bgsncnt__c+'</li>',addInfo)}"/>  
+            <apex:variable var="ep_da" value="{!IF(true,false,false)}" />
+            <apex:variable var="ep_ok" value="{!IF(true,false,false)}" />
+            <apex:variable var="ic_s" value="{!IF(true,false,false)}" />                
+            <apex:variable var="ai_s" value="{!IF(true,false,false)}" />            
+            <apex:variable var="ai_ok" value="{!IF(true,false,false)}" />
+            <apex:variable var="la_rj" value="{!IF(true,false,false)}" />
+            <apex:repeat value="{!rq.Items__r}" var="i">
+                <apex:variable var="ep_da" value="{!IF(AND(i.itm__r.cd__c='ep',i.sta__r.cd__c='da'),true,ep_da)}" />
+                <apex:variable var="ep_ok" value="{!IF(AND(i.itm__r.cd__c='ep',OR(i.sta__r.cd__c='dc',i.sta__r.cd__c='ok')),true,ep_ok)}" />
+                <apex:variable var="ic_s" value="{!IF(i.itm__r.cd__c='ic',true,ic_s)}" />
+                <apex:variable var="ai_s" value="{!IF(i.itm__r.cd__c='ai',true,ai_s)}" />               
+                <apex:variable var="ai_ok" value="{!IF(AND(i.itm__r.cd__c='ai',OR(i.sta__r.cd__c='n',i.sta__r.cd__c='dr',i.sta__r.cd__c='dlc',i.sta__r.cd__c='ok')),true,ai_ok)}" />
+                <apex:variable var="la_rj" value="{!IF(AND(i.itm__r.cd__c='la',OR(i.sta__r.cd__c!='ir',i.sta__r.cd__c!='gr',i.sta__r.cd__c!='r',i.sta__r.cd__c!='c')),true,la_rj)}" />
+            </apex:repeat>
+            <apex:variable var="addInfo" value="{!IF(AND(ep_da,NOT(ai_s),NOT(ai_ok)),addInfo+'<li>Entry permit is deposited at the airport. Once the applicant arrives in country initiate Arrival Intimation.<a href=/apex/grqei?id='+rq.id+'>Click to apply</a></li>',addInfo)}"/>
+            <apex:variable var="addInfo" value="{!IF(AND(ep_ok,AND(NOT(ic_s),NOT(ai_s),NOT(ai_ok))),addInfo+'<li>Entry permit is completed. Once the applicant arrives in country initiate Arrival Intimation.<a href=/apex/grqei?id='+rq.id+'>Click to apply</a></li>',addInfo)}"/>  
+            <apex:variable var="addInfo" value="{!IF(AND(ep_ok,ic_s,AND(NOT(ai_ok),NOT(la_rj))),addInfo+'<li>Entry permit is completed. initiate Local Amendment or Arrival intimation in case the applicant has left the country.<a href=/apex/grqei?id='+rq.id+'>Click to apply</a></li>',addInfo)}"/>  
+            <c:qrbtns isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" addInfo="{!addInfo}"/>
+        </apex:pageBlockButtons>
+         <apex:pageBlockButtons location="bottom">
+            <c:qrbtns showInfo="false" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}"/>
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="msg" />
+        <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}">
+            <apex:pageBlockSection columns="2" collapsible="false"  rendered="{!NOT(ispu)}" title="Account Info">
+                <apex:pageBlockSectionItem rendered="{!ISNULL(rq.Acc__c)}">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                    <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="acc__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="acc__c" value="{!rq.Acc__c}" required="true"/>
+                            <script type="text/javascript">cs['acc__c']=getC('{!$Component.acc__c}');</script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem> 
+ 
+                <apex:pageBlockSectionItem rendered="{!NOT(ISNULL(rq.Acc__c))}">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                    <apex:outputPanel layout="none" >
+                        <div id="acc__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:outputField value="{!rq.Acc__c}"/>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem>                             
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="2" collapsible="true" title="Applicant Name">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcfn__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="width:1px">
+                                        <div class="requiredInput" id="xcslt__cRI">
+                                            <div class="requiredBlock"></div>
+                                            <apex:inputField id="xcslt__c" value="{!rq.xcslt__c}" />
+                                            <script type="text/javascript">cs['xcslt__c']=getC('{!$Component.xcslt__c}');</script>
+                                        </div>
+                                    </td>
+                                    <td style="width:1px">&nbsp;</td>
+                                    <td>
+                                        <div class="requiredInput" id="xcfn__cRI">
+                                            <div class="requiredBlock"></div>
+                                            <apex:inputField id="xcfn__c" value="{!rq.xcfn__c}"/>
+                                            <script type="text/javascript">cs['xcfn__c']=getC('{!$Component.xcfn__c}');</script>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <table border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <div id="xcslt__cRI">
+                                            <div class="requiredBlock"></div>
+                                            <apex:outputField value="{!rq.xcslt__c}" />
+                                        </div>
+                                    </td>
+                                    <td>&nbsp;&nbsp;</td>
+                                    <td>
+                                        <div id="xcfn__cRI">
+                                            <div class="requiredBlock"></div>
+                                            <apex:outputField value="{!rq.xcfn__c}"/>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcfnar__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xcfnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcfnar__c" value="{!rq.xcfnar__c}" />
+                                <script type="text/javascript">cs['xcfnar__c']=getC('{!$Component.xcfnar__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcfnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcfnar__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcmn__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xcmn__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcmn__c" value="{!rq.xcmn__c}" />
+                                <script type="text/javascript">cs['xcmn__c']=getC('{!$Component.xcmn__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcmn__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcmn__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcmnar__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xcmnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcmnar__c" value="{!rq.xcmnar__c}" />
+                                <script type="text/javascript">cs['xcmnar__c']=getC('{!$Component.xcmnar__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcmnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcmnar__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcln__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcln__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcln__c" value="{!rq.xcln__c}" />
+                                <script type="text/javascript">cs['xcln__c']=getC('{!$Component.xcln__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcln__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcln__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xclnar__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xclnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xclnar__c" value="{!rq.xclnar__c}" />
+                                <script type="text/javascript">cs['xclnar__c']=getC('{!$Component.xclnar__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xclnar__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xclnar__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcfan__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xcfan__cRI" class="requiredInput">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcfan__c" value="{!rq.xcfan__c}" />
+                                <script type="text/javascript">cs['xcfan__c']=getC('{!$Component.xcfan__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcfan__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcfan__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcmon__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcmon__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcmon__c" value="{!rq.xcmon__c}" />
+                                <script type="text/javascript">cs['xcmon__c']=getC('{!$Component.xcmon__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcmon__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcmon__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection columns="2" collapsible="true" title="Applicant Details">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcms__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcms__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcms__c" value="{!rq.xcms__c}" />
+                                <script type="text/javascript">cs['xcms__c']=getC('{!$Component.xcms__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcms__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcms__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcrlg__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcrlg__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcrlg__c" value="{!rq.xcrlg__c}" />
+                                <script type="text/javascript">cs['xcrlg__c']=getC('{!$Component.xcrlg__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcrlg__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcrlg__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem helpText="Applicant must be aged between 18 to 60 (over 60 for certain professions).">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcbd__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcbd__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcbd__c" value="{!rq.xcbd__c}" onchange="if(!ckBD(this.value)){this.focus();}"/>
+                                <script type="text/javascript">cs['xcbd__c']=getC('{!$Component.xcbd__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcbd__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField id="bdo" value="{!rq.xcbd__c}" />
+                                <script type="text/javascript">bdo=getC('{!$Component.bdo}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                                     
+                <apex:pageBlockSectionItem helpText="Certain nationalities are subject to the immigration's security approval.">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcnc__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcnc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcnc__c" value="{!rq.xcnc__c}" onchange="copyC(this);"/>
+                                <script type="text/javascript">cs['xcnc__c']=getC('{!$Component.xcnc__c}');</script>
+<script type="text/javascript">
+//<![CDATA[                                        
+var cnt = '{!$Component.xcnc__c}';   
+var selectobject=document.getElementById(cnt)
+for (var i=0; i<selectobject.length; i++){
+if (selectobject.options[i].value == 'Bahrain' || selectobject.options[i].value == 'Oman'  || selectobject.options[i].value == 'Kuwait' || selectobject.options[i].value == 'Qatar' || selectobject.options[i].value == 'Saudi Arabia' || selectobject.options[i].value == 'United Arab Emirates'){
+selectobject.remove(i);
+}
+}
+//]]>
+</script>
+
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcnc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcnc__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcbp__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcbp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcbp__c" value="{!rq.xcbp__c}" />
+                                <script type="text/javascript">cs['xcbp__c']=getC('{!$Component.xcbp__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcbp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcbp__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcnp__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcnp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcnp__c" value="{!rq.xcnp__c}" onchange="copyC(this);"/>
+                                <script type="text/javascript">cs['xcnp__c']=getC('{!$Component.xcnp__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcnp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcnp__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcbc__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcbc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcbc__c" value="{!rq.xcbc__c}" onchange="copyC(this);"/>
+                                <script type="text/javascript">cs['xcbc__c']=getC('{!$Component.xcbc__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcbc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcbc__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xclng__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xclng__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xclng__c" value="{!rq.xclng__c}" />
+                                <script type="text/javascript">cs['xclng__c']=getC('{!$Component.xclng__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xclng__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xclng__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcjb__c.label}" />
+<apex:outputPanel layout="none">
+    <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+        <div class="requiredInput" id="xcjb__cRI">
+            <div class="requiredBlock"></div>
+            <apex:inputField id="xcjb__c" value="{!rq.xcjb__c}" />
+            <script type="text/javascript">cs['xcjb__c']=getC('{!$Component.xcjb__c}');</script>
+            <script type="text/javascript">
+    //<![CDATA[                                        
+    var ttype= '{!$Component.xcjb__c}';   
+    document.getElementById(ttype).disabled =true; 
+    if(document.getElementById(ttype).value === void 0 || document.getElementById(ttype).value.length<1){
+    document.getElementById(ttype).value='Student';
+    }
+    document.getElementById(ttype+'_lkwgt').style.display='none';
+                 
+
+    //]]>
+</script> 
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!md.isView}">
+        <div id="xcjb__cRI">
+            <div class="requiredBlock"></div>
+            <apex:outputField value="{!rq.xcjb__c}" />
+        </div>
+    </apex:outputPanel>
+</apex:outputPanel>
+</apex:pageBlockSectionItem>
+                
+                
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection columns="2" collapsible="true" title="Applicant Passport Details">
+                 <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcp__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcp__c" value="{!rq.xcp__c}" />
+                                <script type="text/javascript">cs['xcp__c']=getC('{!$Component.xcp__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcp__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcp__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcpid__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcpid__cRI">
+                                <div class="requiredBlock"></div>                                                   
+                                <apex:inputField id="xcpid__c" value="{!rq.xcpid__c}" onchange="if(!epckPD(lcl,'xcped__c','xcpid__c',true,this.value,cs['xcped__c'].value,em3,em4)){this.focus();}"/>
+                                <script type="text/javascript">cs['xcpid__c']=getC('{!$Component.xcpid__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcpid__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcpid__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcpip__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcpip__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcpip__c" value="{!rq.xcpip__c}" />
+                                <script type="text/javascript">cs['xcpip__c']=getC('{!$Component.xcpip__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcpip__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcpip__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcped__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcped__cRI">
+                                <div class="requiredBlock"></div>                                                   
+                                <apex:inputField id="xcped__c" value="{!rq.xcped__c}" onchange="if(!epckPD(lcl,'xcped__c','xcpid__c',true,cs['xcpid__c'].value,this.value,em3,em4)){this.focus();}"/>
+                                <script type="text/javascript">cs['xcped__c']=getC('{!$Component.xcped__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcped__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcped__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcpic__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xcpic__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcpic__c" value="{!rq.xcpic__c}" onchange="copyC(this);"/>
+                                <script type="text/javascript">cs['xcpic__c']=getC('{!$Component.xcpic__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcpic__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcpic__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="2" collapsible="true" title="Applicant Address & contact Info">
+                <apex:pageBlockSectionItem helpText="International phone number format (e.g. +971 xx xxxxxx)">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xchph__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div  id="xchph__cRI">                                
+                                <apex:inputField id="xchph__c" value="{!rq.xchph__c}" onchange="vIntPh('xchph__c',cs,false);"/>
+                                <script type="text/javascript">cs['xchph__c']=getC('{!$Component.xchph__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xchph__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xchph__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcha__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div  class="requiredInput" id="xcha__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcha__c" value="{!rq.xcha__c}" />
+                                <script type="text/javascript">cs['xcha__c']=getC('{!$Component.xcha__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcha__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcha__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem helpText="Starts 050 or 052 or 055 or 056 (e.g. 050 xxxxxx)">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xcmob__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div  id="xcmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xcmob__c" value="{!rq.xcmob__c}" onchange="vMob('xcmob__c',cs,false)"/>
+                                <script type="text/javascript">cs['xcmob__c']=getC('{!$Component.xcmob__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xcmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xcmob__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xceml__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div id="xceml__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xceml__c" value="{!rq.xceml__c}" onchange="vEml('xceml__c',cs,false)"/>
+                                <script type="text/javascript">cs['xceml__c']=getC('{!$Component.xceml__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xceml__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xceml__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="1" collapsible="true" title="Collection & Delivery Info">
+                <apex:pageBlockSectionItem helpText="Mobile phone number for the person who follow-up on this request. Starts 050 or 052 or 055 or 056 (e.g. 050 xxxxxx)">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.rmob__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="rmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="rmob__c" value="{!rq.rmob__c}" onchange=" vMob('rmob__c',cs,true);"/>
+                                <script type="text/javascript">cs['rmob__c']=getC('{!$Component.rmob__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="rmob__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.rmob__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+               <apex:pageBlockSectionItem helptext="Pick-up and delivery location for courier services.">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xbrnd__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xbrnd__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xbrnd__c" value="{!rq.xbrnd__c}" style="width:10%"/>
+                                <script type="text/javascript">cs['xbrnd__c']=getC('{!$Component.xbrnd__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xbrnd__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xbrnd__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem helptext="Pick-up and delivery location for courier services.">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xbn__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xbn__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xbn__c" value="{!rq.xbn__c}" />
+                                <script type="text/javascript">cs['xbn__c']=getC('{!$Component.xbn__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xbn__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xbn__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                
+                <apex:pageBlockSectionItem helptext="Pick-up and delivery location for courier services.">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xaloc__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="xaloc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="xaloc__c" value="{!rq.xaloc__c}" style="width:30%"/>
+                                <script type="text/javascript">cs['xaloc__c']=getC('{!$Component.xaloc__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="xaloc__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.xaloc__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                
+                <apex:pageBlockSectionItem helpText="Any additional information you would like to inform our team about">
+                    <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.nt__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                            <div class="requiredInput" id="nt__cRI">
+                                <div class=""></div>
+                                <apex:inputField id="nt__c" value="{!rq.nt__c}" style="width:90%"/>
+                                <script type="text/javascript">cs['nt__c']=getC('{!$Component.nt__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!md.isView}">
+                            <div id="nt__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:outputField value="{!rq.nt__c}" />
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:outputPanel>
+        <c:grms id="Milestones" ispu="{!ispu}" R="{!rq}" rendered="{!md.isView}"/>
+        <script type="text/javascript">ifrm();</script>
+    </apex:pageBlock>
+    <c:qrlstr id="pbRelated" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!rq}" pg="{!pg}"/>
+</apex:form>  
+</apex:page>

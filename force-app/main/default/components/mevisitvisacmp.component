@@ -1,0 +1,104 @@
+<apex:component >
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="srvTp" description="Service Type" type="String" />    
+    <apex:attribute name="rq" description="Request" type="g_Req__c" />    
+    <div class="form-group" style="{! If((srvLst.size > 1)  ,'display: block;','display: none;') }">
+        
+        <label class="mb-3 fs-18">{!srvLbl}</label>
+        
+        <div class="row">
+            <apex:repeat value="{!srvLst}" var="sr">
+                <div class="col-lg-3 col-sm-6">
+                    <label class="box-check">
+                        <input type="radio" attlbl="{!sr.Short_Label__c}" class="service_id"  name="service_id" value="{!sr.id}"/>
+                        <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                            <span class="box-title font-weight-medium">
+                                <apex:outputText rendered="{!sr.Short_Label__c!=''}">{!sr.Short_Label__c}<br/></apex:outputText> {!sr.Service_Type__c}
+                            </span>
+                        </div>
+                        <script>
+                        cs["uid"].value = '058';
+                        if('{!srvLst.size}' ==1){
+                            $('.service_id').eq(0).attr('checked','true');
+                        }
+                        </script>
+                    </label>
+                </div>
+            </apex:repeat>
+            
+        </div>
+    </div>
+   <!-- <label class="custom-checkbox custom-checkbox-sm mb-4" id="qte" >
+        <input type="checkbox" name="qtextn"/>
+        <span>Select if you would like to apply for Quota Extension</span>
+    </label>-->
+    <div id="visa_file_number" style="display:none;"> 
+        
+        <div class="d-flex mt-3 flex-wrap">
+            <div class="form-group mr-3">
+                <label>Visa file number
+                    <!-- data-placement="right" data-toggle="tooltip" data-html="true" title="Visa number is given as Entry Permit No. starting with 201/YYYY/XXXXXXXX in new entry permits. It also appears as a number beginning with 201/YYYY/XXXXXXX next to 'File' in the sticker stamped in your passport.<br><br>The number '201' may vary depending on the issuing emirate or type of the visa."-->
+                    <i id="oTooltip" class="fa fa-question-circle text-primary" 
+                       data-placement="top" data-toggle="tooltip" data-html="true" title="Please visit https://amer.gdrfad.gov.ae/application/form, to find the file number"></i>
+                </label>
+                <div class="visa-file-number-group form-style">
+                    <input type="text" onkeyup="validDigits(this)" id="visa1" class="visanumber form-control autoFocus" value=""  style="width: 5.75rem;" maxlength="3" />
+                    <input type="text" onkeyup="validDigits(this)" id="visa2" class="visanumber form-control autoFocus" value="" style="width: 6.875rem;" maxlength="4" />
+                    <input type="text" onkeyup="validDigits(this)" id="visa3" class="visanumber form-control autoFocus" value="" style="width: 11.50rem;" maxlength="8" />
+                </div>
+                <div class="serErr">Please provide a valid visa number!</div>
+            </div>
+            
+            <div class="form-group form-style">
+                <label>Arrival date</label>
+                <!--<input min="1990-01-01" max="2030-12-31" type="date" class="form-control input-datepicker " />-->
+                <div class="input-datepicker-group input-group">
+                   <!-- <apex:inputHidden id="xrped" value="{!rq.xrped__c}"></apex:inputHidden>-->
+                    <input type="text" class="form-control input-datepicker" id="datepicker1"
+                           data-toggle="datetimepicker" data-target="#datepicker1" value="" onchange="cs['xaed__c'].value = $('#datepicker1').val();$('#datepicker1').parents('.form-group').find('.frmErrMsg,.serErr').remove();" />
+                    
+                    <div class="input-group-append">
+                        <button class="btn text-primary" type="button" data-toggle="datetimepicker"
+                                data-target="#datepicker1">
+                            <i class="icon-date"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="serErr">Please provide a valid date!</div>
+            </div>
+            <!-- .col -->
+        </div>
+        <!-- .row -->
+        
+        <div>
+            <button  type="button" class="btn btn-primary mr-3 my-2" style="width: 200px; max-width: 100%;"
+                    id="verify_visa_details_button">
+                VERIFY VISA DETAILS
+            </button>
+        </div>
+        
+    </div>
+    <script>
+    $('#priority_id').hide();
+    $('.service_id').unbind().on('change',function(){
+        $('#oTooltip').hide();
+        $('.visanumber').val('');
+        $('#visa_file_number').show();
+        $('#visa_file_number').find('.serErr').hide();
+        MEorOA= $(this).attr('attlbl').toLowerCase();
+        if(MEorOA.includes('multi')){
+            $('#verify_visa_details_button').show();
+            $('#upload_button').hide();
+            //$('#visa3').attr('maxlength',7);
+        }
+        else{
+            $('#oTooltip').show();
+            $('#upload_button').show();
+            $('#verify_visa_details_button').hide();
+            //$('#visa3').attr('maxlength',8);
+        }
+    });
+    
+    </script>
+</apex:component>

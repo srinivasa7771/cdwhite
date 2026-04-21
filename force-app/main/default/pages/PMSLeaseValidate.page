@@ -1,0 +1,147 @@
+<apex:page showHeader="false" standardStylesheets="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" docType="html-5.0" Controller="PMSLeaseValidateCtrl">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            <title>Validate PMSLease</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+            
+            
+        </head>
+       <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>  
+         <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.css')}" />
+    
+    <!-- icons -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+    <!-- main css -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+     <script type="text/javascript">
+        
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+     </script>   
+        <body>
+            <apex:form >
+                <apex:actionFunction name="refreshEjari"  action="{!refreshEjariInfo}"  rerender="ejariDtls" oncomplete="removeTempLoader();"/>
+            
+        
+                <!-- REQUIRED SLDS WRAPPER -->
+                <div class="slds-scope">
+                    
+                    
+                    <!--<apex:image id="theImage" value="{!$Resource.axs_Logo_letter}"  height="60px !important" alt="Axs Logo"/>-->
+                    <div class="slds-card" style="margin:0.5%;background: none !important; border: 1px solid #1B45BB !important;min-height: 69.9vh;margin-top: 1% !important;">
+                        <div class="slds-card__header slds-grid slds-align_absolute-center" style="padding: 0.3rem;background: #1B45BB;color: white;font-weight: bold;font-size: medium;">
+                            Validate PMS Lesae
+                        </div>
+                        
+                        <div class="slds-card__body">
+                            <apex:outputpanel >
+                            
+                           
+   
+                           
+    <div class="base">
+       
+            <div class="collapse-title">Account Info</div>
+        
+        <div id="passport_details" class="collapse show">
+            <div class="collapse-content">
+                <div class="row">
+                    <div class="col-4 col-sm-4">
+                        <div class="data-info">
+                           <div class="data-label">Acc Name</div>
+                           <div class="data-value"><apex:outputText value="{!rq.acc__r.name}" /></div>
+                        </div>
+                    </div>
+                    <div class="col-4 col-sm-4">
+                        <div class="data-info">
+                           <div class="data-label">License Number</div>
+                           <div class="data-value"><apex:outputText value="{!rq.acc__r.lc__c}" /></div>
+                        </div>
+                    </div>
+                      
+                    
+                     
+                    
+                   
+                    
+                </div>
+                <div class="row">
+                    <div class="col-4 col-sm-4"></div>
+                     <div class="col-4 col-sm-4">
+                                                
+                                                <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                <a href="#" onClick="showTempLoader(this);refreshEjari();" style="color: white;background-color: rgba(11, 92, 171, 1);"
+                                                   class="btn btn-primary base-nav-next">
+                                                    Refresh Ejari
+                                                </a>
+                                            </div>  
+                </div>    
+                <!-- .row -->
+            </div>
+            <div class="pb-4"></div>
+        </div>
+    </div>
+    
+      <apex:pageBlock title="Ejari Unit details" rendered="{!AND(ejariLeaseLst!= null)}" id="ejariDtls" >
+                                <apex:pageBlockTable value="{!ejariLeaseLst}" var="u" styleClass="slds-table slds-table--bordered slds-table--cell-buffer slds-no-row-hover" >
+                                    <apex:column value="{!u.unitNoEn}"  headerValue="Unit No"/>
+                                    <apex:column value="{!u.building}"  headerValue="Building"/>
+                                    <apex:column value="{!u.areaSft}"  headerValue="Area (Sft)"/>
+                                    <apex:column value="{!u.contractNo}"  headerValue="Contract Number"/>
+                                    <apex:column value="{!u.contractStartDate}"  headerValue="Contract StartDate"/>
+                                    <apex:column value="{!u.ContractEndDate}"  headerValue="Contract EndDate"/>
+                                    <apex:column value="{!u.sts}"  headerValue="Status"/>
+                                </apex:pageBlockTable>
+                            </apex:pageBlock>                          
+                            <apex:pageBlock title="*TECOM CCRM Lease Details" rendered="{!AND(tecomLeaseLst!= null)}"  >
+                                <apex:pageBlockTable value="{!tecomLeaseLst}" var="l" styleClass="slds-table slds-table--bordered slds-table--cell-buffer slds-no-row-hover" >
+                                    <apex:column value="{!l.unitNoEn}"  headerValue="Unit No"/>
+                                    <apex:column value="{!l.building}"  headerValue="Building"/>
+                                    <apex:column value="{!l.areaSft}"  headerValue="Area (Sft)"/>
+                                    <apex:column value="{!l.contractNo}"  headerValue="Contract Number"/>
+                                    <apex:column value="{!l.contractStartDate}"  headerValue="Contract StartDate"/>
+                                    <apex:column value="{!l.ContractEndDate}"  headerValue="Contract EndDate"/>
+                                    
+                                </apex:pageBlockTable>
+                            </apex:pageBlock>
+                            
+                                                                      
+                           </apex:outputpanel>
+                            
+                        </div>
+                        
+                        <!-- / REQUIRED SLDS WRAPPER -->
+                    </div>
+                   
+                </div>
+            </apex:form>
+        </body>
+    </html>
+    
+    
+</apex:page>

@@ -1,0 +1,271 @@
+<apex:page renderAs="PDF" applyHtmlTag="false" showHeader="false" applyBodyTag="false"  sidebar="false" action="{!getPrmtReqs}" standardController="g_Req__c"  extensions="appdfCntr"> <!--action="{!getPrmtReqs}"-->
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401037870000/Theme3/default/gc/elements.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401037870000/Theme3/default/gc/common.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401037870000/Theme3/default/gc/printableView.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1400172052000/Theme3/gc/dStandard.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401037870000/Theme3/default/gc/extended.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401037870000/Theme3/default/gc/zen-componentsCompatible.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom0.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom1.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom2.css"/>
+    <apex:stylesheet value="/sCSS/58.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom3.css"/>
+    
+    <html>
+        <head>
+            <style type="text/css" media="print">
+                @page {
+                @bottom-left {content: element(footer);}
+                }
+                
+                div.footer {
+                position:fixed; left:0; bottom:0; width:100%; 
+                text-align:left; font-size:8px;
+                }
+                
+            </style>
+        </head>
+    </html>
+    <apex:form >
+        <br/>
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:variable var="workHours" value=" " />
+         <apex:repeat value="{!rq.Items__r}" var="i"> 
+             <apex:outputPanel rendered="{!AND(i.sta__r.cd__c == 'ok')}">
+                 <apex:variable var="workHours" value="{!i.xst__c}" />
+             </apex:outputPanel>    
+        </apex:repeat>
+
+        <apex:pageBlock mode="maindetail" rendered="{!(rq.xcped__c!= null && rq.xcped__c<TODAY()) || (rq.i_STA__c!='Access Permit | Approved' && rq.i_STA__c!='Access Permit (Renewal) | Approved')}">
+            <table  style=" font-size: 18px;line-height:25px; border-collapse:collapse;" cellpadding="3" width="100%">
+                
+                <tr style="border: 1px solid gray;text-align:center;">
+                    <td style="width:40%;border: 1px solid gray;background:black;">
+                        <apex:outputLabel style="font-weight:bold;color:white;align:middle;" value="This Permit is not valid !"/> 
+                    </td>
+                </tr>
+            </table>
+        </apex:pageBlock>
+        
+        <apex:pageBlock mode="maindetail" rendered="{!rq.xcped__c!= null && rq.xcped__c>=TODAY() && (rq.i_STA__c=='Access Permit | Approved' || rq.i_STA__c=='Access Permit (Renewal) | Approved')}">
+            <table border="0" cellpadding="0" cellspacing="0" style="width:100%">
+                <tr>  
+                    <td nowrap="nowrap" style="width:1%;vertical-align:middle;"><apex:Image value="{!URLFOR($Resource.axsRS, '/images/Finance_Report.png')}" /></td>
+                    <td nowrap="nowrap" style="vertical-align:middle;">           
+                        <h1>&nbsp;&nbsp;{!IF(Contains(rq.i_STA__c,'Renewal'),'Access Permit : [Renewal]','Access Permit')}</h1><br/>
+                        &nbsp;&nbsp;(Print Date:<apex:outputText value="{0, Date, dd-MMM-yyyy}"><apex:param value="{!TODAY()}"/></apex:outputText>)            
+                    </td>
+                    <!--<td><b><GMBLBC:barcode value="{!rq.Name}" type="code128" /> </b></td>-->
+                    <td nowrap="nowrap" align="right" >
+                        <apex:image url="{!$Resource.logoTECOM}" width="170" height="70" style="float:right; margin-right:5px;" />
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td colspan="3"></td>
+                    <td align="right" style="font-size:x-small;"><i>            
+                        <!--AXS FZ-LLC,<br/>
+                        Dubai Knowledge Park,Block 8,<br/>
+                        Ground Floor,Dubai, UAE.<br/>-->
+                        </i>
+                    </td>                    
+                </tr>
+            </table> <br/>       
+                        
+            <apex:outputpanel layout="none" >
+                <table  style=" font-size: 12px;line-height:15px; border-collapse:collapse;" cellpadding="3" width="100%">
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="Permit Number"/> 
+                        </td>
+                        <td style="width:25%;border: 1px solid gray;">
+                            <apex:outputLabel value="{!rq.Name}"/> 
+                        </td>  
+                        <td style="width:25%;border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="Approved By"/> 
+                        </td>
+                        <td style="width:25%;border: 1px solid gray;">
+                            <!--<apex:outputLabel value="{!$User.FirstName}  {!$User.LastName}"/> -->
+                            <apex:outputLabel value="{!rq.xanum__c}"/>
+                        </td>  
+                    </tr>
+                    <tr style="border: 1px solid gray;">
+                        <td style="border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="Start Date"/> 
+                        </td>
+                        <td style="border: 1px solid gray;">
+                            <apex:outputText value="{0,date,dd-MMM-yyyy}"><apex:param value="{!rq.xcpid__c}"></apex:param></apex:outputText>
+                        </td>
+                        <td style="border: 1px solid gray;background:black;;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="End Date"/> 
+                        </td>
+                        <td style="border: 1px solid gray;">
+                            <apex:outputText value="{0,date,dd-MMM-yyyy}"><apex:param value="{!rq.xcped__c}"></apex:param></apex:outputText>
+                        </td>
+                    </tr>
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color:White;" value="Start Time"/> 
+                        </td>
+                        <td style="width:25%;border: 1px solid gray;">
+                             <apex:outputText value="{!rq.xst__c}"></apex:outputText>
+                        </td>
+                        <td style="width:25%;border: 1px solid gray;background:black;;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="End Time"/> 
+                        </td>
+                        <td style="width:25%;border: 1px solid gray;">
+                             <apex:outputText value="{!rq.xet__c}"></apex:outputText>
+                        </td>
+                    </tr>
+                </table>
+                
+              
+                <br/><br/>
+                <table  style=" font-size: 12px;line-height:15px; border-collapse:collapse;" cellpadding="3" width="100%">
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="Business Partner"/> 
+                        </td>
+                        <td style="border: 1px solid gray;">
+                            <apex:outputLabel value="{!rq.Account_Name__c}"/> 
+                        </td>
+                    </tr>
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;">
+                            <apex:outputLabel style="font-weight:bold;color: White;" value="Number Of Persons "/> 
+                        </td>
+                        <td style="border: 1px solid gray;">
+                            <apex:outputLabel value="{!rq.xrap__c}"/> 
+                        </td>
+                    </tr>
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Service Provider"/> </td>
+                        <td style="border: 1px solid gray;"><apex:outputField value="{!rq.csp__c}"/> </td>
+                    </tr>
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Permit Required For "/> </td>
+                        <td nowrap="nowrap" style="border: 1px solid gray;"><apex:outputLabel value="{!IF(rq.prf__c=='Others', rq.xuvdet__c, rq.prf__c)} "/> </td> <!--{!rq.prf__c} : {!rq.Reason__c}-->
+                    </tr>
+                    
+                    </table> 
+                
+                <table style=" font-size: 12px;line-height:15px; border-collapse:collapse;" cellpadding="6" width="100%">
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%; border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Comments"/> </td>
+                        <td style="border: 1px solid gray;"><apex:outputLabel value="{!rq.nt__c}"/> </td>                       
+                    </tr>
+                </table> 
+                 
+                <br/>
+                <apex:variable var="index" value="{!1}"/>
+                <apex:outputPanel rendered="{!AND(lstPrmtReq!=null,lstPrmtReq.size>0)}">
+                    <tr style="border: 1px solid gray;">
+                        <th style="border: 1px solid gray;background:black;color: White;font-size:12px;">Sr. No.</th>
+                        <th style="border: 1px solid gray;background:black;color: White;font-size:12px;text-align: center">HSE Approved Activities </th>
+                        <th style="border: 1px solid gray;background:black;color: White;font-size:12px;">Accepted</th> 
+                        <th style="border: 1px solid gray;background:black;color: White;font-size:12px;">Site Visit?</th> 
+                    </tr>
+                </apex:outputPanel>
+                
+                <apex:repeat value="{!lstPrmtReq}" var="str" rendered="{!AND(lstPrmtReq!=null,lstPrmtReq.size>0)}">
+                    <tr style="width:100%;border: 1px solid gray;border-collapse:collapse;line-height:15px;">
+                        <td style="width:5%  !important;border: 0.5px solid gray;text-align: center;font-size:13px;font-color:#000000;"><apex:outputLabel value="{!index}"/> </td> 
+                        <td style="width:75%;border: 0.5px solid gray;font-size:13px;font-color:#000000;"><apex:outputLabel value="{!str}"/></td>
+                        <td style="width:5%  !important;border: 0.5px solid gray;">
+                            <apex:image url="{!$Resource.ChbxSel}" width="10" height="10" style="margin-left:25px;" /> 
+                        </td>
+                        <td style="width:5%  !important;border: 0.5px solid gray;">
+                            <apex:image url="{!$Resource.ChbxSel}" width="10" height="10" style="margin-left:25px;" rendered="{!IF(CONTAINS(rq.xrsv__c, str), true,false)}" /> 
+                            <apex:image url="{!$Resource.ChbxCncl}" width="9" height="9" style="margin-left:25px;" rendered="{!IF(CONTAINS(rq.xrsv__c, str), false,true)}" /> 
+                        </td>
+                    </tr>
+                     <apex:variable var="index" value="{!index+1}"/>                     
+                </apex:repeat>
+                
+                <br/><br/>
+                <table  cellpadding="6" width="100%"  style="font-size: 12px;border-collapse:collapse;">
+                    <tr style="border: 1px solid gray;">
+                        <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Name"/> </td>
+                        <td style="width:25%;border: 1px solid gray;"><apex:outputLabel value="{!rq.xchn__c}"/> </td>
+                        <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Contact Number"/> </td>
+                        <td style="width:25%;border: 1px solid gray;"><apex:outputLabel value="{!rq.xcmob__c}"/> </td>
+                    </tr>
+                </table> 
+                
+                
+                <apex:outputpanel layout="none" >
+                    <table  style="font-size: 12px;line-height:15px;border-collapse: collapse;" cellpadding="6" width="100%">
+                        <tr>
+                            <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Job Location"/> </td>
+                            <td style="border: 1px solid gray;"><apex:outputLabel value="{!IF(rq.xbrnd__c=='IMPZ','DPC',rq.xbrnd__c) }"/> </td>
+                            <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Building Name"/> </td>
+                            <td style="width:25%;border: 1px solid gray;"><apex:outputLabel value="{!rq.xbn__c}"/> </td>
+                        </tr>
+                    </table>
+                   <table style="font-size: 12px;line-height:15px;border-collapse: collapse;" cellpadding="6" width="100%">
+                        <tr >
+                            <td style="width:25%;border: 1px solid gray;background:black;"><apex:outputLabel style="font-weight:bold;color: White;" value="Office Location"/> </td>
+                            <td style="border: 1px solid gray;" colspan="3" ><apex:outputLabel value="{!rq.xaloc__c}"/> </td>
+                            
+                        </tr>
+                    </table>    
+                </apex:outputpanel>
+                
+                <!--<div style="page-break-after: always"/>--->
+                <br/> <br/>
+                <apex:pageBlockSection columns="1" collapsible="false">
+                    <apex:outputLabel style="font-size:12px;font-weight:bold;"> Important Notes </apex:outputLabel>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel style=" font-size: 9px;line-height:15px;text-align: justify;" >
+                            <ul style="list-style-type:decimal;font-size:10px;line-height:14px;text-align:justify;">
+                                    <li>    This permit has been issued on the request of the applicant and does not relieve the business partner or the Contractor appointed by them from any legal and/or contractual obligations.
+                                </li><li>   In addition to this access permit, necessary HSE permit to be secured for specific tasks such as confined Space entry, Work at height, Hot work, Spray printing, Film shooting, Excavation works, Handling of chemicals.
+                                </li><li>   This permit is deemed to be cancelled and the works will be stopped immidiately on any health and safety or other violations on site noticed during the inspections or notified to the facilities manager or building security.
+                                </li><li>   The applicant is fully liable for any penalties, rectification/cost implication of any damages and interruptions caused due to such violations by the contractor and their subcontractors. the work can be resumed only after necessary corrective actions.
+                                </li><li>   Contractors to produce fit-out completion certificate issued by DDA for final furnishing and furniture installation prior to occupancy.
+                                </li></ul>
+                        </apex:outputLabel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+    
+    <apex:outputPanel rendered="{!rq.xcped__c!= null && rq.xcped__c>=TODAY() && (rq.i_STA__c=='Access Permit | Approved' || rq.i_STA__c=='Access Permit (Renewal) | Approved')}">
+        <div class="footer">
+            <div >
+                <table style="width:100%;"> 
+                    <tr>
+                        <td></td>
+                        <td >
+                            <div style="float:right;">
+                                <apex:image url="{!URLFOR($Resource.axsRS, '/images/axs_logo.png')}" width="100" height="40"/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:50%;">
+                            <i>
+                                {!rq.Account_Name__c}<br/>
+                                {!rq.Name}<br/>
+                                This Permit is valid till &nbsp;<apex:outputText value="{0,date,dd-MMM-yyyy}"><apex:param value="{!rq.xcped__c}"></apex:param></apex:outputText> <br/>
+                                This is a system generated permit requires no stamp and signature.<br/>
+                                To validate the Permit please visit xxx.xxx.xx<br/>
+                            </i> 
+                        </td>
+                        
+                        <td>
+                            <div style="float:right;text-align:right;">
+                                <i>
+                                    AXS FZ-LLC,<br/>
+                                    Dubai Knowledge Park,Block 8,<br/>
+                                    Ground Floor,Dubai, UAE.<br/>
+                                </i>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+    </apex:outputPanel>
+</apex:page>

@@ -1,0 +1,813 @@
+<apex:component controller="crctn" id="c" allowDML="true">
+    <apex:actionFunction name="paySubmit" action="{!submitPayment}" status="theStatus" rerender="showMsg,crctMsg,crctnOt,p"/>
+    <apex:actionFunction name="Submit" action="{!submitCorrection}" status="theStatus" rerender="showMsg,crctMsg,crctnOt,p"/>
+    <apex:actionFunction name="runOnLoad" action="{!init}" status="theStatus" rerender="docSec,docSec1,docSec2,infoId,InfoMsg,docButtons,hrw,twinPp,crctMsg"/>
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+    <apex:actionFunction name="afs" action="{!saveAttachment}" status="theStatus" rerender="docSec,docSec1,docSec2,infoId,InfoMsg,docButtons,hrw,twinPp,crctMsg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:setAttachment();"/> <!--  -->
+    <apex:actionFunction name="afdltA" action="{!deleteAttachment}" status="theStatus" rerender="docSec,docSec1,docSec2,infoId,InfoMsg,docButtons,hrw,twinPp,crctMsg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount()" />
+    
+    
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9,'css/gsodocupload.css')}"/>       
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/jquerycss.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/jquery-ui.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/scan.css')}" />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'avgrund.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'jquery-1.8.0.min.js')}"  />
+
+<!-- <apex:stylesheet value="{!$Resource.gCss}"/> -->
+
+ <!-- version 10 scripts--->   
+
+ <!-- version 10 scripts--->   
+<apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.initiate.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.config.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.addon.pdf.js')}"  /> 
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+ <apex:includeScript value="{!$Resource.AxsWebTwain12_part2}"/>    
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+    <apex:attribute name="R" description="Request" type="g_Req__c" required="true" assignTo="{!rq}"/>    
+    <apex:attribute name="pg" description="Page Name" type="String" required="true" assignTo="{!pgNm}"/>
+    <apex:attribute name="A" description="Account" type="Account" required="true" assignTo="{!acc}"/>
+    <apex:attribute name="S" description="Service" type="g_Srvc__c"  assignTo="{!srv}"/>
+    <apex:attribute name="CR" description="Correction status" type="Boolean"/>
+  
+    
+    
+    <apex:variable var="AD" value="{!0}" />
+    <apex:variable var="AO" value="{!0}" />
+   
+    <apex:variable var="PE" value="for " />
+    <apex:variable var="actMsg" value="{!R.amsgs__c}" /> 
+    <apex:variable var="action" value="{!R.action__c}" />
+    <apex:variable var="isRC" value="{!IF(true,false,false)}" />
+    
+    <apex:repeat value="{!R.Items__r}" var="i"> 
+        
+        <apex:variable var="AD" value="{!IF(S.uid__c != '208',AD+i.AD__c,AD)}" /> 
+        <apex:variable var="PE" value="{!IF(i.AD__c>0,PE+i.name+' and ',PE)}" />
+         <apex:outputPanel rendered="{!AND(i.sta__r.staown__c == 'Customer',i.sta__r.statype__c == 'Correction')}">
+            <apex:variable var="isRC" value="{!IF(true,true,true)}" />
+        </apex:outputPanel>
+        
+    </apex:repeat>
+    <apex:variable var="PE" value="{!LEFT(PE,(LEN(PE)-4))}" />
+    <apex:repeat value="{!R.Transactions__r}" var="t"><apex:variable var="AO" value="{!IF(AND(t.STA__c='Open',t.TP__c='Payment',S.uid__c != '208'),AO+t.A__c,AO)}" /></apex:repeat> 
+   
+    <style>         
+           
+         font-family: Arial,Helvetica,sans-serif;
+         
+         @keyframes blinkBulb{
+            0% { opacity: 1.0; }
+            50% { opacity: 0.0; }
+            100% { opacity: 1.0; }
+        }
+        .blbImg{
+            // width: 40px;
+            // height: 100px;
+            vertical-align:middle;
+            // background-color: red;           
+            -webkit-animation-name: example; /* Safari 4.0 - 8.0 */
+            -webkit-animation-duration: 4s; /* Safari 4.0 - 8.0 */
+            animation-name: blinkBulb;
+            animation-duration: 6s;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+        ul li:before {
+            list-style-type: none;
+            /*
+            content: "\00BB \0020";
+            color: red;
+            padding-right: 0.5em; */
+        }
+        
+        .errorSummaryLicense{ 
+            font-family: Arial,Helvetica,sans-serif;
+            float: left;           
+            width: 99.5% !important;
+            border-radius: 5px;
+                                   
+        }
+        .errorSummaryActMsgs{ 
+            font-family: Arial,Helvetica,sans-serif;
+            float: left;           
+            padding: 6px 8px 6px 6px;
+            width: 98.7% !important;
+            border-radius: 5px;                       
+        }
+        .errorSummaryInfoMsgs{ 
+            font-family: Arial,Helvetica,sans-serif;
+            float: left;           
+            padding: 6px 8px 6px 6px;
+            width: 98.7% !important;
+            border-radius: 5px;                       
+        }
+        .actBtns{
+            margin-left: 42%;
+            margin-right: 40%;
+        }
+    
+        #databaseOverview .warnIcon {
+            padding-top: 12px;
+            padding-left: 14px;
+            float: left;
+        }
+        
+        #databaseOverview .warningTitle {
+            width: 8%;
+            float: left;
+            padding: 5px;
+            
+        } 
+        
+        #databaseOverview .warningDesc {
+            margin-left: 100px;
+            width: 90%;
+            padding: 5px;
+           
+        }
+        
+        #databaseOverview .warningDescDtl {
+            margin-left: 10px;            
+            width: 30%;
+            // height: 40px;                        
+            float: left;
+        }
+        
+        #databaseOverview .warningDescAct {
+            margin-left: 32%;          
+            width: 50%;
+            // height: 10%;           
+            
+        }
+        
+        #databaseOverview .errorSummaryText {
+            color: #222;
+            // margin-top: 10px;
+            padding: 5px;
+            float: left;
+            // font-size: 1em;
+            // font-weight: bold;
+            line-height: 1.5;
+            list-style-type: none;
+            width: 99%;
+            // height: 10px;
+        }
+        
+        #databaseOverview .errorSummaryDesc{
+            width: auto;
+            height: auto;
+            margin-left: 4%;
+        }
+        
+         .actLink{            
+            text-decoration: none; 
+            vertical-align: middle;   
+            line-height: 26px;            
+            border-radius: 5px;
+            padding-right: 10px;   
+            // font-weight: bold;
+            float: right;
+            font-family: Arial,Helvetica,sans-serif;
+            color: #015ba7;            
+        } 
+       
+      .msg2 {
+              width: 100%;
+              background-color: #f5fcff;
+              border-color: #bee6ff;
+              border: 1px solid #bee6ff;
+              border-radius: 4px !important; 
+          } 
+         .msg4 {
+              width: 95%;
+              background-color: #f5fcff;
+              border-color: #bee6ff;
+              border: 1px solid #bee6ff;
+              border-radius: 4px !important; 
+          } 
+        .msg3 {
+           border-style: solid;
+           border-width: 1px; 
+           color: #000;
+           padding: 4px 8px 2px 6px;
+           margin: 4px 20px;
+           border-radius: 0 !important;
+       }
+        
+       #showid{    
+           background: white;
+           background-repeat:repeat;
+           border-radius: 5px !important;
+           margin:0 auto;
+
+           width:90%;
+           <!--height:170px;-->
+
+           box-shadow:10px 10px 10px 15px grey;
+           z-index:1;
+           position: relative;
+         } 
+        #subtbl{
+            background: white;
+            background-repeat:repeat;
+            align-self: center;
+            width:95%;
+            border: 1px solid rgb(227, 222, 184);
+            border-radius: 8px !important;
+            z-index:2;
+          }
+     .list td
+    {
+       border-bottom: 0px solid #e3deb8;
+    }
+
+   .dtList td
+ {
+  border-bottom: 0px solid #e3deb8 !important;
+  border-color: #ececec;
+ }
+    </style>   
+    
+    <!-- Docs related settings -->
+        <apex:outputPanel id="h" >
+        <!-- <apex:inputHidden value="{!R.srvc__r.stg__r.docq__c}" rendered="false" /> -->
+        <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+        <apex:InputHidden value="{!reqDocId}" id="reqDocId"/>
+        <apex:InputHidden value="{!docName}" id="docName"/>   
+        <input type="hidden" name="dfileId" id="dfileId" value=""/>         
+        <input type="hidden" id="width" value="700"/>
+        <input type="hidden" id="height" value="855"/>
+        <input type="hidden" id="resolution" value="300"/>
+        <input type="hidden" size="20" id="txt_fileNameforSave"/>
+        <input type="hidden" name="txt_fileName" id="txt_fileName"/>
+        <input type="hidden" name="uploaded_count" id="uploaded_count" value="0"/>
+        <input type="hidden" name="htempfieldname" id="htempfieldname" value="test"/>
+        <input type="hidden" name="currentImage" id="currentImage" value="test"/>
+        <input type="hidden" name="currentImageURL" id="currentImageURL" value="{!$Resource.gso_fileuploadNew9}"/>
+        <input type="hidden" name="attchId" id="attchId" value=""/>                   
+    </apex:outputPanel>    
+   
+    <!--- pop up page start --->
+    <c:fileuploadPopUpNew12 id="twinPp"  /> 
+    <!--- pop up page end --->
+    
+    
+     <script>
+        var jQuery = $.noConflict();
+        var imageBase64 , reqDocId, docName;
+        jQuery(document).ready(function() {  
+           if({!CR} && ('{!crctnMsg}' == null || '{!crctnMsg}' == ''))
+            runOnLoad();   
+            imageBase64=document.getElementById("{!$Component.imageBase64}");            
+            reqDocId=document.getElementById("{!$Component.reqDocId}");
+            docName=document.getElementById("{!$Component.docName}"); 
+            
+            //alert(imageBase64.id); 
+            imageBase64.value='100000000000000000000000';
+            /*alert(reqDocId.id);               
+            alert(docName.id);   
+            */
+        $('.SubtCrc').click(function(){
+           
+        $( '<div></div>' ).dialog({
+            resizable: false,
+            height:140,
+            modal: true,
+            open: function() {
+                 var markup = '{!$Label.msgCRConfirm}';
+                 $(this).html(markup);
+            },
+            title: "Confirmation",
+            buttons: {
+                "Yes": function() {
+                    $( this ).dialog( "close" );
+                    Submit();
+                },
+                "No": function() {
+                    $( this ).dialog( "close" );
+                }
+            }
+        });
+       });      
+       $('.SubtPay').click(function(){
+        $( '<div></div>' ).dialog({
+            resizable: false,
+            height:140,
+            modal: true,
+            open: function() {
+                 var markup = '{!$Label.msgCRConfirm}';
+                 $(this).html(markup);
+            },
+            title: "Confirmation",
+            buttons: {
+                "Yes": function() {
+                    $( this ).dialog( "close" );
+                    paySubmit();
+                },
+                "No": function() {
+                    $( this ).dialog( "close" );
+                }
+            }
+        });
+       });
+          
+    }); 
+    
+   
+    </script>
+    <!-- end of Docs related settings -->
+    
+
+    <apex:outputPanel layout="none" id="mo">   
+    
+     <div>  
+           <div id="showid">
+            <div style="font-size: 11px;border-color:#bee6ff;" >
+                 <table width="100%">
+                     
+                  <tr class="dataRow">
+                             <td colspan="2">
+                                 <a class="actLink" href="#" onclick="document.getElementById('box').style.display = 'none'; document.getElementById('p').style.display = 'block';  " > 
+                                  <apex:image id="theImage" value="{!$Resource.CRImg}" width="20px" height="20px"/>
+                                 </a>
+                             </td>
+                 </tr> 
+                  <tr class="dataRow">
+                   <td colspan="2">
+                    <apex:outputpanel id="InfoMsg" >   
+                      <div id="InfoMsg1" class="message InfoM3 d0" style="display:{!IF(OR(CR), 'block;', 'none;')}">
+                            <table border="0" cellpadding="0" cellspacing="0" class="messageTable">
+                                <tbody>
+                                    <tr>
+                                        <td style="width:1%;white-space:nowrap;vertical-align:top;"><img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/></td>
+                                        <td class="messageCell">
+                                            <div  class="messageText">
+                                              <p>
+                                                  <apex:outputPanel layout="none" rendered="{!OR(CR)}">
+                                                  <li>Click on 'x' button to edit or correct the details in the application</li>
+                                                  </apex:outputPanel>    
+                                                 <!-- <apex:outputPanel layout="none" rendered="{!OR(IC==1)}">
+                                                    <li>Once document ready, please submit the request; courier will collect the document shortly</li>
+                                                  </apex:outputPanel> -->
+                                                     
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                   </apex:outputpanel> 
+                             </td>
+                 </tr>     
+                  <tr class="dataRow">
+                          <td colspan="2" align="center">
+                         <apex:outputPanel id="crctMsg">
+                          <div class="msg4 warningM3" style="display:{!IF(crctnMsg == '', 'none;', 'block;')}"> 
+                               <table border="0" cellpadding="0" cellspacing="0" class="messageTable">
+                                <tbody>
+                                    <tr>
+                                        <td style="width:1%;white-space:nowrap;vertical-align:top;"><img alt="Information" class="msgIcon" src="/s.gif" title="Warnings" /></td>
+                                        <td class="messageCell">
+                                            <div  class="messageText">
+                                              <p>
+                                                  <b>{!crctnMsg}</b>
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            </div>
+                             </apex:outputPanel>  
+                             </td>
+                 </tr> 
+                     
+                <apex:outputPanel layout="none" rendered="{!IF(OR(AND(OR(A.lcsnc__c , A.psasnc__c , A.ecsnc__c),S.ckgsnc__c) , AND(A.snc__c !=null,A.snc__c != '',S.snc__c !=null , S.snc__c !='')), true, false)}">
+                  <tr>
+                  <td align="center">
+                    <div id="subtbl">
+                     <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                      <tbody>
+                           
+                         <tr class="dataRow">
+                             <td width="2%"><img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/></td>
+                              <td width="98%">
+                                  <div class="warnIcon">
+                                    <!-- <img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/> &nbsp;-->
+                                      <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Sanction have been imposed</span>
+                                    </div>
+                              </td>
+                          </tr> 
+                         <apex:outputPanel layout="none" rendered="{!A.lcsnc__c}">   
+                          <tr>
+                              <td><!--<img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/>--></td> <!-- <div class="warningTitle">License</div> -->
+                              <td><div class="warningDescAct">{!A.lcsncnt__c}</div></td>
+                            
+                          </tr>  
+                         </apex:outputPanel>  
+                         <apex:outputPanel layout="none" rendered="{!A.psasnc__c}">   
+                          <tr>
+                             <td><!--<img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/>--></td> <!-- <div class="warningTitle">Partnership Signed Agreement</div> -->
+                              <td><div class="warningDescAct">{!A.psasncnt__c}</div></td>
+                             
+                          </tr>  
+                         </apex:outputPanel>  
+                         <apex:outputPanel layout="none" rendered="{!A.ecsnc__c}">   
+                          <tr>
+                              <td><!--<img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/>--></td> <!-- <div class="warningTitle">Establishment Card</div> -->
+                              <td><div class="warningDescAct">{!A.ecsncnt__c}. or <b></b>  <a href="/apex/grqn?c=073" target="_blank"  >Click here</a> for renewing Establishment card.</div></td>
+                           
+                          </tr>  
+                         </apex:outputPanel>  
+                         <apex:outputPanel layout="none" rendered="{!AND(A.snc__c !=null,A.snc__c != '',S.snc__c !=null , S.snc__c !='')}"> 
+                          <apex:repeat value="{!sanctions}" var="s">   
+                          <tr>
+                              <td><!--<img src="/img/msg_icons/error16.png" alt="Error" id="e2" title="Error"/>--></td> <!-- <div class="warningTitle">{!s}</div> -->
+                              <td><div class="warningDescAct" > {!sanctions[s]}
+                                  </div>
+                              </td>
+                          </tr>  
+                           </apex:repeat>    
+                         </apex:outputPanel> 
+                           
+                    
+                      </tbody>   
+                     </table>    
+                </div>
+                  </td>
+                  </tr>
+                  </apex:outputPanel>    
+                  <apex:outputPanel layout="none" rendered="{!CR}">    <!-- , AD>0, AO>0 -->
+                   <tr>
+                    <td align="center">
+                       <div id="subtbl">
+                   <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                      <tbody>
+                           <tr>
+                                <td width="2%">
+                                    <apex:outputPanel rendered="{!isRC}">
+                                    <img src="/img/msg_icons/warning16.png" alt="Warning" id="w2" title="Warning"/>
+                                    </apex:outputPanel>
+                                    <apex:outputpanel id="docSec2" >   
+                                    <apex:outputPanel rendered="{!AND(Not(isRC),AND(actMsg != null, actMsg!='' ),ds > 0)}">
+                                    <img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/>
+                                    </apex:outputPanel>
+                                    </apex:outputpanel>   
+                                 </td>  
+                                <td width="98%">
+                                    <apex:outputPanel rendered="{!isRC}">
+                                     <div class="warnIcon"> 
+                                      <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Correction Required</span>
+                                     </div>
+                                   </apex:outputPanel>
+                                   <apex:outputpanel id="docSec1" >   
+                                    <apex:outputPanel rendered="{!AND(Not(isRC),AND(actMsg != null, actMsg!='' ),ds > 0)}">
+                                     <div class="warnIcon"> 
+                                      <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">More documents Required</span>
+                                     </div>
+                                   </apex:outputPanel> 
+                                    </apex:outputpanel>    
+                                </td>
+                              </tr>
+                             <apex:repeat value="{!R.Items__r}" var="i"> 
+                            <!-- <apex:outputPanel layout="none" rendered="{!AND(OR(NOT(i.xhact__c), NOT(i.xhmsgs__c)),i.sta__r.staown__c == 'Customer') }" OR(R.srvc__r.uid__c == '208',R.srvc__r.uid__c == 'apt') ,>  -->  
+                             <apex:outputPanel layout="none" rendered="{!OR(AND(i.xcnotes__c != null,i.xcnotes__c !=''),AND(i.xr__c != null,i.xr__c !='',i.xr__c !='Others')) }" > 
+                             <tr>
+                              
+                             <td></td>
+                             <td> 
+                              <table width="80%" border="0" style="border-bottom:0px">
+                               <tr>  
+                                    
+                              <td style="border-bottom:0px"> <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.2em;align:right;font-weight: bold;">{!i.Name}</span></td>
+                              
+                              <td style="border-bottom:0px">
+                                   <div class="warningDescDtl" >
+                                                                           <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.2em;align:right;font-weight: bold;">
+                                                                            <apex:outputText value="{!i.xr__c} <br/>" escape="false" rendered="{!AND(i.xr__c != null, i.xr__c != '',i.xr__c != 'Others')}"/>
+                                                                            <apex:outputText value="{!i.xcnotes__c}<br/>" escape="false" rendered="{!AND(i.xcnotes__c!= null, i.xcnotes__c!= '')}"/> </span> 
+                                    </div>
+                               </td>
+                               </tr> 
+                               </table> 
+                               </td>     
+                               </tr>   
+                              
+                               
+                                    
+                              </apex:outputPanel>   
+                                    
+                              </apex:repeat> 
+                             <tr style="background-color: white;">
+                                     <td></td>
+                                     <td>
+                                                         <apex:outputpanel id="docSec" >   
+                                <apex:outputpanel layout="none" rendered="{!ds > 0}" >                 
+                                  
+                                          
+                                                                                <div class="msg3" style="display:{!IF(Docs.size > 0,'block','none')};width: 90%;  border-color: rgb(227, 222, 184);" >   <!-- class="message" background-color: rgb(248, 248, 248); -->                                                                             
+                                                                                    <apex:outputpanel >   
+                                                                                        <table class="dtList" border="0" cellpadding="0" cellspacing="0" id="tData" >
+                                                                                            <tbody>
+                                                                                                <tr class="dataRow">
+                                                                                                  <td colspan="3">
+                                                                                                      <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Following documents need to be uploaded.</span>
+                                                                                                     
+                                                                                                   </td>
+                                                                                                </tr>
+                                                                                                <apex:repeat id="r0" value="{!Docs}" var="D" rendered="{!Docs.size > 0}" >                                                                                                      
+                                                                                                                                                                                                      
+                                                                                                 <!--   <apex:outputPanel layout="none" rendered="{!IF(AND(D.ReqName == i.Name), true, false)}" >   -->                                                                                                 
+                                                                                                        <tr class="dataRow">
+                                                                                                            <td class="actionColumn c1" style="vertical-align:top;width:40%;">
+                                                                                                                <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.0em;align:right;vertical-align: top;font-weight: bold;">{!D.Doc.Name} {!IF(ISNULL(D.Doc.mbr__c),'','(&nbsp;&nbsp;{!D.Doc.mbr__r.Bane}&nbsp;)')}</span>
+                                                                                                            
+                                                                                                            <apex:outputpanel layout="none" rendered="{!NOT(ISBLANK(D.tplt))}" >
+                                                                                                                <br/>
+                                                                                                                <apex:outputLink value="{!D.tplt}" target="_blank" title="Template is available to download.">Download Template</apex:outputLink>                                        
+                                                                                                            </apex:outputpanel>
+                                                                                                            
+                                                                                                            <br/>
+                                                                                                            {!IF(ISNULL(D.Doc.mbr__c),'','(&nbsp;&nbsp;{!D.Doc.mbr__r.Bane}&nbsp;)')}
+                                                                                                            </td>
+                                                                                                            
+                                                                                                            <td class="actionColumn c1" style="vertical-align:top;width:5%;">
+                                                                                                                <apex:outputPanel layout="none" rendered="{!D.cnUp}">
+                                                                                                                    <a class="btnNrm" onclick="javascript:openDialogDW('{!D.Doc.Name}', '');">Upload...</a>
+                                                                                                                    <input type="hidden" id="{!D.Doc.Name}_Id" value="{!D.Doc.Id}"/>
+                                                                                                                    <input type="hidden" id="{!D.Doc.Name}_cur" value="0"/>
+                                                                                                                    <input type="hidden" id="{!D.Doc.Name}_max"  value="{!D.mxAts}"/>
+                                                                                                                    <input type="hidden" id="{!D.Doc.Name}_min"  value="{!D.mnAts}"/> 
+                                                                                                                </apex:outputpanel>
+                                                                                                            </td>
+                                                                                                           
+                                                                                                            <td class="actionColumn c1" style="vertical-align:top;width:55%;">
+                                                                                                                <apex:outputPanel layout="none" rendered="{!D.Ats.size>0}">
+                                                                                                                      
+                                                                                                                    <table border="0" cellpadding="0" cellspacing="0" class="">
+                                                                                                                        <tr>
+                                                                                                                            <apex:variable var="cnt" value="{!0}"/>
+                                                                                                                            <apex:repeat id="r1" value="{!D.Ats}" var="Att">
+                                                                                                                               <apex:variable var="cnt" value="{!cnt+1}"/>
+                                                                                                                                <td class="actionColumn c1" style="vertical-align:top;border: none;">                                                            
+                                                                                                                                     <apex:outputPanel rendered="{!NOT(If(CONTAINS(Att.At.Name,'.pdf'),true,false ))}">
+                                                                                                                                          <a href="" onclick="imgPreview('{!D.Doc.Name}','/servlet/servlet.FileDownload?file={!Att.At.Id}');" >
+                                                                                                                                             <img id="{!Att.At.Id}" src="/servlet/servlet.FileDownload?file={!Att.At.Id}" style="width:57px; height:57px;cursor:pointer;"/>
+                                                                                                                                           </a><br/>                                                            
+                                                                                                                                     </apex:outputPanel> 
+                                                         
+                                                                                                                                     <apex:outputPanel rendered="{!If(CONTAINS(Att.At.Name,'.pdf'),true,false)}"> 
+                                                                                                                                         <a href="/servlet/servlet.FileDownload?file={!Att.At.Id}" target="_new" >
+                                                                                                                                            <img  id="{!Att.At.Id}" src="{!URLFOR($Resource.AxsWebTwain12, 'reference/pdf_Thumb.png')}" width="57" height="57"/> 
+                                                                                                                                           </a><br/>                                                           
+                                                                                                                                     </apex:outputPanel>                                                                                                                         
+                                                                                                                                </td> 
+                                                                                                                                 <td class="datacell" style="vertical-align:top;">
+                                                                                                                                   <apex:outputPanel layout="none" rendered="{!IF(AND(!D.cnUp,cnt==D.mxAts), true, false)}">  
+                                                                                                                                   <div class="msg2">
+                                                                                                                                     <table border="0" cellpadding="0" cellspacing="0" class="messageTable">
+                                                                                                                                      <tbody>
+                                                                                                                                       <tr>
+                                                                                                                                         <td class="actionColumn c1" style="vertical-align:top;border:none;"><img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/></td>
+                                                                                                                                          <td class="messageCell" style="border: none;">
+                                                                                                                                             <div class="messageText">
+                                                                                                                                                <span>Delete existing image to upload new one</span>
+                                                                                                                                             </div>
+                                                                                                                                           </td>
+                                                                                                                                          </tr>
+                                                                                                                                      </tbody>
+                                                                                                                                     </table>
+                                                                                                                                     </div>
+                                                                                                                                     </apex:outputPanel>    
+                                                                                                                                    </td>
+                                                                                                                            </apex:repeat>
+                                                                                                                        </tr>
+                                                                                                                        <tr>
+                                                                                                                            <apex:repeat id="r2" value="{!D.Ats}" var="Att">
+                                                                                                                                <td class="actionColumn c1" style="vertical-align:top;border: none;">
+                                                                                                                                 
+                                                                                                                                    <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!NOT(ispu)}">                                                                          
+                                                                                                                                        <a class="btnCncl" onclick="printImage('/servlet/servlet.FileDownload?file={!Att.At.Id}');">Print</a>
+                                                                                                                                    </apex:outputpanel>
+                                                                                                                                                                                           
+                                                                                                                                   
+                                                                                                                                    <!--<apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!NOT(ispu)}"> -->                                                                          
+                                                                                                                                        <a class="btnCncl" onclick="if(!confirm('Are you sure?')){return}else{dltA('{!Att.At.Id}');};">Delete</a>
+                                                                                                                                    <!--</apex:outputpanel> -->
+                                                                                                                                        
+                                                                                                                                </td>
+                                                                                                                                <td class="actionColumn c1" style="vertical-align:top;border: none;"></td>
+                                                                                                                            </apex:repeat>
+                                                                                                                        </tr>
+                                                                                                                    </table>
+                                                                                                                </apex:outputpanel>
+                                                                                                            </td>                                    
+                                                                                                        </tr> 
+                                                                                                 
+                                                                                                </apex:repeat>                                                                                                
+                                                                                            </tbody>
+                                                                                        </table>                                                                                        
+                                                                                    </apex:outputpanel>                                                                                
+                                                                                </div>
+                                             
+                                                       </apex:outputpanel>
+                                                       </apex:outputPanel>                     
+                                 
+                                                                
+                                                                
+                                           </td>
+                                           </tr>  
+                           <tr>
+                             <td></td>  
+                             <td>
+                                Comments :&nbsp;&nbsp; <apex:inputTextarea cols="80" rows="3" value="{!usrComments}"/>
+                             </td>
+                           </tr>
+                      </tbody>
+                    </table>
+                </div>
+                    </td>
+                  </tr>
+                  </apex:outputPanel>  
+                  <apex:outputPanel layout="none" rendered="{!AND(actMsg != null, actMsg!='' )}">   
+                  <tr>
+                    <td align="center">
+                      <div id="subtbl">
+                  <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                    <tbody> 
+                          <tr>
+                              <td width="2%"><img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/></td>
+                              <td width="98%"> <div class="warnIcon"> 
+                                  <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Action Required</span>
+                                   </div></td>
+                          </tr>   
+                         <tr>
+                              <td width="2%"></td>
+                             <td width="98%"><div class="warningTitle">{!actMsg}.</div> </td> <!-- target="_blank" -->
+                          </tr>
+                    </tbody>   
+                 </table>    
+                </div>
+                    </td>
+                  </tr>
+                 </apex:outputPanel>    
+                 <apex:outputPanel layout="none" rendered="{!IF(AND(CR,OR(AD>0, AO>0)),true,false)}"> 
+                  <tr>
+                    <td align="center">
+                     <div id="subtbl">
+                    <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                    <tbody> 
+                         <tr>
+                              <td width="2%"><img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/></td>
+                              <td width="98%"> <div class="warnIcon"> 
+                                  <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Payment Required</span>
+                                   </div></td>
+                          </tr>
+                          <tr>
+                              <td></td> <!-- <div class="warningTitle">Payment</div> -->
+                              <td><div class="warningDescDtl" >                                                                    
+                                                                    <apex:outputPanel layout="none" rendered="{!IF(AD>0,true,false)}">
+                                                                        Payment of AED&nbsp;<apex:outputText value="{0,number,###,##0.00}"><apex:param value="{!AD}" /></apex:outputText>&nbsp;is required&nbsp;<apex:outputText value="{!PE}"/>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel layout="none" rendered="{!IF(AO>0,true,false)}">
+                                                                        There are incomplete payments of total AED&nbsp;<apex:outputText value="{0,number,###,##0.00}"><apex:param value="{!AO}" /></apex:outputText>&nbsp;needs to be processed
+                                                                    </apex:outputPanel>
+                                                                </div>
+                                                               
+                               </td>
+                            
+                          </tr>  
+                    </tbody>    
+                    </table>    
+                 </div>
+                    </td>
+                  </tr>
+                  </apex:outputPanel> 
+                
+                   <apex:outputPanel layout="none" rendered="{!OR(A.cosnc__c,AND(NOT(A.ecsnc__c), NOT(ISBLANK(A.ecsncnt__c))),AND(NOT(A.lcsnc__c), NOT(ISBLANK(A.lcsncnt__c))))}">  <!-- AND(info != null, info!='',AI==0) -->
+                   <tr>
+                    <td align="center">
+                         <div id="subtbl">
+                     <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                      <tbody>
+                          <tr>
+                              <td width="2%"><img src="/img/msg_icons/info16.png" alt="Information" id="i2" title="Information"/></td>
+                              <td width="98%">
+                               <div class="warnIcon">
+                                    <span style="font-family: Arial,Helvetica,sans-serif;font-size: 1.3em;color: #439cf0;align:right;vertical-align: top;font-weight: bold;">Information</span>
+                               </div>
+                              </td>
+                          </tr>
+                           <!--  <apex:outputPanel layout="none" rendered="{!NOT(rCls)}"> -->
+                           <apex:outputPanel layout="none" rendered="{!A.cosnc__c}">
+                            <tr>
+                               <td width="2%"></td>
+                               <td width="98%">
+                                 <div class="warningDescDtl" > {!A.cosncnt__c} </div> 
+                               </td>
+                                     
+                              </tr> 
+                            </apex:outputPanel>
+                             <apex:outputPanel layout="none" rendered="{!AND(NOT(a.lcsnc__c), NOT(ISBLANK(A.lcsncnt__c)))}">
+                             <tr>
+                               <td width="2%"></td>
+                               <td width="98%">
+                                  <div class="warningDescDtl" >
+                                    <apex:OutputText value="{!a.lcsncnt__c}" escape="false" />
+                                  </div> 
+                               </td>
+                             </tr>  
+                             </apex:outputPanel> 
+                          <apex:outputPanel layout="none" rendered="{!AND(NOT(a.ecsnc__c), NOT(ISBLANK(A.ecsncnt__c)))}">
+                             <tr>
+                              <td width="2%"></td>
+                              <td width="98%">
+                                 <div class="warningDescDtl" >
+                                   <apex:OutputText value="{!a.ecsncnt__c}" escape="false" />
+                                 </div> 
+                              </td>
+                                     
+                            </tr>  
+                            </apex:outputPanel>  
+                        
+                      </tbody>
+                     </table>    
+                  </div>
+                    </td>
+                   </tr>  
+                   </apex:outputPanel>    
+                </table>
+               <table  class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">                
+                    <tbody> 
+                        <tr>
+                            <td colspan="2">
+                                <div class="actBtns">
+                                    <apex:outputPanel rendered="{!AND(CR, action=='Submit', AO<=0,AD<=0 )}">
+                                         <a class="btnNrm SubtCrc"><span>Submit</span></a>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!AND(CR,action=='Submit',OR(AO>0,AD>0))}">
+                                       <a class="btnNrm SubtPay"><span>Submit &amp; Pay</span></a>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!AND(action != null, action=='Manage' )}">
+                                       <a class="btnNrm" href="/apex/grqei?id={!R.Id}" ><span>Manage</span></a>
+                                    </apex:outputPanel>
+                                    
+                                </div>               
+                            </td>
+                        </tr>  
+                                              
+                                                    
+                      </tbody>
+                </table>  
+                 
+            </div>
+              </div>  
+        </div>                 
+    </apex:outputPanel>   
+    
+        
+    <!--- pop up page end --->
+    <div id="imgPrv" title="Image Preview" style="vertical-align:center; text-align:center;" >
+     <img id="imP" src="" />
+    </div>
+    <script type="text/javascript">
+  
+function openDialogDW(docName,val){    
+    //alert(docName);    
+    Dynamsoft.WebTwainEnv.Unload();   
+    //alert("Unload Done");
+    $("#default-popup").load(); 
+    //alert("Load Done");  
+    $("#dwtcontrolContainer").load();   
+    //alert("dwtcontrolContainer Done"); 
+    openDialog(docName,val);
+    //alert("open dialog Done");
+    Dynamsoft.WebTwainEnv.Load();      
+    }
+   function imgPreview(fName,src){
+    
+     $("#imgPrv").dialog({autoOpen: false,show: {effect: "scale",duration: 200},hide: {effect: "explode",duration: 400}});
+     document.getElementById("imP").src=src;
+    $("#imgPrv").dialog("option","title",fName);        
+    $('#imgPrv').dialog({height:700,width:1000,maxHeight:750,maxWidth:1000,resizable:true,modal: true});
+    $( "#imgPrv" ).dialog({ position: { my: "left", at: "left", of: window } });
+    $( "#imgPrv" ).dialog({ position: { my: "top", at: "top", of: window } });
+    $("#imgPrv").dialog("open");
+       
+}   
+function printImage(src){    
+    var html  = "<html><head>" +
+                "</head>" +
+                "<body  style ='-webkit-print-color-adjust:exact;'>"+
+                "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+                "</body>";
+                var win = window.open("about:blank","_blank");
+                win.document.write(html);                
+}
+</script> 
+</apex:component>

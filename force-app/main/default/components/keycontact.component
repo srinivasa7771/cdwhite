@@ -1,0 +1,922 @@
+<apex:component id="conInfo" controller="gctlConMgmt" allowDML="true">
+    <!-- <apex:attribute name="maInfo" description="ManagerInfo" type="coninfo__c" required="true"/>
+<apex:attribute name="adInfo" description="AdminInfo" type="coninfo__c" required="true"/>
+<apex:attribute name="fnInfo" description="FinanceInfo" type="coninfo__c" required="true"/>
+<apex:attribute name="lcInfo" description="LegalInfo" type="coninfo__c" required="true"/> -->
+    <apex:attribute name="cmpTitle" description="Component Title" type="String"/>
+    <apex:attribute name="accountid" description="Account Id" type="String"/>
+    
+    
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+        .disabled3 {
+        border-color:white !important; margin-left: -1rem !important;
+        text-align: left !important; background-color:white !important;
+        }
+    </style>
+    
+    
+    <script type="text/javascript">
+    
+    var cs={}, empInd ; var jsonExistingReps = [];
+    
+    
+    
+    </script> 
+    
+   <!-- <apex:form styleClass="pbform">-->
+        <apex:actionFunction name="parsejson" action="{!parseJsondata}" status="theStatus" oncomplete="location.reload();">
+            <apex:param name="isselected" value=""/>
+            <apex:param name="mroles" value=""/>
+        </apex:actionFunction>
+        
+        <body class="base">
+            <apex:pageBlock id="pbMain">
+                <apex:variable var="fnxPg" value="grqup" />
+                <apex:outputPanel id="msg">
+                    <apex:pageMessages id="msg2" escape="false"/>
+                </apex:outputPanel>
+                <script>
+                var addonItems=''; 
+                var conJsonlst=[];
+                var userm = false;
+                var cs={};
+                
+                function attachmentSaveEIDA(){
+                    createJSON();
+                    
+                }
+                
+                
+                /**
+    *  creates json for non-employee
+    **/
+                                    function createJSON(){
+                                        $('#modal_keycontact').modal('hide');
+                                        $('#preloader').fadeIn();
+                                        parsejson(cs["userm"].value,cs["roles"].value);
+                                        
+                                        
+                                    }
+                                    
+                                    
+                                    
+                                    function vflds(clsName, checkLookup){
+                                        var brk = false;var elem = '';
+                                        
+                                        $(clsName).each(function(){
+                                            var v = $(this).val();
+                                            if($(this).is(':visible')){      
+                                                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                                                    brk=true; addValError(this,'Value is required!'); 
+                                                    if(elem==''){ elem = $(this);}
+                                                }else{ removeValError(this);}
+                                                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+                                            }
+                                        });
+                                        
+                                        if(checkLookup){ brk = validateLookup('.polookup') || brk;}
+                                        return brk;
+                                    }
+                                    
+                                    
+                                    function validateLookup(lookupCls, errorMsg){
+                                        var brk = false; var elem = '';
+                                        errorMsg = (errorMsg==undefined || errorMsg==null) ? 'Value is required!' : errorMsg;
+                                        $(lookupCls).each(function(){
+                                            let v = $(this).val();
+                                            if(v==''||v==null || v==undefined){
+                                                brk=true; addValError($(this).parent(),errorMsg);
+                                                validated=false;
+                                                if(elem=='') elem = $(this).parent();
+                                            }else{
+                                                removeValError($(this).parent());
+                                            }
+                                        });
+                                        return brk;
+                                    }
+                                    
+                                    function salutionOnChange(salutation){
+                                        cs['xcslt__c'].value=salutation;
+                                        $("input[name='salutation']").parent().parent().parent().find('.option-error').hide(); 
+                                    }
+                                    
+                                    function SalOnChange(salt){
+                                        // getC('Mr').checked = false; getC('Mrs').checked = false; getC('Ms').checked = false;
+                                        cs['xcslt__c'].value=salt;
+                                        //getC(salt.replace('.','')).checked = true;
+                                    }
+                                    
+                                    function cmpOnChange(opt){
+                                        $('.cmpErrMsg').hide();
+                                        if(opt){
+                                            addonItems += 'cn;';
+                                        }else{
+                                            addonItems = addonItems.replace('cn;','');
+                                        }
+                                    }
+                                    
+                                    function isUAEMobNum(elem){
+                                        var mob = $(elem).val();
+                                        if(mob==null||mob==undefined||mob=='')
+                                            return;
+                                        var regex =  /^((?:50|52|54|55|56|58)[0-9]{7})$/; ///^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+                                        var r = (regex.test(mob))?true:'invalid';
+                                        if(r == 'invalid'){
+                                            addValError(elem,'Please enter a valid UAE mobile number!'); 
+                                            return false;
+                                        }else{
+                                            removeValError(elem); 
+                                            return true;
+                                        }
+                                    }
+                                    
+                                    function removeAllErrors(clsName){
+                                        $(clsName).each(function(){removeValError(this);});
+                                    }
+                                    
+                                    function adjustDocHeight(){
+                                        if($('.base-side-content').height()>$('.base-main-content').height()){
+                                            $('.document-uploads').css({'height':$('.base-main-content').height()-200+'px','overflow-y':'auto'});
+                                        }
+                                    }
+                                    
+                                    function chkRepCount(modalId){
+                                        $(modalId).modal('show'); 
+                                        
+                                    }
+                                    
+                                    
+                                    /*   function uploadDoc(docname,parseFlg,rqFlg){
+                                        currentDoc = docname;
+                                        cs["docname"].value = docname +'-'+ (jsonExistingReps.length +1);
+                                        cs["parseId"].value = parseFlg; 
+                                        $(".docname").text(docname);
+                                        console.log( cs["docname"].value);
+                                        
+                                        $('#modal_upload_passport').modal('show');
+                                    }*/
+                                    var role='';
+                                    function toggleFieldEdit(elem){
+                                        if($('#check_financial_contact').prop('checked')==true){
+                                            getC('{!$Component.form_financial_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_financial_contact}').style.display = 'block';
+                                            
+                                        }
+                                        if($('#check_admin_contact').prop('checked')==true){
+                                            getC('{!$Component.form_admin_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_admin_contact}').style.display = 'block';
+                                            
+                                        }
+                                        if($('#check_legal_contact').prop('checked')==true){
+                                            getC('{!$Component.form_legal_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_legal_contact}').style.display = 'block';
+                                        }
+                                        if($('#check_hr_contact').prop('checked')==true){
+                                            getC('{!$Component.form_hr_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_hr_contact}').style.display = 'block';
+                                            
+                                        }
+                                        if($('#check_mk_contact').prop('checked')==true){
+                                            getC('{!$Component.form_mk_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_mk_contact}').style.display = 'block';
+                                            
+                                        }
+                                        if($('#check_fm_contact').prop('checked')==true){
+                                            getC('{!$Component.form_fm_contact}').style.display = 'none';
+                                        }else {
+                                            getC('{!$Component.form_fm_contact}').style.display = 'block';
+                                            
+                                        }
+                                        var att = $(elem).attr('attr');
+                                        var att1 = $(elem).attr('attr1');
+                                        $('.'+att1).val('');
+                                        if($(elem).prop('checked') && !role.includes(att)){
+                                            role+= att+';'; 
+                                        }
+                                        else{
+                                            role = role.split(att+';').join('');
+                                        }
+                                        console.log('role -- '+role);
+                                        if(role!=null && role!=''){
+                                            cs["userm"].value=true;
+                                            cs["roles"].value=role;
+                                        }else{
+                                            cs["userm"].value=false;
+                                            cs["roles"].value=null;
+                                        }
+                                    } 
+                                    
+                                    </script>
+                                    <apex:outputPanel id="rerenderImage">
+                                        <apex:inputHidden id="jsonString" value="{!jsonString}" />
+                                        <apex:inputHidden id="usem" value="{!usem}" />
+                                        <apex:inputHidden id="mroles" value="{!mroles}" />
+                                        <!--  <apex:inputHidden id="docname" value="{!docname}" />
+<apex:inputHidden id="parseId" /> -->
+                                        <script>
+                                        cs["conJsonlst"] = document.getElementById("{!$Component.jsonString}");
+                                        cs["userm"] = document.getElementById("{!$Component.usem}");
+                                        cs["roles"] = document.getElementById("{!$Component.mroles}");
+                                        </script>
+                                    </apex:outputPanel>
+                                    
+            </apex:pageBlock>
+            <div class="modal fade modal-base" id="modal_keycontact" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="icon-close"></i>
+                        </button>
+                        <div class="modal-body form-style">
+                            <h2 class="modal-title">Manage Company Contacts</h2>
+                            <p>Review and update your company contact here</p>
+                            
+                            <div class="pb-4">
+                                
+                                
+                                <div class="row row-lg">   
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Tax registration number</label>
+                                            <apex:inputField value="{!acc.van__c}" id="van__c" styleClass="jsnfld form-control numOnly"/>
+                                            <script type="text/javascript">
+                                            cs['van__c']=document.getElementById('{!$Component.van__c}');
+                                            </script>
+                                        </div>
+                                    </div>   
+                                    <!--   <div class="col-lg-6">
+<div class="form-group">
+<label>PO BOX</label>
+<apex:inputField value="{!acc.pb__c}" id="pb__c" styleClass="jsnfld form-control numOnly"/>
+<script type="text/javascript">
+cs['pb__c']=document.getElementById('{!$Component.pb__c}');
+</script>
+</div>
+</div>      -->   
+                                    
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            
+                                            <label>Billing address</label>
+                                            <apex:inputField style="height: calc(1.5em + 1.625rem + 2px) ; overflow-y: hidden" value="{!acc.ad__c}" id="ad__c" styleClass="jsnfld form-control"/>
+                                            <script type="text/javascript">
+                                            cs['ad__c']=document.getElementById('{!$Component.ad__c}');
+                                            </script>
+                                        </div>
+                                    </div> 
+                                </div>
+                                
+                                
+                            </div>
+                            
+                            <h5 class="fs-20 font-weight-medium text-grey">GENERAL MANAGER</h5>
+                            
+                            <!--   <p class="fs-20 font-weight-medium">Ahmed Salem</p> -->
+                            <apex:outputPanel >
+                                <apex:inputHidden id="mirole" value="{!mgInConinf.rol__c}"/>
+                                <script>
+                                cs['mirole']=document.getElementById('{!$Component.mirole}');
+                                cs['mirole'].value="General Manager";
+                                </script>
+                                <div class="row row-lg">
+                                    <div class="col-lg-6">
+                                        <div class="data-info">
+                                            <div class="data-label fs-16 font-weight-medium">Name</div>
+                                            <div class="data-value" id="miname">{!mgInConinf.name__c}</div>
+                                            <script type="text/javascript">
+                                            cs['miname']=document.getElementById('{!$Component.miname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="data-info">
+                                            <div class="data-label fs-16 font-weight-medium">Primary email address</div>
+                                            <div class="data-value" id="miemail__c">{!mgInConinf.email__c}</div>
+                                            <script type="text/javascript">
+                                            cs['miemail__c']=document.getElementById('{!$Component.miemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="data-info">
+                                            <div class="data-label fs-16 font-weight-medium">Primary mobile number</div>
+                                            <div class="data-value" id="miphone__c">+971-{!mgInConinf.phone__c}</div>
+                                            <script type="text/javascript">
+                                            cs['miphone__c']=document.getElementById('{!$Component.miphone__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!mgInConinf.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="misemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['misemail__c']=document.getElementById('{!$Component.misemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!mgInConinf.sphn__c}" id="misphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['misphone__c']=document.getElementById('{!$Component.misphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">FINANCIAL CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_financial_contact" attr1="emptyfldfc" attr="Financial Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_financial_contact" style="display:block;">
+                                <apex:inputHidden id="fcrole" value="{!financialcon.rol__c}"/>
+                                <script>
+                                cs['fcrole']=document.getElementById('{!$Component.fcrole}');
+                                cs['fcrole'].value="Financial Contact";
+                                </script>
+                                <div class="row row-lg" >
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldfc" value="{!financialcon.name__c}" id="fcname"/>
+                                            <script type="text/javascript">
+                                            cs['fcname']=document.getElementById('{!$Component.fcname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!financialcon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldfc"
+                                                            id="fcemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['fcemail__c']=document.getElementById('{!$Component.fcemail__c}');
+                                            
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldfc" value="{!financialcon.phone__c}" id="fcphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['fcphone__c']=document.getElementById('{!$Component.fcphone__c}');
+                                                
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!financialcon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="fcsemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['fcsemail__c']=document.getElementById('{!$Component.fcsemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!financialcon.sphn__c}" id="fcsphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['fcsphone__c']=document.getElementById('{!$Component.fcsphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">ADMIN CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_admin_contact" attr1="emptyfldac" attr="Admin Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_admin_contact" style="display:block;">
+                                <apex:inputHidden id="acrole" value="{!admincon.rol__c}"/>
+                                <script>
+                                cs['acrole']=document.getElementById('{!$Component.acrole}');
+                                cs['acrole'].value="Admin Contact";
+                                </script>
+                                <div class="row row-lg" style="">
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldac" value="{!admincon.name__c}" id="acname"/>
+                                            <script type="text/javascript">
+                                            cs['acname']=document.getElementById('{!$Component.acname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!admincon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldac"
+                                                            id="acemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['acemail__c']=document.getElementById('{!$Component.acemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldac" value="{!admincon.phone__c}" id="acphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['acphone__c']=document.getElementById('{!$Component.acphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!admincon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="acsemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['acsemail__c']=document.getElementById('{!$Component.acsemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!admincon.sphn__c}" id="acsphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['acsphone__c']=document.getElementById('{!$Component.acsphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">LEGAL CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_legal_contact" attr1="emptyfldlc" attr2="nofldlc" attr="Legal Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_legal_contact" style="display:block;">
+                                <apex:inputHidden id="lcrole" value="{!legalcon.rol__c}"/>
+                                <script>
+                                cs['lcrole']=document.getElementById('{!$Component.lcrole}');
+                                cs['lcrole'].value="Legal Contact";
+                                </script>
+                                <div class="row row-lg" style="">
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldlc" value="{!legalcon.name__c}" id="lcname"/>
+                                            <script type="text/javascript">
+                                            cs['lcname']=document.getElementById('{!$Component.lcname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6"></div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!legalcon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldlc"
+                                                            id="lcemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['lcemail__c']=document.getElementById('{!$Component.lcemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldlc" value="{!legalcon.phone__c}" id="lcphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['lcphone__c']=document.getElementById('{!$Component.lcphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!legalcon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="lcsemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['lcsemail__c']=document.getElementById('{!$Component.lcsemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!legalcon.sphn__c}" id="lcsphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['lcsphone__c']=document.getElementById('{!$Component.lcsphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">HR CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_hr_contact" attr1="emptyfldhr" attr="HR Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_hr_contact" style="display:block;">
+                                <apex:inputHidden id="hrrole" value="{!hrcon.rol__c}"/>
+                                <script>
+                                cs['hrrole']=document.getElementById('{!$Component.hrrole}');
+                                cs['hrrole'].value="HR Contact";
+                                </script>
+                                <div class="row row-lg" >
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldhr" value="{!hrcon.name__c}" id="hrname"/>
+                                            <script type="text/javascript">
+                                            cs['hrname']=document.getElementById('{!$Component.hrname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6"></div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!hrcon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldhr"
+                                                            id="hremail__c"/>
+                                            <script type="text/javascript">
+                                            cs['hremail__c']=document.getElementById('{!$Component.hremail__c}');
+                                            
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldhr" value="{!hrcon.phone__c}" id="hrphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['hrphone__c']=document.getElementById('{!$Component.hrphone__c}');
+                                                
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!hrcon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="hrsemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['hrsemail__c']=document.getElementById('{!$Component.hrsemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!hrcon.sphn__c}" id="hrsphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['hrsphone__c']=document.getElementById('{!$Component.hrsphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">MARKETING CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_mk_contact" attr1="emptyfldmk" attr="Marketing Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_mk_contact" style="display:block;">
+                                <apex:inputHidden id="mkrole" value="{!mkcon.rol__c}"/>
+                                <script>
+                                cs['mkrole']=document.getElementById('{!$Component.mkrole}');
+                                cs['mkrole'].value="Marketing Contact";
+                                </script>
+                                <div class="row row-lg" >
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldmk" value="{!mkcon.name__c}" id="mkname"/>
+                                            <script type="text/javascript">
+                                            cs['mkname']=document.getElementById('{!$Component.mkname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6"></div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!mkcon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldmk"
+                                                            id="mkemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['mkemail__c']=document.getElementById('{!$Component.mkemail__c}');
+                                            
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldmk" value="{!mkcon.phone__c}" id="mkphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['mkphone__c']=document.getElementById('{!$Component.mkphone__c}');
+                                                
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!mkcon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="mksemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['mksemail__c']=document.getElementById('{!$Component.mksemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select>
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!mkcon.sphn__c}" id="mksphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['mksphone__c']=document.getElementById('{!$Component.mksphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="mb-2">
+                                <h5 class="d-inline-block font-weight-medium text-grey">FACILITY MANAGEMENT CONTACT</h5>
+                                <label class="custom-checkbox custom-checkbox-sm align-middle ml-4">
+                                    <input type="checkbox" class="contactTypes" id="check_fm_contact" attr1="emptyfldfm" attr="Facility Management Contact" onchange="toggleFieldEdit(this)"/>
+                                    <span>Same as general manager</span>
+                                </label>
+                            </div>
+                            <apex:outputPanel id="form_fm_contact" style="display:block;">
+                                <apex:inputHidden id="fmrole" value="{!fmcon.rol__c}"/>
+                                <script>
+                                cs['fmrole']=document.getElementById('{!$Component.fmrole}');
+                                cs['fmrole'].value="Facility Management Contact";
+                                </script>
+                                <div class="row row-lg" >
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Name</label>
+                                            <apex:inputText styleclass="form-control emptyfldfm" value="{!fmcon.name__c}" id="fmname"/>
+                                            <script type="text/javascript">
+                                            cs['fmname']=document.getElementById('{!$Component.fmname}');   
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6"></div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary email address</label>
+                                            <apex:inputText value="{!fmcon.email__c}" onchange="checkEmail(this);" styleClass="form-control emptyfldfm"
+                                                            id="fmemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['fmemail__c']=document.getElementById('{!$Component.fmemail__c}');
+                                            
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Primary mobile number</label>
+                                            <div class="d-flex">
+                                                
+                                                <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:105px;"/>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly emptyfldfm" value="{!fmcon.phone__c}" id="fmphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['fmphone__c']=document.getElementById('{!$Component.fmphone__c}');
+                                                
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Secondary email address (optional)</label>
+                                            <apex:inputText value="{!fmcon.seml__c}" onchange="checkEmail(this);" styleClass="form-control requiredFld"
+                                                            id="fmsemail__c"/>
+                                            <script type="text/javascript">
+                                            cs['fmsemail__c']=document.getElementById('{!$Component.fmsemail__c}');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="col-lg-6">                                                        
+                                        <div class="form-group">
+                                            <label>Secondary mobile number (optional)</label>
+                                            <div class="d-flex">
+                                                
+                                                <div style="flex-basis: 150px;width: 150px;">
+                                                    <select class="form-control countrycodes">
+                                                        <option value="+971">+971</option>
+                                                    </select> 
+                                                </div>
+                                                <apex:inputField type="text" styleClass="applMob form-control ml-3 numOnly" value="{!fmcon.sphn__c}" id="fmsphone__c"
+                                                                 onchange="isUAEMobNum(this)"/>
+                                                <script type="text/javascript">
+                                                cs['fmsphone__c']=document.getElementById('{!$Component.fmsphone__c}');
+                                                </script>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->
+                                </div><!-- .row -->
+                            </apex:outputPanel>
+                            <div class="separator-dashed"></div>
+                            
+                            <div class="form-group text-right">
+                                <label>&nbsp;</label><br />
+                                <a id="addEIDABtn" style="color: white !important;" onclick="attachmentSaveEIDA();return false;" class="btn btn-primary">CONFIRM &amp; SAVE</a>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    
+                </div>
+            </div>
+            
+            
+        </body>
+    <!--</apex:form>-->
+    
+    <script type="text/javascript">
+    var countryCodeOptions1='';
+    for(x=0;x<countryCodeObj_new.length;x++){
+        var i = countryCodeObj_new[x];
+        var opt = '<option value="'+i.dial_code+'">'+i.dial_code+'</option>';
+        countryCodeOptions1 += opt;
+    }
+    $('.countrycodes').html(countryCodeOptions1);
+    setTimeout(function(){
+        $('.countrycodes').select2({allowSearch:true});
+    },500);
+    </script>
+</apex:component>

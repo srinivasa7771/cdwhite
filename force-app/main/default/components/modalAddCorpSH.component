@@ -1,0 +1,549 @@
+<apex:component >
+    <apex:attribute name="attchedCorpDocId" description="attchedCorpDocId" type="String" required="false" />
+    <apex:attribute name="rq" description="request" type="g_Req__c" required="false" / >
+    <style>
+        .high{
+        font-size: larger;
+        color: red;
+        }
+    </style>
+    
+    <div class="modal fade modal-base" id="add_corp_shareholder" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="heading">Add corporate shareholder</h2>
+                    <p class="pInfo">
+                        Please provide information and click on <b>SAVE</b>.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                    </p>
+                    
+                    <div class="form-style">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Company name</label>
+                                    <input type="text" maxLength="50" objKey="compName" class="requiredFld form-control crpData" value="" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Registration number</label>
+                                    <input type="text" onchange="checkRegNumEdit(this)" objKey="RegNum" class="requiredFld form-control crpData alphaNum" value="" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Incorporation date</label>
+                                    <div class="input-datepicker-group input-group">
+                                        <input onchange="dformat2(getC('datepicker4').value,'datepicker4');checkDate(this,'pid')" type="text" class="requiredFld form-control input-datepicker crpData" id="datepicker4"
+                                               data-toggle="datetimepicker" validationName="pid" objKey="incDate" data-target="#datepicker4" />
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Issuance Authority</label>
+                                    <input type="text" maxLength = "100" objKey="iAuthority" class="requiredFld form-control crpData" value="" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Company Website (Optional)</label><!--onchange="checkUrl(this)"-->
+                                    <input type="text" objKey="website" class="optional form-control crpData" value="" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Mobile number</label>
+                                    <div class="d-flex">
+                                        <div style="flex-basis: 200px;width: 200px;">
+                                            <select objKey="phoneCode" id="countryCode2" class="forEdit crpData countryCode form-control input-select2-flat">
+                                                
+                                            </select>
+                                        </div>
+                                        <input class="requiredFld form-control crpData onlyNum ml-3" maxlength="10" validationName="mobile" objKey="mobileNum" type="text" onchange = "validateMobileNumber(this);" / >
+                                        <script type="text/javascript">
+                                        var countryCodeOptions11='';
+                                        for(i of countryCodeObj_new){
+                                            var opt ='';
+                                            if( i.dial_code && i.name )
+                                                opt = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                            countryCodeOptions11 += opt;
+                                        }
+                                        $('#countryCode2').html(countryCodeOptions11);
+                                        setTimeout(function(){
+                                            $('#countryCode2').select2({allowSearch:true});
+                                        },500);
+                                        </script>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group text-left">
+                                    <label>Allocated shares</label>
+                                    <input class="forEdit requiredFld form-control numOnly crpData" fldName="shareNum"  objKey="shareNum"  onblur="valPopShares(this);" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Country of registration</label>
+                                    <select class="requiredFld form-control input-select2-flat crpNat crpData forEdit" onchange='regCntrChange(this)' fldName="Nationality" objKey="nationality">
+                                        <!--<option value="">Select</option>-->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="docsCorp" style="display:none;">
+                                <label>Existing UAE company shareholding</label>
+                                <div class="form-group reqRadio">
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio" value="single" for="single" onchange="removeRadioErr(this)" name="cshType"/>
+                                        <span>Single</span>
+                                    </label>
+                                    <label class="custom-radio mr-5">
+                                        <input type="radio" value="multiple" for="multiple" onchange="removeRadioErr(this)" name="cshType"/>
+                                        <span>Multiple</span>
+                                    </label>
+                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group text-left">
+                                    <label>Address</label>
+                                    <input maxlength = "200" class="requiredFld form-control crpData" type="textarea" objKey="address" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Email address</label>
+                                    <input class="requiredFld form-control crpData" onchange="convertToLower(this);checkEmail(this);" onkeydown="convertToLower(this)" validationName="email" objKey="emailId" type="text" />
+                                </div>
+                            </div>
+                        </div>
+                        <!--</apex:outputPanel>-->
+                        <div class="row col-12 text-right">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <!--<a id="saveEditMem" style="color: white !important;" class="btn btn-primary saveEditMem">SAVE</a>-->
+                                    <a id="saveCorpSH" style="color: white !important;" onclick="saveCorpSH(this)" class="saveMember btn btn-primary">ADD MEMBER</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+     <!-- modal for Corporate shareholder document starts here -->
+    <div class="modal fade modal-base" id="modal_upload_coi" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    
+                    <div class="row">
+                        <div class="col-md-6 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4">Upload document</h2>
+                                    <p>
+                                        Note: Please ensure that the document to be uploaded is in colour and the
+                                        orientation of the
+                                        image matches what is shown in the example, otherwise, your application will be
+                                        rejected.
+                                    </p>
+                                    <p>
+                                        Once you've scanned or uploaded your document, you can use the edit tools to crop
+                                        and rotate
+                                        the image. When you are done with the edit, click the “Continue” button to attach the
+                                        image to
+                                        the application.
+                                    </p>
+                                    <input type="file" onchange="checkFile(this)" id="files" name="files" style="display: none;"/>
+                                    <button type="button" class="forReadOnly btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="handleBrowseClick();">
+                                        UPLOAD IMAGE
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;">
+                                        SCAN IMAGE
+                                    </button><br/>
+                                    
+                                    <p class="mt-4">
+                                        Note: A plugin is needed for in order to scan your image.
+                                    </p>
+                                    
+                                </div>
+                                <div class="text-right d-none d-md-block">
+                                    <a onclick="saveAttachment_mem(this);" doc="coi" style="color: #fff;" 
+                                       class="forReadOnly saveAtt btn btn-primary disabled">
+                                        CONTINUE
+                                    </a>
+                                    <!--<button class="btn btn-primary btn-block-sm button-process-upload" id="saveAttachment">SAVE</button>-->
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        <div class="col-md-6 order-md-1">
+                            <div class="image-area" id="image-area" style="background-color: #D8D8D8;">
+                                <div style="background-color: #D8D8D8;padding-top: 100%;"></div>
+                                <img src="" style="width:80%;display:none;" />
+                            </div>
+                            <div class="text-center text-md-left mt-3">
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-crop"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-left"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-right"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" id="uploadDel"><i
+                                                                                                                           class="icon-delete"></i></a>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        
+                    </div>
+                    <!-- .row -->
+                    <div class="text-right d-block d-md-none mt-4">
+                        <a doc="coi" onclick="saveAttachment_mem(this);" style="color: #fff;" 
+                           class="forReadOnly saveAtt btn btn-primary disabled">
+                            CONTINUE
+                        </a>
+                    </div>
+                    
+                </div>
+                <!-- .modal-body -->
+            </div>
+        </div>
+    </div>
+    <!-- modal for Corporate shareholder document ends here -->
+    <script>
+    $(document).ready(function(){
+        $('.crpData').on('keyup',function(){
+            if($(this).val().trim().length>0 || $(this).hasClass('optional'))
+                $(this).removeClass('is-invalid');
+            else
+                $(this).addClass('is-invalid');
+        });
+        $('select').on('change',function(){
+            if(!$(this).val()) return;
+            if(typeof($(this).val()) != 'object' && $(this).val().trim().length>0)
+                $(this).next().find('.select2-selection').removeClass('is-invalid');
+            else
+                $(this).next().find('.select2-selection').addClass('is-invalid');
+        });
+    });
+    
+    
+    var isCurrentlyEditing = false;
+    var allCountriesObj = [];
+    for (var i = 0; i < allCountries.length; i++) {
+        var c = allCountries[i];
+        allCountriesObj[i] = {
+            name: c[0],
+            iso2: c[1],
+            dialCode: c[2],
+            priority: c[3] || 0,
+            areaCodes: c[4] || null
+        };
+    }
+    var countryCodeOptions= '';
+    var nationalityOptions= '';
+    for(i of allCountriesObj){
+        var cn = i.name;
+        if(cn.indexOf(' (')!=-1){
+            cn= cn.substring(0,cn.indexOf(' ('));
+        }
+        
+        var opt = '<option value="+'+i.dialCode+'">'+cn+' +'+i.dialCode+'</option>';
+        //var opt = '<option value="+'+i.dialCode+'"> +'+i.dialCode+'</option>';
+        countryCodeOptions += opt;
+    }
+    //   var nationality_arr = [{ "num_code": "784", "alpha_2_code": "AE", "alpha_3_code": "ARE", "countryName": "United Arab Emirates", "nationality": "Emirati, Emirian, Emiri" }];
+    for(j of nationality_arr){
+        if(nationality_arr.indexOf(j)==0)
+            var opt1 = '<option selected="true" value="'+j.nationality+'">'+j.countryName+'</option>';
+        else
+            var opt1 = '<option value="'+j.nationality+'">'+j.countryName+'</option>';
+        nationalityOptions += opt1;
+    }
+    var countryOptions=''; 
+    for(j of nationality_arr){
+        var opt1 = '<option value="'+j.countryName+'">'+j.countryName+'</option>';
+        countryOptions += opt1;
+    }
+    // $('[fldName="country"]').append(nationalityOptions);
+    // $('[objKey="nationality"]').append(nationalityOptions);
+    $('[objKey="contryCode"]').append(countryCodeOptions);
+    
+    function uploadCorpDoc(elem,dName,e){
+        if(!$('[objkey="RegNum"]').val()){
+            addValError($('[objkey="RegNum"]'),'Please enter <b>Registration Number</b> to upload documents.');
+            scrollToDiv($('[objkey="RegNum"]'));
+            return;
+        }
+        cs["docname"].value = dName;
+        handleBrowseClick1($(elem).parent().find('.cDocFile'),elem);
+    }
+    function handleBrowseClick1(e,p){
+        var fileinput = $(e)[0];
+        fileinput.click();
+        $(e).unbind('change').on('change',function(){
+            handleFileSelect1(e,p);
+        });
+    }
+    var currentCorpDoc;
+     function handleFileSelect1(e,p) {
+        var f = $(e)[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function(theFile) {
+            return function(e) { 
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                cs["imageBase64"].value = base64String; //.pdf
+                //cs["docname"].value = 'Franchise Agreement/Incorporation Letter';
+                console.log('docNmae:'+cs["docname"].value);
+                //alert(cs["imageBase64"].value);
+                $('#modal_upload_passport').modal('hide');
+                showTempLoader($('[forLoad="'+cs["docname"].value+'"]'));
+                //attachmentSave();
+                //$(p).parent().parent().html('<b>'+cs["docname"].value+' saved successfully</b>');
+                let ext =  'jpg';
+                if(f.name) ext = (f.name.split('.')[1]!=undefined) ?  f.name.split('.')[1] : 'jpg';
+                cs["docname"].value = cs["docname"].value+'#'+$('[objkey="RegNum"]').val()+'.'+ext;
+                currentCorpDoc = p;
+                attachmentSave();
+            };
+        }(f);
+        
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(f);
+    }
+    function reRenderCorpDocs(){
+        $('[forLoad="'+cs["docname"].value.split('#')[0]+'"]').parent().find('.afterUpload').show();
+        $('[forLoad="'+cs["docname"].value.split('#')[0]+'"]').parent().find('.browseBtn').hide();
+    }
+    function regCntrChange(elem){
+        if(addingOtherMems){
+            $('#docsCorp').hide();
+            return;
+        }
+        var c = $(elem).find('option:selected').text().trim();;
+        if(c && c=='United Arab Emirates'){
+            $('#docsCorp').show();
+        }else {
+            $('#docsCorp').hide();
+        }
+    }
+    function addCSH(){
+        $('[fldname="Nationality"]').val('');
+        $('.frmErrMsg').remove();
+        $('.errField').removeClass('errField');
+        $('[objkey="nationality"],[objkey="contryCode"]').trigger('change');
+        $('.is-invalid').removeClass('is-invalid');
+        $('.high').removeClass('high');
+        var mShares = $('#memShares1').val() == "" ?0:parseInt($('#memShares1').val());
+        if(mShares == 0)
+            return;
+        $('.crpData').each(function(){
+            var k = $(this).attr('objKey');
+            var v = $(this).val('');
+        });
+        resetModalInputs('#add_corp_shareholder');
+        $('[objkey="nationality"],[objkey="contryCode"]').trigger('change');
+        $('[objkey="shareNum"]').val($('#memShares1').val());
+        $('#add_corp_shareholder [objKey="RegNum"]').removeAttr('disabled');
+        $('#add_corp_shareholder').modal('show').on('hidden.bs.modal',function(){
+            resetModalInputs('#add_corp_shareholder');
+        });
+        
+        //$('#add_corp_shareholder').modal('show');
+    }
+    var allSHCodes = ['sh1','sh2','sh3','sh4','sh5','sh6','sh7'];
+    var addedCodes = [];
+    var allmemarr2 = [];
+    
+    function saveCorpSH(elem){
+        currentAddingShData = {};
+        var invalData = false;
+        $('.crpData').each(function(){
+            var k = $(this).attr('objKey');
+            var v = $(this).val();
+            if(addingOtherMems && k=='shareNum') return;
+            if((!v||v=='--None--')&&(!$(this).hasClass('optional'))){
+                if($(this).is('select'))
+                    $(this).next().find('.select2-selection').addClass('is-invalid');
+                else
+                    $(this).addClass('is-invalid');
+                $('.rqrdMsg').addClass('high');
+                invalData = true;
+            }
+            else{
+                if($(this).is('select'))
+                    $(this).next().find('.select2-selection').removeClass('is-invalid');
+                else
+                    $(this).removeClass('is-invalid');
+                $('.rqrdMsg').removeClass('high');
+            }
+            if(k=='RegNum' && v.includes(' '))
+                currentAddingShData[k] = v.replaceAll(' ','');
+            else
+                currentAddingShData[k] = v
+        });
+        currentAddingShData['nationality'] = nationalityToCountry(currentAddingShData['nationality']);
+        currentAddingShData['cshType'] = $('[name="cshType"]:checked').attr('for');
+        $('.reqRadio:visible').each(function(){
+            var checked=false;
+            $(this).find(':radio').each(function(){
+                if($(this).is(':checked')){
+                    currentAddingMemData.inUAE = $(this).attr('for');
+                    checked = true;
+                    return;
+                }
+            });
+            if(!checked){
+                $(this).find('.option-error').show(); 
+                invalData= true;
+            }else
+                $(this).find('.option-error').hide(); 
+        });
+        if(invalData || $('.frmErrMsg:visible').length>0){
+            invalData = false;
+            return;
+        }
+        if(isCurrentlyEditing)
+            delMem(currentAddingShData["RegNum"]);
+            //$('#'+currentAddingShData["RegNum"]).parent().parent().parent().remove();
+        var duplicateRegnum = false;
+        $('.addedMems').each(function(){
+            var v = $(this).attr('id');
+            if(currentAddingShData["RegNum"] == v){
+                //alert('Registration Number already used');
+                addValError('[objkey="RegNum"]','Registration Number already used');
+                duplicateRegnum = true;
+            }
+        });
+        if(duplicateRegnum){
+            duplicateRegnum = false;
+            return;
+        }
+        currentAddingShData['type'] = 'corp';
+        currentAddingShData.lname = currentAddingShData["compName"];
+        if(!addingOtherMems) currentAddingShData.ctgCode= 'sh';
+        else currentAddingShData.ctgCode = currentAddingCat;
+        currentAddingShData.ctg= categoryObj[currentAddingShData.ctgCode];
+        var shctg = currentAddingShData.ctgCode+(addedCodes.length+1);
+        addedCodes1 = allSHCodes.filter(function(i){
+            if(addedCodes .indexOf(i)<0)
+                return i;
+        });
+        //if(!isCurrentlyEditing){
+            //currentAddingShData.ctgCode = addedCodes1[0];
+        //}
+        var y = {};
+        for(i in backEndKeysCorp){
+            y[i] = currentAddingShData[backEndKeysCorp[i]];
+        }
+        if(!addingOtherMems){
+            addedCodes.push(addedCodes1[0]);
+            currentAddingShData.ctgCode1 = addedCodes1[0];
+        }
+        var mNewRow = $("<div class='col-lg-6'>"); 
+        //var sharesPerc = Math.round(parseInt(currentAddingShData["shareNum"])/parseInt($('#sharesTotal').val())*100);
+        var sharesPerc = parseInt(currentAddingShData["shareNum"]);
+        var mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+        if(addingOtherMems)
+            mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'><label>"+currentAddingShData["compName"]+" - "+currentAddingShData.ctg.toUpperCase()+"</label> <input type='hidden' class='additionalMems addedMems' id='"+currentAddingShData["RegNum"]+"' value='"+JSON.stringify(currentAddingShData)+"'/>";
+        else
+            mCols += "<label>"+currentAddingShData["compName"]+"</label> <input type='hidden' for='"+currentAddingShData["compName"]+"' class='addedMems' id='"+currentAddingShData["RegNum"]+"' value='"+JSON.stringify(currentAddingShData)+"'/>";
+        mCols += '<button type="button" onclick="memberEdit(\''+currentAddingShData["RegNum"]+'\',\'corp\');" id="memberEditid" class="btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+        mCols += '<a onclick="deleteItem(\''+currentAddingShData["RegNum"]+'\');" class="btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a></div>';
+        if(!addingOtherMems) mCols +=  "<div class='shareholder-box-right'><div class='input-percentage-wrapper'><input type='text' readonly='true' class='form-control' title='"+sharesPerc+"' value='"+sharesPerc+"' /> </div><label>Number of shares</label></div>";
+        // mCols += " ";
+        mCols += ' </div>';
+        mNewRow.append(mCols);
+        allpassports.push(currentAddingShData["RegNum"]);
+        if(addingOtherMems){
+            $("#board_members").append(mNewRow);
+            $('[selcode="'+currentAddingCat+'"]').prepend('<option pno="'+currentAddingShData["RegNum"]+'" selected="true" value="'+currentAddingShData.lname+'" >'+currentAddingShData.lname+'</option>').attr('disabled',true);
+            addCtgArr[currentAddingCat].push(currentAddingShData["RegNum"]);
+            //dropDownData[currentAddingShData.ctgCode].selected = currentAddingShData["RegNum"];
+            //dropDownData[currentAddingShData.ctgCode].disabled = ($('[selcode="'+currentAddingCat+'"]').attr('disabled') == 'disabled');
+            validatepg4Next();
+        }
+        else $("#addedMembers").prepend(mNewRow);
+        let rmShrs = parseInt(parseInt($('#remShares elem').text())-parseInt(currentAddingShData["shareNum"]));
+        //Start MS 1.1
+        var addedshares = 0;
+        $('.input-percentage-wrapper input').each(function() {
+            addedshares += parseInt($(this).val());
+        });
+        rmShrs = $('#sharesTotal').val() - addedshares;
+        //end MS 1.1
+        if(rmShrs>0){
+            $('#remShares elem').text(rmShrs);
+            $('#remShares elem').show();
+            $('#remShares').show();
+        }
+        else{
+            $('#remShares elem').text(0);
+            $('#remShares elem').hide();
+            $('#remShares').hide();
+        }
+        $('#add_corp_shareholder').modal('hide');
+        $('[btnfor="corp"],[btnfor="ind"]').addClass('disabled').attr('data-target','#validShares').parent().parent().find('input').val('');
+        $('#memShares1').val('');
+        isCurrentlyEditing = false;
+        validateAddSHDIV();
+        let ext =  'jpg';
+        if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  file1.name.split('.')[1] : 'jpg';
+        cs["docname"].value = "COI - Document#"+currentAddingShData["RegNum"]+'.'+ext;
+        
+        y['cshType'] = $('[name="cshType"]:checked').val();
+        if(!addingOtherMems){
+            y.ctgCode1 = addedCodes1[0];
+            //cs['xadh__c'].value+=addedCodes1[0]+';';
+            cs['xadh__c'].value=addedCodes.join(';');
+            allmemarr2.push(y);
+            allMembersData.members = allmemarr2;
+            cs['xadtx4__c'].value = JSON.stringify(allMembersData);
+            attachmentSave();
+        }
+    }
+    
+    function removeRadioErr(e){
+          $(e).parent().parent().find('.option-error').hide();
+    }
+        
+    function validateMobileNumber(elem) {
+        var mobileNumber = $(elem).val();
+
+        if (mobileNumber.startsWith('0')) {
+            addValError( $(elem),'Please enter valid mobile number.');
+            return true;
+        }
+        if (mobileNumber.includes('-')) {
+            addValError( $(elem),'Please enter valid mobile number.');
+            return true;
+        }
+        return false;
+    }    
+        
+    </script>
+</apex:component>

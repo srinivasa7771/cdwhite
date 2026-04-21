@@ -1,0 +1,440 @@
+<apex:page showHeader="false" standardStylesheets="false" sidebar="false" 
+           applyHtmlTag="false" applyBodyTag="false" docType="html-5.0" 
+           Controller="reqsearchcontroller" action="{!validateQR}">
+<html xmlns="http://www.w3.org/2000/svg" 
+      xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Validate Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <apex:slds />
+    <style>
+        .invalidLink1 {
+            margin-top: 5%;
+            text-align: center;
+            position: relative;
+            top: 50%;
+            font-weight: bold;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: large;
+        }
+        #pdfToolbar {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            margin-bottom: 10px;
+        }
+        #pdfToolbar button {
+            padding: 8px 16px;
+            margin: 4px;
+            font-size: 14px;
+            border: 1px solid #1B45BB;
+            background: #1B45BB;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #pdfToolbar button:disabled {
+            background: #ccc;
+            border-color: #ccc;
+        }
+        #pdfCanvasContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #pdfCanvasContainer canvas {
+            display: block;
+            max-width: 100%;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            background: white;
+        }
+    </style>
+</head>
+<body>
+<apex:form id="frm">
+
+    
+    <span id="hiddenPdfUrl"   style="display:none;"><apex:outputText value="https://axs2.my.site.com/{!pdfConfirm}"/></span>
+    <span id="hiddenIsExpired" style="display:none;"><apex:outputText value="{!isDocumentExpired}"/></span>
+    <span id="hiddenCodeCheck" style="display:none;"><apex:outputText value="{!codeCheck}"/></span>
+    <span id="hiddenIsGv"     style="display:none;"><apex:outputText value="{!isGv}"/></span>
+    <span id="hiddenValidFlag" style="display:none;"><apex:outputText value="{!validFlag}"/></span>
+
+<div class="slds-scope">
+
+    <!-- Header -->
+    <div class="slds-grid slds-wrap slds-grid_pull-padded" style="margin:0%">
+        <div class="slds-p-medium slds-size_1-of-2">
+            <img src="{!if(isGv,URLFOR($Resource.logoTECOM),URLFOR($Resource.Dubailogonew))}" 
+                 style="width:213px;height:90px;margin:3%;margin-top:3%" />
+        </div>
+        <div class="slds-p-medium slds-size_1-of-2">
+            <img src="{!if(isGv,'#',URLFOR($Resource.DDA_Logo))}" 
+                 style="width:198px;height:34px;float:right;margin:2%;margin-top:3%" />
+        </div>
+    </div>
+
+    <div class="slds-card" style="margin:0.5%;background:none !important;
+         border:1px solid #1B45BB !important;min-height:69.9vh;
+         margin-top:1% !important;">
+
+        <div class="slds-card__header slds-grid slds-align_absolute-center" 
+             style="padding:0.3rem;background:#1B45BB;color:white;
+                    font-weight:bold;font-size:medium;">
+            Check Validity Of Document
+        </div>
+        <br/>
+
+        <div class="slds-card__body">
+
+            <!-- Search Section -->
+            <apex:outputpanel rendered="{!!isQrCode}">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                    <div class="slds-container_fluid" style="margin:1%;">
+                        <div class="slds-grid" style="margin-top:8vh">
+                            <div class="slds-col"></div>
+                            <div class="slds-col" style="font-size:0.9rem;">
+                                <div style="position:relative;float:left;font-size:1rem;">
+                                    Request Number
+                                </div>
+                                <div style="position:relative;float:left;margin-left:1vw;">
+                                    <apex:inputText value="{!searchstring}" 
+                                                    label="Input" required="true" 
+                                                    style="width:275px;height:29px;" />
+                                </div>
+                                <div style="position:relative;float:left;margin-left:1vw;">
+                                    <apex:commandButton value="Search" action="{!search}" 
+                                        styleClass="slds-button slds-button_neutral" />
+                                    <apex:commandButton value="Clear" action="{!clear}" 
+                                        styleClass="slds-button slds-button_neutral" />
+                                </div>
+                            </div>
+                        </div>
+                        <br/>
+                        <div align="center">
+                            <apex:outputPanel rendered="{!codeCheck==false}">
+                                <div class="g-recaptcha" data-sitekey="{!sitekey}" 
+                                     style="transform:scale(0.90);"></div>
+                                <script src='https://www.google.com/recaptcha/api.js'></script>
+                            </apex:outputPanel>
+                        </div>
+                        <br/>
+                        <div align="center">
+                            <div style="font-size:0.9rem;"><b>Note:</b></div>
+                            <div style="font-size:0.8rem;">
+                                <p>Please input the Valid Letter Request Number as stated 
+                                on the letter you wish to validate: this can be found in 
+                                the bottom left hand corner of the document.</p>
+                            </div>
+                        </div>
+                        <br/><br/>
+                        <div align="center">
+                            <img style="height:40px;" 
+                                 src="{!URLFOR($Resource.AXSLogo)}" />
+                        </div>
+                    </div>
+                </div>
+            </apex:outputpanel>
+
+            <!-- Results Table -->
+                
+            <apex:pageBlock title="" rendered="{!req != null && codeCheck==true}">
+                <apex:pageblockTable value="{!req}" var="r" 
+                    styleClass="slds-table slds-table--bordered slds-table--cell-buffer slds-no-row-hover">
+                    <apex:column value="{!r.Name}" />
+                    <apex:column value="{!r.Full_Name__c}" />
+                    <apex:column value="{!r.Account_Name__c}" />
+                    <apex:column value="{!r.xlt__c}" />
+                    <apex:column headerValue="Validity" value="{!validFlag}" 
+                                 rendered="{!NOT(ISBLANK(validFlag))}" />
+                </apex:pageblockTable>
+            </apex:pageBlock>
+
+            <!-- OUTSIDE apex:pageBlock — always exists in DOM -->
+            <div id="pdfSection" style="display:none;">
+                <div style="text-align:center;">
+                    <div id="pdfLoadingMsg" style="padding:20px;color:#555;">
+                        ⏳ Loading document...
+                    </div>
+                    <div id="pdfToolbar">
+                        <button type="button" id="btnPrev" 
+                                onclick="changePage(-1)" disabled="disabled">
+                            &#8592; Prev
+                        </button>
+                        <span id="pageInfo" 
+                              style="font-size:14px;margin:0 8px;
+                                     line-height:36px;color:#333;">
+                            Page 1 of 1
+                        </span>
+                        <button type="button" id="btnNext" onclick="changePage(1)">
+                            Next &#8594;
+                        </button>
+                    </div>
+                    <div id="pdfCanvasContainer"></div>
+                </div>
+            </div>
+
+            <!-- OUTSIDE apex:pageBlock — always exists in DOM -->
+            <div id="expiredSection" style="display:none;">
+                <div class="form-group row" style="min-height:20em;">
+                    <div class="invalidLink1">
+                        Your scanned document is expired, 
+                        please contact PRM to get the document!
+                    </div>
+                </div>
+            </div>
+            <br/>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <footer class="slds-p-around--large" role="contentinfo" style="padding:0.4rem">
+            <div class="slds-grid slds-grid--align-spread">
+                <apex:outputText rendered="{!!isGv}">
+                    <p class="slds-col">Copyright © 2023 
+                        <a href="https://dda.gov.ae/en/about-dda/" target="_blank">
+                            Dubai Development Authority
+                        </a> All Rights Reserved.
+                    </p>
+                </apex:outputText>
+                <apex:outputText rendered="{!isGv}">
+                    <p class="slds-col">Copyright © 2025 
+                        <a href="https://tecomgroup.ae/" target="_blank">
+                            TECOM Group
+                        </a> All Rights Reserved.
+                    </p>
+                </apex:outputText>
+                <apex:outputText rendered="{!isGv}">
+                    <p class="slds-col">
+                        <a href="https://tecomgroup.ae/website-terms-of-use.pdf" 
+                           target="_blank">Terms of use</a> | 
+                        <a href="https://tecomgroup.ae/contact-us.html" 
+                           target="_blank">Contact Us</a>
+                    </p>
+                </apex:outputText>
+                <apex:outputText rendered="{!!isGv}">
+                    <p class="slds-col">
+                        <a href="https://dda.gov.ae/en/terms-of-use/" 
+                           target="_blank">Terms of Use</a> | 
+                        <a href="https://dda.gov.ae/en/contactus/" 
+                           target="_blank">Contact Us</a>
+                    </p>
+                </apex:outputText>
+            </div>
+        </footer>
+    </div>
+
+</div>
+</apex:form>
+
+<!-- PDF.js + Logic OUTSIDE apex:form — zero view state impact -->
+<script src="{!$Resource.pdfjs}"></script>
+<script src="{!$Resource.pdfjs}"></script>
+<script>
+(function() {
+
+    function el(id)            { return document.getElementById(id); }
+    function show(id)          { if(el(id)) el(id).style.display = 'block'; }
+    function hide(id)          { if(el(id)) el(id).style.display = 'none';  }
+    function setHtml(id, html) { if(el(id)) el(id).innerHTML = html;        }
+
+    var pdfUrl    = (el('hiddenPdfUrl')    || {}).innerText || '';
+    var isExpired = (el('hiddenIsExpired') || {}).innerText || '';
+    var codeCheck = (el('hiddenCodeCheck') || {}).innerText || '';
+    var isGv      = (el('hiddenIsGv')      || {}).innerText || '';
+
+    pdfUrl    = pdfUrl.trim();
+    isExpired = isExpired.trim().toLowerCase();
+    codeCheck = codeCheck.trim().toLowerCase();
+    isGv      = isGv.trim().toLowerCase();
+
+    // Fix relative URL
+    if(pdfUrl && pdfUrl !== 'null' && pdfUrl.indexOf('http') !== 0) {
+        pdfUrl = window.location.origin + pdfUrl;
+    }
+
+    var showPDF  = (isExpired !== 'true') && (codeCheck === 'true' || isGv === 'true');
+    var isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isMobile = window.innerWidth < 768;
+    var pdfDoc      = null;
+    var currentPage = 1;
+    var totalPages  = 1;
+    var renderTask  = null;
+
+    if(isExpired === 'true') {
+        show('expiredSection');
+        return;
+    }
+
+    if(showPDF) {
+        show('pdfSection');
+
+        if(!pdfUrl || pdfUrl === 'null' || pdfUrl === ''
+           || pdfUrl === window.location.origin) {
+            setHtml('pdfLoadingMsg',
+                '<p style="color:#e74c3c;">&#9888; Document not found.</p>');
+            return;
+        }
+
+        if(isIOS) {
+            setHtml('pdfLoadingMsg',
+                '<div style="padding:30px;">' +
+                    '<p style="color:#555;font-size:15px;margin-bottom:15px;">' +
+                        '&#128196; Your document is ready' +
+                    '</p>' +
+                    '<a href="' + pdfUrl + '" target="_blank" ' +
+                       'style="display:inline-block;padding:14px 32px;' +
+                              'background:#1B45BB;color:#fff;border-radius:6px;' +
+                              'text-decoration:none;font-size:16px;font-weight:bold;">' +
+                        '&#128065; Open PDF Document' +
+                    '</a>' +
+                '</div>');
+            return;
+        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '{!$Resource.pdfjsworker}';
+        fetchAndDownload(pdfUrl);
+    }
+
+    function fetchAndDownload(url) {
+        setHtml('pdfLoadingMsg', '<p style="color:#555;">⏳ Preparing document...</p>');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType    = 'arraybuffer';
+        xhr.withCredentials = true;
+        xhr.timeout         = 60000;
+
+        xhr.onload = function() {
+            if(xhr.status === 200 || xhr.status === 0) {
+                var blob    = new Blob([xhr.response], { type: 'application/pdf' });
+                var blobUrl = URL.createObjectURL(blob);
+
+                var a           = document.createElement('a');
+                a.href          = blobUrl;
+                a.download      = 'document.pdf';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                setHtml('pdfLoadingMsg',
+                    '<p style="color:green;font-size:15px;font-weight:bold;">' +
+                        '&#10004; Download started!' +
+                    '</p>');
+
+                renderPDF(xhr.response);
+                setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 60000);
+
+            } else {
+                showFallback(url);
+            }
+        };
+        xhr.onerror   = function() { showFallback(url); };
+        xhr.ontimeout = function() { showFallback(url); };
+        xhr.send();
+    }
+
+    function renderPDF(arrayBuffer) {
+        pdfjsLib.getDocument({
+            data: arrayBuffer,
+            disableRange: true,
+            disableStream: true,
+            disableAutoFetch: true
+        }).promise
+        .then(function(pdf) {
+            pdfDoc = pdf; totalPages = pdf.numPages; currentPage = 1;
+            hide('pdfLoadingMsg');
+            show('pdfToolbar');
+            renderPage(1);
+        })
+        .catch(function(err) { console.error('PDF error:', err); });
+    }
+
+    function renderPage(pageNum) {
+        if(renderTask) { renderTask.cancel(); renderTask = null; }
+        var container = el('pdfCanvasContainer');
+        if(!container) return;
+
+        pdfDoc.getPage(pageNum).then(function(page) {
+            var sw       = window.innerWidth || 375;
+            var defVp    = page.getViewport({ scale: 1 });
+            var scale    = isMobile ? (sw * 0.92) / defVp.width : 1.5;
+            var viewport = page.getViewport({ scale: scale });
+
+            while((viewport.width * viewport.height) > 16000000 && scale > 0.3) {
+                scale -= 0.1; viewport = page.getViewport({ scale: scale });
+            }
+
+            var canvas = document.createElement('canvas');
+            canvas.width  = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            canvas.style.maxWidth  = '100%';
+            canvas.style.display   = 'block';
+            canvas.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+
+            container.innerHTML = '';
+            container.appendChild(canvas);
+
+            renderTask = page.render({
+                canvasContext: canvas.getContext('2d'),
+                viewport: viewport,
+                intent: 'display'
+            });
+            renderTask.promise
+                .then(function() { renderTask = null; updateToolbar(); })
+                .catch(function(e) {
+                    if(e && e.name === 'RenderingCancelledException') return;
+                });
+        });
+    }
+
+    function updateToolbar() {
+        if(el('pageInfo')) el('pageInfo').innerText = 'Page ' + currentPage + ' of ' + totalPages;
+        if(el('btnPrev'))  el('btnPrev').disabled   = (currentPage <= 1);
+        if(el('btnNext'))  el('btnNext').disabled   = (currentPage >= totalPages);
+    }
+
+    function showFallback(url) {
+        
+        hide('pdfLoadingMsg');
+        hide('pdfToolbar');
+        setHtml('pdfCanvasContainer',
+            '<div style="padding:20px;">' +
+                '<a href="' + url + '" target="_blank" ' +
+                   'style="display:inline-block;padding:12px 28px;' +
+                          'background:#1B45BB;color:#fff;border-radius:6px;' +
+                          'text-decoration:none;font-size:16px;font-weight:bold;">' +
+                    '&#128065; Open PDF' +
+                '</a>' +
+            '</div>');
+    }
+
+    window.changePage = function(direction) {
+        var n = currentPage + direction;
+        if(n < 1 || n > totalPages) return;
+        currentPage = n;
+        var c = el('pdfCanvasContainer');
+        if(c) c.scrollIntoView({ behavior: 'smooth' });
+        renderPage(n);
+    };
+
+})();
+</script>
+
+</body>
+</html>
+</apex:page>

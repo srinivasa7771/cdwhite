@@ -1,0 +1,343 @@
+<apex:component controller="gulkpCtrl2" allowDML="true" >
+    <style>
+        
+        .icon-request-preference:before {
+        content: "\e968";
+        }
+        .selectData1{
+        display:block;
+        max-height : 24em;
+        overflow-y:auto;
+        }
+        #srvNotes{
+        display:none;
+        }
+        tr.disabled {
+        cursor: not-allowed !important;
+        }
+    </style>
+    <form id='conLookupForm'>
+        
+        <div class="custLookup">
+            <apex:attribute name="sponsor" description="true for sponsor" type="String" required="false" assignTo="{!isSponsor}" />
+            <apex:attribute name="heading" description="lable for the search" type="String" required="false" />
+            <apex:attribute name="role" description="Contact Role" type="String" required="true" assignTo="{!cRole}" />
+            <apex:attribute name="sta" description="Contact Status" type="String" required="true" assignTo="{!cSta}" />
+            <apex:attribute name="accId" description="Account Id" type="String" required="true" assignTo="{!cAccId}" />
+            <apex:attribute name="Request" description="Request" type="g_Req__c" assignTo="{!rq}" />
+            <apex:attribute name="saveRq" description="Save Applicant details" type="Boolean"  />
+            <apex:attribute name="outSource"  assignTo="{!onlyOutSourced}" description="To get only out sourced employees" type="Boolean" required="false" />
+            <apex:attribute name="sdVType" description="visa type" type="String" assignTo="{!sdVisaType}" />
+            <apex:attribute name="srvUid"  description="" type="String" required="false" />
+            
+            <!-- <h4>DETAILS</h4>
+Contact Role ---* {!role}<br />
+Contact Status ---* {!sta}<br />
+Account Id ---* {!cAccId}<br />
+Request ---* {!Request}<br />-->
+            <div class="modal fade modal-base" id="modal_lookup_values_con" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="icon-close"></i>
+                        </button>
+                        <div class="modal-body pt-5 pb-5">
+                            <div class="mb-4 d-flex">
+                                <h3 class="modal-title">
+                                    Available People
+                                </h3>
+                                
+                                <div class="search-field mb-0 ml-5" style="width: 25%;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="Search with name or passsport number" id="searchCON" onkeyup="searchWithEnter_con(event)" />
+                                        
+                                        <div class="input-group-append">
+                                            <div class="btn" onclick="searchCONWithVal()">
+                                                <div class="icon-search"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="frmErrMsg2" class="frmErrMsg1" style="display:none;padding-left:0px;">
+                                        Minimun 3 characters needed to search!
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <span id="srvNotes" class="text-primary font-italic">
+                                Note: <span>Policy can only be applied within 30 days of expiry</span>
+                            </span>
+                            <apex:outputPanel styleClass="selectData1" id="selectData_con" rendered="true">
+                                <input type="hidden" id="serContString" value="{!serContString}" />
+                                <table class="table" id="conTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 16.6%;">PHOTO</th>
+                                            <th style="width: 16.6%;">NAME</th>
+                                            <th style="width: 16.6%;">PASSPORT #</th>
+                                            <th style="width: 16.6%;">STATUS</th>
+                                            <th style="width: 16.6%;">VISA EXPIRY DATE</th>
+                                            <th style="width: 16.6%;{!IF(OR(sdVType='egv'),'display:block','display:none')}">JOINING DATE</th>
+                                            <th style="width: 16.6%;">JOB TITLE</th>
+                                            <th style="width: 16.6%;{!IF(OR(srvUid='162',srvUid='212'),'display:block','display:none')}">POLICY EXPIRY</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <apex:repeat value="{!serContList}" var="s">
+                                            <tr style="cursor: pointer;" onclick="setData_con(this);" cId="{!s.id}" fullVal="{!s}">
+                                                <td att="photoId" val1="{!s.Photo_ID__c}" onclick="openImg(this,event);">
+                                                    <img width="18" src='/servlet/servlet.FileDownload?file={!s.Photo_ID__c}' />
+                                                </td>
+                                                <td att="eName" val1="{!s.name}">{!s.name}</td>
+                                                <td att="pNo" val1="{!s.p__c}">{!s.p__c}</td>
+                                                <td>{!s.STA__c}</td>
+                                                <td><apex:outputField value="{!s.rped__c}"/></td>
+                                                <td style="{!IF(OR(sdVType='egv'),'display:block','display:none')}" att="jddt" val1="{!s.jd__c}"><apex:outputField value="{!s.jd__c}"/></td>
+                                                <td att="jbT" val1="{!s.jb__r.name}">{!s.jb__r.name}</td>
+                                                <td style="{!IF(OR(srvUid='162',srvUid='212'),'display:block','display:none')}" att="plced" val1="{!s.xped__c}"><apex:outputField value="{!s.xped__c}"/></td>
+                                            </tr>
+                                        </apex:repeat>
+                                    </tbody>
+                                </table>
+                                <script>
+                                if('{!srvUid}'=='162'||'{!srvUid}'=='212'){
+                                    $('#srvNotes span').text('Policy can only be applied within 30 days of expiry');
+                                    $('#srvNotes').show();
+                                    $('#conTable tr').each(function(){
+                                        var letplcExpdt = $(this).find('[att="plced"]').attr('val1');
+                                        var plcDaysDiff = (new Date(letplcExpdt)-new Date())/(1000*60*60*24);
+                                        if(plcDaysDiff>30){
+                                            $(this).addClass('disabled').attr('title','Policy can be renewed within 30 days of expiry');
+                                        }
+                                    });
+                                }
+                                </script>
+                            </apex:outputPanel>
+                            <apex:outputPanel styleClass="selectData1" id="selectData_con_2" rendered="false">
+                                <h2 style="color:#E62D38">
+                                    No available contacts for this service
+                                </h2>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row row-lg">
+                
+                <div class="col-lg-12 conLkp">
+                    <div class="form-group">
+                        <apex:outputLabel escape="false"  value="{!heading}"></apex:outputLabel>
+                        
+                        <!--<apex:outputLabel rendered="{!(AND(rq.id!=null,rq.srvc__r.Category__c!='Corporate'))}" value="Selected Applicant"></apex:outputLabel>
+<label>People Reference</label>
+ispu -- {!ispu}-->
+                        <div class="input-group input-group-transparent" onclick="searchCon11()"> <!--  data-toggle="modal" data-target="#modal_lookup_values_con" -->
+                            <input disabled="true" type="text" class="lookup form-control {!IF((ispu==true),'pointer','disabledCursor')}" id="conSerachVal" />
+                            <div class="pointer input-group-append">
+                                <span class="input-group-text"><!-- class="input-group-text {!IF(AND(rq.id!=null,rq.srvc__r.Category__c!='Corporate'),'disabledCursor','')}"-->
+                                    <i id="conLkpSearch" class="icon-request-preference text-primary {!IF((ispu==true),'pointer','disabledCursor')}"></i><!-- onclick="searchCon11()"-->
+                                </span>
+                            </div>
+                        </div>
+                        <div class="frmErrMsg1" style="display:none;">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id='con'>
+                
+            </div>
+            <!--<div>
+<label for="selLookUpVal">Selected:</label>
+<span type="text" id="selLookUpVal"></span>
+</div>-->
+            <apex:actionFunction name="sdraft2" immediate="true" action="{!saveDraft1}" oncomplete="$('#preloader').fadeOut();removeEmptyLables();" rerender="attDetail">
+                <apex:param name="lkpCon" value=""/>
+            </apex:actionFunction>
+            <apex:actionFunction name="loadData_con" action="{!init_con}" oncomplete="removeEmptyLables();preConData()" rerender="selectData">
+            </apex:actionFunction>
+            <apex:actionFunction name="prsnSrch" immediate="true"  action="{!searchPersons}" oncomplete="showLkpModel_con('#serContString');hideTempLoader_input();" rerender="selectData_con,selectData_con_2">
+                <apex:param name="prsn" assignTo="{!prsn}" value=""/>
+                <apex:param name="csRl" assignTo="{!csRl}" value=""/>
+                <apex:param name="apc" assignTo="{!parkingCard}" value=""/>
+            </apex:actionFunction>
+            <!-- <span class="select2-container select2-container--default select2-container--open" style="position: absolute; top: 376.792px; left: 315.375px;"><span class="select2-dropdown select2-dropdown--below" dir="ltr" style="width: 511.292px;"><span class="select2-search select2-search--dropdown"><input class="select2-search__field" type="search" tabindex="0" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" role="textbox" /></span><span class="select2-results"><ul class="select2-results__options" role="tree" id="select2-f9qa-results" aria-expanded="true" aria-hidden="false"><li role="treeitem" aria-live="assertive" class="select2-results__option select2-results__message">No results found</li></ul></span></span></span>-->
+            <div style="display:none;">
+                <apex:outputLabel style="display:none;" id="selectData">
+                    <apex:inputHidden id="selectedCon" value="{!selectedCon}"/>
+                    <apex:inputHidden id="Con__c" value="{!Request.Con__c}"/>
+                    <apex:inputHidden id="Spr__c" value="{!Request.Spr__c}"/>
+                    <apex:inputHidden id="xcsfn__c" value="{!Request.xcsfn__c}"/>
+                    <apex:inputHidden id="xcsnc__c" value="{!Request.xcsnc__c}"/>
+                    <apex:inputHidden id="xcsp__c" value="{!Request.xcsp__c}"/>
+                    <!--precondata  -----* {!preloadedContact}-->
+                    <script>
+                    cs['selectedCon']=document.getElementById('{!$Component.selectedCon}');
+                    cs["Con__c"] = document.getElementById("{!$Component.Con__c}");
+                    cs["Spr__c"] = document.getElementById("{!$Component.Spr__c}");
+                    cs["xcsfn__c"] = document.getElementById("{!$Component.xcsfn__c}");
+                    cs["xcsnc__c"] = document.getElementById("{!$Component.xcsnc__c}");
+                    cs["xcsp__c"] = document.getElementById("{!$Component.xcsp__c}");
+                    function preConData(){
+                        if('{!isSponsor}'){
+                            if('{!preloadedContact}'!='')
+                                serContString = JSON.parse('{!preloadedContact}');
+                            cs['Spr__c'].value = '{!preloadedContact.id}';
+                        }
+                        else
+                            cs['Con__c'].value = '{!preloadedContact.id}';
+                        cs['selectedCon'].value = '{!preloadedContact.name}';
+                        $('#conSerachVal').val(cs['selectedCon'].value);
+                    }
+                    </script>
+                </apex:outputLabel>
+            </div>
+        </div>
+    </form>
+    <script><!-- -->
+    
+    var conJson = {'pNo':'', 'eName':'', 'jbT':'', 'photoId':'', 'salt':'', 'fNm':'', 'lNm':'', 'mNm':'', 'ntc':'', 'eml':'','mob':'','eidid':''};
+    var crol = '';
+    $(document).ready(function(){
+        setTimeout(function(){loadData_con();},500);
+        $("#conLookupForm").submit(function() { return false; });
+    });
+    /* $('#conLkpSearch').unbind().on('click',function(){
+        showTempLoader_input('#conSerachVal');
+        let sv = $('#conSerachVal').val();
+        $('#searchCON').val(sv);
+        console.log('in conl...!');
+        prsnSrch(sv);
+    });*/
+    function searchWithEnter_con(e){
+        var key = e.which;
+        if(key == 13)
+        {
+            searchCONWithVal();
+            return false;  
+        }
+    }
+    var parkingCard='';
+    function searchCon11(){
+        //if('{!rq.id}'==null||'{!rq.id}'==''||'{!rq.srvc__r.Category__c}'=='Corporate'){
+        if('{!ispu}'=='true'){
+            var pCard = parkingCard;
+            //pCard = pCard?pCard:'';
+            showTempLoader_input('#conSerachVal');
+            let sv = $('#conSerachVal').val();
+            $('#searchCON').val(sv);
+            console.log('in conl...!');
+            if(cs["csRole"] != undefined && cs["csRole"].value != '')
+                crol = cs["csRole"].value;
+            prsnSrch(sv,crol,pCard);
+        }
+    }
+    function showLkpModel_con(el){
+        console.log('in showLkpModel_con...!');
+        var ell = $(el).val();
+        serContString = JSON.parse(ell);
+        if(!$('#modal_lookup_values_con').is(':visible'))
+            $('#modal_lookup_values_con').modal('show');
+    }
+    function searchCONWithVal(elem){
+        var pCard = parkingCard;
+        let v = $("#searchCON").val();
+        if(v.length>2 || !v){
+            $('#frmErrMsg2').hide();
+            if(cs["csRole"] != undefined && cs["csRole"].value != '')
+                crol = cs["csRole"].value;
+            prsnSrch(v,crol,pCard);
+            showTempLoader_input('#searchCON');
+        }
+        else
+            $('#frmErrMsg2').show();
+        
+    }
+    function searchJTWithVal(elem){
+        let v = $("#searchJT").val();
+        if(v!=undefined&&v!=null&&v.length>2){
+            $('#frmErrMsg2').hide();
+            jobSrch(v);
+            showTempLoader_input('#searchJT');
+        }
+        else
+            $('#frmErrMsg2').show();
+    }
+    var serContString = {};
+    function setData_con(elem){
+        if($(elem).hasClass('disabled')){
+            $('#srvNotes span').addClass('font-weight-bold').fadeOut().fadeIn().fadeOut().fadeIn();
+            return;
+        }
+        let id = $(elem).attr('cid');
+        let n = $(elem).find('td').eq(1).text();
+        
+        $('#conSerachVal').val(n);
+        $('#modal_lookup_values_con').modal('hide');
+        cs['selectedCon'].value = n;
+        if('{!isSponsor}'){
+            cs['Spr__c'].value = id;
+            //for(i of serContString ){
+            for(x=0;x<serContString.length;x++){
+                var i = serContString[x];
+                if(id == i.Id){
+                    cs['xcsfn__c'].value = i.Name; cs['xcsnc__c'].value = i.nc__c; cs['xcsp__c'].value = i.p__c;
+                }
+            }
+        }else{
+            cs['Con__c'].value = id;
+            for(x=0;x<serContString.length;x++){
+                var i = serContString[x];
+                if(id == i.Id){
+                    conJson['fNm'] = i.FirstName; conJson['lNm'] = i.LastName; conJson['eName'] = i.Name; 
+                    conJson['jbT'] = (i.jb__r==undefined) ?"":i.jb__r.Name;
+                    conJson['ntc'] = i.nc__c; conJson['photoId'] = i.Photo_ID__c; conJson['salt'] =i.Salutation;
+                    conJson['mob'] = i.MobilePhone; conJson['eml'] = i.Email;
+                    conJson['pNo'] = i.p__c;  conJson['eidid'] = (i.eidid__c!=undefined && i.eidid__c!=null && i.eidid__c!='') ? i.eidid__c : ''; 
+                }
+            }
+            
+            //for standalone insurance
+            var heading = '{!heading}';
+            if(heading.includes(' health insurance')){
+                //alert('standalone insurance');
+                toggleGLoader(); afsd();
+            }
+            if(heading.includes('contract attestation')){ /*|| heading.includes('outsource')*/
+                //alert('standalone insurance');
+                toggleGLoader(); afsd();
+            }
+            //for attribute Update // 
+            if(heading.includes('update attributes') || heading.includes('update details')){
+                console.log('In >> update attributes');
+                toggleGLoader();afsd();
+            }
+        }
+        $('.conLkp .frmErrMsg1').hide();
+        if(cs['Con__c'].value != '' && '{!saveRq}' == 'true' && '{!Request.id}' == ''){
+            //alert('tst33:;');
+            copyApplicantInfo();
+        }
+        
+    }
+    
+    function openImg(elem,event){
+        event.stopPropagation();
+        var src = $(elem).find('img').attr('src');
+        window.open(src);
+    }
+    
+    function sdraft(){
+        let v = $('#conSerachVal').val();
+        let v1 = cs['selectedCon'].value;
+        if(v!=v1){
+            $('.conLkp').find('.frmErrMsg1').html('** Selected look up value has changed!').show();
+        }
+        else{
+            sdraft2(cs['Con__c'].value);
+            $('.conLkp').find('.frmErrMsg1').hide();
+        }
+    }
+    </script>
+</apex:component>

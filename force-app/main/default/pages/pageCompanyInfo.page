@@ -1,0 +1,2012 @@
+<apex:page cache="false" controller="gctlHm1" docType="html-5.0"  standardStylesheets="false" readOnly="false" showHeader="true" sidebar="false" title="Account Info"  action="{!checkParkingUser}">
+    
+    <html>
+        
+        <head>
+            <title>AXS</title>
+            <style>
+                a.nav-link.disabledApex {
+                pointer-events: none !important;
+                background-color: #cccccc94!important;
+                }
+                
+                #modal_confirm_global .close {
+                display: none !important;
+                }
+                .cardLabel i {
+                font-size: 1.3em !important;
+                }
+                
+                
+                elem.vehicle-number {
+                padding: 0.4em !important;
+                width: 1.9em !important;
+                height: 1.3em !important;
+                min-width: 0px;
+                }
+                
+                .standardCard {
+                cursor: pointer;
+                color: #000;
+                background: #fff;
+                border-color: #44a5c9;
+                }
+                .reservedCard {
+                background: #4a82e9;
+                color: #fff;
+                }
+                
+                .vipCard {
+                background: #6be57a;
+                color: #fff;
+                }
+                
+                .paidCard {
+                color: #fff;    
+                background: #364a80;
+                }
+                
+                .enrolledCard {
+                color: #fff;    
+                background: #909090;
+                }
+                /* .standardCard {
+                cursor: pointer;
+                color: #fff;
+                background: #44a5c9;
+                }
+                
+                .reservedCard {
+                background: #364a80;
+                background: green;
+                color: #fff;
+                }
+                
+                .paidCard {
+                color: #fff;
+                background: royalblue;
+                background: red;
+                }
+                
+                .enrolledCard {
+                color: #fff;
+                background: cornflowerblue;
+                background: #f37216;
+                }
+                elem.vehicle-number {
+                padding: 0.4em !important;
+                width: 0.5em !important;
+                height: 0.5em !important;
+                min-width: 0px;
+                }*/
+                .cardLabel {
+                font-size: 0.8em;
+                align-items: center;
+                }
+                .actionsElem{
+                display:none;
+                }
+                .tabs.tabs-4 .nav-tabs .nav-item{
+                font-size:0.9em !important;
+                }
+                .editAcc1,.editAccBtns{display:none;}
+                .editAcc2{display:flex;}
+                ::placeholder {
+                color: #d1d1d5 !important;
+                }
+                @keyframes blink {
+                0% {
+                opacity: 0.4;
+                }
+                50% {
+                opacity: 0.8;
+                }
+                80% {
+                opacity: 1;
+                }
+                100% {
+                opacity: 1;
+                }
+                }
+                
+                .blinkAny {
+                animation: blink 2s infinite;
+                }
+            </style>
+            <link rel="icon" href="./favicon.ico" />
+            
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css" />
+            <link href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css" />
+            
+            <!-- icons -->
+            
+            
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+            <!-- main css -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+            
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Media City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Internet City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dic.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai International Academic City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dia.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Knowledge Park'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dkp.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Outsource City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-doc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Studio City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Design District'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-ddd.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Production City'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dpc.css') }" />
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Science Park'}">
+                <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsp.css') }" />
+            </apex:outputPanel>
+            
+        </head>
+        
+        <body>
+            <apex:form > 
+                <div id="main">
+                    <div id="page_content">
+                        <div class="container">
+                            <div class="page-header">
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li>
+                                    <li class="breadcrumb-item">{!IF((A.Legal_Framework__c='Freelancer'),'My Info','Company Info')}</li>
+                                </ul>
+                                <!-- .breadcrumb -->
+                                
+                                <h1 class="page-title">{!IF((A.Legal_Framework__c='Freelancer'),'MY INFO','COMPANY INFO')}</h1>
+                                
+                            </div>
+                            <!-- .page-header 
+onlyParkingUser -- {!onlyParkingUser}-->
+                            <div class="row">
+                                <div class="col-xl-9 mb-xl-0 mb-4 chk" style="display:block !important;">
+                                    <div class="tabs accordion-tabs tabs-4">
+                                        
+                                        <ul class="nav nav-tabs" role="tablist">
+                                            <li class="nav-item forActions" for="accDet">
+                                                <a class="nav-link active {!IF(onlyParkingUser=true,'disabledApex','')}" data-toggle="tab" href="#tab_1">
+                                                    ACCOUNT DETAILS
+                                                    <i class="tab-icon icon-account"></i>
+                                                </a>
+                                            </li>
+                                            <!--<li class="nav-item forActions" for="lease" style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none','')}">
+<a class="nav-link" data-toggle="tab" href="#tab_2">LEASE <i class="tab-icon icon-lease-2"></i></a>
+</li> --><!-- Hidden for time being -->
+                                            <li class="nav-item forActions"  for="license">
+                                                <a class="nav-link {!IF(onlyParkingUser=true,'disabledApex','')}" data-toggle="tab" href="#tab_3">{!IF((A.Legal_Framework__c='Freelancer'),'FREELANCE PERMIT','LICENSE')} <i class="tab-icon icon-license"></i></a>
+                                            </li>
+                                            <li class="nav-item forActions"  for="depPayments">
+                                                <a class="nav-link {!IF(onlyParkingUser=true,'disabledApex','')}" data-toggle="tab" href="#tab_4">DEPOSITS &amp; PAYMENTS
+                                                    <i class="tab-icon icon-deposits-payments"></i></a>
+                                            </li>
+                                            <li class="nav-item forActions" for="parking" style="{!if(OR(AND(el['paidStdnExc']!=NULL,el['paidStdnExc']>0),AND(el['stdElg']!=null,(el['stdElg'] +  el['AddElg'])>0),AND(el['prkAvl']!=null,el['prkAvl']>0)),'','display:none')}" ><!--{!if(AND(el['stdElg']!=null,(el['stdElg'] +  el['AddElg'])>0),'','display:none')}-->
+                                                <a class="nav-link" data-toggle="tab" href="#tab_5">PARKING 
+                                                    <i class="tab-icon icon-parking"></i></a>
+                                            </li>
+                                        </ul>
+                                        <!-- .nav-tabs -->
+                                        
+                                        <div class="accordion" id="app_accordion">
+                                            <div class="tab-content">
+                                                <!-- #tab_1 -->
+                                                <div class="accordion-item open tab-pane fade show active" id="tab_1">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_1">
+                                                            <i class="tab-icon icon-account"></i>&nbsp;
+                                                            ACCOUNT DETAILS
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_1" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <apex:outputPanel id="accDetails">
+                                                                <div class="row">
+                                                                    <!--<div class="col-12">
+<i class="tab-icon icon-account" onclick="editAccDetails();" style="float: right;font-size: 1.5em;border: 2px solid #dcdcdc;border-radius: 10px;padding: 5px;cursor: pointer;"></i>
+</div>-->
+                                                                    <div class="col-lg-4 col-sm-6 data-info">
+                                                                        <div class="data-label">Account name</div>
+                                                                        <div class="data-value">{!A.name}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info">
+                                                                        <div class="data-label" fl="Name">Operating name</div>
+                                                                        <div class="data-value">{!A.on__c}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info">
+                                                                        <div class="data-label" fl="Name (Arabic)">Operating name (Arabic)</div>
+                                                                        <div class="data-value">{!A.onar__c}</div>
+                                                                    </div> 
+                                                                    <div class="col-lg-4 col-sm-6 data-info form-group">
+                                                                        <div class="data-label"><span fl="Website">Company website</span>
+                                                                            <i class="fa fa-pencil" data-original-title="Click here to edit Website" data-html="true" data-placement="top" data-toggle="tooltip" onclick="shwIPField(this);" style="float: right;cursor: pointer;color: #dcdcdc;"></i>
+                                                                        </div>
+                                                                        <apex:inputText html-attr1="{!A.Website}" html-attr="Website" onkeyup="validURL()" id="aWebsite" styleClass="form-control editAcc1" value="{!accUpdate.Website}" />
+                                                                        <div class="data-value">{!accUpdate.Website}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info">
+                                                                        <div class="data-label">Legal framework</div>
+                                                                        <div class="data-value">{!A.Legal_Framework__c}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info form-group">
+                                                                        <div class="data-label"><span fl="Ofﬁcial email">Company official email</span>
+                                                                            <i class="fa fa-pencil" data-original-title="Click here to edit Email" data-html="true" data-placement="top" data-toggle="tooltip" onclick="shwIPField(this);" style="float: right;cursor: pointer;color: #dcdcdc;"></i>
+                                                                        </div>
+                                                                        <apex:inputText html-attr1="{!A.Email__c}" html-attr="Email__c" onkeyup="convertToLower(this)" onchange="checkEmail(this)" id="aEmail1" styleClass="form-control editAcc1" value="{!accUpdate.Email__c}" />
+                                                                        <div class="data-value">{!accUpdate.Email__c}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info form-group">
+                                                                        <div class="data-label"><span fl="Contact number">Company phone</span>
+                                                                            <i class="fa fa-pencil" for="aPhone" data-original-title="Click here to edit Phone should be in format of 5XXXXXXXX OR 4XXXXXXX" data-html="true" data-placement="top" data-toggle="tooltip" onclick="shwIPField(this);" style="float: right;cursor: pointer;color: #dcdcdc;"></i>
+                                                                        </div>
+                                                                        <div class="editAcc1 editAcc2" style="display:none;">
+                                                                            <apex:inputText html-placeholder="009715XXXXXXXX OR 009714XXXXXXX" style="width: auto;" maxlength="15" html-attr1="{!A.Phone}" html-attr="Phone"  id="aPhone" styleClass="numOnly form-control editAcc1" value="{!accUpdate.Phone}" />
+                                                                            <script>
+                                                                            var aPhn=getC('{!$Component.aPhone}');
+                                                                            </script>
+                                                                        </div>
+                                                                        <div class="data-value">{!accUpdate.phone}</div>
+                                                                    </div>
+                                                                    <div class="col-lg-4 col-sm-6 data-info form-group">
+                                                                        <div class="data-label">TRN#
+                                                                            <i class="fa fa-pencil" data-original-title="Click here to edit TAX Registration Number" data-html="true" data-placement="top" data-toggle="tooltip" onclick="shwIPField(this);" style="float: right;cursor: pointer;color: #dcdcdc;"></i>
+                                                                        </div>
+                                                                        <apex:inputText html-attr1="{!A.van__c}" html-attr="Van__c" onkeyup="" id="aVan" styleClass="form-control editAcc1" value="{!accUpdate.van__c}" />
+                                                                        <div class="data-value">{!accUpdate.van__c}</div>
+                                                                    </div>
+                                                                    <!--</div>-->
+                                                                </div>
+                                                                <div class="editAccBtns row col-xl-12">
+                                                                    <div class="col-xl-6 form-group text-right">
+                                                                        <a class="btn btn-primary" id="cancelAccDetails" onclick="cancelAccDetails1()" style="color: white !important;">CANCEL</a>
+                                                                    </div>
+                                                                    <div class="col-xl-6 form-group">
+                                                                        <a class="btn btn-primary disabled" id="saveAccDetails1" onclick="saveAccDetails1(this)" style="color: white !important;">SAVE</a>
+                                                                    </div>
+                                                                </div>
+                                                                <script>
+                                                                $('input.editAcc1').unbind('change').on('change',function(){
+                                                                    $('#saveAccDetails1').addClass('disabled');
+                                                                    $('input.editAcc1').each(function(i,v){
+                                                                        var v = $(this).val();
+                                                                        var f = $(this).attr('attr1');
+                                                                        var fld = $(this).attr('attr');
+                                                                        var validate = true;
+                                                                        if(fld=='Van__c'){
+                                                                            validate = checkTrn1(this);
+                                                                        }
+                                                                        if(v!=f && validate){
+                                                                            $('#saveAccDetails1').removeClass('disabled');
+                                                                        }
+                                                                        else{
+                                                                            //$('#saveAccDetails1').addClass('disabled');
+                                                                        }
+                                                                        if($('.frmErrMsg').length>0){
+                                                                            $('#saveAccDetails1').addClass('disabled');
+                                                                        }
+                                                                    });
+                                                                });
+                                                                function convertToLower(e){
+                                                                    $(e).val($(e).val().toLowerCase());
+                                                                }
+                                                                function isUAEMobNum1(elem){
+                                                                    var mob = $(elem).val();
+                                                                    if(mob==null||mob==undefined||mob=='')
+                                                                        return;
+                                                                    var regex = /^((?:50|51|52|54|55|56|58|2|3|4|6|7|9)\d{7})$/gm;
+                                                                    //var regex =  /^((?:50|52|54|55|56|58|2|3|4|6|7|)[0-9]{7,})$/; /*/^(?:\+971|00971|0)?(?:50|51|52|55|56|2|3|4|6|7|9)\d{7}$/gm; */
+                                                                    var r = (regex.test(mob))?true:'invalid';
+                                                                    if(r == 'invalid'){
+                                                                        addValError(elem,'Please enter a valid UAE number!'); 
+                                                                        return false;
+                                                                    }else{
+                                                                        removeValError(elem); 
+                                                                        return true;
+                                                                    }
+                                                                }
+                                                                
+                                                                function checkTrn1(e){
+                                                                    var r = new RegExp('^((?!(0))[0-9]{15})$');
+                                                                    var v = $(e).val();
+                                                                    if(!v)
+                                                                        return true;
+                                                                    removeValError(e);
+                                                                    if(!r.test(v) ){
+                                                                        addValError(e,'Only numbers allowed!');
+                                                                        $(e).addClass('is-invalid');
+                                                                        return false;
+                                                                    }
+                                                                    else if(v=='100487319400003' || v=='100072771700003'){
+                                                                        addValError(e,'Invalid TRN Number!');
+                                                                        $(e).addClass('is-invalid');
+                                                                        return false;
+                                                                    }
+                                                                    return true;
+                                                                }
+                                                                </script>
+                                                            </apex:outputPanel>
+                                                            <!-- .row -->
+                                                            <div class="separator-dashed" style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none;','')}"></div>
+                                                            
+                                                            <div class="row" style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none;','')}">
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <h4>EMPLOYEE VISA ELIGIBILITY</h4>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Employee visa eligibility (assigned)</div>
+                                                                        <div class="data-value">{!A.vespe__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Employee visa eligibility (add-on)</div>
+                                                                        <div class="data-value">{!A.vespex__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Total employee visa eligibility</div>
+                                                                        <div class="data-value">{!A.vetemp__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Available employee visas</div>
+                                                                        <div class="data-value">{!A.vbtemp__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <h4>STUDENT VISA ELIGIBILITY</h4>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Student visa eligibility (assigned)</div>
+                                                                        <div class="data-value">{!A.vespst__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Student visa eligibility (add-on)</div>
+                                                                        <div class="data-value">{!A.vespstx__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Total student visa eligibility</div>
+                                                                        <div class="data-value">{!A.vetst__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Available student visas</div>
+                                                                        <div class="data-value">{!A.vbtst__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <h4>OTHER ELIGIBILITIES</h4>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Visit visa eligibility</div>
+                                                                        <div class="data-value">{!A.vev__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Total parking access</div>
+                                                                        <div class="data-value">{!el['stdElg'] + el['AddElg']}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Available parking access</div>
+                                                                        <div class="data-value">{!el['stdElg'] +  el['AddElg'] -el['paidUtlzd'] - el['freeUtlzd']}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">axs users</div>
+                                                                        <div class="data-value">{!A.mxPortalUsers__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                            </div>
+                                                            <!-- .row -->
+                                                            
+                                                            <div class="separator-dashed mb-0"></div>
+                                                            <div class="detail-collapse-wrapper" id="coninfo" style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none;','')}">
+                                                                <a class="detail-collapse-toggle collapsed" data-toggle="collapse" href="#collapse_coninfo">
+                                                                    <h4>
+                                                                        COMPANY CONTACTS
+                                                                    </h4>
+                                                                </a>
+                                                                <div class="detail-collapse-body">
+                                                                    <div class="collapse" id="collapse_coninfo">
+                                                                        
+                                                                        <apex:outputPanel rendered="{!if(conVals,true,false)}">
+                                                                            
+                                                                            
+                                                                            <apex:repeat value="{!aList}" var="a" > 
+                                                                                
+                                                                                <div class="separator-dashed mb-0"></div>
+                                                                                <br/>
+                                                                                <div class="row">
+                                                                                    
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        <apex:outputtext rendered="{!(CONTAINS(conMap[a].rol__c,'General Manager'))}">
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-value"> <h4>General Manager</h4></div>
+                                                                                            </div>
+                                                                                        </apex:outputtext>
+                                                                                        <apex:outputtext rendered="{!!(CONTAINS(conMap[a].rol__c,'General Manager'))}">
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-value"> <h4>{!a}</h4></div>
+                                                                                            </div>
+                                                                                        </apex:outputtext>
+                                                                                    </div>
+                                                                                    <div class="col-lg-4 col-sm-6"></div>
+                                                                                    <div class="col-lg-4 col-sm-6"></div>
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Name</div>
+                                                                                            <div class="data-value">{!conMap[a].name__c}</div>
+                                                                                        </div>
+                                                                                    </div><!-- .col -->
+                                                                                    
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        
+                                                                                        
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Primary email address</div>
+                                                                                            <div class="data-value">{!conMap[a].Email__c}</div> 
+                                                                                        </div>
+                                                                                    </div><!-- .col -->
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Primary mobile number</div>
+                                                                                            <div class="data-value">{!conMap[a].phone__c}</div> 
+                                                                                        </div>
+                                                                                        
+                                                                                    </div>
+                                                                                    
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Secondary email address</div>
+                                                                                            <div class="data-value">{!conMap[a].seml__c}</div> 
+                                                                                        </div>
+                                                                                        
+                                                                                    </div>
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Secondary mobile number</div>
+                                                                                            <div class="data-value">{!conMap[a].sphn__c}</div> 
+                                                                                        </div>
+                                                                                        
+                                                                                    </div>
+                                                                                    <apex:outputtext rendered="{!(CONTAINS(conMap[a].rol__c,'General Manager'))}">
+                                                                                        
+                                                                                        <div class="col-lg-4 col-sm-6">
+                                                                                            
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Other roles</div>
+                                                                                                <apex:repeat value="{!oList}" var="b" > 
+                                                                                                    <div class="data-value"><li>{!b}</li></div> 
+                                                                                                </apex:repeat> 
+                                                                                            </div>
+                                                                                            
+                                                                                        </div>
+                                                                                        
+                                                                                        
+                                                                                    </apex:outputtext>
+                                                                                </div>
+                                                                                
+                                                                                
+                                                                            </apex:repeat>
+                                                                            
+                                                                            
+                                                                        </apex:outputPanel> 
+                                                                        <apex:outputPanel rendered="{!if(conVals,false,true)}">
+                                                                            <span id='compcon'>You have no contacts registered. Thank you</span>
+                                                                        </apex:outputPanel>
+                                                                        
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="detail-collapse-wrapper">
+                                                                <a class="detail-collapse-toggle collapsed" data-toggle="collapse" href="#collapse_sanctions">
+                                                                    <h4>
+                                                                        SANCTIONS
+                                                                    </h4>
+                                                                </a>
+                                                                <div class="detail-collapse-body">
+                                                                    <div class="collapse" id="collapse_sanctions">
+                                                                        <!--Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident dolore sed maxime quas, rem
+quam fuga! Quidem dicta ratione consequuntur, inventore earum saepe voluptate perferendis.
+Eligendi ipsum qui ratione odio. -->
+                                                                        
+                                                                        <apex:outputPanel rendered="{!if(mScHasVal,true,false)}"><!-- rendered="{!if(AND(mScSize!=null,mScSize>1),true,false)}"-->
+                                                                            
+                                                                            <div id="allSnc" style=''>
+                                                                                <apex:repeat value="{!mSnc}" var="mSk" >
+                                                                                    <li>  {!mSnc[mSk]} </li>  
+                                                                                </apex:repeat> 
+                                                                            </div>
+                                                                            <!--<span id='sncWarn'>You have more than one sanctions imposed on your account, please click on <b>View Details</b></span>-->
+                                                                            
+                                                                        </apex:outputPanel>
+                                                                        <!--<apex:outputPanel rendered="{!if(mScHasVal,true,false)}">
+<apex:repeat value="{!mSnc}" var="mSk" > 
+<p>  {!mSnc[mSk]} </p> 
+</apex:repeat>
+
+</apex:outputPanel>-->
+                                                                        <apex:outputPanel rendered="{!if(mScHasVal,false,true)}">
+                                                                            <span id='sncWarn'>Currently, there are no sanctions imposed on your account.</span>
+                                                                        </apex:outputPanel>
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            <!-- .detail-collapse-wrapper -->
+                                                            
+                                                            <div class="detail-collapse-wrapper">
+                                                                <a class="detail-collapse-toggle collapsed" data-toggle="collapse" href="#collapse_pob">
+                                                                    <h4>
+                                                                        P.O. BOX 
+                                                                    </h4>
+                                                                </a>
+                                                                <div class="detail-collapse-body">
+                                                                    <div class="collapse" id="collapse_pob">
+                                                                        <apex:outputPanel rendered="{!IF(AND(NOT(ISBLANK(poBoxLst)),poBoxLst.size>0),true,false)}">
+                                                                            <apex:repeat value="{!poBoxLst}" var="p" > 
+                                                                                <div class="row">
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">P.O. Box number</div>
+                                                                                            <div class="data-value">{!p.Name}</div>
+                                                                                        </div>
+                                                                                    </div><!-- .col -->
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">P.O. Box bundle details</div>
+                                                                                            <div class="data-value">{!p.typ__c}</div>
+                                                                                        </div>
+                                                                                    </div><!-- .col -->
+                                                                                    <div class="col-lg-4 col-sm-6">
+                                                                                        <div class="data-info">
+                                                                                            <div class="data-label">Expiry date</div>
+                                                                                            <div class="data-value"><apex:outputField value="{!p.edt__c}" /></div>
+                                                                                        </div>
+                                                                                        <!--<div class="data-info">
+<div class="data-label">Authorised Agents</div>
+<div class="data-value">Ahmed Salem <br>Ali Ali Gossan</div>
+</div>-->
+                                                                                    </div>
+                                                                                </div>
+                                                                                
+                                                                            </apex:repeat>
+                                                                            
+                                                                            
+                                                                        </apex:outputPanel> 
+                                                                        <apex:outputPanel rendered="{!IF(AND(NOT(ISBLANK(poBoxLst)),poBoxLst.size>0),false,true)}">
+                                                                            <span id='pobWarn'>You have no PO Box for your account. Thank you</span>
+                                                                        </apex:outputPanel>
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_1 -->
+                                                <!-- #tab_2 -->
+                                                <div class="accordion-item tab-pane fade" id="tab_2">
+                                                    <!--<div class="accordion-toggle">
+<a href="#" data-toggle="collapse" data-target="#collapse_2">
+<i class="tab-icon icon-lease-2"></i>&nbsp;
+LEASE
+<i class="fa fa-angle-down"></i>
+</a>
+</div>-->
+                                                    <div id="collapse_2" class="accordion-content collapse" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <div class="row">
+                                                                <div class="col-lg-3">
+                                                                    <h4 class="mt-lg-3 pt-lg-2">LEASE DETAILS</h4>
+                                                                </div>
+                                                                <!-- .col -->
+                                                                <div class="col-lg-9">
+                                                                    <apex:repeat value="{!tecomLeaseList}" var="l" id="theRepeat2">
+                                                                        <div class="detail-collapse-wrapper">
+                                                                            <a class="detail-collapse-toggle" data-toggle="collapse" href="#collapse_lease_1">
+                                                                                <h4><i class="icon-lease-1"></i> LEASE 1 - {!l.AgNo}</h4>
+                                                                            </a>
+                                                                            <div class="detail-collapse-body">
+                                                                                <div class="collapse show" id="collapse_lease_1">
+                                                                                    <div class="row">
+                                                                                        
+                                                                                        <div class="col-lg-4 col-sm-6">
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Lease Status</div>
+                                                                                                <div class="data-value">{!l.ContractStatusReason}</div>
+                                                                                            </div>
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Category</div>
+                                                                                                <div class="data-value">{!l.Category}</div>
+                                                                                            </div>
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Business Park</div>
+                                                                                                <div class="data-value">{!l.BusinessPark}</div>
+                                                                                            </div>
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Address</div>
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                <apex:repeat value="{!finalAgreeLoc[l.AgNo]}" var="key2">
+                                                                                                    <div class="data-value">
+                                                                                                        {!key2}
+                                                                                                    </div>
+                                                                                                    
+                                                                                                </apex:repeat>
+                                                                                                
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        
+                                                                                        <!-- .col -->
+                                                                                        <div class="col-lg-4 col-sm-6">
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Lease Issue Date</div>
+                                                                                                <div class="data-value">{!l.ContractStartDate }
+                                                                                                    <!--
+<apex:outputText value="{0, date, dd MMMMMM yyyy}">
+<apex:Param value="{!l.ContractStartDate }" />
+</apex:OutputText>
+-->
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="data-info">
+                                                                                                <div class="data-label">Lease Expiry Date</div>
+                                                                                                <div class="data-value">{!l.ContractEndDate }
+                                                                                                    <!--
+<apex:outputText value="{0, date, dd MMMMMM yyyy}">
+<apex:Param value="{l.ls_end__c }" />
+</apex:OutputText>
+-->
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <!-- .col -->
+                                                                                        <div class="col-lg-4 col-sm-6 font-weight-medium">
+                                                                                            <p class="text-light">
+                                                                                                <span class="checkbox-static checkbox-static-unchecked mr-2"></span>
+                                                                                                Ramadan Permit
+                                                                                            </p>
+                                                                                            <p>
+                                                                                                <span class="checkbox-static mr-2"></span>
+                                                                                                Registered Office
+                                                                                            </p>
+                                                                                        </div>
+                                                                                        <!-- .col -->
+                                                                                    </div>
+                                                                                    <!-- .row -->
+                                                                                </div>
+                                                                                <!-- .collapse -->
+                                                                            </div>
+                                                                            <!-- .detail-collapse-body -->
+                                                                        </div>
+                                                                        <!-- .detail-collapse-wrapper -->
+                                                                        
+                                                                    </apex:repeat>
+                                                                    
+                                                                    <!-- .detail-collapse-wrapper -->
+                                                                    
+                                                                </div>
+                                                                <!-- .col -->
+                                                            </div>
+                                                            <!-- .row -->
+                                                            
+                                                            <div class="mb-lg-5 mb-3"></div>
+                                                            
+                                                            <!--<div class="row">
+<div class="col-lg-3">
+<p class="font-weight-bold mt-1 d-none d-lg-block" style="font-size: 1rem;">Related <br/>Documents</p>
+<p class="font-weight-bold mt-1 d-lg-none" style="font-size: 1rem;">Related Documents</p>
+</div>
+<div class="col-lg-9">
+<div class="card-files-wrapper">
+<a href="#" class="card-file">
+<img  src="/resource/1578395596000/assets_NUI/images/file-pdf.png" alt="" class="file-icon" />
+<div class="file-name">Lease Contract <br/>CBF-283292134</div>
+<div class="file-prop">PDF &nbsp;|&nbsp; 580 KB</div>
+</a>
+<a href="#" class="card-file">
+<img  src="/resource/1578395596000/assets_NUI/images/file-xls.png" alt=""  class="file-icon" />
+<div class="file-name">Ejari Certificate</div>
+<div class="file-prop">XLS &nbsp;|&nbsp; 580 KB</div>
+</a>
+<a href="#" class="card-file">
+<img  src="/resource/1578395596000/assets_NUI/images/file-doc.png" alt="" class="file-icon" />
+<div class="file-name">Cheque Payment Copies</div>
+<div class="file-prop">DOC &nbsp;|&nbsp; 580 KB</div>
+</a>
+</div>
+
+
+</div>
+</div>-->
+                                                            <!-- .row -->
+                                                            
+                                                            <div class="table-payment-schedule-wrapper">
+                                                                
+                                                                <div class="separator-dashed"></div>
+                                                                
+                                                                <div class="d-flex mb-2 flex-wrap">
+                                                                    <h4 class="mr-auto mt-3 pr-4">LEASE PAYMENT SCHEDULE</h4>
+                                                                    <!-- dropdown filter -->
+                                                                    <div class="table-form-wrapper">
+                                                                        <div class="table-form-col col-12">
+                                                                            <div class="dropdown-filter-wrapper">
+                                                                                <select class="dropdown-filter form-control">
+                                                                                    <option value="">All</option>
+                                                                                    <option value="">Other Option</option>
+                                                                                    <option value="">Option 1</option>
+                                                                                    <option value="">Option 2</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- end .dropdown filter -->
+                                                                </div>
+                                                                
+                                                                <div class="table-responsive table-responsive-lg">
+                                                                    <table class="table table-payment-schedule">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th>INVOICE NUMBER</th>
+                                                                                <th>AMOUNT (AED)</th>
+                                                                                <th>DUE DATE</th>
+                                                                                <th>STATUS</th>
+                                                                                <th colspan="2" class="text-center">DOWNLOAD</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        
+                                                                        <tbody>
+                                                                            <!-- 1 -->
+                                                                            <tr>
+                                                                                <td>INV390183</td>
+                                                                                <td>40,000</td>
+                                                                                <td></td>
+                                                                                <td><span class="badge badge-payment badge-payment-paid">PAID</span></td>
+                                                                                <td><a href="#">RECEIPT <i class="icon-download"></i></a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 2 -->
+                                                                            <tr>
+                                                                                <td>INV382022</td>
+                                                                                <td>43,000</td>
+                                                                                <td></td>
+                                                                                <td><span class="badge badge-payment badge-payment-paid">PAID</span></td>
+                                                                                <td><a href="#">RECEIPT <i class="icon-download"></i></a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 3 -->
+                                                                            <tr>
+                                                                                <td>INV593920</td>
+                                                                                <td>40,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-danger">IN 18 DAYS</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 4 -->
+                                                                            <tr>
+                                                                                <td>INV390183</td>
+                                                                                <td>23,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 5 -->
+                                                                            <tr>
+                                                                                <td>INV382022</td>
+                                                                                <td>40,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 6 -->
+                                                                            <tr>
+                                                                                <td>INV593920</td>
+                                                                                <td>43,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 7 -->
+                                                                            <tr>
+                                                                                <td>INV390183</td>
+                                                                                <td>40,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 8 -->
+                                                                            <tr>
+                                                                                <td>INV382022</td>
+                                                                                <td>23,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                            <!-- 9 -->
+                                                                            <tr>
+                                                                                <td>INV593920</td>
+                                                                                <td>50,000</td>
+                                                                                <td>12/03/2018</td>
+                                                                                <td><span class="badge badge-payment badge-payment-upcoming">UPCOMING</span></td>
+                                                                                <td><a href="#">-</a></td>
+                                                                                <td><a href="#">INVOICE <i class="icon-download"></i></a></td>
+                                                                            </tr>
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                                <!-- .table-responsive -->
+                                                            </div>
+                                                            
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_2 -->
+                                                <!-- #tab_3 -->
+                                                <div class="accordion-item tab-pane fade" id="tab_3">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_3">
+                                                            <i class="tab-icon icon-license"></i>&nbsp;
+                                                            {!IF((A.Legal_Framework__c='Freelancer'),'FREELANCE PERMIT','LICENSE')}
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_3" class="accordion-content collapse" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <div class="row">
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Permit number">License number</div>
+                                                                        <div class="data-value">{!A.lc__c} </div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Permit type">License type</div>
+                                                                        <div class="data-value">{!A.lctp__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Permit status">License status</div>
+                                                                        <div class="data-value">{!A.lcsta__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Business community">Business community</div>
+                                                                        <div class="data-value">{!A.Prk__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="First permit issue date">First license issue date</div>
+                                                                        <div class="data-value">
+                                                                            <apex:outputText value="{0, date, dd-MM-yyyy}">
+                                                                                <apex:Param value="{!A.lcidt1__c}" />
+                                                                            </apex:outputText>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Current permit issue date">Current license issue date</div>
+                                                                        <div class="data-value">
+                                                                            <apex:outputText value="{0, date, dd-MM-yyyy}">
+                                                                                <apex:Param value="{!A.lcidt__c}" />
+                                                                            </apex:outputText>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Permit expiry date">License expiry date</div>
+                                                                        <div class="data-value">
+                                                                            <apex:outputText value="{0, date, dd-MM-yyyy}">
+                                                                                <apex:Param value="{!A.lcedt__c}" />
+                                                                            </apex:outputText>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Establishment card number">Establishment card number</div>
+                                                                        <div class="data-value">{!A.ec__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Establishment card issue date">Establishment card issue date</div>
+                                                                        <div class="data-value">
+                                                                            <apex:outputText value="{0, date, dd-MM-yyyy}">
+                                                                                <apex:Param value="{!A.ecidt__c}" />
+                                                                            </apex:outputText>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label" fl="Establishment card expiry date ">Establishment card expiry date</div>
+                                                                        <div class="data-value">
+                                                                            <apex:outputText value="{0, date, dd-MM-yyyy}">
+                                                                                <apex:Param value="{!A.ecedt__c}" />
+                                                                            </apex:outputText>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                            </div>
+                                                            <!-- .row -->
+                                                            
+                                                            <div class="separator-dashed mb-0" style=""></div>
+                                                            <div class="detail-collapse-wrapper" id="docinfo" ><!--style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none;','')}"-->
+                                                                <a class="detail-collapse-toggle collapsed" data-toggle="collapse" href="#collapse_docinfo">
+                                                                    <h4>
+                                                                        Related Documents
+                                                                    </h4>
+                                                                </a>
+                                                                <div class="detail-collapse-body">
+                                                                    <div class="collapse" id="collapse_docinfo">
+                                                                        
+                                                                        <div class="card-files-wrapper">
+                                                                            <!--<a href="#" class="card-file"><img  src="/resource/1578395596000/assets_NUI/images/file-pdf.png" alt="" class="file-icon" /><div class="file-name">Company Establishment Card</div><div class="file-prop">PDF &nbsp;|&nbsp; 580 KB</div></a>-->
+                                                                            <!-- .card-file -->
+                                                                            <a href="/apex/getdoccopy?lc={!A.lc__c}&dc=Commercial+License&rg=Y" target="_new" class="card-file" style="{!IF((A.Legal_Framework__c='Freelancer'),'','display:none')}">
+                                                                                <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon" />
+                                                                                <div class="file-name">Freelancer Permit</div>
+                                                                                <div class="file-prop">PDF </div>
+                                                                            </a>
+                                                                            <!-- .card-file -->
+                                                                            <!-- <apex:repeat value="{!DdaDocs}" var="doc" rendered="{!A.Legal_Framework__c!='Freelancer'}" >
+<apex:outputPanel rendered="{!IF(OR(AND(contains(A.Legal_Framework__c,'Branch'), contains(doc,'Branch')), NOT(contains(doc,'Branch'))),true,false)}">
+<a style="margin-right: 1rem;" href="/getdoccopy?dc={!DdaDocs[doc]}" target="_new" class="card-file">
+<img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+<div class="file-name">{!doc}</div>
+<div class="file-prop">PDF </div>
+</a>
+</apex:outputPanel>
+</apex:repeat> Commented on 8th May to hide COI for Branch-->
+                                                                            <apex:outputPanel rendered="{!IF(NOT(contains(A.Legal_Framework__c,'Branch')),true,false)}">
+                                                                                <a style="margin-right: 1rem;" href="/getdoccopy?dc=COI" target="_new" class="card-file">
+                                                                                    <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                    <div class="file-name">Certificate of Incorporation</div>
+                                                                                    <div class="file-prop">PDF </div>
+                                                                                </a>
+                                                                            </apex:outputPanel>
+                                                                            <apex:outputPanel rendered="{!IF(contains(A.Legal_Framework__c,'Branch'),true,false)}">
+                                                                                <a style="margin-right: 1rem;" href="/getdoccopy?dc=COBR" target="_new" class="card-file">
+                                                                                    <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                    <div class="file-name">Certificate of Branch Registration</div>
+                                                                                    <div class="file-prop">PDF </div>
+                                                                                </a>
+                                                                            </apex:outputPanel>
+                                                                            <!--<apex:outputPanel ><!--US APD2635
+                                                                                <a style="margin-right: 1rem;" href="/getdoccopy?dc=NameChangeCertificate" target="_new" class="card-file">
+                                                                                    <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                    <div class="file-name">Certificate of Company Name change</div>
+                                                                                    <div class="file-prop">PDF </div>
+                                                                                </a>
+                                                                            </apex:outputPanel>-->
+                                                                            <a style="margin-right: 1rem;" href="/getdoccopy?dc=License" target="_new" class="card-file">
+                                                                                <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                <div class="file-name">Commercial License</div>
+                                                                                <div class="file-prop">PDF </div>
+                                                                            </a>
+                                                                            <a style="margin-right: 1rem;" href="/getdoccopy?dc=ROD" target="_new" class="card-file">
+                                                                                <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                <div class="file-name">Register of Directors</div>
+                                                                                <div class="file-prop">PDF </div>
+                                                                            </a>
+                                                                            <apex:outputPanel rendered="{!AND(A.Legal_Framework__c != 'Freelancer', A.stapsa__c = 'Signed', NOT(ISBLANK(A.PSA_Signed_By__c)))}">
+                                                                                <a style="margin-right: 1rem;" href="/PSADoc?id={!A.Id}" target="_new" class="card-file">
+                                                                                    <img  src="{!URLFOR($Resource.assets_NUI, '/images/file-pdf.png')}" alt="" class="file-icon"/>
+                                                                                    <div class="file-name">Employee Sponsorship Agreement</div>
+                                                                                    <div class="file-prop">PDF </div>
+                                                                                </a>
+                                                                            </apex:outputPanel>
+                                                                        </div>
+                                                                        <apex:outputPanel rendered="{!if(ISNULL(DdaDocs),true,false)}">
+                                                                            <span id='compcon1'>You have no related documents. Thank you</span>
+                                                                        </apex:outputPanel>
+                                                                        
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            <!-- .row -->
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_3 -->
+                                                <!-- #tab_4 -->
+                                                <div class="accordion-item tab-pane fade" id="tab_4">
+                                                    <div class="accordion-toggle">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_4">
+                                                            <i class="tab-icon icon-deposits-payments"></i>&nbsp;
+                                                            DEPOSITS &amp; PAYMENTS
+                                                            <i class="fa fa-angle-down"></i>
+                                                            
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_4" class="accordion-content collapse" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <div class="row">
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Portal deposit (opening)</div>
+                                                                        <div class="data-value comNum">
+                                                                            {!A.adob__c}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Portal deposit topped up (total)</div>
+                                                                        <div class="data-value comNum">{!A.adx__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Portal deposit consumed</div>
+                                                                        <div class="data-value comNum">{!A.adc__c}</div>
+                                                                    </div>
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Portal deposit (available)</div>
+                                                                        <div class="data-value comNum">{!A.adb__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                                <div class="col-lg-4 col-sm-6" style="{!IF((A.Legal_Framework__c='Freelancer'),'display:none;','')}">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Bank guarantee</div>
+                                                                        <div class="data-value comNum">{!A.bg__c}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <!--  -->
+                                                            </div>
+                                                            <!-- .row -->
+                                                            
+                                                            <!--<div class="separator-dashed mb-0"></div>-->
+                                                            
+                                                            <!--<div class="detail-collapse-wrapper">
+<a class="detail-collapse-toggle collapsed" data-toggle="collapse" href="#collapse_payment_history">
+<h4>
+PAYMENT HISTORY
+</h4>
+</a>
+<div class="detail-collapse-body">
+<div class="collapse" id="collapse_payment_history">
+<div class="table-responsive table-responsive-lg">
+<table class="table table-payment-schedule">
+<thead>
+<tr>
+<th>TRANSACTION NUMBER</th>
+<th>PAYMENT METHOD</th>
+<th>AMOUNT</th>
+<th>PAYMENT PROCESSED</th>
+<th>STATUS</th>
+<th colspan="2" class="text-center">DOWNLOAD</th>
+</tr>
+</thead>
+
+<tbody>
+<apex:repeat value="{!tsLst}" var="t" id="theRepeat3">
+<tr>
+<td>{!t.Name}</td>
+<td>{!t.md__c}</td>
+<td>
+<apex:outputText styleClass="comNum" value="{!t.A__c}">
+</apex:outputText>
+</td>
+<td>
+<apex:outputText value="{0, date, dd MMMMMM yyyy}">
+<apex:Param value="{!t.dt__c }" />
+</apex:outputText>
+</td>
+<td><span class="badge badge-payment {!IF(t.STA__c='Completed', 'badge-payment-paid', IF(t.STA__c='Open','badge-payment-upcoming',IF(t.STA__c='Cancelled' || t.STA__c='Failed','badge-payment-danger','')))}">{!t.STA__c}</span></td>
+<apex:outputPanel rendered="{!t.STA__c='Completed'}"> <td colspan="2"><a href="/gtrcpt?id={!t.id }" target="_blank">RECEIPT <i class="icon-download"></i></a></td></apex:outputPanel>
+<apex:outputPanel rendered="{!t.STA__c='Open'}"> <td colspan="2"><a href="/gtrinv?id={!t.id }" target="_blank">Invoice <i class="icon-download"></i></a></td></apex:outputPanel>
+
+</tr>
+</apex:repeat>                                                                               
+
+</tbody>
+</table>
+</div>
+
+</div>
+
+
+</div>
+</div>-->
+                                                            <!-- .detail-collapse-wrapper -->
+                                                            
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_4 -->
+                                                <!-- #parking tab -->
+                                                <!-- #parking tab -->
+                                                <div class="accordion-item tab-pane fade" id="tab_5">
+                                                    <div class="accordion-toggle" style="{!if(AND(el['stdElg']!=null,el['stdElg']>0),'','display:none')}">
+                                                        <a href="#" data-toggle="collapse" data-target="#collapse_parking">
+                                                            <i class="tab-icon icon-account"></i>&nbsp;
+                                                            PARKING
+                                                            <i class="fa fa-angle-down"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse_parking" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                        <div class="accordion-content-inner">
+                                                            <p>
+                                                                The section below displays the total number of parking permits assigned, in addition to parking permits you may have purchased seperately. If you have any questions, please contact us via the Connect feature or reach out to your partner relations representative.
+                                                            </p>
+                                                            <div class="row">
+                                                                <div class="col-xl-4" style="{!if((el['paidStd']+el['paidEXC'])>0,'','display:none;')}"><!-- {!if((el['paidStd']+el['paidEXC'])>0,'','display:none;')}-->
+                                                                    <div class="box box-padding parking-box box-white box-auto-height">
+                                                                        <i class="icon-car icon"></i>
+                                                                        <span class="parking-value">{!el['paidStd']+el['paidEXC']}</span>
+                                                                        <div>
+                                                                            <div class="fs-14 font-weight-bold">Available pre approved permits</div>
+                                                                            <!--div class="fs-14">{!el['paidStdnExc']}</div-->
+                                                                        </div>
+                                                                        <div class="d-none">
+                                                                            <a href="/nrtaea?sid=a0L2800000AqH9DEAV" class="blinkAny" target="_blank">Click here to apply</a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xl-4">
+                                                                    <div class="box box-padding parking-box box-white box-auto-height">
+                                                                        <i class="icon-parking icon"></i>
+                                                                        <span class="parking-value">{!el['stdElg']+el['AddElg']}</span>
+                                                                        <div>
+                                                                            <div class="fs-14 font-weight-bold">Total parking permits</div>
+                                                                            <div class="fs-14">{!el['stdElg']} Eligible + {!el['AddElg']} Purchased</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xl-4">
+                                                                    <div class="box box-padding parking-box box-white box-auto-height">
+                                                                        <i class="icon-car icon"></i>
+                                                                        <span class="parking-value">{!el['tUtlzd']}</span>
+                                                                        <div>
+                                                                            <div class="fs-14 font-weight-bold">Parking permits used</div>
+                                                                            <div class="fs-14">{!(el['stdElg']+el['AddElg'])} Total Eligibility + {!el['enrld']} Total Enrolled</div><!--+ {!el['enrld']} Total Enrolled-->
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xl-4">
+                                                                    <div class="box box-padding parking-box box-white box-auto-height">
+                                                                        <i class="icon-car icon"></i>
+                                                                        <span class="parking-value">{!el['rsrvd']}</span>
+                                                                        <div>
+                                                                            <div class="fs-14 font-weight-bold">Reserved parking</div>
+                                                                            <div class="fs-14">{!(el['stdElg']+el['AddElg'])}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="row col-12 d-none d-lg-flex">
+                                                                <div class="col-3 cardLabel" style="display: flex;">
+                                                                    <elem class="mx-2 vehicle-number reservedCard" style="" data-original-title="Reserved parking ensures that a parking is available and guaranteed for the selected users." data-placement="top" data-toggle="tooltip">&nbsp;</elem>
+                                                                    <!--<i class="fs-20 icon-info-circle text-primary mr-1" data-original-title="Reserved parking ensures that a parking is available and guaranteed for the selected users." data-placement="top" data-toggle="tooltip"></i>
+-->
+                                                                    RESERVED PERMIT
+                                                                    
+                                                                </div>
+                                                                <div class="col-3 cardLabel" style="display: flex;">
+                                                                    <elem class="mx-2 vehicle-number standardCard" style="" data-original-title="Eligible parking permits based on lease agreement." data-placement="top" data-toggle="tooltip">&nbsp;</elem>
+                                                                    <!--<i class="fs-20 icon-info-circle text-primary mr-1" data-original-title="Eligible parking permits based on lease agreement." data-placement="top" data-toggle="tooltip"></i>-->
+                                                                    {!if((el['paidStd']+el['paidEXC'])>0,'PRE APPROVED PERMIT','ELIGIBLE FREE PERMIT')}
+                                                                </div>
+                                                                <div class="col-3 cardLabel" style="display: flex;">
+                                                                    <elem class="mx-2 vehicle-number paidCard" style="" data-original-title="Additional parking permits purchased. This will increase the total parking eligibility." data-placement="top" data-toggle="tooltip">&nbsp;</elem>
+                                                                    <!--<i class="fs-20 icon-info-circle text-primary mr-1" ></i>-->
+                                                                    ELIGIBLE PAID PERMIT
+                                                                    
+                                                                </div>
+                                                                <div class="col-3 cardLabel" style="display: flex;">
+                                                                    <!-- <i class="fs-20 icon-info-circle text-primary mr-1" ></i>
+-->
+                                                                    <elem class="mx-2 vehicle-number enrolledCard" style="" data-original-title="This allows additional users to have parking access based on current parking eligibility and  availability. This will not increase the total eligibility." data-placement="top" data-toggle="tooltip">&nbsp;</elem>
+                                                                    ADDITIONAL USER PERMIT
+                                                                    
+                                                                </div>
+                                                                <apex:outputPanel rendered="{!isVIPCardHolder}" style="margin-left: 10px;">
+                                                                    <div class="cardLabel" style="display: flex;margin-top: 15px;">
+                                                                        <!-- <i class="fs-20 icon-info-circle text-primary mr-1" ></i>-->
+                                                                        <elem class="mx-2 vehicle-number vipCard" style="" data-original-title="This allows users to have VIP parking access." data-placement="top" data-toggle="tooltip">&nbsp;</elem>
+                                                                        VIP RESERVED PARKING
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                            </div>
+                                                            <div class="pb-2"></div>
+                                                            <div>
+                                                                <i class="icon-info-circle text-primary"></i>&nbsp;&nbsp;<span>Please click on <b>ACCESS NUMBER</b> to see the details.</span>
+                                                            </div>
+                                                            
+                                                            <c:parkingdetails opi="{!orclId}" plist="{!lst_pd}" pString="{!parkingString}"/>
+                                                            <!-- <c:parkingDetails1 pString="{!parkpaingString}"/>-->
+                                                            <!-- .table-responsive -->
+                                                        </div>
+                                                        <!-- .accordion-content-inner -->
+                                                    </div>
+                                                    
+                                                    <!-- .accordion-content -->
+                                                </div>
+                                                <!-- end #tab_parking -->
+                                                <!-- end #tab_parking -->
+                                                
+                                            </div>
+                                            <!-- .tab-content -->
+                                        </div>
+                                        <!-- .accordion -->
+                                    </div>
+                                    <!-- .accordion-tabs -->
+                                </div>
+                                <!-- end #parking tab -->
+                                <!-- .col -->
+                                <div class="col-xl-3">
+                                    <div class="panel panel-actions panel-actions-account panel-actions-company panel-actions-dropdown">
+                                        <div class="panel-body">
+                                            <h4 class="panel-actions-title text-center">ACTIONS</h4>
+                                            <a href="#" class="panel-actions-title-dropdown collapsed" data-toggle="collapse"
+                                               data-target="#panel_actions">
+                                                <h4 class="panel-actions-title">
+                                                    ACTIONS
+                                                </h4>
+                                            </a>
+                                            <div class="panel-actions-dropdown-body collapse text-center" id="panel_actions">
+                                                <span class="actionsElem" for="accDet" style="display:block;">
+                                                    <button style="{!IF(A.Legal_Framework__c='Freelancer','display:none;','')}" class="btn btn-outline-primary btn-block" onclick="chkRepCount('#modal_keycontact');return false;">MANAGE COMPANY CONTACTS</button>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000008XXsAAM">APPLY FOR NEW P.O. BOX</button>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000008XXqAAM">RENEW P.O. BOX</button>
+                                                    <!--<button class="btn btn-outline-primary btn-block">MANAGE P.O. BOX DETAILS</button><!-- srini -->
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000008XXeAAM">AMEND P.O. BOX</button>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000008XXjAAM">CANCEL P.O. BOX</button>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/edrsCasesInfo">EDRS CASES</button>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/custProfileUpdate?sid=a0L2y00000lWdrEEAS">CUSTOMER PROFILE UPDATE</button>
+                                                    <apex:outputText rendered="{!A.Legal_Framework__c!='Freelancer'}"> <!--{!A.Legal_Framework__c!='Freelancer'}-->
+                                                        <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000002Ch9">FINANCIAL AUDIT REPORT</button>
+                                                    </apex:outputText>
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grfb?sid=a0LIi000000sYDmMAM">UPDATE COMPANY BANK ACCOUNT INFO</button>
+                                                </span>
+                                                <span class="actionsElem" for="lease">
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a215D000000ikaD">{!IF((A.Legal_Framework__c='Freelancer'),'RENEW FREELANCE PERMIT','RENEW LICENSE')} </button>
+                                                    <apex:outputLabel rendered="{!A.Legal_Framework__c!='Freelancer'}">
+                                                        <button class="btn btn-outline-primary btn-block">EXTEND LEASE </button>
+                                                        <button class="btn btn-outline-primary btn-block">AMEND LEASE AGREEMENT</button>
+                                                        <button class="btn btn-outline-primary btn-block">UPDATE EJARI CONTRACT</button>
+                                                        <button class="btn btn-outline-primary btn-block">VIEW LEASE AGREEMENT</button>
+                                                        <button class="btn btn-outline-primary btn-block">VIEW EJARI CONTRACT</button>
+                                                    </apex:outputLabel>
+                                                </span>
+                                                <span class="actionsElem" for="license">
+                                                    <!--<button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a215D000000ikaD">{!IF((A.Legal_Framework__c='Freelancer'),'RENEW FREELANCE PERMIT','RENEW LICENSE')}</button>-->
+                                                    <button class="serviceBtns btn btn-outline-primary btn-block" ref="/grqdccaAmd?sid=a0L2y000000XdPrEAK" fl="AMEND FREELANCER PERMIT">AMEND REGISTRY / LICENSE</button>
+                                                    <!--<button class="btn btn-outline-primary btn-block">RENEW ESTABLISHMENT CARD</button>
+<button class="btn btn-outline-primary btn-block">{!IF((A.Legal_Framework__c='Freelancer'),'VIEW FREELANCE PERMIT','VIEW TRADE LICENSE')}</button>-->
+                                                </span>
+                                                <span class="actionsElem" for="depPayments">
+                                                    <button ref ="/grqn?c=tad" class="serviceBtns btn btn-outline-primary btn-block">TOP-UP PORTAL DEPOSIT</button>
+                                                    <button ref ="/grqn?c=tbg" style="{!IF(OR(A.bg__c>=125000,A.bgnr__c),'display:none;','')}"  class="serviceBtns btn btn-outline-primary btn-block">BANK GUARANTEE DEPOSIT</button>
+                                                </span>
+                                                <span class="actionsElem" for="parking">
+                                                    <!--<button class="btn btn-outline-primary btn-block" onclick="window.open('/nonrta?sid=a0L28000008xt5VEAQ')">ADD VEHICLE</button>-->
+                                                    <!--button class="btn btn-outline-primary btn-block notForDOC" onclick="window.open('/nrtaea?sid=a0L2800000AqH9DEAV')">REQUEST ADDITIONAL PARKING PERMIT OR USER</button>
+<button class="btn btn-outline-primary btn-block onlyForDOC" onclick="window.open('/nrtaea?sid=a0L2800000AqH9DEAV')">REQUEST PARKING PERMIT</button>-->
+                                                    <apex:outputPanel > <!--  rendered="{!AND(A.Prk__c != 'Dubai Design District')}" ,A.Type!='Customer-DED',A.lctp__c!='DED'-->
+                                                        <button class="btn btn-outline-primary btn-block" onclick="window.open('/nrtaea?sid=a0L2800000AqH9DEAV')">REQUEST PARKING PERMIT</button>
+                                                        <button class="btn btn-outline-primary btn-block" onclick="window.open('/nrtaLostCard_i?sid=a0L28000008y2gCEAQ')">REPLACE PARKING PERMIT</button>
+                                                        <button class="btn btn-outline-primary btn-block" onclick="window.open('/nrtacc?sid=a0L0I00000CC3Q3UAL')">CANCEL / DEREGISTER  PARKING PERMIT</button>
+                                                    </apex:outputPanel>
+                                                    <!--<button class="btn btn-outline-primary btn-block" onclick="window.open('/nrtauv?sid=a0L28000008y2flEAA')">MANAGE REGISTERED VEHICLES</button>
+<button class="btn btn-outline-primary btn-block notForDOC" onclick="window.open('/nrtpe?sid=a0L6D0000079WfDUAU')">PARKING ENROLLMENT</button>
+<button class="btn btn-outline-primary btn-block onlyForDOC" onclick="window.open('/nrtep?sid=a0L6D0000079X7jUAE')">EXECUTIVE PARKING</button>
+<!--<button disabled="true" class="disabled btn btn-outline-primary btn-block" onclick="window.open('/nrtapr?sid=a0L5D000001zLGGUA2')">REQUEST FOR PARKING RENEWALS</button>-->
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                            
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                
+                
+                <!-- request modal -->
+                <!-- Modal -->
+                <div class="modal fade" id="request_modal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="icon-close"></i>
+                            </button>
+                            <div class="modal-body">
+                                <!-- .modal-navigation -->
+                                <div class="request-main" id="request_main">
+                                    <div class="row">
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-main">
+                                                <i class="icon-employee request-icon"></i>
+                                                
+                                                <div class="panel-request-body">
+                                                    <h4 class="request-title">SERVICES FOR EMPLOYEES</h4>
+                                                    <p class="request-description">
+                                                        Letters, Insurance and everything else for your employees
+                                                    </p>
+                                                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_1">
+                                                        GET SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="panel-request-mobile">
+                                                    <button class="btn open-request-option" data-target="request_options_1">
+                                                        SERVICES FOR EMPLOYEES
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <!-- .panel-request-main -->
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-main">
+                                                <i class="icon-visa-immigration request-icon"></i>
+                                                
+                                                <div class="panel-request-body">
+                                                    <h4 class="request-title">VISA &amp; IMMIGRATION</h4>
+                                                    <p class="request-description">New Visas, Renewals, Cancellations and other Services</p>
+                                                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_2">
+                                                        GET SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="panel-request-mobile">
+                                                    <button class="btn open-request-option" data-target="request_options_2">
+                                                        VISA &amp; IMMIGRATION
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <!-- .panel-request-main -->
+                                        </div>
+                                        <!-- .col -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-main">
+                                                <i class="icon-corporate request-icon"></i>
+                                                
+                                                <div class="panel-request-body">
+                                                    <h4 class="request-title">COMPANY SERVICES</h4>
+                                                    <p class="request-description">
+                                                        Lease, License, Deposits and Establishment related services
+                                                    </p>
+                                                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_3">
+                                                        GET SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="panel-request-mobile">
+                                                    <button class="btn open-request-option" data-target="request_options_3">
+                                                        COMPANY SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                            </div>
+                                            <!-- .panel-request-main -->
+                                        </div>
+                                        <!-- .col -->
+                                        
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-main">
+                                                <i class="icon-vfs request-icon"></i>
+                                                
+                                                <div class="panel-request-body">
+                                                    <h4 class="request-title">OTHER SERVICES</h4>
+                                                    <p class="request-description">
+                                                        Parking, PO Box and other services from our partner
+                                                    </p>
+                                                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_4">
+                                                        GET SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="panel-request-mobile">
+                                                    <button class="btn open-request-option" data-target="request_options_3">
+                                                        OTHER SERVICES
+                                                    </button>
+                                                </div>
+                                                
+                                                
+                                            </div>
+                                            <!-- .panel-request-main -->
+                                        </div>
+                                        <!-- .col -->
+                                        
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- #request_main -->
+                                
+                                <div class="request-options" id="request_options_1" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary request-options-back">
+                                        <i class="fa fa-chevron-left"></i> BACK
+                                    </button>
+                                    <h3 class="modal-request-header">
+                                        <i class="icon-employee"></i>
+                                        <span>SERVICE FOR EMPLOYEES</span>
+                                    </h3>
+                                    <div class="row">
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">
+                                                    NEW VISAS/REQUESTS
+                                                </h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_1_1">
+                                                    <h4 class="request-options-title">
+                                                        NEW VISAS/REQUESTS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_1_1">
+                                                    <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_1_2">
+                                                    <h4 class="request-options-title">
+                                                        RENEWALS / TRANSFERS / EXTENSIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_1_2">
+                                                    <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                                                    <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                                                    <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_1_3">
+                                                    <h4 class="request-options-title">
+                                                        AMENDMENTS / CANCELLATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                    <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                                                    <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_1_4">
+                                                    <h4 class="request-options-title">
+                                                        ABSCONDER NOTIFICATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_1_4">
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                                                        DECLARATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- #request_options_1 -->
+                                <div class="request-options" id="request_options_2" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary request-options-back">
+                                        <i class="fa fa-chevron-left"></i> BACK
+                                    </button>
+                                    <h3 class="modal-request-header">
+                                        <i class="icon-immigration"></i>
+                                        <span>VISA AND IMMIGRATION</span>
+                                    </h3>
+                                    <div class="row">
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">
+                                                    NEW VISAS/REQUESTS
+                                                </h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_2_1">
+                                                    <h4 class="request-options-title">
+                                                        NEW VISAS/REQUESTS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_2_1">
+                                                    <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_2_2">
+                                                    <h4 class="request-options-title">
+                                                        RENEWALS / TRANSFERS / EXTENSIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_2_2">
+                                                    <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                                                    <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                                                    <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_2_3">
+                                                    <h4 class="request-options-title">
+                                                        AMENDMENTS / CANCELLATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_2_3">
+                                                    <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                                                    <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_2_4">
+                                                    <h4 class="request-options-title">
+                                                        ABSCONDER NOTIFICATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_2_4">
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                                                        DECLARATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- #request_options_2 -->
+                                <div class="request-options" id="request_options_3" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary request-options-back">
+                                        <i class="fa fa-chevron-left"></i> BACK
+                                    </button>
+                                    <h3 class="modal-request-header">
+                                        <i class="icon-corporate"></i>
+                                        <span>COMPANY SERVICES</span>
+                                    </h3>
+                                    <div class="row">
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">
+                                                    NEW VISAS/REQUESTS
+                                                </h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_3_1">
+                                                    <h4 class="request-options-title">
+                                                        NEW VISAS/REQUESTS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_3_1">
+                                                    <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_3_2">
+                                                    <h4 class="request-options-title">
+                                                        RENEWALS / TRANSFERS / EXTENSIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_3_2">
+                                                    <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                                                    <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                                                    <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_3_3">
+                                                    <h4 class="request-options-title">
+                                                        AMENDMENTS / CANCELLATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_3_3">
+                                                    <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                                                    <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_3_4">
+                                                    <h4 class="request-options-title">
+                                                        ABSCONDER NOTIFICATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_3_4">
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                                                        DECLARATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- #request_options_3 -->
+                                <div class="request-options" id="request_options_4" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary request-options-back">
+                                        <i class="fa fa-chevron-left"></i> BACK
+                                    </button>
+                                    <h3 class="modal-request-header">
+                                        <i class="icon-vfs"></i>
+                                        <span>OTHER SERVICES</span>
+                                    </h3>
+                                    <div class="row">
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">
+                                                    NEW VISAS/REQUESTS
+                                                </h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_4_1">
+                                                    <h4 class="request-options-title">
+                                                        NEW VISAS/REQUESTS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_4_1">
+                                                    <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                                                    <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_4_2">
+                                                    <h4 class="request-options-title">
+                                                        RENEWALS / TRANSFERS / EXTENSIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_4_2">
+                                                    <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                                                    <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                                                    <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_4_3">
+                                                    <h4 class="request-options-title">
+                                                        AMENDMENTS / CANCELLATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_4_3">
+                                                    <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                                                    <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="col-lg-3 col-md-6">
+                                            <div class="panel-request panel-request-options">
+                                                <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                                                <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                                   data-target="#request_options_4_4">
+                                                    <h4 class="request-options-title">
+                                                        ABSCONDER NOTIFICATIONS
+                                                    </h4>
+                                                </a>
+                                                <div class="request-options-dropdown-body collapse" id="request_options_4_4">
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                                                        DECLARATION</button>
+                                                    <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                                                    <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                                                    <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .col -->
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- #request_options_4 -->
+                                
+                            </div>
+                            <!-- .modal-body -->
+                        </div>
+                        <!-- .modal-content -->
+                    </div>
+                    <!-- .modal-dialog -->
+                </div>
+                <!-- .modal -->
+                <!-- .connect-buttons -->
+                <c:keycontact cmpTitle="Contact Management"></c:keycontact> 
+                <apex:actionFunction name="saveAccDetails" action="{!saveAccount}" reRender="accDetails" status="theStatus" oncomplete="saveAccComplete()" />
+                <apex:actionFunction name="manipulateVeh" action="{!vehOperations}" rerender="dummy" oncomplete="" >
+                    <apex:param name="reqJson" value=""/>
+                </apex:actionFunction>
+                <apex:actionFunction name="checkVeh1" action="{!checkVehVal}"  rerender="dummy" oncomplete="addNewVehRow({!isValidVeh})" >
+                    <apex:param name="rJson" value=""/>
+                </apex:actionFunction>
+                <apex:outputPanel id="dummy">
+                    
+                </apex:outputPanel>
+            </apex:form>
+        </body>
+    </html>
+    <!--   <c:keycontact cmpTitle="Contact Management"></c:keycontact> -->
+    <script>
+    const DQuarters_Exceptions = '{!$Label.DQuarters_Exceptions}';
+    const opi = '{!JSENCODE(orclId)}';
+    var accEditabledetails= {};
+    var tElg = 0;
+    var tRsrvd = 0;
+    var docPaidParking = 0;
+    $(document).ready(function(){
+        tRsrvd = parseInt({!el['rsrvd']});
+        tElg = parseInt({!el['stdElg']})  + parseInt({!el['AddElg']});
+        // tElg = 2;
+        /* for DQuarters Exceptions starts*/
+        for(i of DQuarters_Exceptions.split(';')){
+            if(opi==i)
+                $('[for="parking"]').show();
+        }
+        /* for DQuarters Exceptions ends*/
+        
+        $('button').click(function (ev) {
+            // ev.preventDefault();
+        });
+        setTimeout(function(){
+            if(localStorage.getItem('parkingClicked')=='true'){
+                $('[for="parking"] a').trigger('click');
+                localStorage.removeItem('parkingClicked');
+            }
+            if((getUrlParameter('t') &&getUrlParameter('t')=='a5m4n9uu5ns9ih0a' && $('[for="parking"] a').is(':visible'))||('{!JSENCODE(onlyParkingUser)}'=='true')){
+                $('[for="parking"] a').trigger('click');
+            }
+        },500);
+        if('{!JSENCODE(A.Legal_Framework__c)}'=='Freelancer'){
+            $('div[fl],button[fl],span[fl]').each(function(){
+                $(this).html($(this).attr('fl'));
+            });
+        }
+        $('.chk').show();
+        $('.editAcc').unbind('change').on('change',function(){
+            $('#saveAccDetails').addClass('disabled');
+            $('.editAcc').each(function(i,v){
+                var v = $(this).val();
+                var f = $(this).attr('attr1');
+                if(v!=f){
+                    $('#saveAccDetails').removeClass('disabled');
+                }
+            });
+        });
+        docPaidParking = parseInt({!el['paidStd']})  + parseInt({!el['paidEXC']});
+        console.log('--docPaidParking--'+docPaidParking);
+        if(docPaidParking>0){
+            $('.notForDOC').remove();
+        }
+        else{
+            $('.onlyForDOC').remove();
+        }
+    });
+    
+    $('.forActions').unbind().on('click',function(){
+        //console.log($(this).index());
+        if($(this).find('a').hasClass('disabled') || $(this).find('a').hasClass('disabledApex'))
+            return;
+        var f = $(this).attr('for');
+        $('#panel_actions').find('.actionsElem').hide();
+        if(f!='lease')$('#panel_actions').find('[for="'+f+'"]').show();
+    });
+    $('.data-value').each(function(){
+        if($(this).text()=='')
+            $(this).html('-');//<span style="color: #E62D38;">Not Available</span>
+    });
+    $('.comNum').each(function(){
+        $(this).text($(this).text().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    });
+    
+    /* calling from parkingdetails component*/
+    
+    function reserveVeh(c1){
+        var c = c1.split('&&')[0];
+        var isChecked = c1.split('&&')[1];
+        var reqJson = {"ActionName":"reservedparkingcards","OracleID":"","CardNumber":"","Eligibility":"","BusinessPark":"","Sector":"","SectorLocationId":"","IsReserved":true};
+        for([i,v1] of allJSONObj.entries()){
+            if(c == v1.cardNum){
+                reqJson.OracleID = '{!JSENCODE(orclId)}';
+                reqJson.CardNumber = v1.cardNum;
+                reqJson.Eligibility = v1.EligibilityName;
+                reqJson.BusinessPark = v1.BusinessPark;
+                reqJson.Sector = v1.sector;
+                reqJson.SectorLocationId = v1.sectorId;
+                reqJson.IsReserved = (isChecked =='true')?true:false;
+            }
+        }
+        var storageJson = {'reserved':isChecked,'time':Date.now()};
+        localStorage.setItem(c,JSON.stringify(storageJson));
+        /*if(isChecked=='true')
+            axsAlert('Success','Access Number - '+c+' marked as <b>RESERVED</b>!');
+        if(isChecked=='false')
+            axsAlert('Success','Access Number - '+c+' marked as <b>STANDARD</b>!');*/
+        showGLoader();
+        manipulateVeh(JSON.stringify(reqJson));
+    }
+    function undoReserveVeh(c1){
+        var c = c1.split('&&')[0];
+        var isChecked = c1.split('&&')[1];
+        $('[for="'+c+'"]').prop('checked',(isChecked=="false"));
+    }
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    if(aPhn)
+        cs['aPhone'] = aPhn;
+    function shwIPField(e){
+        var f = $(e).attr('for');
+        if(f && f=='aPhone'){
+            //cs['aPhone'].value = cs['aPhone'].value.replace('+971','');
+            cs['aPhone'].value = cs['aPhone'].value.replaceAll(' ','');
+        }
+        $(e).parents('.data-info').find('.editAcc1').show();
+        //$(e).parent().hide();
+        $(e).parents('.data-info').find('.data-value').hide();
+        
+        $('.editAccBtns').css('display','flex');
+    }
+    function cancelAccDetails1(){
+        removeAllErrors('.editAcc1');
+        $('.editAcc1').hide();
+        $('.editAcc1').parent().find('.data-value').show();
+        $('.editAccBtns').hide();
+    }
+    function checkTrnComp(res){
+        if(res == 'true'){
+            addValError('[attr="van__c"]','** Entered TRN is already configured with different account, please check!');
+        }
+        else{
+            removeValError('[attr="van__c"]');
+        }
+    }
+    function editAccDetails(){
+        $('#modal_edit_acc').modal('show');
+    }
+    function saveAccDetails1(e){
+        showGLoader();
+        showTempLoader(e);
+        saveAccDetails();
+    }
+    function saveAccComplete(){
+        $('#modal_edit_acc').modal('hide');
+        removeTempLoader();
+        $('#saveAccDetails').addClass('disabled');
+    }
+    function chkRepCount(modalId){
+        
+        $(modalId).modal('show');
+        
+    }
+    
+    function validURL(str) {
+        var pattern = new RegExp('^(https?:\\/\\/)?'+ 
+                                 '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ 
+                                 '((\\d{1,3}\\.){3}\\d{1,3}))'+
+                                 '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+
+                                 '(\\?[;&a-z\\d%_.~+=-]*)?'+ 
+                                 '(\\#[-a-z\\d_]*)?$','i'); 
+        return !!pattern.test(str);
+    }
+    </script>
+    <!-- <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tablesorter/dist/js/jquery.tablesorter.min.js')}" /> -->
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <c:dataTablesJS />
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    
+    
+    
+    
+</apex:page>

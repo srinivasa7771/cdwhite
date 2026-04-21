@@ -1,0 +1,370 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!srv.sdg__r.slbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <script type="text/javascript">
+        var cs = {};
+        $(document).ready(function() {  
+            console.log('document ready::::::');
+            
+            //Hide fields
+            let flds1 = [cs['xclnar__c'],cs['xcfanar__c'],cs['xcfan__c'],cs['xcslt__c'],cs['xcfnar__c'],cs['xcmon__c'],cs['xcmonar__c'],cs['noFnm__c'],cs['xcms__c'],cs['xcbc__c'],cs['xcqemrt__c'],cs['xcnp__c'],cs['xcrlg__c'],cs['xclng__c'],cs['xeidav__c']];
+            flds1.forEach(function(i) {
+                $(i).parent().parent().hide();
+            }); 
+            //Disable  fields
+            let flds2 =[cs['xcbd__c'],cs['xcnc__c'],cs['xcbp__c'],cs['xcfn__c'],cs['xcln__c'],cs['Gender__c'],cs['xcp__c'],cs['xcpic__c'],cs['xcpid__c'],cs['xcped__c'],cs['xcpip__c'],cs['xceidid__c'],cs['xceidedt__c']];
+            flds2.forEach(function(i){ 
+                if($(i).val())
+                    $(i).attr('disabled',true);
+            });
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z ]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+            
+        });
+        //Validate Data on click of next button
+        function validateData(){
+            console.log('validateData:::::::::');
+            
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld,.applMob').each(function(){
+                //if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                //return;
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                
+                var v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            $('.ddValidation').each(function(){
+                //debugger;
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                showErrMsg($(this),'rqrd',true);
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined){
+                    if($(this).is('select'))
+                        showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                    else
+                        showErrMsg($(this),'rqrd','invalid');
+                    return false;
+                }
+            });
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            if($('#tANDc').prop('checked')){
+                removeValError('#tANDc');
+            }
+            else{
+                $('.chk').find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+                $('.chk').append(errElem);
+                scrollToDiv($('.chk'));
+                validated= false;
+            }
+            if(checkGPA(cs['GPA__c'])){
+                console.log('grqspt checkGPA::::::::');
+                scrollToDiv($(cs["xcnc__c"]));
+                validated= false;
+            }
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                console.log('Validated true::::')
+                console.log('Program__c::::'+cs['Program__c'].value);
+                showTempLoader(event.target);
+                toggleGLoader();
+                next();
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function assignfldVal(val,fldId){cs[fldId].value=val;}
+        function rmErronTC(){
+            if($('#tANDc').is(':checked')==true)
+                $('.chk').find('.frmErrMsg').remove();
+            else{
+                var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+                $('.chk').append(errElem);
+            }
+        }
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        </script>                  
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="btnid,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideTempLoader_input();loadData_jt();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft2" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                </span>
+                                <!--<a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+                                
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" id="comp"/>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        
+                                        <div class="steps steps-desktop">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                    <div class="step-title">Additional Services</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                    <div class="step-title">Review &amp; Payment</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                        </div>
+                                        <!-- end .steps -->
+                                        
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        
+                                        
+                                        <b><apex:pageMessages id="msg"  />
+                                            
+                                            
+                                        </b>
+                                        
+                                        
+                                        <!-- .base-collapse -->
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                                <div class="collapse-title">Applicant details </div>
+                                            </a>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <Label>First Name</Label>
+                                                                    <apex:inputField styleClass="form-control" value="{!req.xcfn__c}" id="xcfn__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcfn__c']=document.getElementById('{!$Component.xcfn__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <Label>Last Name</Label>
+                                                                    <apex:inputField styleClass="form-control" value="{!req.xcln__c}" id="xcln__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcln__c']=document.getElementById('{!$Component.xcln__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Date of birth</label>
+                                                                    <div class="input-datepicker-group input-group">
+                                                                        <apex:inputHidden id="xcbd" value="{!req.xcbd__c}" />
+                                                                        <input type="text" class="requiredFld form-control input-datepicker rorenwl" id="xcbd__c"
+                                                                               data-toggle="datetimepicker" data-target="#xcbd__c" value="{!req.xcbd__c}"
+                                                                               onchange = "assignfldVal(this.value,'xcbd');checkDate(this,'dob','{!IF(OR(req.srvc__r.uid__c='051',req.srvc__r.uid__c='054'),'onlyPast',req.srvc__r.uid__c)}','{!JSENCODE(req.Gender__c)}')"  validationname="dob"/>
+                                                                        <script type="text/javascript">
+                                                                        cs['xcbd__c']=document.getElementById('xcbd__c');
+                                                                        dformat('{!JSENCODE(req.xcbd__c)}','xcbd__c');
+                                                                        cs['xcbd']=getC('{!$Component.xcbd}');
+                                                                        </script>
+                                                                        <div class="input-group-append">
+                                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcbd__c">
+                                                                                <i class="icon-date"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <Label>Nationality</Label>
+                                                                    <apex:inputField styleClass="form-control" value="{!req.xcnc__c}" id="xcnc__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcnc__c']=document.getElementById('{!$Component.xcnc__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <Label>Gender</Label>
+                                                                    <apex:inputField styleClass="addRqrd form-control numOnly" value="{!req.Gender__c}" id="Gender__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['Gender__c']=document.getElementById('{!$Component.Gender__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#course_details">
+                                                <div class="collapse-title">Course details</div>
+                                            </a>
+                                            <div id="course_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                        <c:studentDetails req="{!req}" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#contact_details">
+                                                <div class="collapse-title">Contact details</div>
+                                            </a>
+                                            <div id="contact_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                        <c:contactdetails req="{!req}" id="conInfoCmp"/>
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-12" >
+                                                                <div class="form-group">
+                                                                    <label>Description</label>
+                                                                    <apex:inputField styleClass="form-control" value="{!req.nt__c}" id="nt__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['nt__c']=document.getElementById('{!$Component.nt__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <p class="chk" style="vertical-align: middle;font-size: 1em;">
+                                                            <label class="custom-checkbox mr-4"><!-- data-value-->
+                                                                <input type="checkbox" id="tANDc" onchange="rmErronTC()" />
+                                                                <span class="">
+I confirm that the entered information is correct, and the student is qualified to get registered in the part-time eligibility list as per the compliance with the Student Eligibility under the article 2.1 of <a href=" https://dda.gov.ae/wp-content/uploads/Student%20Part%20Time%20Employment%20Regulations%20-%20signed.pdf" target="_blank"><u> Order No (1) of 2016</u></a>, concerning Student Part-time Employment”.                                                                </span>
+                                                            </label>  
+                                                        </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                        
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+            <c:fileuploadpopupnew13 R="{!req}" />
+        </apex:form>
+    </html>
+</apex:page>

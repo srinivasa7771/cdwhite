@@ -1,0 +1,217 @@
+<apex:page standardController="Account"  renderAs="{!IF(showOutputs , 'pdf' ,'') }" extensions="rfc"  >
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="../js/jquery-1.2.1.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="../js/jquery-ui.min.js"></script> 
+    <script src="../js/menu.js" type="text/javascript"></script>
+    <script src="../js/common.js" type="text/javascript"></script>
+    <style>
+        .detailList th{padding-bottom:15px !important;}
+    </style>
+    <link rel="stylesheet" type="text/css" href="../styles/styles.css" />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <link href="../styles/tecom-style.css" rel="stylesheet" type="text/css" />
+    <apex:stylesheet value="{!$Resource.gCss}"/> 
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401037870000/Theme3/default/gc/elements.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401037870000/Theme3/default/gc/common.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401037870000/Theme3/default/gc/printableView.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1400172052000/Theme3/gc/dStandard.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401037870000/Theme3/default/gc/extended.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401037870000/Theme3/default/gc/zen-componentsCompatible.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom0.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom1.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom2.css"/>
+    <apex:stylesheet value="/sCSS/50.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom3.css"/>
+    
+    <table border="0" cellpadding="0" cellspacing="0" style="width:100%">
+        <tr>            
+            <td nowrap="nowrap" style="width:1%;vertical-align:middle;"><apex:Image value="{!URLFOR($Resource.axsRS, '/images/Finance_Report.png')}" /></td>
+            <td nowrap="nowrap" style="vertical-align:middle;">
+                <h1>&nbsp;&nbsp;{!packageChoosen} Refund - form</h1><br/>
+                &nbsp;&nbsp;Date: <apex:outputText value="{0, Time, dd-MMM-yyyy: h:mm a}"><apex:param value="{!NOW()}"/></apex:outputText>
+                <apex:pageMessages ></apex:pageMessages> 
+            </td>
+            <td nowrap="nowrap" align="right">
+                <apex:image url="{!URLFOR($Resource.axsRS, '/images/axs_logo.png')}" width="100" height="40"/>         
+            </td>
+        </tr>
+    </table>     
+    
+    
+    <apex:form >
+        <apex:pageBlock mode="maindetail">
+            <apex:pageMessages ></apex:pageMessages>
+            <apex:pageBlockButtons rendered="{!!showOutputs}" location="Bottom">
+                <a href="" onClick="callgeneratePDF();" class="btnSave">Print Refund Form</a>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection columns="2" collapsible="false" title="">
+                <apex:outputfield value="{!Account.Name}" label="Company Name" />
+                <apex:outputfield value="{!Account.lc__c}" />  
+                
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection title="Refund Details" columns="2" >
+                <apex:pageBlockSectionItem rendered="{!!showOutputs}">
+                    <apex:outputLabel value="Package Applied For:"></apex:outputLabel>
+                    <apex:outputPanel >
+                        <apex:selectList label="Package Applied For:" size="1" multiselect="false" value="{!packageChoosen}"  styleClass="pay_mtd" onchange="calAmt();"> 
+                            <apex:selectOption itemLabel="" itemValue=""></apex:selectOption>
+                            <apex:selectOption itemLabel="Customer Deposit" itemValue="Customer Deposit"></apex:selectOption>
+                            <apex:selectOption itemLabel="Bank Guarantee" itemValue="Bank Guarantee"></apex:selectOption>
+                            <apex:selectOption itemLabel="Exit Guarantee Deposit" itemValue="Exit Guarantee Deposit"></apex:selectOption>
+                        </apex:selectList><span id="amt_rem" style="color:#f00;margin-left:10px;"></span>
+                        
+                    </apex:outputPanel>
+                    
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!!showOutputs}">
+                    <apex:outputLabel value="Mobile No:" />
+                    <apex:outputPanel >
+                        <div id="mnRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputText id="amt" value="{!mobileNo}" styleClass="mn_val"/>
+                        </div>
+                    </apex:outputPanel>  
+                </apex:pageBlockSectionItem>
+                <apex:inputText label="Receipt Number:" rendered="{!!showOutputs}" value="{!ReceiptNo}"/>
+                <apex:inputText label="Email:" rendered="{!!showOutputs}" value="{!emailAdd}"/>
+                <apex:pageBlockSectionItem rendered="{!!showOutputs}">
+                    <apex:outputLabel value="Amount" />
+                    <apex:outputPanel >
+                        <div id="amtRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputText id="amt" value="{!amt}" onBlur="validateAmount();" styleClass="pay_amt"/>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem>
+                <apex:inputTextArea label="Notes" rendered="{!!showOutputs}" value="{!notes}"/>
+                <apex:inputText label="Name of Authorized Signatory:" rendered="{!!showOutputs}" value="{!sigName}"/>
+                
+                
+                <apex:outputText label="Reference Number:" styleClass="ref_no_ot" value="{!refNo}" rendered="{!showOutputs}"></apex:outputText>
+                <apex:outputText label="Receipt Number:" rendered="{!showOutputs}" value="{!ReceiptNo}"/>
+                <apex:outputText label="Package Applied For:" rendered="{!showOutputs}" value="{!packageChoosen}"/>
+                <apex:outputText label="Mobile No:" rendered="{!showOutputs}" value="{!mobileNo}"/>
+                <apex:outputText label="Amount :" rendered="{!showOutputs}" value="{!amt}"/>
+                <apex:outputText label="Email:" rendered="{!showOutputs}" value="{!emailAdd}"/>
+               
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="1">
+                <apex:outputText label="Notes[Maximum 150 Characters]:" rendered="{!showOutputs}" value="{!notes}" > </apex:outputText> 
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection title="Authorized Signatory" columns="1" collapsible="false">
+                 <apex:outputText label="Name:" rendered="{!showOutputs}" value="{!sigName}"/>
+                <apex:inputText label="Signature & Stamp:" rendered="{!showOutputs}"/>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection title="Office Use Only" columns="2" rendered="{!showOutputs}">  
+                <apex:outputText label="Staff Signature:" ></apex:outputText>
+                <apex:outputText label="Date:" ></apex:outputText>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:outputText label="Assigned To:" ></apex:outputText>
+                <apex:outputText label="Date:" ></apex:outputText>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="1" rendered="{!showOutputs}">
+                <apex:outputText label="Remarks:" ></apex:outputText>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:outputText label="Refunded Amount:" ></apex:outputText>
+                <apex:outputText label="Amount in words:" ></apex:outputText>
+                <apex:outputText label="Checked by:" ></apex:outputText>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:outputText label="Manager Approval:" ></apex:outputText>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            
+            <apex:pageBlockSection title="Notes" columns="1" rendered="{!showOutputs}">
+                <ul style="color:#cc0000">
+                    <li>Original receipt is required if receipt date is prior to 2015.</li>
+                    <li>A copy of receipt should be attached with the request.</li>
+                    <li>AXS Finance department requires minimum of 8 working days in case of cash refund (less than AED 5,000/- claim) and 15 working days in case of cheque payments (amount more than AED 5,000/-).</li>
+                    <li>Violation of TECOM regulations will result in imposition of penalties.</li>
+                    <li>For further queries please email us on <a href="mailto:support@axs.ae">support@axs.ae</a></li>
+                </ul>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+        <apex:actionFunction name="generatePDFAct" action="{!generatePDF}" />
+    </apex:form> 
+    
+    <script>
+    var noOfErros = 0;
+    function validateAmount(){
+        fldErr('amt',null,false);
+        noOfErros = 0;
+        var amtFld = document.getElementsByClassName('pay_mtd')[0];
+        var pay_mtd = amtFld.options[amtFld.selectedIndex].value;
+        var amt = document.getElementsByClassName('pay_amt')[0].value;
+        if(pay_mtd == '' && amt !== undefined && amt.length>0){
+            fldErr('amt','Please choose package Applied for First.',false);
+            noOfErros++;
+            document.getElementsByClassName('pay_amt')[0].value = '';
+        }
+        else{
+            if(!isNaN(amt)){
+                amt = parseFloat(amt).toFixed(2);
+                var advDepAvailable = parseFloat({!account.adb__c}).toFixed(2);
+                var bankgurAvailable = parseFloat({!account.bgb__c}).toFixed(2);
+                if((pay_mtd == 'Customer Deposit' && parseFloat(amt)>parseFloat(advDepAvailable)) || (pay_mtd == 'Bank Guarantee' && parseFloat(amt)>parseFloat(bankgurAvailable))){
+                    fldErr('amt','Not Enough ' + pay_mtd + ' Balance',false);
+                    noOfErros++;
+                    document.getElementsByClassName('pay_amt')[0].value = '';
+                }
+            }
+            else{
+                fldErr('amt','Please enter valid amount.',false);
+                noOfErros++;
+                document.getElementsByClassName('pay_amt')[0].value = '';
+            }
+        }
+    }
+    function calAmt(){
+        var amtFld = document.getElementsByClassName('pay_mtd')[0]; 
+        var pay_mtd = amtFld.options[amtFld.selectedIndex].value;
+        if(pay_mtd == 'Customer Deposit'){
+            document.getElementById("amt_rem").innerHTML = 'Remaining Balance : '+{!account.adb__c};
+        }
+        else if(pay_mtd == 'Bank Guarantee'){
+            document.getElementById("amt_rem").innerHTML = 'Remaining Balance : '+{!account.bgb__c};
+        }
+            else{
+                document.getElementById("amt_rem").innerHTML = '';
+            }
+        document.getElementById('pay_amt').value = '';   
+    }
+    function callgeneratePDF(){
+        var amt = document.getElementsByClassName('pay_amt')[0].value;
+        if(amt === undefined || amt.trim().length==0 || amt==0){
+            fldErr('amt','Amount cannot be 0 or blank',false);
+            noOfErros++;
+        }
+        var mn = document.getElementsByClassName('mn_val')[0].value;
+        console.log(mn);
+        if(mn === undefined || mn.trim().length==0){
+            fldErr('mn','Value is Required',false);
+            noOfErros++;
+        }
+        if(noOfErros >0 ){
+            noOfErros = 0;
+            return;
+        } 
+        
+        else
+            generatePDFAct(); 
+    }
+    </script>
+</apex:page>

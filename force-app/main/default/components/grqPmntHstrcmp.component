@@ -1,0 +1,85 @@
+<apex:component >
+    
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="false"/>
+    <apex:attribute name="trans" description="Transactions" type="g_Tran__c[]" required="false"/>
+    <apex:attribute name="srvCd" description="Service code" type="String" required="false"/>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+
+
+                <tr>
+                    <th class="font-weight-normal fs-13">RECIEPT NUMBER</th>
+                    <th class="font-weight-normal fs-13">TYPE</th>
+                    <th class="font-weight-normal fs-13">PAYMENT METHOD</th>
+                    <th class="font-weight-normal fs-13">PAYMENT INITIATED</th>
+                    <th class="font-weight-normal fs-13">PAYMENT PROCESSED</th>
+                    <th class="font-weight-normal fs-13">AMOUNT (AED)</th>
+                    <th class="font-weight-normal fs-13">STATUS</th><!--<i class="fa fa-arrow-up"></i> -->
+                    <th class="font-weight-normal fs-13">RECEIPT</th>
+                </tr>
+            </thead>
+            
+            <tbody>
+                <apex:repeat value="{!trans}" var="tran" >
+                    <!--<apex:outputpanel layout="none" rendered="{!if(AND(tran.TP__c<>'Claim',ispu),true,not(ispu))}">-->
+                    <tr>
+                        <td class="align-middle"> 
+                            <apex:outputText rendered="{!AND(srvCd != 'tbg',srvCd != 'tad',tran.TP__c == 'Payment',tran.md__c == 'Cash',tran.STA__c == 'Open')}">
+                                <a onclick="cancelT('{!tran.id}');$('#preloader').fadeIn();" href="#" class="btn btn-primary" >CANCEL</a>
+                            </apex:outputText>
+                             <apex:outputLink rendered="{!!ispu}" value="/{!tran.Id}">{!tran.Name}</apex:outputLink>
+                            <apex:outputText rendered="{!ispu}" >{!tran.Name}</apex:outputText>
+                        </td>
+                        <td class="align-middle">{!tran.TP__c}</td>
+                        
+                        <td class="align-middle">{!tran.md__c}</td>
+                        <td class="align-middle">
+                            <apex:outputText value="{0, date,dd / MM / yyyy }"> 
+                                <apex:param value="{!tran.dt__c}" /> 
+                            </apex:outputText>
+                        </td>
+                        <td class="align-middle">
+                            <apex:outputText value="{0, date,dd / MM / yyyy }"> 
+                                <apex:param value="{!tran.dt__c}" /> 
+                            </apex:outputText>
+                        </td>
+                        <td class="align-middle text-center">{!tran.A__c}</td>
+                        <td class="align-middle initialism">
+                            <apex:outputPanel styleclass="badge-status badge-status-open" rendered="{!tran.STA__c == 'Open'}">
+                                Open
+                            </apex:outputPanel>
+                            <apex:outputPanel styleclass="badge-status badge-status-completed" rendered="{!tran.STA__c == 'Completed'}">
+                                Completed
+                            </apex:outputPanel>
+                            <apex:outputPanel styleclass="badge-status badge-status-urgent" rendered="{!tran.STA__c == 'Cancelled'}">
+                                Cancelled
+                            </apex:outputPanel>
+                        </td>
+
+                            <td class="align-middle">
+                                <apex:outputpanel layout="none" rendered="{!AND(tran.TP__c='Payment',OR(tran.STA__c='Completed',tran.STA__c='Open'))}">
+                                    <apex:outputpanel rendered="{!IF(AND(tran.STA__c="Completed",DATE(2017,12,31) >= tran.dt__c),true,false)}" >
+                                        <apex:outputLink styleClass="btn btn-primary btn-outline-primary-2" value="/apex/gtrcpto?id={!tran.Id}" target="_blank" rendered="{!AND(tran.STA__c='Completed')}">DOWNLOAD</apex:outputLink>
+                                    </apex:outputpanel>
+                                    <apex:outputpanel rendered="{!IF(AND(tran.STA__c="Completed",DATE(2020,03,01) >= tran.dt__c ),true,false)}" >
+                                        <apex:outputLink styleClass="btn btn-primary btn-outline-primary-2" value="/apex/gtrcptbv?id={!tran.Id}" target="_blank" rendered="{!AND(tran.STA__c='Completed')}">DOWNLOAD</apex:outputLink>
+                                    </apex:outputpanel>
+                                    <apex:outputpanel rendered="{!IF(AND(tran.STA__c='Completed',DATE(2020,03,02) < tran.dt__c),true,false)}" >
+                                        <apex:outputLink styleClass="btn btn-primary btn-outline-primary-2" value="/apex/gtrcpt?id={!tran.Id}" target="_blank" rendered="{!AND(tran.STA__c='Completed')}">DOWNLOAD</apex:outputLink>
+                                    </apex:outputpanel> 
+                                     <apex:outputpanel rendered="{!tran.STA__c='Open'}" >
+                                        <apex:outputLink styleClass="btn btn-primary btn-outline-primary-2" value="/apex/gtrinv?id={!tran.Id}" target="_blank" rendered="{!AND(tran.STA__c='Open')}">PAYMENT ADVICE</apex:outputLink>
+                                    </apex:outputpanel>    
+                                </apex:outputpanel>
+                            </td>
+                    </tr>
+                    <!--</apex:outputpanel>-->
+                </apex:repeat>
+            </tbody>
+            
+        </table>
+    </div>
+    <!-- .table-responsive -->
+</apex:component>

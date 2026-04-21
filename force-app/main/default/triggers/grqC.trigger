@@ -1,0 +1,1 @@
+trigger grqC on Contact (before Update){if(trigger.isBefore && trigger.isUpdate){grqH.hUBContact(trigger.newMap,trigger.oldMap);}}

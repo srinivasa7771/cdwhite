@@ -1,0 +1,1 @@
+global  class InsuranceBatchSchedul  implements Schedulable{  global void execute(SchedulableContext sc) { InsuranceBatch b = new InsuranceBatch (); database.executebatch(b, 1); }   }

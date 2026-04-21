@@ -1,0 +1,256 @@
+<apex:page standardController="Case" extensions="Case_Request_Status_CTL" showHeader="false">
+
+
+
+<apex:PageBlock rendered="{!Case.Request__c!=null}">
+      <c:crh id="Milestones" ispu="0" R="{!req}" rendered="true"/>
+</apex:PageBlock>
+
+
+ <div id="tabs-2">
+  <style type='text/css'>
+  .bold-green-font {
+    font-weight: bold;
+    color: green;
+  }
+
+  .row-font {
+    font-weight: normal; font-family: "Times New Roman", Georgia, Serif; background-color:#83b7e8;
+  }
+  
+  .large-font {
+    font-size: 11px;
+  }
+  
+  .small-font {
+    font-size: 11px;
+  }
+
+  .underline-blue-font {
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .gold-border {
+    border: 3px solid gold;
+  }
+
+  .beige-background {
+    background-color: beige;
+  }
+  .google-visualization-table-td {
+    text-align: left !important;
+  }
+
+</style>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["table"]});
+      google.setOnLoadCallback(drawTable);
+
+      function drawTable() {
+      var ispu = false;
+        var cssClass = {
+            'headerRow': 'pbSubheader brandTertiaryBgr tertiaryPalette',
+            'tableRow': 'data2Col  last requiredBlock small-font',
+            'oddTableRow': 'beige-background data2Col  last small-font',
+            'selectedTableRow': 'orange-background large-font',
+            'hoverTableRow': '',
+            'headerCell': '',
+            'tableCell': '',
+            'rowNumberCell': 'underline-blue-font'};
+        var data = new google.visualization.DataTable();
+        var dFrom;var dTo;var dBy; var dur; var dura; var sta; var awb;var DurationSplit;var hr; var min;var name;var id;var kstp; var tsta;  
+          //data.addColumn('string', 'Id');
+        data.addColumn('string', 'Name');
+          
+        data.addColumn('string','Status');
+        data.addColumn('datetime', 'Completion Date');
+           if(!ispu){
+        data.addColumn('string', 'Task');
+        data.addColumn('string', 'Task Duration');
+       data.addColumn('string', 'User')};
+        
+        <apex:repeat value="{!req.Status_History__r}" var="m">   
+          dFrom = new Date(Date.parse('<apex:outputText value="{0,date,MMM dd, yyyy HH:mm}"><apex:param value="{!m.acts__c}"/></apex:outputText>'));                                     
+          dTo = new Date('{!m.actE__c}');
+          dFrom.setHours(dFrom.getHours());
+          dTo.setHours(dTo.getHours());
+          dura='{!m.Duration__c}';
+          name='{!if(m.itm__r.exp__c,m.itm__r.itm__r.Name&' * ',m.itm__r.itm__r.Name)}';
+          id='{!m.id}';
+          DurationSplit = dura.split(".");
+          kstp='{!m.kstp__c}';
+        
+          
+          if(dura != '')
+          { 
+              hr    = DurationSplit[0];
+              min   = DurationSplit[1];
+              
+              if(min !=00 && hr !=00)
+                dur = hr+ ' hrs :'+min.toString().substring(0, 2)+' min';
+              else if(hr!=00 && min==00)
+                  dur = hr+' hrs';
+              else dur = min.toString().substring(0, 2)+' min';    
+                 
+          }
+          else {
+            dur='0:00 min';
+          } 
+         
+          if(ispu && '{!m.kstp__c}'=='true'){
+              data.addRows([['{!m.itm__r.itm__r.lbl__c}','{!m.To__c}',dTo]]); 
+              
+          }
+              
+         
+           if('{!m.kstp__c}'=='true' && !ispu){  
+               tsta='<b>'+'{!m.To__c}'+'</b>';
+               }else{
+                    tsta='{!m.To__c}';
+                }
+          if(!ispu){
+           
+                  data.addRows([
+                  ['<a href="/apex/rqih?id={!m.itm__r.id}" target="_blank">'+name+'</a>',tsta,dTo,'{!m.Activity__c}',dur,'<apex:outputText >{!m.CreatedBy.Name}</apex:outputText>']         
+                  ]);        
+          }
+         
+          </apex:repeat>
+            
+        if(ispu){
+            data.sort([{column: 2, desc:false}, {column: 0}]);
+         }
+         else{
+            data.sort([{column: 2, desc:false}, {column: 0}]);
+         }
+          
+        var table = new google.visualization.Table(document.getElementById('table_div'));  
+        var options;
+        if(ispu){ 
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 375,width: 880};                      
+        }
+        else{
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 375,width: 880};                      
+        }
+          
+        table.draw(data,options);
+           
+                    
+      }
+    </script>     
+  </div>
+  
+
+           <div id="tabs-3">
+    <style type='text/css'>
+  .bold-green-font {
+    font-weight: bold;
+    color: green;
+  }
+
+  .row-font {
+    font-weight: normal; font-family: "Times New Roman", Georgia, Serif; background-color:#83b7e8;
+  }
+  
+  .large-font {
+    font-size: 11px;
+  }
+  
+  .small-font {
+    font-size: 11px;
+  }
+
+  .underline-blue-font {
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .gold-border {
+    border: 3px solid gold;
+  }
+
+  .beige-background {
+    background-color: beige;
+  }
+  .google-visualization-table-td {
+    text-align: left !important;height:10px!important;
+  }
+
+</style>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["table"]});
+      google.setOnLoadCallback(drawTable);
+
+      function drawTable() {
+        var ispu = false;
+        var cssClass = {
+            'headerRow': 'pbSubheader brandTertiaryBgr tertiaryPalette',
+            'tableRow': 'data2Col  last requiredBlock small-font',
+            'oddTableRow': 'beige-background data2Col  last small-font',
+            'selectedTableRow': 'orange-background large-font',
+            'hoverTableRow': '',
+            'headerCell': '',
+            'tableCell': '',
+            'rowNumberCell': 'underline-blue-font'};
+        var data = new google.visualization.DataTable();
+        var dTo;var dura; var awb;var itemName;var createdByname; var dur;var DurationSplit;
+        data.addColumn('string', 'Name');
+        data.addColumn('string', 'AWB#');
+        data.addColumn('string', 'Booking Type');
+         if(!ispu){  
+        data.addColumn('string', 'Status');        
+           }
+        data.addColumn('datetime', 'Completion Date'); 
+         data.addColumn('string', 'Task'); 
+        data.addColumn('string', 'Task Duration');
+        if(!ispu){data.addColumn('string', 'User')};
+        
+        <apex:repeat value="{!req.Courier_Histories__r}" var="m">   
+          dTo               = new Date('{!m.End_Date__c}');
+          dTo.setHours(dTo.getHours());
+          dura              ='{!m.Duration__c}';
+          CourierStatus     ='{!m.Activity__c}';
+          awb               ='{!m.AWB_No__c}';
+          itemName          ='{!m.Item_Name__c}';
+           
+          createdByname     ='{!m.CreatedBy.name}'
+          
+          DurationSplit = dura.split(".");
+          
+          if(dura != '')
+          { 
+              hr    = DurationSplit[0];
+              min   = DurationSplit[1];
+              if(min !=00 && hr !=00)
+                dur = hr+ ' hrs :'+min.toString().substring(0, 2)+' min';
+              else if(hr!=00 && min==00)
+                  dur = hr+' hrs';
+              else dur = min.toString().substring(0, 2)+' min';   
+          }
+          else {
+            dur='0 hrs:00 min';
+          }          
+          
+          if(ispu)  data.addRows([[itemName,awb,CourierStatus,dTo,dur]]); 
+          else      data.addRows([[itemName,awb,'{!m.tp__c}','{!m.To_Courier_Status__c}',dTo,CourierStatus,dur,createdByname]]);   
+          
+          
+        </apex:repeat>
+        
+         
+
+        var table = new google.visualization.Table(document.getElementById('table_Courier_div'));  
+        var options;
+        options = {showRowNumber: false,allowHtml: true,cssClassNames: cssClass,height: 300,width: 890};                      
+        table.draw(data,options);   
+        
+        
+        
+      }
+    
+    </script>    
+  </div>  
+
+  
+</apex:page>

@@ -1,0 +1,649 @@
+<apex:component allowDML="true" >
+    <style>
+        
+        /*Mine .table-parking thead,
+        .table-parking tbody {
+        width: 100%;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        }
+        
+        .table-parking tbody {
+        max-height: 600px;
+        }*/
+        
+        .disabledApex{
+        cursor: not-allowed !important;
+        background-color: white !important;
+        pointer-events: all !important;
+        user-select: none;
+        }
+        
+        .table-parking {
+        display: block;
+        }
+        
+        .table-parking thead,
+        .table-parking tbody {
+        display: block;
+        width: 100%;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        }
+        
+        .table-parking thead::-webkit-scrollbar,
+        .table-parking tbody::-webkit-scrollbar {
+        width: 8px;
+        }
+        
+        @media (max-width: 991.98px) {
+        .table-parking thead,
+        .table-parking tbody {
+        width: 1000px;
+        }
+        }
+        
+        .table-parking tbody {
+        max-height: 600px;
+        /* Handle */
+        /* Handle on hover */
+        }
+        
+        .table-parking tbody::-webkit-scrollbar-thumb {
+        background: rgba(79, 84, 93, 0.2);
+        border-radius: 8px;
+        }
+        
+        .table-parking tbody::-webkit-scrollbar-thumb:hover {
+        background: rgba(56, 59, 65, 0.2);
+        }
+        
+        
+        
+        a.disabled {
+        pointer-events: none;
+        cursor: not-allowed !important;
+        }
+        .switch-label > input:checked + span {
+        background-color: #1e8c39;
+        right: 4em !important;
+        }
+        
+        
+        
+        .switch-label > input:checked + span.Ocolor {
+        background-color: #F5A623 !important;
+        }
+        
+        #table-parking th {
+        cursor: pointer !important;
+        width:auto !important;
+        }
+        
+        /* VMKR - 14th Oct 2021 */
+        
+        .data-label {
+        text-transform: capitalize !important;
+        }
+        
+        
+    </style>
+    
+    <apex:attribute name="pList" type="ParkingDetails[]" description="l" />
+    <apex:attribute name="pString" type="String" description="l" />
+    <apex:attribute name="opi" type="String" description="Account Oracle Party ID" />
+    <div class="table-responsive table-responsive-lg" ><!--style="overflow-x: hidden;"-->
+        
+        <table class="table table-align-middle" id="table-parking" data-page-length='25'>
+            <thead>
+                <tr>
+                    <th>ACCESS NUMBER<i class="fa text-primary"></i></th>
+                    <!--<th>PLATE NUMBER<i class="fa text-primary"></i></th>
+<th width="16%">CITY / COUNTRY<i class="fa text-primary"></i></th>-->
+                    <th class="d-none d-lg-table-cell">CARD HOLDER<i class="fa text-primary"></i></th>
+                    <th class="d-none d-lg-table-cell">CONTACT NUMBER<i class="fa text-primary"></i></th>
+                    <th>SECTOR<i class="fa text-primary"></i></th>
+                    <th class="d-none d-lg-table-cell">STATUS<i class="fa text-primary"></i></th>
+                    <th>NUMBER OF VEHICLES<i class="fa text-primary"></i></th>
+                    <th class="d-none d-lg-table-cell">EXPIRY<i class="fa text-primary"></i></th>
+                    <!-- <th>ACCESS NUMBER<i class="fa text-primary"></i></th>-->
+                    <th>PARKING TYPE<i class="fa text-primary"></i></th>
+                    <!--<th>REPLACE PERMIT<i class="fa text-primary"></i></th>
+<th>CARD STATUS<i class="fa text-primary"></i></th>-->
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <div class="modal fade modal-base" id="modal_vehDetails" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Access Number - <span id="cVh">A 12345</span> &nbsp;&nbsp;Card Holder - <span id="cOwn">A 12345</span></h2>
+                    <div class="separator-dashed"></div>
+                    <div class="form-style">
+                        <div class='row col-12' id="vehDetails">
+                            
+                        </div>
+                        <div class="text-right">
+                            <elem class="addNewVeh btn btn-primary" >ADD MORE</elem>
+                        </div>
+                        <div id="newVehSec" class="newVehSe" style="display:none">
+                            <div class="mb-3 row col-12">
+                                <div class="col-4">
+                                    <label>Place of registration</label>
+                                    <select fldName="PlaceOfRegistration"  onchange="createvCodeVals(this)" id="por_1" class="form-control input-select2-flat">
+                                        <option value=''>--None--</option>
+                                    </select>
+                                    <script>
+                                    var porNations='';
+                                    var por = ["Dubai","Abu Dhabi", "Ajman", "Bahrain",  "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                    for(var x=0;x<por.length;x++){
+                                        var j = por[x];
+                                        var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                        porNations += opt1;
+                                    }
+                                    $('#por_1').append(porNations);                                           
+                                    </script>
+                                </div>
+                                <div class="col-8 row">
+                                    <div class="col-4">
+                                        <label>Plate number code</label>
+                                        <input class="requiredFldPop form-control forEdit" maxLength='3' fldname="PlateNumber" id="vncdd" onkeyup="validAlphaNumeric(this);" type="text" />
+                                        <!--<select disabled="true" fldName="PlaceOfRegistration" onchange="checkCode(this)" id="vncdd" class="form-control input-select2-flat">
+<option value=''>--None--</option>
+</select>-->
+                                    </div>
+                                    <div class="col-4 form-group" id='othCodePrnt' style="display:none;">
+                                        <label>Code</label>
+                                        <input class="requiredFldPop form-control forEdit" maxLength="6" fldName="PlateNumberCode" id="othCode" onkeyup="removeValError(this)" type="text" />
+                                    </div>
+                                    <div class="col-4 form-group">
+                                        <label>Plate number</label>
+                                        <input class="requiredFldPop form-control forEdit numOnly" maxLength="6" fldname="PlateNumber"  id="vehNumber" onkeyup="removeValError(this)" type="text" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12" id="vherr" style="display:none;color: red">
+                                Provide vehicle detail.
+                            </div>
+                            <div class="text-right">
+                                <elem class="btn btn-primary addVeh" onclick="checkVeh()">ADD</elem>
+                            </div>
+                        </div>
+                        <div id="newVehSec1" style="display:none">
+                            <div class="mb-3 row col-12">
+                                <div class="col-6">
+                                    <label>Plate number</label>
+                                    <input class="requiredFldPop form-control forEdit" fldname="PlateNumber" id="vehNum" onkeyup="validAlphaNumeric(this);" type="text" />
+                                </div>
+                                <div class="col-6">
+                                    <label>Place of registration</label>
+                                    <select fldName="PlaceOfRegistration" id="por" class="form-control input-select2-flat">
+                                        <option value=''>--None--</option>
+                                    </select>
+                                    <script>
+                                    var porNations='';
+                                    var por = ["Dubai","Abu Dhabi", "Ajman", "Bahrain",  "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                    for(var x=0;x<por.length;x++){
+                                        var j = por[x];
+                                        var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                        porNations += opt1;
+                                    }
+                                    $('#por').append(porNations);
+                                    setTimeout(function(){$('#xppor__c').select2();},2000);                                                
+                                    </script>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <elem class="btn btn-primary addVeh" onclick="checkVeh()">ADD</elem>
+                            </div>
+                        </div>
+                        
+                        <!-- .row -->
+                    </div>
+                    
+                    <div class="text-primary" style="display:none;">
+                        <i class="fa fa-info-circle pr-2" id="addMoreInfo"></i>
+                        <elem>You can add 1 more vehicle(s)</elem>
+                    </div>
+                    
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    $(document).ready(function(){
+        // $('#table-parking').DataTable();
+        if(str){
+        formData(str);
+        }
+        $('#table-parking th').each(function(){
+            $(this).attr('title','Click to sort');
+        });
+        $('#table-parking th').click(function(){
+            $('#table-parking th i').hide();
+            $(this).find('i').show();
+            var c = $(this).attr('class');
+            //console.log(c)
+            if(c.includes('desc')){
+                $(this).find('i').removeClass('fa-arrow-up').addClass('fa-arrow-down');
+            }
+            else{
+                $(this).find('i').removeClass('fa-arrow-down').addClass('fa-arrow-up');
+            }
+        });
+    });
+    (function ($) {
+        $(function () {
+            $('.btn-select-non-employee').click(function () {
+                $('#select_employee').hide();
+                $('#select_non_employee').show();
+            });
+            $('.btn-select-employee').click(function () {
+                $('#select_employee').show();
+                $('#select_non_employee').hide();
+            });
+            
+            $('.btn-add-vehicle-detail').click(function () {
+                $(this).before($('.vehicle-detail').html());
+            });
+        });
+    }(jQuery));
+    
+    var str = '{!pString}';
+    function validAlphaNumeric(e){ 
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    var allJSONStr='',allJSONObj={},allJSONObj1=[];
+    function formData(d){
+        d=d.replaceAll('\t', ' ');
+        allJSONStr = d.split("\"Items\"").join('\'Items\'');
+        allJSONObj = JSON.parse(allJSONStr);
+        for(var x=0;x<allJSONObj.length;x++){
+            var i = allJSONObj[x];
+            var a = {};
+            var b = {};
+            for(y=0;y<Object.keys(i).length;y++){
+                var j = Object.keys(i)[y];
+                //var j = Object.keys(allJSONObj[y]);
+                if(j!='secVclNum'&&j!='sPlaceOfReg'){
+                    a[j] = i[j];
+                }
+            }
+            a['vehType'] = 'primary';
+            allJSONObj1.push(a);
+            if(i.secVclNum!=null){
+                for(y=0;y<Object.keys(i).length;y++){
+                    var j = Object.keys(i)[y];
+                    if(j!='vehicleNumber'&&j!='pPlaceOfReg'){
+                        if(j == 'secVclNum')
+                            b['vehicleNumber'] = i[j];
+                        else if(j == 'sPlaceOfReg')
+                            b['pPlaceOfReg'] = i[j];
+                            else
+                                b[j] = i[j];
+                    }
+                }
+                b['vehType'] = 'secondary';
+                allJSONObj1.push(b);
+            }
+        }
+        var tableData='';
+        /*for(var x=0;x<allJSONObj1.length;x++){
+            var i = allJSONObj1[x];
+            var tr='<tr>';
+            var VN = (i.vehicleNumber==''||i.vehicleNumber==null)?'NA':i.vehicleNumber;
+            var POR = (i.pPlaceOfReg==''||i.pPlaceOfReg==null)?'-':i.pPlaceOfReg;
+            var CN = (i.cHolderNm==''||i.cHolderNm==null)?'-':i.cHolderNm.split(' ')[0];
+            var MN = (!i.refMobile)?'-':i.refMobile;
+            // changed from update to View tr +='<td><div style="'+((VN=='NA'||i.actStat!='Active')?"cursor:not-allowed;":"cursor:pointer;")+'" onclick="updateVeh(\''+VN+'\',\''+i.cardNum+'\',\''+i.actStat+'\')" class="vehicle-number mb-1">'+((VN=='NA')?"<span style=\'font-size: 0.7em;\'>To be registered</span>":"<span>"+VN+"</span>")+'</div></td>'; // data-toggle='tooltip' data-placement='top' title='' data-original-title='Update "+VN+"'
+            tr +='<td><div style="cursor:pointer;" onclick="viewVeh(\''+VN+'\',\''+i.cardNum+'\',\''+i.actStat+'\')" class="vehicle-number mb-1">'+((VN=='NA')?"<span style=\'font-size: 0.7em;\'>To be registered</span>":"<span>"+VN+"</span>")+'</div></td>';
+            //tr +='<td><div class="vehicle-number mb-1"><span>'+VN+'</span></div></td>';
+            //tr +='<td>'+POR+'</td>';
+            tr += '<td>'+CN+'</td>';
+            tr +='<td>'+MN+'</td>';// tr +='<td><b style="color: #E62D38;">NA</b></td>';
+            // tr +='<td style="text-transform: capitalize;">'+i.sector+'</td>';
+            tr +='<td>'+i.expDate+'</td>';
+            tr +='<td>'+i.cardNum+'</td>';
+        //tr +='<td class=""><a class="'+((i.actStat=='Active'||i.actStat=='Inactive')?'':'disabled ')+'btn btn-outline-primary btn-outline-primary-2"  href="/nrtaLostCard_i?sid=a0L28000008y2gCEAQ&c='+i.cardNum+'" target="_blank">REPLACE</a></td>';
+        //  tr +='<td>'+i.actStat+'</td>';
+            if((VN!='NA'))
+                tr +='<td><label class="switch-label'+((VN=='NA')?" disabledApex":"")+'"><input '+((VN=='NA')?"disabled=true":"")+' card="'+i.cardNum+'" for="'+VN+'" type="checkbox" ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">STANDARD</span></span></label></td>';
+            else
+                tr +='<td><label class="switch-label'+((VN=='NA')?" disabledApex":"")+'"><input '+((VN=='NA')?"disabled=true":"")+' card="'+i.cardNum+'" for="'+VN+'" type="checkbox" ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">IN ACTIVE</span></span></label></td>';
+            tr +='</tr>';
+            tableData +=tr;
+        }*/
+        //for(var x=0;x<allJSONObj.length;x++){
+        for([x,i] of allJSONObj.entries()){
+            var cTypeClass='';
+            cTypeClass = (i.cardType=='Free'?'standardCard':(i.cardType=='Paid'?'paidCard':''));
+            cTypeClass = (i.cardType=='Enrollment'?'enrolledCard':cTypeClass);
+            cTypeClass = (i.cardType=='VIP'?'vipCard':cTypeClass);
+            cTypeClass = (i.isReserved=='true' && i.cardType !='VIP' ?'reservedCard':cTypeClass);
+            var tr='<tr>';
+            var CN = (i.cHolderNm==''||i.cHolderNm==null)?'-':i.cHolderNm.split(' ')[0];
+            var MN = (!i.refMobile)?'-':i.refMobile;
+            tr +='<td><div style="cursor:pointer;" onclick="viewVeh(\''+i.cardNum+'\',\''+i.actStat+'\',\''+i.sector+'\',\''+i.sectorId+'\')" class="'+cTypeClass+' vehicle-number mb-1">'+i.cardNum+'</div></td>';
+            //tr +='<td>'+i.cardNum+'</td>';
+            tr += '<td class="d-none d-lg-table-cell">'+CN+'</td>';
+            tr +='<td class="d-none d-lg-table-cell">'+MN+'</td>';
+            tr +='<td style="text-transform: capitalize;">'+i.sectorlocationname+'</td>';
+            tr +='<td class="d-none d-lg-table-cell">'+((i.actStat=='Active' && i.vDetails.length<1)?'Unassigned':(i.actStat=='Active' && i.vDetails.length>0)?'Assigned':i.actStat)+'</td>';
+            tr +='<td>'+i.vDetails.length+'</td>';
+            tr +='<td class="d-none d-lg-table-cell">'+i.expDate+'</td>';
+            
+            if((i.actStat))
+                tr +='<td><label class="switch-label"><input onchange="switchLabel(this,'+i.vDetails.length+');" cardtype="'+i.cardType+'"   card="'+i.cardNum+'" for="'+i.cardNum+'" type="checkbox" '+(i.isReserved=="true"?"checked=true":"")+' ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">STANDARD</span></span></label></td>';
+            //'+((i.vDetails.length<1)?"disabled=true":"")+'
+            /* else
+                tr +='<td><label class="switch-label'+((i.actStat!='Active')?" disabledApex":"")+'"><input '+((i.actStat!='Active')?"disabled=true":"")+' card="'+i.cardNum+'" for="'+i.cardNum+'" type="checkbox"'+(i.isReserved=="true"?"checked=true":"")+' ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">IN ACTIVE</span></span></label></td>';
+
+           
+            /*if((i.actStat))
+                tr +='<td><label class="switch-label'+((i.actStat!='Active')?" disabledApex":"")+'"><input '+((i.actStat!='Active')?"disabled=true":"")+' card="'+i.cardNum+'" for="'+i.cardNum+'" type="checkbox" '+(i.isReserved=="true"?"checked=true":"")+' ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">STANDARD</span></span></label></td>';
+            else
+                tr +='<td><label class="switch-label'+((i.actStat!='Active')?" disabledApex":"")+'"><input '+((i.actStat!='Active')?"disabled=true":"")+' card="'+i.cardNum+'" for="'+i.cardNum+'" type="checkbox"'+(i.isReserved=="true"?"checked=true":"")+' ><span><span class="switch-label-check">RESERVED</span><span class="switch-label-uncheck">IN ACTIVE</span></span></label></td>';*/
+            
+            tr +='</tr>';
+            tableData +=tr;
+        }
+        $('#table-parking tbody').html(tableData);
+        $('#table-parking').DataTable({
+            dom: 'Alfrtip',
+            language: {
+                'paginate': {
+                    'previous': '<i class="fa fa-long-arrow-left"></i><span> PREV</span>',
+                    'next': '<span>NEXT </span><i class="fa fa-long-arrow-right"></i>'
+                }
+            }
+        });
+        $('#table-parking_filter').parent().removeClass('col-md-6');
+        $('#table-parking_filter').parents('.row').eq(0).children().eq(0).hide();
+    }
+    
+    function checkCode(e){
+        let v = $(e).val();
+        $('#othCodePrnt').hide();
+        if(v=='Other'){
+            $('#othCodePrnt').show();
+        }
+    }
+    
+    function addVehSer(c){
+        window.open('/nonrta?sid=a0L28000008xt5VEAQ&c='+c,'_blank');
+    }
+    
+    var currentCardSector = '',currentCard='',currentSectorId='';
+    function viewVeh(cNum,cSta,cSect,cSectId){//vNum
+        if(cSta =='Inactive'){
+            //axsConfirmation('Confirm','No users registered yet, Click on yes to register a user.',false,'addVehSer',cNum);
+            axsAlert('Alert','Card generation is still in process.');
+            return;
+        }
+        /* else if(cSta=='Under Activation'){
+            axsAlert('Alert','No vehicles availble and card <b>Under Activation</b>.');
+            return;
+        }*/
+        //var keysToDisplay = ['vehicleNumber','pPlaceOfReg','cardNum','expDate','BusinessPark','cHolderNm','refMobile','email'];
+        var keysToDisplay = ['vehicleNumber','pPlaceOfReg'];
+        var elems = '';
+        currentCardSector = cSect;
+        currentCard = cNum;
+        currentSectorId = cSectId;
+        for(var [i,v] of allJSONObj.entries()){
+            console.log('v===',v);
+            if(cNum== v.cardNum ){
+                if(v.vDetails.length<1){
+                    axsConfirmation('Confirm','No users registered yet, Click on yes to register a user.',false,'addVehSer',cNum);
+                    return;
+                }
+                if(false){//v.vDetails.length<1
+                    if(cSta=='Under Activation')
+                        axsAlert('Alert','Card status is <b>Under Activation</b>.');
+                }
+                for(var [a,b] of v.vDetails.entries()){
+                    var elem = '<div class="col-12 '+b.VehicleNumber+'">';
+                    elem +='<div class="base-collapse pb-2">';
+                    elem +='<a aria-expanded="false" class="collapse-toggle collapsed" data-target="#id_'+b.VehicleNumber+'" data-toggle="collapse" href="#"><h3 class="collapse-title mb-2" id="'+b.VehicleNumber+'Det"> Vehicle number - '+b.VehicleNumber+'</h3></a>';
+                    elem +='<div class="collapse" id="id_'+b.VehicleNumber+'" style=""><div class="collapse-content"><div class="">';
+                    /*elem +='<div class="col-lg-4"><div class="form-group">'+b.VehicleNumber+'</div></div>'; 
+                    elem +='<div class="col-lg-4"><div class="form-group">'+b.VehiclePlaceofReg+'</div></div>';
+                    elem +='<div class="col-lg-4"><div class="form-group"><a style="color: #bf0000;padding:0px;" class="btn" onclick="inActiveVeh(this)" for='+b.VehicleNumber+'>Deactivate</a></div></div>';*/
+                    //elem +='<p><h4 class="mb-2">Vehicle number - '+b.VehicleNumber+'</h4></p>';
+                    elem +='<p>Place of registration - '+b.VehiclePlaceofReg+'</p>';
+                    elem +='<p><a style="padding:0px;" class="btn text-primary" onclick="inActiveVeh(this)" for='+b.VehicleNumber+'>Click here to deregister</a></p>';
+                    elem +='</div></div></div></div></div><div class="separator-dashed"></div></div></div>';
+                    elems +=elem;
+                    $('#cOwn').html(v.cHolderNm);
+                    
+                }
+                if(v.vDetails.length<5)
+                    if(cSta=='Under Activation'){
+                        $('.addNewVeh').attr('disabled',true).addClass('disabled');
+                        return;
+                    }
+                    else{
+                        $('.addNewVeh').show().unbind('click').on('click',function(){
+                            $('#newVehSec').show();
+                            $('.addNewVeh').hide();
+                        });
+                        $('#addMoreInfo').parent().show().find('elem').html('You can add '+(5-v.vDetails.length)+' more vehicle(s)');
+                    }
+                else if(v.vDetails.length>=5){
+                    $('#addMoreInfo').parent().hide();
+                    $('.addNewVeh').hide();
+                }
+            }
+        }
+        $('#newVehSec').hide();
+        $('#vehDetails').html(elems);
+        $('#cVh').html(cNum);
+        $('#modal_vehDetails').modal('show');
+    }
+    
+    function inActiveVeh(elem){
+        var v = $(elem).attr('for');
+        axsConfirmation('Confirm','Do you want to deregister vehicle - '+v+'<br><b>Note: </b>Deregistered vehicles will no longer be allowed access.',false,'inActiveVeh1',v);
+    }
+    
+    function inActiveVeh1(elem){
+        var reqJson = {"ActionName": "cancelvehicle","VehicleNumber": "","CardNumber": "","Sector": "","SectorLocationId": "","Status": "Cancel"};
+        for([i,v1] of allJSONObj.entries()){
+            for([x,y] of v1.vDetails.entries()){
+                if(elem == y.VehicleNumber){
+                    reqJson.CardNumber = v1.cardNum;
+                    reqJson.VehicleNumber = elem;
+                    reqJson.Sector = v1.sector;
+                    reqJson.SectorLocationId = v1.sectorId;
+                }
+            }
+        }
+        showGLoader();
+        manipulateVeh(JSON.stringify(reqJson));
+        $('#vehDetails .'+elem).remove();
+        if($('#vehDetails .col-12').length>4){
+            $('.addNewVeh').hide();
+        }
+        else{
+            $('.addNewVeh').show();
+        }
+        
+    }
+    
+    
+    
+    function checkVeh(e) {
+        let pCode = $('#vncdd').val();
+        pCode = (pCode == 'Other')?$('#othCode').val():pCode;
+        let reqJson = {"ActionName": "checkvehiclevalidity","VehicleNumber": "","CardNumber": "","Sector": "","SectorLocationId":""};
+        if(pCode == 'No Code'){
+            reqJson['VehicleNumber'] = $('#vehNumber').val();
+        }else{
+            reqJson['VehicleNumber'] = pCode+''+$('#vehNumber').val();
+        }
+        
+        if($('.'+reqJson['VehicleNumber']).length>0){
+            addValError('#vehNumber','Vehicle already added!');
+            return;
+        }
+        reqJson['CardNumber'] = currentCard;
+        reqJson['Sector'] = currentCardSector;
+        reqJson['SectorLocationId'] = currentSectorId;
+        confirmCheckVeh(reqJson);
+        //
+        
+    }
+    function confirmCheckVeh(reqJson){
+        axsConfirmation('Confirm','You are adding vehicle <b>'+reqJson.VehicleNumber+'</b> to card <b>'+reqJson.CardNumber+'</b>. <br/> Please Confirm.',true,'checkVehCaller',JSON.stringify(reqJson));
+    }
+    function checkVehCaller(reqJsonStr){
+        showTempLoader('#addVeh');
+        checkVeh1(reqJsonStr);
+    }
+    
+    function addNewVehRow(m){
+        hideGLoader();
+        removeTempLoader();
+        if(m){
+            axsAlert('Error','vehicle is already registered!');
+            return;
+        }
+        let reqJson = {"ActionName":"addvehicle","OracleID":"","CardNumber":"","PlateNumberCode":"","PlaceOfReg":"","Sector": "","SectorLocationId":""};
+        //var veh = $('#vehNum').val();
+        //var por = $('#por').val();
+        var veh;
+        let pCode = $('#vncdd').val();
+        pCode = (pCode == 'Other')?$('#othCode').val():pCode;
+        if(pCode == 'No Code'){
+            veh = $('#vehNumber').val();
+        }else{
+            veh = pCode+''+$('#vehNumber').val();
+        }
+        
+        var por = $('#por_1').val();
+        
+        reqJson.OracleID='{!opi}';
+        reqJson.CardNumber=currentCard;
+        reqJson.PlateNumberCode=veh;
+        reqJson.PlaceOfReg=por;
+        reqJson.Sector=currentCardSector;
+        reqJson['SectorLocationId'] = currentSectorId;
+        showGLoader();
+        manipulateVeh(JSON.stringify(reqJson));    
+    }
+    
+    function createDataInfo(lab,val){
+        var h = '<div class="data-info">';
+        h +='<div class="data-label">'+lab+'</div>';
+        h +='<div class="data-value"><span>'+val+'</span></div></div>';
+        return h;
+    }
+    function addNewVeh(cNum){
+        $('#newVehSec').show();
+        $('.addNewVeh').hide();
+    }
+    
+    function updateVeh(vNum,cNum,cSta){
+        if(vNum=='NA' || cSta!='Active')
+            return;
+        else if(cSta!='Active'){
+            axsAlert('Alert','You cannot update vehicles with card status as - '+cSta);
+            return;
+        }
+        var u = '/nrtauv?sid=a0L28000008y2flEAA&v='+vNum+'&c='+cNum;
+        window.open(u);
+    }
+    var plateCodes = {'Dubai':["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","Other","No Code"],'Abu Dhabi':['1','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','50',"Other","No Code"],'Ajman':["Other","No Code"],'Bahrain':["Other","No Code"],'Fujairah':["Other","No Code"],'Kuwait':["Other","No Code"],'Oman':["Other","No Code"],'Qatar':["Other","No Code"],'Ras Al Khaimah':["Other","No Code"],'KSA':["Other","No Code"],'Sharjah':["Other","No Code"],'Umm Al Quwain':["Other","No Code"]};
+    function createvCodeVals(e){
+        $('#vncdd').html('').removeAttr('disabled');
+        /*var v = $(e).val();
+        if(v=='--None--')
+            return;
+        var codes = plateCodes[v];
+        var codeOtions="<option value=''>--None--</option>";
+        if(codes){
+            for([i,v] of codes.entries()){
+                var opt1 = '<option value="'+v+'">'+v+'</option>';
+                codeOtions += opt1;
+            }
+            $('#vncdd').html(codeOtions);
+        }
+        else{
+            //$('#vncdd').removeAttr('disabled');
+        }
+        $('#vncdd').removeAttr('disabled').select2({
+            tags: true,
+            "language": {
+                "noResults": function(){
+                    return "<span class='text-primary'>Type plate number code</span>";
+                }
+            },
+            escapeMarkup: function (markup) {
+                return markup;
+            }
+        });*/
+    }
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    
+    
+    
+    function switchLabel(e,l){
+        
+        var c = $(e).attr('card');
+        var v = $(e).attr('for');
+        var cardType= $(e).attr('cardtype');
+        
+        $('[card='+c+']').removeAttr('disabled');
+        $('[card='+c+']').parent().removeClass('disabledApex');
+        var isChecked = $(e).prop('checked');
+        var stroedJson = localStorage.getItem(c);
+        if(stroedJson){
+            let j = JSON.parse(stroedJson);
+            if((Date.now()-j.time)/(60000)<5){
+                axsAlert('Your previous request is still in process, please try after 5 mins.');
+                undoReserveVeh(c+'&&'+isChecked);
+                return;
+            }
+        }
+        if(cardType == 'VIP'){
+            axsAlert('Error','<b>VIP</b> Parking cant be unreserved.');
+            undoReserveVeh(c+'&&'+isChecked);
+        }
+        else if($(e).prop('checked')){
+            if(tRsrvd==tElg){
+                axsAlert('Alert','Reserved cards count is already reached maximum eligibility, please un reserve any card to proceed.');
+                undoReserveVeh(c+'&&'+isChecked);
+                return;
+            }
+            if(l<=0){
+                axsAlert('Error','You need to add vehicles to mark <b>Reserved</b>');
+                undoReserveVeh(c+'&&'+isChecked);
+                return;
+            }
+            axsConfirmation('Please confirm!','By making this action, all the vehicles under the card will be reserved',false,'reserveVeh',c+'&&'+isChecked,'undoReserveVeh',c+'&&'+isChecked);
+        }
+        else{
+            axsConfirmation('Please confirm!','By making this action, Reserved card will be un reserved',false,'reserveVeh',c+'&&'+isChecked,'undoReserveVeh',c+'&&'+isChecked);
+        }
+        
+    }
+    
+    </script>
+</apex:component>

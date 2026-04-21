@@ -1,0 +1,111 @@
+<apex:component allowDML="true">
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="cmpTitle" description="Component Title" type="String"/>
+    <script>
+        function assignfldVal(val,fldId){
+            cs[fldId].value=val;
+        }
+        function rpidCheck(elem,event){
+            $(elem).parent().find('.frmErrMsg').remove();
+            $(elem).attr('maxlength',16);
+            if(event.keyCode == 8)
+                return;
+            let v = $(elem).val();
+            let l = $(elem).val().length;
+            if(l==3 || l==8){
+                $(elem).val(v+'/');
+            }
+        }
+        function checkrpid(elem){
+            if(!validateRPId($(elem).val())){
+                addValError(elem,'Invalid Residence permit id!');
+            }else{
+                removeValError($(elem));
+            }
+        }
+        function validateRPId(v){
+            let test = (/^201.[0-9]{4}.[0-9]{7}$/).test(v);
+            return test&&v.includes('/');
+        }
+    </script>
+    <div class="base-collapse">
+        <a href="#" class="collapse-toggle collapsed" data-toggle="collapse" data-target="#emirate_id" aria-expanded="true">
+            <div class="collapse-title">RP details</div>
+        </a>
+        <div id="emirate_id" class="collapse show" style="">
+            <div class="collapse-content">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>RP ID</Label>
+                            <apex:inputField ignoreEditPermissionForRendering="true" styleClass="requiredFld form-control numOnly" value="{!req.xrp__c}"  id="xrp__c"
+                                             onkeydown="rpidCheck(this,event)" onchange="checkrpid(this)"/>
+                            <script type="text/javascript">
+                                cs['xrp__c']=document.getElementById('{!$Component.xrp__c}');
+                            </script>
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>RP UID</Label>
+                            <apex:inputField ignoreEditPermissionForRendering="true" styleClass="requiredFld form-control" value="{!req.xui__c}"  id="xui__c" />
+                            <script type="text/javascript">
+                                    cs['xui__c']=document.getElementById('{!$Component.xui__c}');
+                            </script>
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Issue date</Label>
+                            <div class="input-datepicker-group input-group">
+                                <apex:inputHidden id="xrpid" value="{!req.xrpid__c}" />
+                                <input type="text" class="addRqrd form-control input-datepicker" id="xrpid__c"
+                                       data-toggle="datetimepicker" data-target="#xrpid__c" value="{!req.xrpid__c}"
+                                       onchange="assignfldVal(this.value,'xrpid');checkValidDate(this);checkDate(this,'pid')"/>
+                                <script type="text/javascript">
+                                cs['xrpid__c']=document.getElementById('xrpid__c');
+                                dformat('{!req.xrpid__c}','xrpid__c');
+                                cs['xrpid']=getC('{!$Component.xrpid}');
+                                </script>
+                                <div class="input-group-append">
+                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrpid__c">
+                                        <i class="icon-date"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <!-- .col -->
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <Label>Expiry date</Label>
+                            <div class="input-datepicker-group input-group">
+                                <apex:inputHidden id="xrped" value="{!req.xrped__c}" />
+                                <input type="text" class="addRqrd form-control input-datepicker" id="xrped__c"
+                                       data-toggle="datetimepicker" data-target="#xrped__c" value="{!req.xrped__c}"
+                                       onchange="assignfldVal(this.value,'xrped');checkValidDate(this);"/> <!-- checkDate(this,'ped') -->
+                                <script type="text/javascript">
+                                cs['xrped__c']=document.getElementById('xrped__c');
+                                dformat('{!req.xrped__c}','xrped__c');
+                                cs['xrped']=getC('{!$Component.xrped}');
+                                </script>
+                                <div class="input-group-append">
+                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrped__c">
+                                        <i class="icon-date"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <!-- .col -->
+                </div>
+                <!-- .row -->
+                <div class="pb-4"></div>
+            </div>
+        </div>
+    </div>
+</apex:component>

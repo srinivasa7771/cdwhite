@@ -1,0 +1,573 @@
+<apex:component >
+    <apex:attribute name="test" description="test " type="String" />
+    <apex:attribute name="req" description="Request " type="g_Req__c" />
+    <apex:attribute name="pg" description="Page Name " type="String" />
+    
+    <style>
+        @media (max-width:480px){
+            .select2-selection__rendered li{
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        
+        #ainfo:after,#ainfo:before{
+        content:none !important;
+        }
+    </style>
+    <apex:includeScript value="{!$Resource.freelancerActivities}"/>
+    <div class="mb-3">
+        
+        <div>
+            <div class="form-group">
+                <div class="mb-3">
+                    <apex:outputText rendered="{!OR(req.STA__c=='Draft',req.STA__c=='')}">Dear {!$User.FirstName} {!$User.LastName},</apex:outputText> 
+                </div>
+                <apex:outputText rendered="{!pg == 'obrqfl'}">
+                <p style="/*line-height: 1.3; font-size: 18px; */">
+                   Based on the information you have provided, we have personalized your journey to enable you to complete your application in simple steps.
+                </p>
+                </apex:outputText>    
+                <label>Industry</label>
+                <apex:inputHidden id="xaccbrand__c" value="{!req.xaccbrand__c}"/>
+                <script type="text/javascript">
+                cs['xaccbrand__c']=getC('{!$Component.xaccbrand__c}');
+                </script>
+                <div>
+                    <apex:selectList value="{!req.xaccbrand__c}" id="brnd" multiselect="false" 
+                    styleClass="forDraft form-control input-select2-flat" size="1" onchange="changeBrand1(this)">
+                        <!--<apex:selectOption itemLabel="--None--"  itemvalue="" id="none"  />-->
+                        <apex:selectOption itemLabel="Design" html-prk="ddd" itemvalue="Dubai Design District"   />
+                        <apex:selectOption itemLabel="Media" html-prk="dmc" itemvalue="Dubai Media City"   />
+                        <apex:selectOption itemLabel="Education" html-prk="dkp" itemvalue="Dubai Knowledge Park"   />
+                        <apex:selectOption itemLabel="Tech" html-prk="dic" itemvalue="Dubai Internet City"   />                        
+                    </apex:selectList> 
+                </div>
+                <script type="text/javascript">
+                cs['brnd']=getC('{!$Component.brnd}');
+                </script>
+                <div class="input-info"  style="display:none;">
+                    <i class="fa fa-exclamation-circle text-info"></i>
+                    <elem id="selectText">
+                        Select relevant activities for your business. You can select multiple activities (up to 3 per segment).
+                    </elem><!--, if any additional activity will be charged at a rate of AED 1,000 per activity.-->
+                </div>
+            </div>
+        </div>
+        
+        <div class=" form-group col-lg-12" style="display:none">
+            <label>
+                Select sector that best describe the nature of business you are planning to start
+            </label>
+            <select id="segments" class="depPar requiredFld form-control dum input-select2-flat " onchange="buildAct(this)">
+                
+            </select>
+            <apex:inputHidden id="segmentFL__c" value="{!req.segmentFL__c}" />
+        </div>
+        <div class=" form-group mt-4">
+            <label>
+                
+                    <!--Based on the business park, your segment is selected to <b id="seg"></b>, Please choose the activities.-->
+                   <!-- Based on the business community selected, the <b id="seg"></b> segment will be associated with your freelance permit. 
+                    Please choose the relevant activities from the segment to proceed.
+                    -->
+                     Freelance activity
+                
+                <!--<p style="display:none;"><i class="icon-info-circle text-primary" style="vertical-align: middle;font-size: 1.25rem;"></i>
+                    <elem id="selectText">
+                        Select relevant activities for your business. You can select multiple activities (up to 3 per segment)
+                    </elem>, any additional activity will be charged at a rate of AED 1,000 per activity.
+                </p>-->
+            </label>
+            <select id="activities" multiple="multiple" class="depChild requiredFld form-control dum input-select2-flat" onchange="changeActInfo(this)">
+                <option value="--None--">--None--</option>
+            </select>
+            <apex:inputHidden id="activitiesFL__c" value="{!req.activitiesFL__c}" />
+            <apex:inputHidden id="xcmoa__c" value="{!req.xcmoa__c}" />
+            <apex:inputHidden id="xcst__c" value="{!req.xcst__c}" />
+            <script>
+            cs['segmentFL__c']=document.getElementById('{!$Component.segmentFL__c}');
+            cs['activitiesFL__c']=document.getElementById('{!$Component.activitiesFL__c}');
+            cs['xcmoa__c']=document.getElementById('{!$Component.xcmoa__c}');
+            cs['xcst__c']=document.getElementById('{!$Component.xcst__c}');
+            </script>
+            <div class="input-info" id="ainfo" style="display:none">
+                <i class="fa fa-exclamation-circle text-warning"></i>&nbsp;
+                <span id="infotxt"></span> 
+            </div>
+        </div>            
+        
+        
+        <div class="form-group mt-4">
+            <label>As part of the onboarding process, please share any social media handles or links that showcase your work</label>
+            <apex:inputField styleClass="form-control requiredFld" value="{!req.xvn__c}" id="xvn__c" onchange="checkUrl1();" /><!-- -->
+            <script type="text/javascript">
+            cs['xvn__c']=document.getElementById('{!$Component.xvn__c}');
+            </script>
+        </div>
+        
+        <div class="form-group">
+            <!--<h4 class="mb-3 mt-3">
+                Just few more details to proceed.
+            </h4> -->
+            <div class="form-group">
+                <label>Please select either of the below statements that apply to you</label>
+                
+                <apex:inputField value="{!req.xcflst__c}" styleClass="form-control input-select2-flat requiredFld"
+                                 id="xcflst__c" onchange="checkNoVisa1(this)" />
+                <script type="text/javascript">
+                cs['xcflst__c']=document.getElementById('{!$Component.xcflst__c}');
+                </script>
+            </div>
+            <!--<div class=" form-group col-lg-12" >
+                <label>
+                    Current status in country.
+                </label>
+                <apex:selectList value="{!req.xcflst__c}" id="xcflst__c" styleClass="forDraft form-control input-select2-flat" size="1" >
+                    <apex:selectOption itemLabel="--None--"  itemvalue=""   />
+                    <apex:selectOption itemLabel="I am a Gulf Cooperative Council (GCC) national" itemvalue="gcc"/>
+                    <apex:selectOption itemLabel="I am currently sponsored by an existing employer within the UAE" itemvalue="empvisa" />
+                    <apex:selectOption itemLabel="I am currently not employed but have a valid UAE visa" itemvalue="nonempvisa"/>
+                    <apex:selectOption itemLabel="I reside out of the UAE and don’t have a UAE visa" itemvalue="novisa"/>                        
+                </apex:selectList> 
+                <script type="text/javascript">
+                cs['xcflst__c']=getC('{!$Component.xcflst__c}');
+                </script>
+            </div>-->
+            <apex:outputPanel rendered="false">
+                <div class="form-group">
+                    <!-- checkbox primary -->
+                    <label>Do you also want to apply for a residence visa?</label>
+                    <div class="mt-2">
+                        <label class="custom-radio mr-3">
+                            <input type="radio" value='yes' name="est"/>
+                            <span>Yes</span>
+                        </label>
+                        <label class="custom-radio">
+                            <input type="radio" value='no' name="est"/>
+                            <span>No</span>
+                        </label>
+                    </div>
+                    <div class="mt-2 forVisa" style="display:none;">
+                        <strong>To apply for a visa:</strong>
+                        <ul class="ul-style">
+                            <li>
+                                You require an establishment card - this costs AED 2,000 and is included as part of your application process.
+                            </li>
+                            <li>
+                                Once the establishment card is issued, you may apply for the visa via the ‘Visa &amp; Immigration Services’ section on your axs dashboard.
+                            </li>
+                            <li>
+                                For visa fees, please <a href="#">click</a>.
+                            </li>
+                            
+                        </ul>                
+                    </div>
+                </div>
+            </apex:outputPanel>
+            <apex:inputHidden id="inUAE__c" value="{!req.inUAE__c}"/>
+            <apex:inputHidden id="is_sponsered_fl__c" value="{!req.is_sponsered_fl__c}"/>
+            <script type="text/javascript">
+                cs['inUAE__c']=getC('{!$Component.inUAE__c}');
+                cs['is_sponsered_fl__c']=getC('{!$Component.is_sponsered_fl__c}');
+                $('.flCheck').on('change',function(){
+                    var sfFld = $(this).attr('sfField');
+                    cs[sfFld].value = $(this).prop('checked');
+                });
+            </script>
+           
+            
+        </div>
+        <apex:inputHidden id="xcddocs__c" value="{!req.xcddocs__c}"/>
+        <script type="text/javascript">
+        cs['xcddocs__c']=document.getElementById('{!$Component.xcddocs__c}');
+        </script>
+    </div>
+    <script>
+    /*  ---segAct--- JSON from freelancerActivities static resource*/
+    
+    var selectedSeg,selectedAct;
+    var segAvailable,actAvailable;
+    var firstLoad = true;
+    var prkObj = {'ddd':'Design','dmc':'Media','dic':'Tech','dkp':'Education'};
+    // var setObj = {'Design':'ddd','Media':'dmc','Tech':'dic','Education':'dkp'};
+    var paymentWithoutAct = 0.00;
+    var prvBrnd='',prvVisaVal='';
+    $(document).ready(function(){
+        setTimeout(function(){
+            prvBrnd= $(cs['brnd']).val();
+            prvVisaVal = $(cs['xcflst__c']).val();
+            
+            var brand1 = '{!req.xaccbrand__c}'; var segment1 = '{!req.segmentFL__c}'; var actvity1 = '{!req.activitiesFL__c}';
+            if(brand1){cs['brnd'].value = cs['xaccbrand__c'].value;}
+            
+            setTimeout(function(){
+                $(cs['brnd']).trigger('change');
+            },400);
+            buildSeg();
+            
+            if(segment1){ $("#segments").val(segment1).trigger('change');}
+            if(actvity1){ $("#activities").val(actvity1).trigger('change'); $('#segments').trigger('change').select2();} 
+            
+           
+            
+            $('[name="est"]').on('change',function(){
+                let v = $(this).val().toLowerCase();
+                removeValError('[name="est"]');
+                cs['xcst__c'].value = v;
+                if(v=='yes' ){
+                    if(!cs["xadh__c"].value.includes('ec;'))
+                        cs["xadh__c"].value +='ec;';
+                    $('.forVisa').show();
+                } else{
+                    cs["xadh__c"].value = cs["xadh__c"].value.replace('ec;','');
+                    $('.forVisa').hide();
+                }
+                var rqId1 = '{!req.id}';
+                /*if('{!pg}' != 'obrqfl' && rqId1){
+                    toggleGLoader();
+                    saveadhoc();
+                }*/
+                // saveRequest2();
+                 updateAmnt();
+            });
+            if(cs['xcst__c'].value){//cs["xadh__c"].value
+                $('[name="est"][value="'+cs['xcst__c'].value+'"]').prop('checked',true);
+            }
+            if(cs["xcflst__c"].value=='gcc'){
+                $('[name="est"][value="no"]').prop('checked',true);
+                $('[name="est"]').attr('disabled','true');
+                $('[name="est"]').trigger('change');
+            }
+            
+        },500);
+    });
+    
+    function checkNoVisa1(e){
+        var v = $(e).val();
+        var t = $(e).find('option:selected').text();
+        if(t!='--None--'&&v&&prvVisaVal&&v!=prvVisaVal)
+            axsConfirmation("Please confirm","Are you sure you want to change your current visa status?",false,'checkNoVisa','','revertNoVisa','');
+        else
+            checkNoVisa(e);
+    }
+    function revertNoVisa(){
+        $(cs['xcflst__c']).val(prvVisaVal).trigger('change');
+    }
+    function checkNoVisa(e){
+        if(cs["xcflst__c"].value=='gcc'){
+            $('[name="est"][value="no"]').prop('checked',true);
+            $('[name="est"]').attr('disabled','true');
+            $('[name="est"]').trigger('change');
+        }
+        else{
+            $('[name="est"]').removeAttr('disabled').prop('checked',false);
+            cs['xcst__c'].value='';
+        }
+        if('{!pg}' != 'obrqfl' &&$(cs['xcflst__c']).val() &&prvVisaVal!=$(cs['xcflst__c']).val()){
+            showGLoader();
+            //addTLoaders('#xcflst__c');
+            saveReqDraft4();
+        }
+    }
+    
+    function changeBrand1(e){
+        var v = $(e).val();
+        var t = $(e).find('option:selected').text();
+        if(t!='--None--'&&v&&prvBrnd&&v!=prvBrnd)
+            axsConfirmation("Please confirm","Selected activities are not mapped with <b>"+t+"</b> industry.<br>Are you sure you want to change the industry?",false,'changeBrand','','revertBrand','');
+        else
+            changeBrand(e);
+    }
+    function revertBrand(){
+        $(cs['brnd']).val(prvBrnd).trigger('change');
+        //selectedAct = cs['activitiesFL__c'].value.split(';');
+        //cs['activitiesFL__c'].value = (typeof(selectedAct)=='string')?selectedAct:selectedAct.join(';');
+        //$('#activities').val(prAct).trigger('change').select2();
+    }
+    function changeBrand(e){
+        prvBrnd = $(cs['brnd']).val();
+        var prk = $(cs['brnd']).find('option:selected').attr('prk');
+        var prkCss = $('#brand').attr('href').replace($('#brand').attr('href').split('.')[0].split('/')[$('#brand').attr('href').split('.')[0].split('/').length-1],'brand-'+prk);
+        
+        
+        if(cs['segmentFL__c'].value!='{!req.segmentFL__c}'){
+            $('#segments').val('').trigger('change').select2();
+            $('#activities').val('').trigger('change').select2();
+            cs['segmentFL__c'].value=''; cs['activitiesFL__c'].value='';
+        }
+
+        if(prk){
+            $('#brand').attr('href',prkCss);
+            $('#segments').find('option[value="'+prkObj[prk]+'"]').prop('selected',true);
+            $('#segments').trigger('change');
+            $('b#seg').html(prkObj[prk]);
+            //buildAct
+        }
+    }
+    
+    function buildSeg(){
+        segAvailable = Object.keys(segAct);
+        var options = '<option value="">--None--</option>'
+        for(i of segAvailable ){
+            var opt='<option value="'+i+'">'+i+'</option>';
+            options+=opt;
+        }
+        $('#segments').html(options);
+        var prSeg = cs['segmentFL__c'].value;
+        if(!prSeg)
+            return;
+        $('#segments').find('option[value="'+prSeg+'"]').prop('selected',true);
+        $('#segments').trigger('change').select2();
+    }
+    var prAct='';
+    function buildAct(e){
+        selectedSeg = $(e).val();
+        $('#ainfo').hide();
+        cs['xcddocs__c'].value = ''; cs['xcmoa__c'].value=0;
+        
+        if(selectedSeg!=null && selectedSeg!='{!req.segmentFL__c}'){
+            $('#activities').val('').trigger('change').select2();
+            cs['activitiesFL__c'].value='';
+        }
+        
+        if(!selectedSeg){
+            //$('#activities').prop('disabled',true);
+            
+            $('#activities').html(''); return;
+        }
+        $('#activities').prop('disabled',false); $('#activities').html();
+        cs['segmentFL__c'].value = selectedSeg;
+        actAvailable = Object.keys(segAct[selectedSeg]);
+        var options = '';
+        if(selectedSeg!="Media") 
+           options = '<option value="">--None--</option>';
+        /*else
+           options = '<option disabled="disabled" value="">--None--</option>';
+        /***if(selectedSeg!="Media")  options = '<option value="">--None--</option>';
+        else options = '';***/
+        
+        for([i,v] of segAct[selectedSeg].entries()){
+            var opt='<option ind='+i+' value="'+v.Activity +'" dscr="'+v.Description + '" reqdoc="'+v.Document + '" actAmnt="'+v.Amount +'">'+v.Activity+'</option>';
+            options+=opt;
+        }
+        $('#activities').html(options);
+        if(selectedSeg!="Media"){
+            $('#selectText').html('You can select only ONE activity under <b>'+selectedSeg+'</b> industry.').parent().show(); //<b>'+selectedSeg+'</b>
+            $('#activities').removeAttr('multiple');
+        }
+        else{
+            $('#selectText').html('You can select upto THREE activities under <b>'+selectedSeg+'</b> industry.').parent().show(); //<b>'+selectedSeg+'</b>
+            $('#activities').attr('multiple','multiple');
+            $('#activities').select2({
+                placeholder: 'Select your activities',
+                allowClear: false
+            });
+        }
+        prAct = cs['activitiesFL__c'].value;
+        if(cs["activitiesFL__c"].value.includes(';')){
+            var prActAr = cs["activitiesFL__c"].value.split(';');
+            for(i of prActAr ){
+                $('#activities').find('option[value="'+i+'"]').prop('selected',true);
+            }
+        }
+        else{
+            $('#activities').find('option[value="'+prAct+'"]').prop('selected',true);
+        }
+        if(selectedSeg=="Media"){
+            
+        }
+        $('#activities').trigger('change').select2();
+        
+    }
+    var timeToHideInfo = 0;
+    function changeActInfo(e){
+        timeToHideInfo = 10000;
+        var selectElem = document.getElementById('activities');
+        selectedAct = ($(e).val())?$(e).val():'';
+        var tempSeg = (typeof(selectedAct)=='string')?selectedAct:selectedAct.join(';');
+        prAct = (tempSeg)?tempSeg:prAct;
+        if(selectedAct && selectedAct.length>0){
+            
+            if(selectedSeg=="Media" && selectedAct.length>3){
+                selectedAct = cs['activitiesFL__c'].value.split(';');
+                cs['activitiesFL__c'].value = selectedAct.join(';');
+                $('#activities').val(selectedAct).trigger('change').select2();
+                axsAlert('Alert','As per regulations, you can select upto THREE activities under <b>Media</b> industry.');
+                return;
+            }
+            /***if(selectedSeg!="Media") cs['activitiesFL__c'].value = selectedAct;
+            else if(selectedSeg=="Media") cs['activitiesFL__c'].value = selectedAct.join(';');***/
+            
+            document.querySelectorAll(".actRomove").forEach(el => el.remove());
+            
+            /*for(var i=0; i< selectedAct.length; i++){
+                var actElem = '<div class="onboarding-review-row actRomove"><span id="brkacts" class="onboarding-review-label">'+ selectedAct[i]  +'</span></div>';
+                $('.dynaacts').append(actElem);
+            }*/ 
+            cs['activitiesFL__c'].value = (typeof(selectedAct)=='string')?selectedAct:selectedAct.join(';');
+            var index = selectElem.selectedIndex;
+            var index1 = index;
+            var desc = $(e).find('option:selected').eq($(e).find('option:selected').length-1).attr('dscr');
+            //var desc = $(e).find('[ind='+index1+']').attr('dscr');
+            $('#infotxt').html(desc);
+            if(desc)
+                $('#ainfo').show();
+            
+            setTimeout(function(){
+                $('#ainfo').hide();
+            },timeToHideInfo);            
+            
+            var reqdoc =  $(e).find('option:selected').eq($(e).find('option:selected').length-1).attr('reqdoc');
+            cs['xcddocs__c'].value = '';
+            cs['xcmoa__c'].value = 0;
+            var actCount = 0;
+            if(cs['xadh__c'].value) { cs['xadh__c'].value = cs['xadh__c'].value.replace('act;','');}
+            
+            $(e).find('option:selected').each(function(){     
+                actCount++;
+                var a  = $(this).attr('reqdoc'); 
+                if(a && a!="undefined"){ 
+                    a=a.trim();
+                    var rDocs =  cs['xcddocs__c'].value;
+                    if(!rDocs.includes(a)){
+                        cs['xcddocs__c'].value += a+';';
+                    }
+                }
+                
+                var actAmount  = $(this).attr('actAmnt');                 
+                if(actAmount && selectedSeg!="Media" && actCount>1){
+                    cs['xcmoa__c'].value = parseFloat(cs['xcmoa__c'].value) + parseFloat(actAmount);
+                }else if(actAmount && selectedSeg=="Media" && actCount>3){
+                    cs['xcmoa__c'].value = parseFloat(cs['xcmoa__c'].value) + parseFloat(actAmount);
+                }
+                
+            });
+            
+            if(parseFloat(cs['xcmoa__c'].value) > 0){
+                cs['xadh__c'].value +='act;';
+            }
+            
+            if('{!req.id}'){
+                dynaActivities(selectedAct);
+            }
+            /*if(reqdoc && selectedSeg!="Media"){cs['xcddocs__c'].value = reqdoc+';';}else if(selectedSeg=="Media" && reqdoc){ $(e).find('option:selected').each(function(){var a  = $(this).attr('reqdoc'); if(a && a!="undefined"){ a=a.trim();var rDocs =  cs['xcddocs__c'].value;if(!rDocs.includes(a)){cs['xcddocs__c'].value += a+';';}}});}*/
+            
+        } else{        
+            $('#ainfo').hide();
+            cs['xcddocs__c'].value = '';
+            document.querySelectorAll(".actRomove").forEach(el => el.remove());
+        }
+        
+        updateAmnt();         
+        if('{!pg}' != 'obrqfl' && !firstLoad){//cs["activitiesFL__c"].value != tempSeg
+            addTLoaders('#activities');
+            firstLoad = false;
+            saveReqDraft3();
+        }
+    }
+   
+    function addTLoaders(e){
+        showTLoader(e);
+        $('.loader_rerender').show();
+    }
+    
+    function showTLoader(e){
+        if($(e).is('select'))
+            showTempLoader_select(e);
+        else
+            showTempLoader_input(e);
+    }
+    function showTempLoader_select(e){
+        $(e).parent().find('.select2-selection--single').addClass('tempLoader_input');
+        setTimeout(function(){
+            $('*').addClass('loadingProgress');
+        },400);
+    }
+
+
+    
+    var isValidUrl = (url) => {try {new URL(url); } catch (e) { console.log(e); return false; } return true; };  
+    
+    function checkUrl(){
+        /*removeValError(cs['xvn__c']); 
+        var lURL = cs['xvn__c'].value.toLowerCase();
+        if(isValidUrl(lURL) ) {//&& (lURL.includes('linkedin.com')|| lURL.includes('instagram.com'))
+            return true;
+        }
+        else{
+            addValError(cs['xvn__c'],'Please enter valid URL.');
+            return false;
+        }*/
+        return true;
+    }
+    function checkUrl1(){
+        removeValError(cs['xvn__c']); 
+        var lURL = cs['xvn__c'].value.replaceAll(' ','').toLowerCase();
+        if(!lURL ||lURL.length<5 ||lURL=='null'||lURL=='na'||lURL=='not applicable'||lURL=='n/a'||lURL=='-'|| lURL.includes('--')) {//&& (lURL.includes('linkedin.com')|| lURL.includes('instagram.com'))
+            addValError(cs['xvn__c'],'Please enter valid URL.');
+            cs['xvn__c'].value = cs['xvn__c'].value.trim();
+            scrollToDiv($(cs['xvn__c']));
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    
+    function updateAmnt(){ 
+        var totalpaymnt = '{!req.ATV__c}'; 
+        if(totalpaymnt==''){totalpaymnt=0.00;}
+        paymentWithoutAct = parseFloat(totalpaymnt);
+        var xadh = cs["xadh__c"].value; var xadh2 = '{!req.xadh__c}'; 
+        
+        if(xadh && xadh.includes("ec;")){
+            $("#ecbrkdown").show();
+            if(!xadh2.includes("ec;") && xadh.includes("ec;")){ 
+                totalpaymnt =  parseFloat(totalpaymnt) + 2000.00;
+            } 
+        }else{
+            $("#ecbrkdown").hide();
+            if(xadh2.includes("ec;") && !xadh.includes("ec;")){
+                totalpaymnt =  parseFloat(totalpaymnt) - 2000.00;
+            }
+        }
+        
+        if(parseFloat(totalpaymnt) > 0){
+            if(cs['xcmoa__c'].value && parseFloat(cs['xcmoa__c'].value)>0){
+                paymentWithoutAct = parseFloat(totalpaymnt) - parseFloat('{!req.xcmoa__c}');
+            }
+        }
+        
+        if(parseFloat(cs['xcmoa__c'].value) > 0){
+            paymentWithoutAct = parseFloat(paymentWithoutAct) + parseFloat(cs['xcmoa__c'].value);
+        }else{
+            paymentWithoutAct = parseFloat(totalpaymnt) - parseFloat('{!req.xcmoa__c}');
+        }
+        
+
+        if(!isNaN(paymentWithoutAct)) {
+            
+            //$('.dueAmt').text('AED ' + paymentWithoutAct.toFixed(2));
+            var tPym = numberWithCommas(''+paymentWithoutAct.toFixed(2));
+            $('.dueAmt').text('AED ' + tPym);
+        }
+       
+        //update popup values
+        if(!isNaN(parseFloat(cs['xcmoa__c'].value)) && parseFloat(cs['xcmoa__c'].value)>0){
+            $('#brkseg').text('Additional freelance activity');
+            var addtnlPy = numberWithCommas(''+parseFloat(cs['xcmoa__c'].value).toFixed(2));
+            $('#brksegamnt').text('AED ' + addtnlPy );
+            $(".divbrkseg").show();
+        }else{
+            $(".divbrkseg").hide();
+            $('#brkseg').text('');
+            $('#brksegamnt').text('');
+        }
+        
+        
+    }
+    
+    </script>
+</apex:component>

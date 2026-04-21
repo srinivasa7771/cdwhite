@@ -1,0 +1,132 @@
+<apex:page controller="grqichCtl"  readOnly="false" showHeader="true" sidebar="false" showChat="false"  >
+ <apex:stylesheet value="{!$Resource.gCss}"/>
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <script>
+     var ct=0;
+    function val(id){
+       
+        if(document.getElementById(id).value=='' || document.getElementById(id).value.length==0){
+            alert('Enter Courier Notes');
+         return false;       
+        }
+        if (ct==1){ alert('Booking is in process please wait.');return false;}
+        ct++;
+        
+        return true;
+    }
+    
+    </script>
+    <apex:form >
+    <apex:pageMessages id="msg" />
+        <div class="header-info"><br/></div>
+        <apex:outputPanel layout="none">     
+        <div class="header-info">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                  
+                    <td class="header-content">
+                         <img src="/img/icon/mail32.png"  class="pageTitleIcon"/>
+                        <apex:outputPanel style="margin-left:5px;font-size: 0.8em;font-weight: normal;line-height: 1.1em;" ><h1>{!itm} <br/></h1>
+                        </apex:outputPanel>
+                         <apex:outputPanel style="margin-left:5px;font-size: 1.8em;font-weight: normal;line-height: 1.1em;" rendered="{!NOT(ISNULL(rqName))}">{!rqName}</apex:outputPanel>   
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </apex:outputPanel>
+       
+   <div class="mgtBtn" style="align:right">
+  
+  <apex:outputLink value="/apex/grqei?id={!rqId}" onclick="" styleClass="btnSave">Previous Page</apex:outputLink>
+  <apex:commandLink action="{!deliveryBooking}"  id="crt" onclick="val('{!$Component.courierNotes}')" styleClass="btnSave" >Create Delivery</apex:commandLink>
+  <apex:commandLink action="{!collectionBooking}"  id="coll" onclick="val('{!$Component.courierNotes}')" styleClass="btnSave" >Create Collection</apex:commandLink>
+   
+</div>        
+   <div class="header-info"><br/></div>     
+     <table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td class="pbTitle"><h2 class="mainTitle">Shipment Details</h2></td>
+</tr></tbody></table>
+        
+<apex:pageBlock >
+    
+<apex:pageBlockTable value="{!courDetails}" var="cur" >
+       <apex:column headerValue="AWB#" >
+    <apex:outputLabel value="{!TEXT(cur.xawb__c)}" />
+    </apex:column>
+
+    <apex:column headerValue="Type" value="{!cur.xcb__c}"/>
+    <apex:column headerValue="Adoch Booking"  value="{!cur.adh__c}"/>
+    
+<apex:column headerValue="Current Status" value="{!cur.sta__c}"/> 
+    <apex:column headerValue="Courier Notes" value="{!cur.xnts__c}"/>
+       <apex:column headerValue="Update Reason" value="{!cur.xupr__c}"/>
+    <apex:column headerValue="Created Date" value="{!cur.CreatedDate}"/>
+<apex:column headerValue="Created By" value="{!cur.CreatedBy.Name}"/>
+    <apex:column headerValue="Last Update Time " value="{!cur.tmpstamp__c}"/>
+    
+       <apex:column headerValue="Print Barcode"  rendered="true" >
+       <apex:commandLink action="{!getDetailsByID}"  id="recrt1" value="Print" styleClass="btn" >
+              <apex:param name="curId" value="{!cur.id}"/>
+           </apex:commandLink>
+    </apex:column>
+    
+     <apex:column headerValue="ReTry Booking"  rendered="{!if(cur.xawb__c=0,true,false)}">
+         <apex:commandLink action="{!recreateBooking}"  id="recrt" value="Retry" styleClass="btn"  rendered="{!if(cur.xawb__c=0,true,false)}" >
+             <apex:param name="curId" value="{!cur.id}"/>
+           </apex:commandLink>
+    </apex:column>
+     
+ 
+ 
+
+</apex:pageBlockTable>
+
+ 
+</apex:pageBlock>
+         <table border="0" cellpadding="0" cellspacing="0"><tbody>
+             <tr>
+                 <td>
+                <table border="0" cellpadding="0" cellspacing="0"><tbody>
+                     <tr>
+<td>
+<h1>
+Courier Notes:</h1>                 
+</td>
+<td>
+    <div class="requiredInput" id="courierNotesRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputTextarea id="courierNotes" value="{!courierNotes}" style="margin: 0px; width: 630px; height: 37px;"/>
+                               
+                            </div>
+
+</td>
+</tr>
+<tr>
+<td>
+<br/>
+</td>
+</tr>
+ </tbody></table>                       
+                     
+                 </td>
+             
+             </tr>
+             
+             <tr>
+             <td>
+                 <br/>
+                 </td>
+             </tr>
+             
+            </tbody></table>   
+        
+        <div class="mgtBtn" style="align:right">
+  
+  <apex:outputLink value="/apex/grqei?id={!rqId}" onclick="" styleClass="btnSave">Previous Page</apex:outputLink>
+  <apex:commandLink action="{!deliveryBooking}"  id="create" onclick="val('{!$Component.courierNotes}')" styleClass="btnSave" >Create Delivery</apex:commandLink>
+  <apex:commandLink action="{!collectionBooking}"  id="collection" onclick="val('{!$Component.courierNotes}')" styleClass="btnSave" >Create Collection</apex:commandLink>
+   
+</div>
+</apex:form>
+    </apex:page>

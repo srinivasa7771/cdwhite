@@ -1,0 +1,723 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!req.srvc__r.lbl__c}">
+    <html>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js">
+        </script>
+        
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+        <script type="text/javascript">
+        var cs = {};
+        var BasicSal;
+        var eidid;
+        var eididnew;
+        var eidExpDt;
+        var eidExpDtnew;
+        var passDetailnew;
+        var passDetailOrg;
+        var requiredDocs='';
+        var draftFlag=true;
+        
+        $(document).ready(function() {
+            
+            hideFileds();
+            
+            dr();
+            hr();
+            mr();
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+            
+            
+            toggleGLoader(); 
+        });
+        
+        function formatDateFromDb(date) {
+            var d = new Date(date),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+            
+            if (month.length < 2) 
+                month = '0' + month;
+            if (day.length < 2) 
+                day = '0' + day;
+            
+            return [day, month, year].join('/');
+        }
+        
+        /*  function setPassDetailOrg(){
+            console.log('In setPassDetailOrg >>'+passDetailOrg);
+            passDetailOrg='';
+            let flds = [cs['xcp__c'],cs['xcpic__c'],cs['xcpid__c'],cs['xcped__c'],cs['xcpip__c']];
+             flds.forEach(function(i){  
+                passDetailOrg = passDetailOrg + $(i).val();
+             });
+            console.log('passDetailOrg>>'+passDetailOrg);
+        }
+        
+        function checkPassDetailChange(){
+            console.log('In setPassDetailOrg >>'+passDetailOrg);
+            passDetailnew='';
+            let flds = [cs['xcp__c'],cs['xcpic__c'],cs['xcpid__c'],cs['xcped__c'],cs['xcpip__c']];
+             flds.forEach(function(i){  
+                passDetailnew = passDetailnew + $(i).val();
+             });
+            console.log('passDetailnew>>'+passDetailnew);
+            //if(passDetailOrg!=passDetailnew)
+            var nd = 'Passport First Page;Passport Last Page;';
+            if(!passDetailOrg.includes(passDetailnew)){
+            
+                console.debug('1requiredDocs>>'+requiredDocs);
+                if(!requiredDocs.includes(nd)){
+                requiredDocs = requiredDocs+nd;
+                console.debug('2requiredDocs>>'+requiredDocs);
+                setDynamicDoclst(requiredDocs);
+                }else{
+                    console.log('Aready doc present');
+                }
+            }else{
+                console.log('Its in else');
+                requiredDocs = requiredDocs.replace(nd,"");
+                setDynamicDoclst(requiredDocs);
+            }
+        } */
+        function hideFileds(){
+            let flds = [cs['xcfan__c'],cs['xcfanar__c'],cs['xcmonar__c'],cs['xcmon__c'],cs['xcnp__c'],cs['xcbc__c'],cs['xcbp__c'],cs['xcrlg__c'],cs['xcjb__c'],cs['xeidav__c'],cs['nt__c']]; 
+            flds.forEach(function(i){  
+                console.log('hided>>'+i); 
+                $(i).parent().hide();   
+                
+            });
+            
+            $(cs['xeidav__c']).parent().parent().hide();  
+            $('#jobLookup').removeClass('requiredFld');
+            $('#jobLuk').hide();
+        }
+        
+        function validateBasicSalary(thiselem){
+            var sal = $(thiselem).val();
+            console.log('sal>>'+sal);
+            if(sal < 500){ 
+                addValError(thiselem,'Minimum basic salary should be AED 500.','salVal');
+                return false;
+            }else{
+                console.log('greater:::');
+                // $(thiselem).parent().find('.frmErrMsg').remove();
+                removeValError(thiselem); 
+            }
+            
+            setSalReqDocuments();
+        }
+        function setReqDocuments(){
+            setSalReqDocuments();
+            checkEididChange();
+        }
+        function checkEididChange(){
+            console.log('In eidid >>'+eidid);
+            eididnew=$(cs['xceidid__c']).val();
+            console.log('eididnew >>'+eididnew);
+            
+            console.log('In eidExpDt >>'+eidExpDt);
+            eidExpDtnew=$(cs['xceidedt__c']).val();
+            console.debug('eidExpDtnew>>'+eidExpDtnew);
+            
+            var nd = 'Emirates ID - Front Side;Emirates ID - Back side;';
+            //if(!(eididnew == eidid) || !( eidExpDtnew==eidExpDt)){ /* !(eididnew == eidid) || !( eidExpDtnew==eidExpDt) */
+            var selectedItms = cs['xadh__c'].value;
+            if(selectedItms.includes('sd;')){  
+                console.debug('1requiredDocs>>'+requiredDocs);
+                if(!requiredDocs.includes(nd)){
+                    requiredDocs = requiredDocs+nd;
+                    console.debug('2requiredDocs>>'+requiredDocs);
+                    setDynamicDoclst(requiredDocs);
+                }else{
+                    console.log('Aready doc present');
+                }
+            }
+            /*else{
+                console.log('Its in else');
+                requiredDocs = requiredDocs.replace(nd,"");
+                setDynamicDoclst(requiredDocs);
+            }*/
+        }
+        function setSalReqDocuments(){
+            // $('input[name=dynamicDoclst]').val('Salary Certificate;Employment Amendment Contract;');
+            //console.log($('#dynamicDoclst').val());
+            var nnd = '';
+            /*if(conRol=='Employee')
+                nnd = nnd +'Employment Amendment Contract;';*//*Commented as Employment Amendment Contract not needed - vmkr_06072023 */
+            
+            var newBasicSal = parseFloat( $(cs['xcmbs__c']).val().replace(',', ''));
+            console.log('old sal>>'+BasicSal);
+            console.log('new sal>>'+newBasicSal);
+            var diff= newBasicSal-BasicSal;
+            console.log('diff>>'+diff);
+            console.log('0.3*BasicSal>>'+0.3*BasicSal);
+            
+            if((BasicSal < newBasicSal) && (0.3*BasicSal<diff)){  /* (BasicSal < newBasicSal) && (0.3*BasicSal<diff) */
+                if(!requiredDocs.includes(nnd)){
+                    requiredDocs = requiredDocs+nnd ;
+                    setDynamicDoclst(requiredDocs);
+                }else{
+                    console.log('Allready sal doc present');
+                    //requiredDocs = requiredDocs.replace(nnd,"");//Changed to show document all time
+                    requiredDocs = requiredDocs+nnd ;
+                    setDynamicDoclst(requiredDocs);
+                }
+                
+            }else{
+                console.log('In Allready else....');
+                //requiredDocs = requiredDocs.replace(nnd,"");//Changed to show document all time
+                //requiredDocs = requiredDocs+nnd ;
+                //setDynamicDoclst(requiredDocs);
+            }
+            
+            //setDynamicDoclst(requiredDocs);
+            //checkPassDetailChange();
+        }
+        
+        
+        /*
+         function salaryCahnge(thiselem){
+          var newBasicSal = $(thiselem).val().replace(',', '');
+            console.log('old sal>>'+BasicSal);
+            console.log('new sal>>'+newBasicSal);
+            
+            if(BasicSal >= newBasicSal){
+                moveNext();
+            }else{
+                var diff= newBasicSal-BasicSal;
+                console.log('diff >>'+diff);
+                if(0.3*BasicSal<diff){
+                    //checkDoc('Salary Certificate;Employment Amendment Contract;');
+                    console.log('sal >>requiredDocs >> '+ requiredDocs);
+                    checkDoc(requiredDocs);
+                    console.log('fg>> In open doc >>');
+                }else{
+                    if(draftFlag){
+                        saveReqDraft();
+                    }else{
+                        moveNext();
+                      }
+                }
+            }
+        }*/
+        
+        //Add  warning message
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        //Validate Data on click of next button
+        function validateDataDraft(){
+            draftFlag = true;
+            validateData2();
+        }
+        function validateData(){
+            draftFlag = false;
+            validateData2();
+        }
+        //Validate Data on click of next button
+        function validateData2(){
+            var elem = '';
+            var validated  = true;
+            
+            $('.requiredFld').each(function(){
+                if($(this).is(':visible')){ 
+                    var v = $(this).val();
+                    if(v==''||v==null||v==undefined||v.lenght<1){
+                        addValError(this,'This field is required !!');
+                        console.log('blank >>'+$(this).attr("name"));
+                        console.dir(this);
+                        validated=false;
+                        
+                        if(elem=='') elem = $(this);
+                    }else{
+                        removeValError(this);  
+                    }
+                    if(elem!=''){
+                        $('html,body').animate({
+                            scrollTop: (elem.offset().top-60)
+                        }, 100);
+                        elem.focus();
+                    }
+                }
+            });
+            console.log('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+                $('html,body').animate({
+                    scrollTop: (elem.offset().top-60)
+                }, 250);
+                elem.focus();
+            }
+            
+            console.log('Basic salary v:'+validated);
+            
+            if('{!JSENCODE(req.Con__r.rol__c)}' == 'Employee' &&  (validateBasicSalary( cs['xcmbs__c']) == false)){   
+                validated =false;
+            }console.log('Basic salary v:'+validated);
+            
+            if(validated == true){
+                checkDoc(requiredDocs);
+            }
+            console.log('validated >>>'+validated);
+        }
+        
+        //checkDoc(requiredDocs);
+        function checkDoc(dName){
+            var flag=false;
+            console.log('000>'+dName+' >>>'+flag); 
+            if(dName.length>0){
+                Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.ApplicantDetailController.checkDoc}',$('#reqId').val(), dName , 
+                                                          function(result, event){
+                                                              console.log('111>'+flag);
+                                                              if (event.status) {
+                                                                  var res =result;
+                                                                  if(res=='true')flag=true;else{flag =false; axsAlert("Document Upload !!!",res);}
+                                                                  console.log('222>'+flag);
+                                                                  
+                                                                  if(flag){
+                                                                      console.log('333>'+flag);
+                                                                      if(draftFlag){
+                                                                          console.log('In Draft');
+                                                                          //saveReqDraft(); //Commented by Anu: Added new method for saveDraft as this one is not working
+                                                                          svReqDft();
+                                                                      }else{
+                                                                          console.log('In Next');
+                                                                          moveNext();
+                                                                      }
+                                                                  }else{
+                                                                      //return false;
+                                                                      refreshError();
+                                                                  }
+                                                              } 
+                                                              console.log('444>'+flag);
+                                                          }, 
+                                                          {escape: true}
+                                                         );
+                
+                console.log('555>'+flag);
+            }else{
+                if(draftFlag){
+                    console.log('In Draft');
+                    //saveReqDraft();//Commented by Anu: Added new method for saveDraft as this one is not working
+                    svReqDft();
+                }else{
+                    console.log('In Next');
+                    moveNext();
+                }
+            }
+            return flag;
+        } 
+        
+        
+        
+        function moveNext(){
+            console.log('in MoveNext');
+            // showTempLoader(event.target);
+            toggleGLoader();
+            next();
+            console.log("Req Updated::::::::::"); 
+        }
+        
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function showDraftAlert1(){
+            var rqNum = '{!JSENCODE(req.Name)}';
+            $('#modal_alert_global').remove(); 
+            var cBlock = '<div class="modal fade modal-base" id="modal_alert_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body text-center pt-5 pb-5"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <div class="mb-3 fs-24" style="text-align:center;">Your Request has been saved!</div><div class="mb-3 fs-24">SR # <b>'+rqNum+'</b></div> <p style="text-align: center;">You can continue with this request from \'Drafts\' tab on your Dashboard<p class="col-xl-12 col-lg-12" style="font-size: 0.8em;text-align: center;"> <div class="col-xl-4"></div> <button class="col-xl-4 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" id="gDash">GO TO DASHBOARD</button> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_alert_global').modal('show');
+            $('#gDash').on('click',function(){
+                window.open('/gpm','_self');
+            });
+        }
+        
+        function afsd(){
+            createReqOncontact();
+        }
+        
+        function saveReqDraft3(){
+            /*$('.loader_rerender').hide(); 
+            hideTempLoader_input();*/
+            showTempLoader();
+            saveReqDraft4();
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            {!dynamicDoclst}
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"></apex:outputPanel>
+                <apex:actionFunction name="svReqDft" action="{!saveDraftR}" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="saveReqDraft4" action="{!saveDraftR}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideFileds();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="createReqOncontact" action="{!ApplicantContactInfo}" status="theStatus" rerender="pbMain,errmsg,saveRq,msg" oncomplete="toggleGLoader();$('#preloader').fadeOut();" />
+                
+                <apex:actionFunction name="setDynamicDoclst" action="{!setDynamicDoclst}" rerender="reqdoc" >
+                    <apex:param name="dLst" value="" /> <!--assignTo="{!dynamicDoclst}" /-->
+                </apex:actionFunction>
+                
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                
+                <apex:actionFunction name="refreshError" rerender="msg" />
+                <!--apex:actionFunction name="reUploadAgain"  action="{!ApplicantContactInfo}" rerender="upld" oncomplete="hideFileds();"/-->
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+                <script>
+                cs["xadh__c"] = document.getElementById("{!$Component.xadh__c}");
+                </script>
+                <body class="base">
+                    <div id="main">
+                        
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    <span class="text-000">{!req.Name} </span>
+                                </span>
+                                <!--<apex:outputpanel rendered="{!IF(req.id!=null,true,false)}">
+<a style="color:#fff;" onclick="validateDataDraft();" class="btn btn-black"> SAVE DRAFT  </a>
+</apex:outputpanel>-->
+                                
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+                                
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <!--
+<c:srvdefcmp srv="{!srv}"/>
+-->
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" PayDone="{!if(req.AP__c>0,false,false)}" id="comp"/>
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <div class="base-main">
+                                    <div class="base-main-content">
+                                        
+                                        <!-- .base-collapse -->
+                                        <h3 class="base-main-title">Update applicant attributes   </h3>
+                                        <b><apex:pageMessages id="msg"  /></b> 
+                                        <apex:outputpanel rendered="{!IF(AND(req.id==null,conId == ''),true,false)}">
+                                            <div id="conlookuprow" class="row">
+                                                <div class="col-lg-12">
+                                                    <div class="form-group">
+                                                        <apex:outputPanel rendered="true">
+                                                            <c:gconlookup id="conlookup" Request="{!req}" role="Employee;Student;Spouse;Child;Non Sponsored" accId="{!req.Acc__c}" sta="Active" heading="Select the applicant to update attributes" />  
+                                                        </apex:outputPanel> 
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                        </apex:outputPanel>  
+                                        
+                                        <apex:outputpanel rendered="{!IF(req.id!=null,true,false)}">
+                                            <div class="col-lg-9">
+                                                <div class="form-group">
+                                                    <apex:outputLabel value="Applicant to update details"></apex:outputLabel>
+                                                    <div class="input-group input-group-transparent" > <!--  data-toggle="modal" data-target="#modal_lookup_values_con" -->
+                                                        <input disabled="true" type="text" class="form-control" value="{!req.xcfn__c} {!req.xcmn__c } {!req.xcln__c } " />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                        </apex:outputPanel>  
+                                        
+                                        <apex:outputpanel rendered="{!IF(req.id!=null,true,false)}">
+                                            <apex:outputPanel id="upld">
+                                                <apex:outputPanel id="dummy">
+                                                    <input type="Hidden" value="{!reqId}" id="reqId"/>   
+                                                    <input type="Hidden" value="{!dynamicDoclst}" id="dynamicDoclst" name='dynamicDoclst'/>   
+                                                </apex:outputPanel>
+                                                
+                                                <script>
+                                                BasicSal = parseFloat('{!JSENCODE(BasicSal)}');
+                                                console.log('BasicSal>>'+BasicSal);
+                                                eidid = '{!JSENCODE(eidid)}';
+                                                console.log('eidid>>'+eidid);
+                                                eidExpDt = formatDateFromDb('{!JSENCODE(eidExpDt)}');
+                                                console.log('eidExpDt>>'+eidExpDt);
+                                                conRol = '{!JSENCODE(conRol)}';
+                                                console.log('conRol>>'+conRol);
+                                                </script>
+                                                
+                                                <apex:outputPanel id="reqdoc">
+                                                    <apex:outputpanel rendered="{!IF(dynamicDoclst!='',true,false)}">
+                                                        <div class="base-collapse">
+                                                            <!--<a class="collapse-header collapsed" data-target="#passport_details" data-toggle="collapse" href="#"></a>-->
+                                                            <div class="collapse-title">Please upload below documents</div>
+                                                            <c:grqsupd Dim="SH"  req="{!req}" PayDone="false"   onlyDoc="true"/>
+                                                        </div>
+                                                    </apex:outputPanel>
+                                                </apex:outputPanel>
+                                                
+                                                <div class="base-collapse">
+                                                    <div class="collapse show">
+                                                        <c:eContactInfo req="{!req}" id="conInfoCmp" />
+                                                        <div class="pb-4"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div id="eidaCmp">
+                                                    <c:emiratesidinfo req="{!req}" id="EinfoCmp" />
+                                                </div>  
+                                                <script type="text/javascript">
+                                                cs['xeidav__c'].value='Yes';
+                                                </script>
+                                                <!--
+<c:PassportDetails req="{!req}" id="ppdCmp" />
+
+-->
+                                                <apex:outputText rendered="{!OR(req.Con__r.rol__c == 'Employee',req.Con__r.rol__c == 'Non Sponsored')}">
+                                                    <div id="jobOffCmp_details" class="collapse show">
+                                                        <div class="collapse-content">
+                                                            <c:jobofferdetails req="{!req}" attFlag="false" id="jobOffCmp" /> 
+                                                        </div>
+                                                    </div>
+                                                </apex:outputText>
+                                                
+                                            </apex:outputPanel>     
+                                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!req.srvc__r.uid__c}"/>
+                                        </apex:outputPanel>     
+                                    </div>
+                                    <!-- .base-layout -->
+                                </div>
+                                <!-- .base-layout"-->
+                            </div>
+                            <!-- .container -->
+                        </div>
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <script type="text/javascript">
+        
+        window.onload = function(){
+            
+            if('{!JSENCODE(req.id)}'== '' && '{!JSENCODE(conId)}' != ''){
+                //$('#main').hide();
+                //$('#preloader').fadeIn();
+                //** createReqOncontact();
+            }
+            
+        }
+        
+        </script>
+        <script type="text/javascript">
+        
+        //Validation  for UAE Mobile Number
+        function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            // var regex = /^(?:\+971|00971|0)((?:50|52|54|55|56|58)[0-9]{7,})$/;
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                addValError($(elem).parent(),'Please enter a valid UAE mobile number');
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        
+        function checkEmail(elem){  /**Ex: <input type="text" onchange="checkEmail(this)" />**/
+            
+            var email = $(elem).val();
+            var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+            var r = (regex.test(email))?true:'invalid';
+            if(r == 'invalid'){
+                addValError($(elem).parent(),'Please enter a valid Email Address.');
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        
+        //check whether date is valid or not
+        function checkValidDate(thisElement){
+            console.log('validDate:::');
+            var date = $(thisElement).val();
+            console.log('date:::'+date);
+            var date_regex =/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/;
+            var r = (date_regex.test(date))?true:'invalid';
+            console.log('r::::'+r);
+            if(r == 'invalid'){
+                removeWarningMsg(thisElement);
+                removeValError(thisElement);   
+                addValError(thisElement,'Invalid date format');
+                $(thisElement).addClass("is-invalid");
+                return false;    
+            }else{
+                removeValError(thisElement);  
+                $(thisElement).removeClass("is-invalid");
+                return r;
+            }
+        }
+        
+        function setDynamicDoclstTemp(){
+            console.log('requiredDocs>>'+requiredDocs);
+            setTimeout(function(){ 
+                /*loadData_jt();*/
+                setReqDocuments();
+                setDynamicDoclst(requiredDocs); 
+                console.log('done...');
+            }, 1000);
+            
+        }
+        
+        $(document).ready(function() {
+            /* disable search for job title VMKR-18/01/2023 */
+            $('#jd').removeAttr('data-target');
+            $('#jd,#serachVal').addClass('disabledApex').removeClass('requiredFld');
+            /*
+                $(cs['xcp__c']).change(function(){
+                  checkPassDetailChange();
+                });
+                $(cs['xcpic__c']).change(function(){
+                  checkPassDetailChange();
+                });
+                $(cs['xcpid__c']).change(function(){
+                  checkPassDetailChange();
+                });
+                $(cs['xcped__c']).change(function(){
+                  checkPassDetailChange();
+                });
+                $(cs['xcpip__c']).change(function(){
+                  checkPassDetailChange();
+                });
+                */
+              $(cs['xceidid__c']).change(function(){
+                  checkEididChange();
+              });
+              
+              $(cs['xceidedt__c']).change(function(){
+                  checkEididChange();
+              });
+              
+              
+              
+              
+              $(cs['xcmob__c']).change(function(){
+                  isUAEMobNum(cs['xcmob__c']);
+              });
+              $(cs['xceml__c']).change(function(){
+                  checkEmail(cs['xceml__c']);
+              });
+              
+              //setPassDetailOrg();
+              hideFileds();
+              console.log('requiredDocs>>'+requiredDocs);
+              setDynamicDoclstTemp();
+              
+              //disable salary fields
+              //$(".calsalary").prop( "disabled", true );
+              //$(".addRqrd").prop( "disabled", true );
+              
+              //EinfoCmp
+              var selectedItms = cs['xadh__c'].value;
+              if(!selectedItms.includes('sd;')){ 
+                  $("#eidaCmp").hide();
+              }
+              if(!selectedItms.includes('ci;')){ 
+                  $("#jobOffCmp_details").hide();
+              }
+          });
+        
+        function addTLoaders(){
+            // do nothing
+        }
+        </script>
+        
+    </html>    
+    <apex:form id="uploadFrm">
+        <c:fileuploadpopupnew13 R="{!req}"  />
+    </apex:form>
+    
+</apex:page>

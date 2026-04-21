@@ -1,0 +1,1 @@
+global class InsEidaBatchSchd implements Schedulable{ global void execute(SchedulableContext sc) {  InsEidaUpdateBatch b = new InsEidaUpdateBatch ();   database.executebatch(b, 1); } }

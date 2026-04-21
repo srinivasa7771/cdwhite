@@ -1,0 +1,611 @@
+<apex:page id="page" standardStylesheets="true" sidebar="false" showHeader="true" deferLastCommandUntilReady="true" standardController="g_Req__c" extensions="gctlConMgmt" label="Key Contacts" title="Contact Management">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>   
+    
+    <apex:stylesheet value="{!URLFOR($Resource.JQ, '/css/redmond/jquery-ui-1.10.4.custom.min.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JQ, '/js/jquery-ui-1.10.4.custom.min.js')}"/>
+    <div id="abx" style="width:450px;"><div id="adt" ></div></div>
+    
+    <script> 
+        var cs={};var cif,cnt=0; var isCh = false; var roleMngr = '';
+        $(document).ready(function(){loadData();});
+       
+        function loadData(){
+            getC("mainban").style.display="none";if(typeof(cs['mRole__c'])!='undefined'){roleMngr=cs['mRole__c'].value;} disableFields();cRenderCon(false,'{!JSENCODE(lstCI.size)}');
+            $("#pw").dialog({title:"Important Notice!",autoOpen: true, show: {effect: "drop",duration: 200},hide: {effect: "explode",duration: 400},width:600,maxHeight:500,overflow:true,modal: true,padding:0});     
+        } 
+   
+    
+    function chkBillingContact(count){
+        var bCount = 0;
+        for(var j=0;j<count;j++){
+            var sta = cs['sta__c'+ j].value;
+            if(sta=='Active'){
+				var opt;
+                var select = document.getElementById(cs['rol__c'+j].id);
+                var options = select && select.options;
+                for (var i=0, iLen=options.length; i<iLen; i++) {
+                    opt = options[i];
+                    if (opt.selected) { 
+                        if(opt.value =='Billing Contact' || opt.text =='Billing Contact'){bCount++;}
+                    }
+                }
+            }
+        }
+        
+        if(bCount>1){  alrt("Data Error","A single billing contact should be active at any point in time. Please check all contact roles."); return true;}
+        return false;
+    }
+    
+      
+    
+    /*validate UAE Landline format*/
+    function vLandline(f,cs,isReq){
+        fldErr(f,null,isReq);
+        var lndRgx = /^(?:\+971|00971|0)(?:2|3|4|6|7|9)[0-9]{7}$/; 
+        if(cs[f].value.trim()!=''){
+            var ldno = cs[f].value.trim();
+            if(!lndRgx.test(ldno)){
+                fldErr(f,'Expecting UAE Landline number',isReq);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    
+    function vfrm(count){
+        
+        var sRoles = 0;var selected = [];cnt=count; var brq = false;var roleChk=' ';
+        
+        //check # of billing contacts
+        var multipleBillingContacts =  chkBillingContact(count);
+        if(multipleBillingContacts){return false;}
+        
+        
+        for(var i=0;i<count;i++){
+            var sta = cs['sta__c'+ i].value;
+            if(sta=='Active'){
+                var iRole=cs['rol__c'+i].value; var iName=cs['name__c'+i].value; var iCon=cs['Con__c'+i].value; 
+                var iEml=cs['email__c'+i].value; var iPhn=cs['phone__c'+i].value; var iLdno=cs['ldno__c'+i].value;
+                
+                fldErr('rol__c'+i,null,!0); brq = fldReq('rol__c'+i, cs) || brq;fldErr('email__c'+i,null,!0); brq = fldReq('email__c'+i, cs) || brq;
+                fldErr('phone__c'+i,null,!0); brq = fldReq('phone__c'+i, cs) || brq;fldErr('ldno__c'+i,null,!0); brq = fldReq('ldno__c'+i, cs) || brq;
+                fldErr('ad__c',null,!0);  brq = fldReq('ad__c', cs) || brq;
+                
+                fldErr('MEmailM',null,!0);  brq = fldReq('MEmailM', cs) || brq;
+                fldErr('MPhone',null,!0);  brq = fldReq('MPhone', cs) || brq;
+                
+                brq =!(vMob('phone__c'+i,cs,true))||brq;
+                brq =!(vLandline('ldno__c'+i,cs,true))||brq;
+                
+                var chk = cs['extcon__c'+i].checked;
+                if(!chk){fldErr('Con__c'+i,null,!0); brq = fldReq('Con__c'+i, cs) || brq;}else{fldErr('name__c'+i,null,!0); brq = fldReq('name__c'+i, cs) || brq;}
+            }
+        }  
+        brq = vVAN() || brq;
+        if(brq==false){saveAccInfo();}else{alrt("Information Missing","Please check all the required fields and validate the data.");}
+        
+        return !brq;
+    }
+    
+        function clsp(s,r){if(s=='true'){ window.top.location.reload(); /*if(r=='true'){window.top.location.reload();}else{setTimeout(function(){ window.open('', '_self', '');window.close();},2000);}*/}}  
+        
+        $("#abx").dialog({autoOpen: false,show: {effect: "drop",duration: 200},hide: {effect: "explode",duration: 400}});
+        function alrt(a,b){document.getElementById("adt").innerHTML="<br/>"+b;$("#abx").dialog({width:300,modal:!0});$("#abx").dialog("option","title",a);$("#abx").dialog("open")}
+        
+        function fldsEdt(i){
+            cs['Con__c'+i].disabled=false; /*cs['Con__lk'+i].style.display='block';*/ cs['sphn__c'+i].disabled=false; cs['seml__c'+i].disabled=false;cs['name__c'+i].disabled=false; 
+            cs['email__c'+i].disabled=false;  cs['phone__c'+i].disabled=false;  cs['ldno__c'+i].disabled=false;
+            cs['rol'+i].style.display='none';getC('rol_c'+i).style.display='block';cs['extcon__c'+i].disabled=false;
+            
+            var chk = cs['extcon__c'+i].checked; cs['extcon__c'+i].onclick();
+            if(!chk){cs['Con__c'+i].style.display='block';cs['name__c'+i].style.display='none';}else{cs['Con__c'+i].style.display='none';cs['name__c'+i].style.display='block';}
+        }
+        function disableFields(s){
+            var c = '{!JSENCODE(lstCI.size)}';
+            for(var i=0;i<c;i++){
+                var rol = cs['email__c'+i].value; 
+                if(rol!='' && rol!=null) { 
+                    cs['Con__c'+i].disabled=true;cs['Con__lk'+i].style.display='none'; cs['sphn__c'+i].disabled=true; cs['seml__c'+i].disabled=true; 
+                    cs['name__c'+i].disabled=true; cs['email__c'+i].disabled=true; cs['phone__c'+i].disabled=true; cs['ldno__c'+i].disabled=true;
+                    cs['Con__c'+i].style.display='none'; cs['extcon__c'+i].disabled=true;
+                    
+                    if(s=='save'){cs['rol'+i].style.display='none'; if(getC('rol_c'+i)!=null){getC('rol_c'+i).style.display='block';}
+                                  if(getC('btnEdt'+i)!=null){getC('btnEdt'+i).style.display='block';}
+                    }else{cs['rol'+i].style.display='block'; getC('rol_c'+i).style.display='none';  }
+                    
+                    var sta = cs['sta__c'+ i].value;
+                    if(getC('btnDact'+i)!=null &&(sta=="Active" || sta==null)) {
+                        cs['sta__c'+ i].value="Active";
+                        getC('page:form:pbMain:rBlc:'+i+':pbs').style.background="white";getC("btnEdt"+i).style.display="block";
+                        }else if(getC('btnDact'+i)!=null && sta=="Inactive"){
+                        getC('page:form:pbMain:rBlc:'+i+':pbs').style.background="antiquewhite"; getC("btnEdt"+i).style.display="none";
+                    }
+                }
+            } 
+            getC('page:form').style.display = 'block';
+        }
+         
+        function closef() { window.open('', '_self', '');window.close();}
+        function cpyName(i){cs['name__c'+i].value=cs['Con__c'+i].value;}
+        
+        function cRenderCon(a,num,isNew) {
+            for(var i=0; i<=num; i++){
+                if(typeof(cs['extcon__c'+i])!='undefined'){
+                    if(isNew!='true'){cs['extcon__c'+i].checked=true; }
+                    var chk = cs['extcon__c'+i].checked;
+                    if(chk){cs['name__c'+i].style.display = 'block';cs['Con__c'+i].style.display = 'none';cs['Con__lk'+i].style.display = 'none';
+                    }else if(!chk){ cs['Con__c'+i].style.display = 'block';cs['Con__lk'+i].style.display = 'block';cs['name__c'+i].style.display = 'none';}
+                }
+            }
+        }    
+        //function hRq(){var brq = false;if(cs['name'].value!="" || cs['Con__c'].value!="") {fldErr('rol__c',null,!0); brq = fldReq('rol__c',cs) || brq;}return brq;}
+        
+        function removeCon(i){
+            var sta = cs['sta__c'+ i].value;
+            
+            var selectedRoles='\n';
+            var select1 = document.getElementById("page:form:pbMain:rBlc:"+i+":pbs:iRol:rol__c");
+            for (var n1=0;n1<select1.length;n1++) {
+                if(select1.options[n1].selected){
+                    selectedRoles+=select1.options[n1].text+", ";
+                }
+            }
+            selectedRoles = selectedRoles.substring(0, selectedRoles.length - 2) + " \n";
+            var msg = "This contact will be removed from the list of Key-Contacts.\n\nPlease make sure you assign below role(s) to existing Contact or add a new key-contact: "+selectedRoles+" \n Are you sure to remove ?";
+            if((sta=="Active" || sta==null || sta=='') && confirm(msg)==true) {
+                cs['sta__c'+ i].value="Inactive"; getC('btnDact'+i).style.display="none";
+                getC('page:form:pbMain:rBlc:'+i+':pbs').style.background="antiquewhite"; getC("btnEdt"+i).style.display="none";
+                
+                cs['Con__c'+i].disabled=true;cs['Con__lk'+i].style.display='none'; cs['sphn__c'+i].disabled=true; cs['seml__c'+i].disabled=true; 
+                cs['name__c'+i].disabled=true; cs['email__c'+i].disabled=true; cs['phone__c'+i].disabled=true; cs['ldno__c'+i].disabled=true;
+                cs['Con__c'+i].style.display='none'; cs['extcon__c'+i].disabled=true; cs['rol__c'+i].style.display="none";cs['rol'+i].style.display="none";
+                cs['iRol'+i].style.display="none";getC('rol_c'+i).style.display='none';
+    
+            }
+        }
+        
+        function asgnR(){
+            var chk = cs['asgnR'].checked;
+            if(chk) {
+                cs['mRole__c'].value = 'Manager Incharge;VAT Contact;Office Admin/Manager'; //Billing Contact;
+                cs['mRoleh1'].value = 'Manager Incharge;Office Admin/Manager'; //Billing Contact;VAT Contact;
+            }else{cs['mRole__c'].value=roleMngr; cs['mRoleh1'].value= roleMngr;}
+        }
+    
+    function vVAN(updtCon){
+        fldErr('van__c',null,true); var x = cs['van__c'].value; var updt = false;
+        if(x=='' || x==null){return false;}
+        
+        if(x=='100072771700003'){
+        	fldErr('van__c','Invalid TRN!',true);
+            return true;
+        }
+        if (! /^[0-9]{15}$/.test(x)) {
+            fldErr('van__c','Please input exactly 15 Digits. e.g.123456789012345',true);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    
+    function isNumberKey(evt){
+        var isNum = true;
+        var e = evt || window.event; 
+        var charCode = e.which || e.keyCode;                        
+        if (charCode > 31 && (charCode < 47 || charCode > 57)){isNum= false;}
+        if (e.shiftKey){ isNum= false;}
+        
+        if(!isNum){fldErr('pb__c','Please input only digits.',true);}else{fldErr('pb__c',null,!0);}
+        
+        return isNum;
+    }
+    
+    
+    function toLowerCase(fid){
+        if(cs[fid].value != null && cs[fid].value!=''){
+            cs[fid].value = cs[fid].value.toLowerCase();
+        }
+    }
+    
+    </script> 
+    
+        <apex:outputPanel layout="none" >
+            <div id="pw" style="display: none;">      
+                <div class="errorM3"  style="font-size: 11px;height:auto;width: auto;overflow-y: auto;">
+                    <table border="0" cellpadding="0" cellspacing="0" style="font-size:13px;border-radius:4px !important;border-width:1px;border-style:solid;">
+                        <tbody><tr><td style="vertical-align:top;padding-top: 5px;width:1%;padding-left: 10px;"><br/><img src="/s.gif" alt="Important Notice!" title="Important Notice!"/></td>
+                            <td style="vertical-align:top;padding-right: 10px;"><br/><div ><ul style="padding-left:15px;">
+                                <apex:outputPanel layout="none" rendered="true">
+                                    <li>  <p> In the effort of enhancing our services to our customers, we're introducing a new contact management form to allow us communicate with you important information and notifications more efficiently and conveniently, we appreciate your time in updating your account key contact details, to assure sending relevant information to your right contacts. </p>  </li>
+                                </apex:outputPanel></ul></div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </apex:outputPanel> 
+    
+    
+        <c:pgHeader id="sH" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="Key Contacts" subtitle="Primary Contact Details" description="Add, Update or Delete contact(s) Or assign one or multiple roles to the Contact" />
+        <apex:form id="form" style="display:none;">
+         
+        <apex:pageBlock id="pbMain" tabStyle="g_Req__c" title=""> 
+            <apex:pageBlockButtons id="pbBtn">
+                <apex:outputPanel rendered="{!IF(reld,true,false)}">
+                <a href=""  onClick="closef();" id="modalClose" class="btnSave" style="float: right;position:relative;">Cancel</a>
+                </apex:outputPanel>
+                    <a href="" onClick="disableFields('save');return vfrm('{!JSENCODE(noOfCons)}');" class="btnSave" style="float: right;position:relative;">{!IF(reld,'Save & Refresh','Save  &  Close')}</a>
+            </apex:pageBlockButtons>
+            <apex:pageMessages id="msg" escape="false"/>  
+            
+            <apex:pageBlock title="Key-Contact Role Description" > 
+                <apex:outputPanel >
+                    <div style="background:aliceblue;">
+                        <p style="font-family: arial;padding-bottom: 10px;" >
+                            <ul style="list-style-type: circle;font-size:x-small; ">
+                                <li><b>Manager InCharge (as per Trade license)</b>: This contact will receive notifications and announcements related to trade license and premises lease.</li>
+                                <li><b>Office Manager</b>: This contact will receive notifications and announcements related to building maintenance, procedure and system enhancements, trade license and premises lease.</li>
+                                <li><b>Billing Contact </b>: This contact will receive notifications and announcements related to finance, such as payments, receipts, refunds and other financial matters.</li>
+                                <li><b>VAT Contact</b> : For receiving announcements related to taxation.</li>
+                            </ul>
+                        </p>  
+                    </div>
+                </apex:outputPanel>
+            </apex:pageBlock>
+
+            
+            <apex:outputPanel rendered="{!NOT(resultrol) && errMsg==null}">
+                <div style="float:center;">
+                    <i> **Below mandatory key contacts are missing, please add by clicking on "Add contact" Button at the bottom of page.</i>
+                        <b><br/>{!chkrol} <br/> </b><br/>   
+              </div>
+            </apex:outputPanel>
+            
+            <apex:actionFunction name="saveAccInfo" action="{!saveAccInfo}" status="theStatus" oncomplete="clsp('{!JSENCODE(success)}','{!JSENCODE(reld)}');disableFields();" rerender="form" />
+            
+            <apex:actionStatus id="theStatus" startText="Loading... Please wait.">
+                <apex:facet name="start"><apex:outputPanel >
+                    <div class="divWait"><table  border="0" bordercolor="red"  width="100%" height="100%">
+                        <tr><td valign="center" align="center"> <img alt="Loading... Please wait." src="{!URLFOR($Resource.axsRS, '/images/PROGRESS.gif')}" /></td></tr>
+                        </table>  </div>
+                    </apex:outputPanel>
+                </apex:facet>
+            </apex:actionStatus>
+          
+            <apex:variable var="index" value="{!0}"/>
+            
+            <apex:pageBlockSection id="pb_a" title="Finance Details" > <!-- rendered="{!IF((acc.van__c==null || acc.van__c==0),true,false)}" -->
+                <apex:pageBlockSectionItem id="vat" >
+                    <apex:outputLabel value="{!$ObjectType.account.Fields.van__c.label}"/>
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="van__cRI">
+                                <!--<div class="requiredBlock"></div>-->
+                                <apex:inputField id="van__c" value="{!acc.van__c}" onchange="vVAN();" />
+                                <script type="text/javascript">
+                                cif='{!$Component.van__c}_lkid';
+                                cs['van__c']=getC('{!$Component.van__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:outputPanel />
+                
+                <apex:pageBlockSectionItem id="pbo" >
+                    <apex:outputLabel value="{!$ObjectType.account.Fields.pb__c.label}"/>
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                           <div class="requiredInput" id="pb__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="pb__c" value="{!acc.pb__c}" onkeypress="return isNumberKey(event)"/>
+                                <script type="text/javascript">
+                                cs['pb__c']=getC('{!$Component.pb__c}');</script>
+                           </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="address1" >
+                    <apex:outputLabel value="{!$ObjectType.account.Fields.ad__c.label}"/>
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="ad__cRI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="ad__c" value="{!acc.ad__c}" style="width:325px;" />
+                                <script type="text/javascript">
+                                cs['ad__c']=getC('{!$Component.ad__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+        
+        <!--  Manager in Charge  Contact details  -->
+        <apex:pageBlockSection id="pb_mic" title="Manager Incharge Details" rendered="{!IF(mgInConinf.name__c!=null, true,false)}">
+            <apex:pageBlockSectionItem id="mRole">
+                <apex:outputLabel value="Role" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="mRole1">
+                            <div class="requiredBlock"></div>
+                            <apex:inputText disabled="true" id="mRole__c" value="{!mgInConinf.rol__c}" /> 
+                            <script type="text/javascript">
+                            cs['mRole__c']=getC('{!$Component.mRole__c}');
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem> 
+            
+            <apex:pageBlockSectionItem id="asgn" helpText="Assign Multiple roles">
+                <apex:inputCheckbox label="" id="asgnR" onclick="asgnR();" /> 
+                <script type="text/javascript">
+                cs['asgnR']=getC('{!$Component.asgnR}');
+                </script>
+                Click to assign all the roles to Manager Incharge. 
+            </apex:pageBlockSectionItem>
+            
+            <apex:pageBlockSectionItem id="mNm">
+                <apex:outputLabel value="Contact Name" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="MNameM">
+                            <apex:outputText id="MName" value="{!mgInConinf.name__c}" /> 
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem>  
+            
+            <apex:outputLabel ></apex:outputLabel>
+            
+            <apex:pageBlockSectionItem id="mEm">
+                <apex:outputLabel value="Primary Email" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="MEmailMRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="MEmailM" onchange="toLowerCase('MEmailM');vEml('MEmailM',cs,true);" value="{!mgInConinf.email__c}" /> 
+                        	<script type="text/javascript">
+                                cs['MEmailM']=getC('{!$Component.MEmailM}');
+                            </script> 
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem> 
+            
+            <apex:pageBlockSectionItem id="msEm2">
+                <apex:outputLabel value="Secondary Email" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="MEmail2MRI">
+                            <apex:inputField id="MEmail2M" onchange="toLowerCase('MEmail2M');vEml('MEmail2M',cs,true);"  value="{!mgInConinf.seml__c}" /> 
+                        	<script type="text/javascript">
+                                cs['MEmail2M']=getC('{!$Component.MEmail2M}');
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem> 
+            
+            <apex:pageBlockSectionItem id="mPm">
+                <apex:outputLabel value="Primary Mobile" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="MPhoneRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="MPhone"  onchange="vMob('MPhone',cs,true);" value="{!mgInConinf.phone__c}" /> 
+                            <script type="text/javascript">
+                                cs['MPhone']=getC('{!$Component.MPhone}');
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem> 
+            
+            <apex:pageBlockSectionItem id="msPm2">
+                <apex:outputLabel value="Secondary Mobile" />
+                <apex:outputPanel layout="none">
+                    <apex:outputPanel >
+                        <div class="requiredInput" id="MPhone2RI">
+                            
+                            <apex:inputField id="MPhone2" onchange="vMob('MPhone2',cs,true);" value="{!mgInConinf.sphn__c}" />
+                            <script type="text/javascript">
+                                cs['MPhone2']=getC('{!$Component.MPhone2}');
+                            </script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel> 
+            </apex:pageBlockSectionItem> 
+            
+        </apex:pageBlockSection> 
+            
+            <!--  List of Contacts -->
+        <apex:repeat id="rBlc" value="{!lstCI}" var="cInfo">
+            <apex:pageBlockSection id="pbs" title="Key Contact - {!index+1}">
+                <apex:pageBlockSectionItem id="iRol">
+                    <apex:outputLabel id="role" value="Role"/>
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="rol__c{!index}RI">
+                                <div id="rol_c{!index}">
+                                    <div class="requiredBlock"></div>
+                                    <apex:inputField id="rol__c" value="{!cInfo.rol__c}"  />
+                                    <script type="text/javascript">
+                                    cif='{!$Component.rol__c}_lkid';
+                                    cs['rol__c{!index}']=getC('{!$Component.rol__c}');
+                                    cs['iRol{!index}']=getC('{!$Component.role}');</script>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel >
+                            <div>
+                                <apex:outputPanel >
+                                    <div class="requiredInput" id="rol{!index}RI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField id="rol" value="{!cInfo.rol__c}" />
+                                        <script type="text/javascript">
+                                        cif='{!$Component.rol__c}_lkid';
+                                        cs['rol{!index}']=getC('{!$Component.rol}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>    
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem> 
+                
+                <apex:outputLabel rendered="{!IF(cInfo.email__c == null, true, false)}"/>
+                <apex:pageBlockSectionItem rendered="{!IF(cInfo.email__c==null,false,true)}">
+                    <a href="" id="btnDact{!index}" onClick="removeCon('{!JSENCODE(index)}');return false;" class="btnSave" style="float: right;position:relative;">Delete/Deactivate</a>
+                    <a href="" id="btnEdt{!index}" onClick="fldsEdt('{!JSENCODE(index)}');return false;" class="btnSave" style="float: right;position:relative;">Edit</a>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="bpi1">
+                    <apex:inputCheckbox label="" id="extcon__c" value="{!cInfo.extcon__c}" onclick="cRenderCon(this,'{!JSENCODE(index)}','true');" /> 
+                    <script type="text/javascript">
+                    cs['extcon__c{!index}']=getC('{!$Component.extcon__c}');
+                    </script>
+                    Click here for non Existing Contact. 
+                </apex:pageBlockSectionItem>
+                
+                <apex:outputLabel ></apex:outputLabel>
+                
+                <apex:pageBlockSectionItem id="chn">
+                    <apex:outputLabel value="Contact Name" id="conlb2" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="Con__c{!index}RI" >
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="Con__c" value="{!cInfo.con__c}" onchange="cpyName({!index});" />
+                                <script type="text/javascript">
+                                cif='{!$Component.Con__c}_lkid';
+                                cs['Con__c{!index}']=getC('{!$Component.Con__c}');
+                                cs['Con__lk{!index}']=getC('{!$Component.Con__c}'+'_lkwgt');
+                                </script>
+                            </div>
+                            <div class="requiredInput" id="name__c{!index}RI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="name__c" value="{!cInfo.name__c}" />
+                                <script type="text/javascript">
+                                cif='{!$Component.xchn__c}_lkid';
+                                cs['name__c{!index}']=getC('{!$Component.name__c}');
+                                </script>
+                            </div>
+                        </apex:outputPanel>
+                        
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>   
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.coninfo__c.Fields.ldno__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="ldno__c{!index}RI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="ldno__c" value="{!cInfo.ldno__c}" onchange="vLandline('ldno__c{!index}',cs,true);" />
+                                <script type="text/javascript">
+                                cif='{!$Component.ldno__c}_lkid';
+                                cs['ldno__c{!index}']=getC('{!$Component.ldno__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel> 
+                </apex:pageBlockSectionItem> 
+
+                <apex:pageBlockSectionItem id="iEml">
+                    <apex:outputLabel value="{!$ObjectType.coninfo__c.Fields.email__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="email__c{!index}RI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="email__c" value="{!cInfo.email__c}" onchange="toLowerCase('email__c{!index}');vEml('email__c{!index}',cs,true);"/>
+                                <script type="text/javascript">
+                                cif='{!$Component.email__c}_lkid';
+                                cs['email__c{!index}']=getC('{!$Component.email__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel> 
+                </apex:pageBlockSectionItem> 
+                
+                <apex:pageBlockSectionItem id="pseml__c">
+                    <apex:outputLabel value="{!$ObjectType.coninfo__c.Fields.seml__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="seml__c{!index}RI">
+                                <apex:inputField id="seml__c" value="{!cInfo.seml__c}"  onchange="toLowerCase('seml__c{!index}');vEml('seml__c{!index}',cs,true);"/>
+                                <script type="text/javascript">
+                                cif='{!$Component.seml__c}_lkid';
+                                cs['seml__c{!index}']=getC('{!$Component.seml__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel> 
+                </apex:pageBlockSectionItem>   
+                
+                <apex:pageBlockSectionItem id="iPhn">
+                    <apex:outputLabel value="{!$ObjectType.coninfo__c.Fields.phone__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="phone__c{!index}RI">
+                                <div class="requiredBlock"></div>
+                                <apex:inputField id="phone__c" value="{!cInfo.phone__c}" onchange="vMob('phone__c{!index}',cs,true);"/>
+                                <script type="text/javascript">
+                                cif='{!$Component.phone__c}_lkid';
+                                cs['phone__c{!index}']=getC('{!$Component.phone__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel> 
+                </apex:pageBlockSectionItem> 
+                
+                <apex:pageBlockSectionItem id="psphn__c">
+                    <apex:outputLabel value="{!$ObjectType.coninfo__c.Fields.sphn__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <apex:outputPanel >
+                            <div class="requiredInput" id="sphn__c{!index}RI">
+                                <apex:inputField id="sphn__c" value="{!cInfo.sphn__c}" onchange="vMob('sphn__c{!index}',cs,true);"/>
+                                <script type="text/javascript">
+                                cif='{!$Component.sphn__c}_lkid';
+                                cs['sphn__c{!index}']=getC('{!$Component.sphn__c}');</script>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel> 
+                </apex:pageBlockSectionItem> 
+                
+                
+                <apex:outputPanel layout="none" style="display:none">
+                    <apex:inputHidden id="sta__c" value="{!cInfo.Sta__c}" />
+                    <script type="text/javascript">
+                    cs['sta__c{!index}']=getC('{!$Component.sta__c}');
+                    </script>
+                </apex:outputPanel> 
+                
+                
+                
+                <apex:variable var="index" value="{!index+1}"/>
+            </apex:pageBlockSection>   
+        </apex:repeat>
+            
+            <apex:outputPanel layout="none" style="display:none">
+                    <apex:inputHidden id="mRoleh1" value="{!mgInConinf.rol__c}" />
+                    <script type="text/javascript">
+                    cs['mRoleh1']=getC('{!$Component.mRoleh1}');
+                    </script>
+               </apex:outputPanel>
+               
+            <apex:commandButton status="theStatus" value="Add Contact" styleClass="btnAdd" oncomplete="disableFields();cRenderCon(false,'{!JSENCODE(noOfCons-1)}','true');" reRender="pbMain,rBlc" action="{!addCon}" /> 
+            <apex:commandButton status="theStatus" value="Remove Contact" styleClass="btnAdd" oncomplete="disableFields();cRenderCon(false,'{!JSENCODE(noOfCons-1)}');" reRender="pbMain,rBlc" action="{!rmvCon}" rendered="{!IF(noOfCons>=exCons,true,false)}" /> 
+            
+        </apex:pageBlock>
+    </apex:form>
+    
+    <style type="text/css" media="screen">
+        .lookupInput {display: inline;white-space: nowrap;vertical-align: middle;display: -webkit-box;}
+        .btnAdd {color:black !important;background:#83b7e8 !important;}
+        .btnAdd:hover {color:white !important;background:#83b7e8 !important;}
+        .btnSave{color:black !important;background:#83b7e8 !important;}
+        .btnSave:hover {color:white !important;background:#83b7e8 !important;}
+        .pbSubsection p {color:#898989; font-size:12px; font-family:arial; margin:0; padding:0;}
+    </style>
+
+</apex:page>

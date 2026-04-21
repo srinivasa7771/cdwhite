@@ -1,0 +1,535 @@
+<apex:component controller="SegmentsActivitiesController" allowDML="true" id="seg">
+   
+   <style>
+        a:not([href]):hover{
+        color: #fff;
+        }
+        label.box-check .box {
+        min-height: 6.25rem !important;
+        }
+    </style>
+    <!--<apex:actionFunction name="updateRequest" action="{!updateRequest}" reRender="pbMain">-->
+    <apex:actionFunction name="updateRequest_seg" action="{!updateRequest}" reRender="containerPanel">
+        <apex:param name="segmentActivityJson" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="updateJson_seg" action="{!updateRequest}" reRender="spcmpid"> <!-- updateleaseJsonStr-->
+        <apex:param name="segmentActivityJson" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="moreSegment" action="{!moreSegments}" reRender="segActPanel,spcmpid" oncomplete="updateActivityDetailsToSegment()"/>
+    
+    <apex:inputHidden id="adhoc2" value="{!adhoc2}" />
+     <script>
+        cs["adhoc2"] = document.getElementById("{!$Component.adhoc2}");
+        </script>
+    
+    <apex:outputPanel id="segActPanel">
+        <div id="segment">
+            <h3>Select the nature of your business</h3>
+            <p>
+                Click on the segment that best describes your business in order to view and select your business activities.
+                <br/>
+            </p>
+            
+            <p class="activityErrorElement" style="display:none; color: red;" >
+                <i class="icon-info-circle" style="vertical-align: middle;color: red;"></i>
+                Please select an activity
+            </p>
+            
+            <div class="custom-scroll business-segments mt-4 mb-3">
+                <div class="row">
+                    <div class="loader" style="position: fixed;top: 80%;left: 15px;padding-left: 62%;z-index: 100;display:none">
+                        <svg class="spinner spinner-primary" width="45px" height="45px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg" >
+                            <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30">
+                            </circle>
+                        </svg>
+                    </div>
+                    <apex:repeat value="{!segments}" var="seg">
+                        <div class="col-lg-3 col-md-4 col-6 Seg">
+                            <a data-value="{!seg.segmentId}" id="{!seg.segmentId}"
+                               class ="forReadOnly business-segment box-grey box-grey-hover added">
+                                <span Class="added-number text-primary selectedCountSpan" 
+                                      style="display:none">
+                                </span>
+                                <span class="segmentId" style="display:none">{!seg.segmentId}</span>
+                                <span class="box-grey-title segmentSpan" >{!seg.Label}</span>
+                            </a>
+                        </div>
+                    </apex:repeat>
+                </div>
+            </div>
+            <apex:outputText rendered="{!req.xvtyp__c != 'DED'}">
+                <p class="onboarding-footer-info"><!--onboarding-nav-info-->
+                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                    <!--Want to see more segments from other communities?-->
+                    Click 
+                    <a href="#" class="forReadOnly "
+                       data-value="moreSegment"
+                       style="text-decoration: underline;">
+                       here
+                    </a>
+                   to see more segments from our other business districts.
+                </p>
+            </apex:outputText> 
+            <div class="onboarding-nav-wrapper">
+                <div class="onboarding-nav">
+                     <a href="" data-value="businessName"  class="forReadOnly btn btn-primary onboarding-nav-previous" style="color: #fff;">
+                        <i class="fa fa-angle-left"></i> <span>BACK</span>
+                    </a>
+                         <!--<i class="fa fa-angle-left text-primary"></i> <span >BACK</span>-->
+                    <a href="" data-value="next" class="forReadOnly btn btn-primary onboarding-nav-next" style="color: #fff;">
+                        <span>NEXT</span> <i class="fa fa-angle-right"></i> 
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div id="activities" style="display:none"> 
+            <apex:repeat value="{!segments}" var="seg">
+                <div class="{!seg.segmentId} SegAct" style="display:none">
+                    <h3>
+                        Great! Tell us about your business activities
+                    </h3>
+                    <p>
+                        <br/>
+                        Select relevant activities for your planned business.
+                       
+                        <apex:outputText rendered="{!req.xvtyp__c != 'DED'}">
+                            <apex:outputText rendered="{!seg.AllowedActivites==1}">
+                                You can select 1 activity for this segment.<br/>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!seg.AllowedActivites!=1}">
+                                You can select up to {!seg.AllowedActivites} activities.<br/>
+                            </apex:outputText>
+                            
+                            <!--Extra charges for selecting more than allowed activity.-->
+                        </apex:outputText>
+                        <span class="remaining"></span>
+                        <span class ="segName" style="display:none">{!seg.Label}</span>
+                        <span class ="segId" style="display:none">{!seg.segmentId}</span>
+                        <span class ="allowed" style="display:none">{!seg.AllowedActivites}</span>
+                        
+                        <apex:outputPanel rendered="{!Contains(ChkSegmentMapKey,seg.segmentId)}">
+                            <span class ="selectedPrice" style="display:none">{!segmentMap[seg.segmentId].Price}</span>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!!Contains(ChkSegmentMapKey,seg.segmentId)}">
+                            <span class ="selectedPrice" style="display:none"></span>
+                        </apex:outputPanel>
+                        <span class ="standardPrice" style="display:none">{!seg.Price}</span>
+                    </p>
+                    <i class="icon-info-circle text-primary icon" style="vertical-align: middle;display:none"></i>
+                    <span class ="info" style="display:none"></span>
+                    <div class="row mt-4 mb-3">
+                        <div class="col-lg-3">
+                            <a href="#" class="forReadOnly business-segment box box-center bg-primary text-white">
+                                <span class="box-title" data-toggle="tooltip" data-placement="bottom" title="{!seg.Description}" data-original-title="{!seg.Description}">
+                                    {!seg.Label}
+                                </span>   
+                            </a>
+                        </div>
+                        
+                        <div class="col-lg-9">
+                            <div class="custom-scroll business-activities">
+                                <div class="row">
+                                    <apex:repeat value="{!seg.Activities}" var="activity">
+                                        <apex:outputPanel styleClass="col-md-4 col-6 act" rendered="{!Contains(ChkActivityMapKey,activity.activityId) && selected}">
+                                            <div class="">
+                                                <div class="modal fade modal-base" id="modal_saved" tabindex="-1" role="dialog" aria-hidden="true">
+                                                    <span class="channel" style="display:none">{!activity.isRelatedtoChannel}</span>
+                                                    <span class="title" style="display:none">{!activity.isRelatedtoTitles}</span>
+                                                    <div class="modal-dialog" role="document" style="width: 607px;">
+                                                        <div class="modal-content">
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <i class="icon-close"></i>
+                                                            </button>
+                                                            
+                                                            <div class="modal-body text-center pt-5 pb-5">
+                                                                <div class="form-style">
+                                                                    <apex:outputPanel rendered="{!activity.isRelatedtoChannel}">
+                                                                        <div class="row mt-4">
+                                                                            <div class="col-md-12">
+                                                                                <div class="form-group row">
+                                                                                    <div class="col-md-6"><h3>Number of Channel</h3></div>
+                                                                                    <div class="col-md-6">
+                                                                                        <input type="Number" min="1" class="forReadOnly form-control channelInput" onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"/>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </apex:outputPanel>
+                                                                    
+                                                                    <apex:outputPanel rendered="{!activity.isRelatedtoTitles}">
+                                                                        <div class="row">
+                                                                            <div class="col-md-6">
+                                                                                <div class="form-group">
+                                                                                    <h3>Number of Titles</h3>
+                                                                                    <p>Number of Titles if applicable</p>
+                                                                                    <input type="Number" min="1" class="form-control titleInput" onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"/>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </apex:outputPanel>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <label class="box-check activityLabel popup">
+                                                    <input type="checkbox" name="business_activity" onclick="notify(this)" class="{!seg.segmentId} forReadOnly avtivityCheckBox" id="btnShow" checked="TRUE">
+                                                    <div class="business-activity box box-center box-hover activityDiv">
+                                                        <span class="ActivityPrice" style="display:none">{!activity.Price}</span>
+                                                        <span id ="{!activity.activityId}" class="box-title ActivitySpan" data-toggle="tooltip" data-placement="bottom" title="{!activity.Description}" data-original-title="{!activity.Description}">{!activity.Label}</span>
+                                                        <span class="docList">
+                                                            <apex:repeat value="{!activity.doclist}" var="doc">
+                                                                <input type="hidden" class="docName" value="{!doc.docName}"/>
+                                                                <input type="hidden" class="mandatory" value="{!doc.isMandatory}"/>
+                                                            </apex:repeat>
+                                                        </span>
+                                                    </div>
+                                                </input>
+                                            </label>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel styleClass="col-md-4 col-6 act" rendered="{!!Contains(ChkActivityMapKey,activity.activityId)}">
+                                        <div class="">
+                                            <div class="modal fade modal-base" id="modal_saved" tabindex="-1" role="dialog" aria-hidden="true">
+                                                <span class="channel" style="display:none">{!activity.isRelatedtoChannel}</span>
+                                                <span class="title" style="display:none">{!activity.isRelatedtoTitles}</span>
+                                                <div class="modal-dialog" role="document" style="width: 607px;">
+                                                    <div class="modal-content">
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <i class="icon-close"></i>
+                                                        </button>
+                                                        <div class="modal-body text-center pt-5 pb-5">
+                                                            <div class="form-style">
+                                                                <apex:outputPanel rendered="{!activity.isRelatedtoChannel}">
+                                                                    <div class="row mt-4">
+                                                                        <div class="col-md-12">
+                                                                            <div class="form-group row">
+                                                                                <div class="col-md-6"><h3>Number of Channel</h3></div>
+                                                                                <div class="col-md-6">
+                                                                                    <input type="Number" for="{!activity.activityId}" min="1" class="forReadOnly form-control channelInput" onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"/>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                                <apex:outputPanel rendered="{!activity.isRelatedtoTitles}">
+                                                                    <div class="row">
+                                                                        <div class="col-md-6">
+                                                                            <div class="form-group">
+                                                                                <h3>Number of Titles</h3>
+                                                                                <p>Number of Titles if applicable </p>
+                                                                                <input type="Number" for="{!activity.activityId}" min="1" class="forReadOnly form-control titleInput" onkeypress="return (event.charCode == 8 || event.charCode == 0) ? null : event.charCode >= 48 && event.charCode <= 57"/>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <label class="box-check activityLabel popup">
+                                                <input type="checkbox" name="business_activity" onclick="notify(this)" class="{!seg.segmentId} forReadOnly avtivityCheckBox" id="btnShow" >
+                                                <div class="business-activity box box-center box-hover activityDiv">
+                                                    <span class="ActivityPrice" style="display:none">{!activity.Price}</span>
+                                                    <span id ="{!activity.activityId}" class="box-title ActivitySpan" data-toggle="tooltip" data-placement="bottom" title="{!activity.Description}" data-original-title="{!activity.Description}">{!activity.Label}</span>
+                                                    <span class="docList">
+                                                        <apex:repeat value="{!activity.doclist}" var="doc">
+                                                            <input type="hidden" class="docName" value="{!doc.docName}"/>
+                                                            <input type="hidden" class="mandatory" value="{!doc.isMandatory}"/>
+                                                        </apex:repeat>
+                                                    </span>
+                                                </div>
+                                            </input>
+                                        </label>
+                                    </div>
+                                </apex:outputPanel>
+                                    
+                                </apex:repeat>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </apex:repeat>
+        <div class="onboarding-nav" id="activityBackBtn">
+            <a data-value ="back" class="forReadOnly btn btn-primary btn-primary-3 onboarding-nav-previous" style="color: #fff;">
+                <i class="fa fa-angle-left"></i> <span>BACK</span>
+            </a>
+        </div>
+    </div>
+    
+    
+    <script>
+    $(document).ready(function(){
+        var sta = "{!req.sta__c}";
+        cs['seg'] = '{!$Component.seg}';
+        var obSta = "{!req.os__c}";
+        var editMode = (sta == 'Draft' || sta == 'Open' || obSta == "Segments Re-Review") ? true : false;
+        if(editMode == false){
+            makeReadOnly('forReadOnly');
+        }
+        updateSegments();
+    });
+    //Onclick for navigating from segments/activities
+    $("a").click(function(){
+        if($(this).hasClass('disabled'))
+            return;
+        var val =$(this).data("value");
+        if(val == 'back'){
+            $('#activities').children().hide();
+            $('#activities').hide();
+            $('#segment').show();
+        }else if(val == 'next'){
+            $(this).attr("disabled", false);        
+            var checkBoxCount =$('#activities input.avtivityCheckBox:checkbox:checked').length;
+            if(cs['xadtx2__c'].value){cs['xadtx2__c'].value = cs['xadtx2__c'].value.replaceAll('&amp;amp;','&');}
+            var selSeg = cs['xadtx2__c'].value;
+            if(checkBoxCount>0 || (selSeg&&JSON.parse(selSeg).length>0)){
+                var segActJson = createSegmentActivityJson();
+                updateSegments();
+                
+                $('#businessActivities').removeClass('active-section').addClass('completed-section');
+                $('#members').removeClass('incomplete-section').addClass('active-section');
+                  console.log('checkBoxCount=3==',checkBoxCount);
+                cs["xadtx2__c"].value = createSegmentActivityJson();
+                  console.log('checkBoxCount=4==',cs["xadtx2__c"].value);
+                   nextpg('members'); 
+                //nextpg2('members');
+            }else{
+                //###SHUI updateRequest_seg('');
+                updateSegments();
+                $('#segment').find('.activityErrorElement').show();   
+                $('html, body').animate({scrollTop: $('.activityErrorElement').offset().top + 'px'}, 'slow');
+            }
+        }else if(val == 'moreSegment'){
+            console.log('val::::'+val);
+            moreSegment();
+            $('.loader').show();
+        }else if( val =='businessName'){
+            //showTempLoader($('.onboarding-nav-prev'));
+            var segActJson =  createSegmentActivityJson();
+            if(segActJson){segActJson = segActJson.replaceAll('&#38;amp;','&');}
+            cs['xadtx2__c'].value=segActJson;
+            cs['adhoc2'].value=segActJson;
+            console.log('cs:::'+ cs['xadtx2__c'].value);
+            updateSegments();
+            showTempLoader(event.target);
+            if(cs['xvtyp__c'].value == 'DED')
+               nextpg1('confpage');
+            else
+            nextpg1('businessName');
+        }else if (val != undefined){
+            console.log('val:::'+val);
+            $('#segment').hide();
+            $('#activities').show();
+            $('#activities').find('div.'+val).show();
+            $('#activityBackBtn').show();
+        }
+    });
+    
+    $('label').each(function(){
+        if($(this).children().length>1&&$(this).next().length<1) return;
+        else{
+            let e = $(this).next();
+            $(this).next().remove();
+            $(this).append(e);
+        }
+    });
+
+
+//update feesbreakdownpoup
+function updateSegments(){
+    
+    $("#popupfees").children().remove();
+    var totalPrice = 0;
+    
+    if(cs['xadtx2__c'].value){
+        cs['xadtx2__c'].value = cs['xadtx2__c'].value.replaceAll('&amp;amp;','&');
+        var jsonSeg = JSON.parse(cs['xadtx2__c'].value);
+        for(var i=0; i<jsonSeg.length; i++){
+            var price = parseFloat( jsonSeg[i].price , 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString();
+            var mEL = '<div class="onboarding-review-toggle"><div class="onboarding-review-row"><span class="onboarding-review-label">'+jsonSeg[i].name+'</span><span class="onboarding-review-value">AED '+ price+'</span></div></div>';
+            $("#popupfees").append(mEL);
+            
+            totalPrice = parseFloat(totalPrice) + parseFloat( jsonSeg[i].price);
+            
+            for(var j=0; j<jsonSeg[i].SegActivities.length; j++){
+                var chEl = '<div class="onboarding-review-body"><div class="onboarding-review-row"><span class="onboarding-review-label">' + jsonSeg[i].SegActivities[j].name + '</span></div></div>';
+                $("#popupfees").append(chEl);
+            }
+        }
+    }
+    
+    $(".totalDue1").text('AED '+ parseFloat(totalPrice, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString());
+}
+
+
+//update activity selection to segments
+function updateActivityDetailsToSegment(){
+    console.log('updateActivityDetailsToSegment:::::');
+    $('.Seg').each(function(e,v){
+        var segId = $(v).find('.segmentId').html();
+        var activitycount = $('#activities').find('.'+segId+' input.avtivityCheckBox:checkbox:checked').length;
+        if(activitycount>0){
+            $(v).find(".selectedCountSpan").html(activitycount).show();
+            var segJson = (cs["xadtx2__c"].value)?JSON.parse(cs["xadtx2__c"].value):[];
+            var  ii =$(v).find('a').attr('id');
+            for(i of segJson){
+                if(i.segId == ii && i.SegActivities && i.SegActivities.length>0){
+                    for(j of i.SegActivities){
+                        $('.channelInput[for="'+j.actId+'"]').val(j.channel);
+                    }
+                }
+            }
+        }            
+    });
+    
+    // reset the checkbox css
+    if($(".ActivityPrice").parent().hasClass("popup")) {$(".ActivityPrice").unwrap();}
+    
+}
+
+//ready function
+$( document ).ready(function() {
+    console.log( "ready::::" );
+    updateActivityDetailsToSegment();
+    isnextPgnameReg = false;
+});
+    </script>
+</apex:outputPanel>
+
+<script type="text/javascript">
+/*window.onload = function(){
+    console.log( "onload::::" );
+    updateActivityDetailsToSegment();
+}*/
+
+
+//Notification when a activity/segment is checked/unchecked
+function notify(seg){
+    var classNames = seg.className.split(" ");
+    var segId =  classNames[0];
+    var count = $('.'+segId+' input.avtivityCheckBox:checkbox:checked').length;
+    var allowed =$('#activities').find('.'+segId).find('.allowed').html();
+    var rem = allowed - count;
+    /*if(rem<0 && $(seg).prop("checked") == true){
+        //cannot select more activities than allocated
+        $(seg).prop("checked",false);
+        return;
+    }*/
+    ///
+    if(count>0){
+        //Price calculation
+        var standardPrice = $('#activities').find('.'+segId).find('.standardPrice').html();
+        var activityPrice = $(seg).next().find('.ActivityPrice').html();
+        var price  =  $('#activities').find('.'+segId).find('.selectedPrice').html();
+        
+        if(allowed>=count){
+            $('#activities').find('.'+segId).find('.selectedPrice').html(standardPrice);
+        }else{
+            var selectedPrice ='';
+            if($(seg).prop("checked") == true){
+                selectedPrice = +price + +activityPrice;    
+            }else if($(seg).prop("checked") == false){
+                selectedPrice = +price - +activityPrice;
+            }
+            $('#activities').find('.'+segId).find('.selectedPrice').html(selectedPrice);
+        }   
+        
+        //Remaining Notification in activity
+        if(rem>0){
+            //$('#activities').find('.'+segId).find('.remaining').html('you can select('+rem+ ' more )').show();
+        }else if(rem<=0){
+            $('#activities').find('.'+segId).find('.remaining').hide();
+        }else{
+            $('#activities').find('.'+segId).find('.remaining').hide();
+            
+        }
+        //Selected count notification in both segment and activity
+        $('#activities').find('.'+segId).find('.info').html('You have selected '+count+'<br/>').show();
+        $('#activities').find('.'+segId).find('.icon').show();
+        $('#segment').find('#'+segId).find(".selectedCountSpan").html(count).show();
+        
+        
+    }else {
+        $('#activities').find('.'+segId).find('.info').html('').hide();
+        $('#activities').find('.'+segId).find('.icon').hide();
+         $('#activities').find('.'+segId).find('.remaining').hide();
+        $('#segment').find('#'+segId).find(".selectedCountSpan").html('').hide();
+        $('#activities').find('.'+segId).find('.selectedPrice').html('');
+    }
+    ///    
+    
+    //Update json to apex
+    var segActJson =  createSegmentActivityJson();
+     console.log('segActJson:::', segActJson);
+    if(segActJson){segActJson = segActJson.replaceAll('&amp;amp;','&');}
+    cs['xadtx2__c'].value=segActJson;
+    cs['adhoc2'].value=segActJson;
+    
+    //brekdownFees(cs['xadtx2__c'].value);
+    console.log('cs:::', cs['xadtx2__c'].value);
+    //###SHUI updateJson_seg(segActJson);
+    updateSegments();
+    
+    //show pop for channel and title
+    if($(seg).prop("checked")){
+        //hide error element
+        $('#segment').find('.activityErrorElement').hide();
+        //show pop if channel/title exists
+        if(($(seg).parent().prev().find('.channel').html() == "true"|| $(seg).parent().prev().find('.title').html() == "true")){
+            $(seg).parent().prev().modal("show");
+            
+        }
+    }
+};
+
+
+
+//create json for selected segments and activities
+function createSegmentActivityJson(){
+    var segJson = '';
+    var segArray=[];
+    $('.SegAct').each(function(e,v){ 
+        var count = $(v).find('input.avtivityCheckBox:checkbox:checked').length;
+        if($(v).find('input.avtivityCheckBox:checkbox:checked').length>0){
+            let segJson = {};
+            segJson.name = $(v).find('.segName').html();
+            segJson.segId = $(v).find('.segId').html();
+            segJson.allowed = $(v).find('.allowed').html();
+            segJson.price = $(v).find('.selectedPrice').html();
+            var activityArray=[];
+            $(v).find('.act').each(function(e,v){
+                var checked = $(v).find('[name="business_activity"]').prop("checked");
+                if(checked){
+                    let activityJson = {};
+                    activityJson.name = $(v).find('.ActivitySpan').html();
+                    activityJson.actId = $(v).find('.ActivitySpan').attr("id");
+                    activityJson.price = $(v).find('.ActivityPrice').html();
+                    if($(v).find('.channelInput').val())
+                        activityJson.channel = $(v).find('.channelInput').val();
+                    activityJson.title = $(v).find('.titleInput').val();
+                    var docList =[];
+                    $(v).find('.docList').find('.docName').each(function(e1,v1){
+                        docList.push($(v1).val());
+                    });
+                    activityJson.docs =docList;
+                    activityArray.push(activityJson);
+                }
+            });
+            segJson.SegActivities = activityArray;
+            segArray.push(segJson);
+        }
+    });
+    segJson = JSON.stringify(segArray);
+    console.log('segArray:::'+segJson);
+    return segJson;
+}     
+
+</script>
+</apex:component>

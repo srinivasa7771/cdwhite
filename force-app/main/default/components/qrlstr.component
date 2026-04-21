@@ -1,0 +1,160 @@
+<apex:component >
+    <apex:attribute name="isNew" description="Is New Request" type="Boolean" required="true" />
+    <apex:attribute name="isEdit" description="Is Edit Mode" type="Boolean" required="true"/>
+    <apex:attribute name="isView" description="Is View Mode" type="Boolean" required="true"/>
+    <apex:attribute name="pgHide" description="Is Read Only Access" type="Boolean" required="true"/>
+    <apex:attribute name="ispu" description="is a portal user" type="Boolean" required="true"/>
+    <apex:attribute name="R" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="pg" description="Page Name" type="String" required="true"/>
+    <apex:outputPanel id="grms" rendered="{!isView}" >
+    <div class="container">
+        <div class="mb-5"></div>
+                                   
+         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingFour">
+            <div class="row">
+                 <div class="col-lg-6 col-sm-6">
+                    <h5 class="ml-5 d-none d-lg-block" style="padding: 1rem;">
+                            <div class="fs-16 m-0">PAYMENT HISTORY</div>
+                    </h5>
+                </div>
+                <div class="col-lg-6 col-sm-6">
+                    <h5 class="float-right mr-15"  style="padding: 1rem;">
+                        FIRST PAYMENT DATE: 
+                        <apex:outputText style="font-size:small;font-weight: bold" value="{0,date,MMM dd, yyyy}">
+                            <apex:param value="{!R.xfpc__c}" />
+                        </apex:outputText>
+                    </h5>
+                </div>
+            </div>
+            </div>
+            <!--div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingFour"-->
+             <div class="row">
+             <div class="col-lg-12 col-sm-12">
+                <!--div class="panel-body"-->
+                    <div class="table-responsive" style="padding: 1.5rem;">
+                        <table class="table table-striped table-bordered table-hover table-sm fs-12" id="dataTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.Name.label}</th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.STA__c.label}</th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.TP__c.label}</th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.dt__c.label}</th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.md__c.label}</th>
+                                    <th scope="col">{!$ObjectType.g_Tran__c.fields.A__c.label}</th>  
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <apex:repeat value="{!R.Transactions__r}" var="T">                                    
+                                    <apex:outputpanel layout="none" rendered="{!OR(NOT(ispu),T.TP__c='Payment',T.TP__c='Refund')}">
+                                        <tr class="dataRow" >
+                                            <td class="actionColumn">
+                                                <apex:outputLink value="/{!T.Id}">View</apex:outputLink>
+                                                <apex:outputpanel layout="none" rendered="{!AND(T.TP__c='Payment',OR(T.STA__c='Completed',T.STA__c='Open'))}">
+                                                    &nbsp;|&nbsp;&nbsp;
+                                                    <apex:outputpanel rendered="{!IF(AND(T.STA__c="Completed",DATE(2017,12,31) >= T.dt__c),true,false)}" >
+                                                        <apex:outputLink value="/apex/gtrcpto?id={!T.Id}" target="_blank" rendered="{!AND(T.STA__c='Completed')}">Receipt Copy</apex:outputLink>
+                                                    </apex:outputpanel>
+                                                    <apex:outputpanel rendered="{!IF(AND(T.STA__c='Completed',DATE(2017,12,31) < T.dt__c),true,false)}" >
+                                                        <apex:outputLink value="/apex/gtrcpt?id={!T.Id}" target="_blank" rendered="{!AND(T.STA__c='Completed')}">Receipt Copy</apex:outputLink>
+                                                    </apex:outputpanel>
+                                                    <apex:outputLink value="/apex/gtrinv?id={!T.Id}" target="_blank" rendered="{!T.STA__c='Open'}">Invoice Copy</apex:outputLink>                                                    
+                                                </apex:outputpanel>
+                                                
+                                            </td>
+                                            <td ><apex:outputField value="{!T.Name}" />&nbsp;&nbsp;</td>
+                                            <td ><apex:outputField value="{!T.STA__c}" /></td>
+                                            <td ><apex:outputField value="{!T.TP__c}" /></td>
+                                            <td><apex:outputField value="{!T.dt__c}" /></td>
+                                            <td ><apex:outputField value="{!T.md__c}" /></td>
+                                            <td  ><apex:outputField value="{!T.A__c}" /></td>                                       
+                                        </tr>   
+                                    </apex:outputpanel>
+                                </apex:repeat>    
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+        <!-- end of payment history-->
+        
+
+                <apex:outputPanel rendered="{!!isPu}">
+                <div class="container">
+                    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="casediv">
+                                <h4 class="panel-title">
+                                    <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#dCasesDiv" aria-expanded="false" aria-controls="dCasesDiv">
+                                        Related Case
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="dCasesDiv" class="panel-collapse collapse" role="tabpanel" aria-labelledby="casediv">
+                                <div class="panel-body">
+                                    <div class="table-responsive">
+                                        <div class="table-responsive"> 
+                                            <table class="table table-striped table-bordered table-hover table-sm fs-12" id="dataTable">
+                                                <thead>
+                                                    <th scope="col"></th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.CaseNumber.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Subject.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Origin.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Type.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Category__c.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Sub_Category__c.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.Status.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.CreatedDate.label}</th>
+                                                    <th scope="col">{!$ObjectType.Case.fields.ClosedDate.label}</th>
+                                                </thead>                                
+                                                <apex:repeat value="{!R.Cases__r}" var="cs">                                    
+                                                    <apex:outputpanel layout="none">
+                                                        <tr class="dataRow" >
+                                                            <td class="actionColumn">
+                                                                <apex:outputLink value="/{!cs.Id}">View</apex:outputLink>                                        
+                                                            </td>
+                                                            <td ><apex:outputField value="{!cs.CaseNumber}" />&nbsp;&nbsp;</td>
+                                                            <td  ><apex:outputField value="{!cs.Subject}" /></td>
+                                                            <td><apex:outputField value="{!cs.Origin}" /></td>
+                                                            <td><apex:outputField value="{!cs.Type}" /></td>
+                                                            <td><apex:outputField value="{!cs.Category__c}" /></td>
+                                                            <td><apex:outputField value="{!cs.Sub_Category__c}" /></td>
+                                                            <td><apex:outputField value="{!cs.Status}" /></td>
+                                                            <td><apex:outputField value="{!cs.CreatedDate}" /></td>
+                                                            <td><apex:outputField value="{!cs.ClosedDate}" /></td>                              
+                                                        </tr>   
+                                                    </apex:outputpanel>
+                                                </apex:repeat>                               
+                                                
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                    </div>
+                    </div>
+                    
+                    
+                    
+                </apex:outputPanel>                   
+                
+                
+                
+                
+           
+        
+       
+    </apex:outputPanel>
+    <!--
+<c:CaseRelatedList id="caseRelated" isNew="{!isNew}" isEdit="{!isEdit}" isView="{!isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!R}" pg="{!pg}"/>
+-->
+</apex:component>

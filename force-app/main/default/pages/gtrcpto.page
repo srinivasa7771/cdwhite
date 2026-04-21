@@ -1,0 +1,124 @@
+<apex:page id="x" rendered="{!AND(NOT(ISNULL(T)),T.STA__c='Completed',T.TP__c='Payment')}"   sidebar="false" showHeader="false" renderas="pdf" cache="false" expires="0" title="Receipt:{!T.Name}" standardController="g_Tran__c" extensions="gctlTrnPDF" >
+<apex:stylesheet value="/sCSS/45.0/sprites/1401037870000/Theme3/default/gc/elements.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401037870000/Theme3/default/gc/common.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401037870000/Theme3/default/gc/printableView.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1400172052000/Theme3/gc/dStandard.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401037870000/Theme3/default/gc/extended.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401037870000/Theme3/default/gc/zen-componentsCompatible.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom0.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom1.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom2.css"/>
+<apex:stylesheet value="/sCSS/45.0/sprites/1401879760000/Theme3/00D20000000mHry/00520000003A38T/gc/dCustom3.css"/>
+<table border="0" cellpadding="0" cellspacing="0" style="width:100%">
+    <tr> 
+        <td nowrap="nowrap" style="width:1%;vertical-align:middle;"><apex:Image value="{!URLFOR($Resource.axsRS, '/images/Finance_Report.png')}" /></td>
+        <td nowrap="nowrap" style="vertical-align:middle;">
+            <h1>&nbsp;&nbsp;Payment Receipt</h1><br/>
+            &nbsp;&nbsp;(Print Date:<apex:outputText value="{0, Date, dd-MMM-yyyy}"><apex:param value="{!TODAY()}"/></apex:outputText>)
+        </td>
+        <td>
+            <GMBLBC:barcode value="{!T.Name}" type="code128" /> 
+        </td>
+        <td nowrap="nowrap" align="right">
+            <apex:image url="{!URLFOR($Resource.axsRS, '/images/axs_logo.png')}" width="100" height="40"/>         
+        </td>
+    </tr>
+</table> 
+<apex:variable var="discCnt" value="{!0}" />
+<apex:pageBlock mode="edit"  tabStyle="Account" />     
+<apex:pageBlock mode="mainDetail"  tabStyle="Account" title="Receipt Details">       
+    <apex:pageBlockSection columns="2" collapsible="false" >
+        <apex:pageBlockSectionItem /><apex:pageBlockSectionItem />
+        <apex:outputfield value="{!T.Name}" />
+        <apex:outputfield value="{!T.A__c}"/>
+        <apex:outputfield value="{!T.RQ__r.Name}" label="Request #"/>
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="{!$ObjectType.g_Tran__c.fields.dt__c.label}" />
+            <apex:outputText value="{0,date,dd-MMM-yyyy}"><apex:param value="{!T.dt__c}" /></apex:outputText>               
+        </apex:pageBlockSectionItem>        
+        <apex:outputfield value="{!T.RQ__r.srvc__r.lbl__c}" label="Service"/>
+        <apex:outputfield value="{!T.md__c}"/>
+        <apex:pageBlockSectionItem />
+        <apex:outputfield value="{!T.STA__c}"/> 
+    </apex:pageBlockSection>
+    <apex:pageBlockSection columns="2" collapsible="false" >           
+        <apex:outputfield value="{!T.Acc__r.Name}" label="Company Name" />    
+         <apex:pageBlockSectionItem rendered="{!NOT(ISBLANK(T.RQ__r.Con__r.Name))}">
+            <apex:outputLabel value="Applicant"/>
+            <apex:outputText value="{!T.RQ__r.Con__r.Name}" />               
+        </apex:pageBlockSectionItem>
+        <apex:outputfield value="{!T.Acc__r.lc__c}" />
+        <apex:outputfield value="{!T.Acc__r.BillingPostalCode}" label="P.O.Box"/>
+        <apex:outputfield value="{!T.Acc__r.BillingStreet}" label="Address"/>
+        <apex:outputfield value="{!T.Acc__r.Prk__c}" label="Zone"/>
+         <apex:pageBlockSectionItem >
+        <apex:outputLabel value="Printed By"/><apex:outputText value="{!$User.FirstName}" /> 
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem rendered="{!AND(T.TP__c='Payment',T.md__c='Cash')}">
+        <!--<apex:outputLabel value="Cash Collected By"/><apex:outputText value="{!T.Updated_By__c}" /> -->
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>    
+    <apex:pageBlockSection columns="1" collapsible="false" title="Line Items">      
+        <apex:pageBlockSectionItem >
+            <apex:outputText value="Details" />
+            <apex:outputpanel styleClass="pbBody">
+                <table class="list" border="0" cellpadding="0" cellspacing="0">
+                        <apex:repeat value="{!T.Items__r}" var="i">
+                            <tr class="dataRow" style="border-top:none;" >
+                                <td class="dataCell" style="border-top:none;" >
+                                    <apex:variable var="discCnt" value="{!IF(AND(NOT(ISNULL(T.RQ__r.dsc__c)),i.itm__r.DscApp__c,NOT(ISNULL(i.itm__r.Dsc__c))),discCnt+1,discCnt)}" />
+                                    <apex:outputText value="*" rendered="{!AND(NOT(ISNULL(T.RQ__r.dsc__c)),i.itm__r.DscApp__c,NOT(ISNULL(i.itm__r.Dsc__c)))}"/>
+                                    {!IF(ispu,i.itm__r.itm__r.lbl__c,i.itm__r.itm__r.Name)}
+                                </td>
+                                <td class="dataCell" style="border-top:none;" >
+                                    <apex:outputText value="{!$ObjectType.g_TranItem__c.fields.exp__c.label}" rendered="{!i.exp__c}" />                                      
+                                </td>                                    
+                                <td class="dataCell CurrencyElement" style="border-top:none;" ><apex:outputfield value="{!i.A__c}" rendered="{!OR(i.itm__r.itm__r.cd__c='fn',i.itm__r.itm__r.cd__c='pt')}" /></td>
+                            </tr>
+                        </apex:repeat>                                           
+                </table>
+                <br/>
+            </apex:outputpanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>        
+    <apex:pageBlockSection columns="1" collapsible="false">
+        <apex:pageBlockSectionItem >
+            <apex:outputText value="Notes" />
+             <apex:outputPanel >
+                <table class="list" border="0" cellpadding="0" cellspacing="0" style="border:none;">
+                    <tbody>
+                        <apex:outputPanel layout="none" rendered="{!NOT(ISNULL(T.RQ__r.nt__c))}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                    <apex:outputText value="{!T.RQ__r.nt__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!NOT(discCnt=0)}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >
+                                    <apex:outputText value="* Discounts are applied"/>
+                                    <apex:outputText value="{!T.RQ__r.srvc__r.payNt__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!IF(T.RQ__r.srvc__r.uid__c=='154',true,false)}">
+                            <tr class="dataRow">
+                               <td class="dataCell" style="border:none;" >                                    
+                                   <apex:outputText value="Parking Payment for the period of {!DAY(T.dt__c)+2}/{!MONTH(T.dt__c)}/{!YEAR(T.dt__c)} to {!T.RQ__r.xaed__c}, Ref Ag No:{!T.RQ__r.xanum__c}" />
+                                </td>
+                            </tr>
+                        </apex:outputPanel>
+                        <apex:repeat value="{!T.Items__r}" var="i">
+                            <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(i.itm__r.itm__r.payNt__c))}">
+                                <tr class="dataRow"><td class="dataCell" style="border:none;" ><apex:outputText escape="true" value="{!i.itm__r.itm__r.payNt__c}" /></td></tr>
+                            </apex:outputPanel>
+                        </apex:repeat>                                          
+                    </tbody>
+                </table>
+             </apex:outputPanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection> 
+ </apex:pageBlock>      
+<apex:pageBlock mode="edit"  tabStyle="Account" /> 
+</apex:page>

@@ -1,0 +1,350 @@
+<apex:page id="main" showheader="false" controller="SiteLoginController">
+    <html>
+        <head>
+            <title>axs</title>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1"/>
+            <link rel="icon" href="./favicon.ico"/>
+            
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css')}" />
+            <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.css')}" /> 
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+            <!-- main css -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+            
+            <link id="brandCss" href="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc.css')}" rel="stylesheet" type="text/css" />
+            
+            
+        </head>
+        <style>
+            
+            
+            @media (max-width: 767.98px){
+            #main_login{background-image:linear-gradient(#434b7f, #77c1ea)!important;
+            }
+            }
+            @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            #main_login .site-main-content {
+            /*min-height: 85vh;*/
+            min-height: calc(100vh - 136px);
+            }
+            #main_login .site-main-content1 {
+            min-height: calc(100vh - 56px);
+            }
+            .site-footer-wrapper{
+            position:relative;
+            bottom:0px;
+            height:90% !important;
+            }
+            }
+
+            /* VMKR - 24th Dec */
+            .footer-images img {
+            margin: 0px 1.6em;
+            width: 6em;
+            }
+            .footer-images {
+            text-align: left;
+            padding: 0 1em;
+            }
+            @media (min-width: 576px){
+                
+                /* VMKR - 12th Jan */
+                .panel.panel-login1 {
+                border-radius: 3rem;
+                margin-left: 40%;
+                width: 56% !important;
+                }
+                .site-footer {
+                padding:1rem !important;
+                }
+                .panel-login {
+                width: 50% !important;
+                }
+            .login-brand{width:70% !important;}
+            }
+            /* For Status Check */
+            
+            .nav-tabs .nav-link {
+            background-color: #52c3ef;
+            font-size: 2.2em;
+            /* padding: 1px 12px; */
+            }
+            
+            .nav-tabs .nav-link:nth-child(0) {
+            padding: 1px 45px !important;
+            }
+            
+            .login-brand-shadow {
+            height: 262px !important;
+            }
+            .panel-login a:hover, .panel-login a:focus {
+            color: white;
+            }
+            
+        </style>
+        <script type="text/javascript">
+        var tempValue ='';
+        tempValue = '{!JSENCODE(pk)}';
+        var brands = ['diac','dic','dic2','dkp','dmc','doc','dpc','dsp','dsc','ddd','dia'];
+        var brandLogoSrc="{!URLFOR($Resource.assets_NUI, '/images/brands/diac.jpg')}";
+        var images = [];
+        var websites = {'dmc':'https://dmc.ae/','dsc':'https://www.dsc.gov.ae/','dia':'https://www.diadubai.com/','dic':'https://dic.ae/','dic2':'https://dubaiindustrialcity.ae/','doc':'https://dubaioutsourcecity.ae/','dpc':'https://dpc.ae/','dkp':'https://dkp.ae/','ddd':'https://www.dubaidesigndistrict.com/','dsp':'https://dsp.ae/','in5':'https://infive.ae/'};
+        function loginClick(e){
+            var bg = $(e).css('background-image');
+            if(tempValue=='')
+                return;// not clicking for common page
+            window.open(websites[tempValue],'_blank');
+        }
+        function preload() {
+            for (i =0; i<preload.arguments.length; i++) {
+                images[i] = new Image();
+                images[i].src = preload.arguments[i];
+            }
+        }
+        $("link.user").each(function(){
+            var h = $(this).attr('href');
+            if(h.indexOf('style')<0)
+                $(this).attr('disabled','disabled');
+        });
+        var cssLink = $('#brandCss').attr('href').replace('brand-dmc','brand-'+tempValue);
+        $('#brandCss').attr('href',cssLink);
+        $(document).ready(function(){
+            if (!String.prototype.includes) {
+                String.prototype.includes = function() {
+                    return String.prototype.indexOf.apply(this, arguments) !== -1;
+                };
+            }
+            //tempValue = '{!JSENCODE(pk)}';
+            var url;
+            var logUrl;
+            if(tempValue!=''){
+                //brandLogoSrc = ['ddd','dsc','dia'].includes(tempValue)?"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".png')}":"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".jpg')}";
+                if(tempValue!='dmc')
+                    url= "url('"+"{!URLFOR($Resource.assets_NUI, '/images/brands/header/"+tempValue+"headerbg.jpg')}"+"')";
+                //else
+                //  url= "url('"+"{!URLFOR($Resource.assets_NUI, '/images/full-bg.jpg')}"+"')";
+                logUrl = "url('"+"{!URLFOR($Resource.assets_NUI, '/images/brands/"+tempValue+".png')}"+"')";
+                //$('#main_login').css('background-image',url);
+                $('.login-brand').css('background-image',logUrl);
+            }
+        });
+        function getUrlParameter(key){
+            var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+            return (res==undefined)?'':res[1];
+        }
+        function search1(){
+            search2();
+        }
+        </script>
+        <apex:form >
+            <apex:actionFunction name="search2" action="{!search}" />
+            <!--<apex:inputHidden value="{!CurrentPage.parameters.brand}" id="brandVal"/>-->
+            <body>
+                
+                <div id="main_login" style="background-image:url({!URLFOR($Resource.assets_NUI, '/images/brands/header/'+pk+'headerbg.jpg')})">
+                    <div class="site-main-content {!IF(pk!='','site-main-content1','')}">
+                        <div class="container">
+                            
+                            <div class="panel panel-login {!IF(pk='','panel-login1','')}">
+                                <ul class="nav nav-tabs nav-tabs-2" role="tablist" style="background: #f2f2f2;">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-toggle="tab" href="#login_tab">LOGIN</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-toggle="tab" href="#status_tab">TRACK REQUEST</a>
+                                    </li>
+                                </ul>
+                                <div class="panel-body accordion" id="app_accordion">
+                                    <div class="tab-content">
+                                        <div class="accordion-item open tab-pane fade active show" id="login_tab">
+                                            <div class="accordion-toggle">
+                                                <!--<a href="#" class="collapsed" data-toggle="collapse" data-target="#login_collapse">
+                                                    STATUS &amp; ACTIONS
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>-->
+                                            </div>
+                                            <div id="login_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="login-left">
+                                                            <div class="login-brand" style="{!IF(pk!='','cursor:pointer;','display:none;')} background-image:url({!URLFOR($Resource.axs2_login_logo)})" onclick="loginClick(this)"></div>
+                                                            <div class="login-brand" style="{!IF(pk!='','display:none;','')} background-image:url({!URLFOR($Resource.axs2_login_logo)});" ></div>
+                                                            <div class="login-brand-shadow"></div>
+                                                            <div class="login-brand-2" style="{!IF(pk!='','','display: none;')}">
+                                                                <div class="mb-2">POWERED BY</div>
+                                                                <!--<img src="../assets/images/logo-axs.png" alt=""/>-->
+                                                                <img src="{!URLFOR($Resource.assets_NUI, '/images/logo-axs.png')}"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    
+                                                    <div class="col-md-8">
+                                                        <div class="form-group">
+                                                            <label>Username (Email)</label>
+                                                            <div class="input-group">
+                                                                <div class="input-group-append"><i class="input-group-text icon-username text-primary"></i></div>
+                                                                <apex:inputText styleClass="form-control input-login input-login-username text-primary" style="color: #000 !important;" value="{!username}" id="username"/>
+                                                            </div>
+                                                        </div>
+                                                        <!-- .form-group -->
+                                                        <div class="form-group">
+                                                            <label>Password</label>
+                                                            <div class="input-group">
+                                                                <div class="input-group-append"><i class="input-group-text icon-password text-primary"></i></div>
+                                                                <apex:inputSecret id="password" style="color: #000 !important;" value="{!password}" styleClass="form-control input-login input-login-passwword"/>
+                                                            </div>
+                                                        </div>
+                                                        <!-- .form-group -->
+                                                        
+                                                        <div class="d-flex mb-3">
+                                                            <div class="mr-3">
+                                                                <label class="custom-checkbox">
+                                                                    <input type="checkbox"/>
+                                                                    <span>Remember me</span>
+                                                                </label>
+                                                            </div>
+                                                            <div class="ml-auto">
+                                                                <a target="_blank" href="https://axsstg-axs.cs113.force.com/secur/forgotpassword.jsp?locale=us&amp;startURL=%2Fapex%2Fgpm">Forgot Password?</a>
+                                                            </div>
+                                                        </div>
+                                                        <apex:commandButton action="{!login}" value="SUBMIT" style="{!IF(pk=='','background-color: #434b7f;border-color:#434b7f;','')}" styleClass="btn btn-primary" />
+                                                        <!-- .form-group -->
+                                                    </div>
+                                                    <!-- .col -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item open tab-pane fade" id="status_tab">
+                                            <div class="accordion-toggle">
+                                                <!--<a href="#" class="collapsed" data-toggle="collapse" data-target="#status_collapse">
+                                                    STATUS &amp; ACTIONS
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>-->
+                                            </div>
+                                            <div id="status_collapse" class="accordion-content collapse show" data-parent="#app_accordion">
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="login-left">
+                                                            <div class="login-brand" style="{!IF(pk!='','cursor:pointer;','display:none;')} background-image:url({!URLFOR($Resource.axs2_login_logo)})" onclick="loginClick(this)"></div>
+                                                            <div class="login-brand" style="{!IF(pk!='','display:none;','')} background-image:url({!URLFOR($Resource.axs2_login_logo)});" ></div>
+                                                            <div class="login-brand-shadow"></div>
+                                                            <div class="login-brand-2" style="{!IF(pk!='','','display: none;')}">
+                                                                <div class="mb-2">POWERED BY</div>
+                                                                <!--<img src="../assets/images/logo-axs.png" alt=""/>-->
+                                                                <img src="{!URLFOR($Resource.assets_NUI, '/images/logo-axs.png')}"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    
+                                                    <div class="col-md-8">
+                                                        <div class="form-group">
+                                                            <label>For visa applications, enter your service request or passport number</label>
+                                                            
+                                                            <div class="form-group">
+                                                                <apex:inputText value="{!searchstring}" label="Input"  styleClass="form-control input-search"   />
+                                                            </div>
+                                                            <div>
+                                                                <apex:outputText rendered="{!codeCheck==false}" >
+                                                                    <div class="g-recaptcha mb-3" data-sitekey="{!sitekey}" ></div><!--style="transform:scale(0.90);"-->
+                                                                    <script src='https://www.google.com/recaptcha/api.js'>
+                                                                    </script>
+                                                                </apex:outputText>
+                                                            </div>
+                                                            <input type="button" value="SEARCH" onclick="search1();" class="btn btn-primary" style="background-color: #434b7f;border-color:#434b7f;{!IF(codeCheck==false,'','display:none;')}"  />
+                                                            <!--<apex:commandButton value="SEARCH" action="{!search}" styleClass="btn btn-primary" style="background-color: #434b7f;border-color:#434b7f;" rendered="{! codeCheck==false }"    />-->
+                                                        </div>
+                                                        <!-- .form-group -->
+                                                    </div>
+                                                    <!-- .col -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- .panel-body -->
+                            </div>
+                            <!-- .panel-login -->
+                        </div>
+                        <!-- .container -->
+                    </div>
+                    
+                    <div class="site-footer-wrapper">
+                        <div class="container">
+                            <div class="site-footer {!IF(pk='','site-footer1','')}"> 
+                                <div class="footerImg d-none d-lg-block d-xl-block" style="{!IF(pk!='','display:none !important;','')}">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                    <img src="{!URLFOR($Resource.axs2_loginFooter)}" />
+                                </div>
+                                <!--<div class="footer-images d-none d-lg-block d-xl-block" style="{!IF(pk!='','display:none !important;','')}">
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dic.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/doc.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dmc.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dsc.png')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dpc.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dkp.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/diac.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/dsp.jpg')}" />
+                                    <img src="{!URLFOR($Resource.assets_NUI, '/images/brands/ddd.png')}" />
+                                </div>-->
+                                <div class="footer-links">
+                                    <apex:outputText rendered="{!!invalidPK}">
+                                        <a href="/grqerAboutUS?i={!$CurrentPage.parameters.i}" target="_blank">ABOUT axs</a> |
+                                        <a href="/grqerContactUs?i={!$CurrentPage.parameters.i}" target="_blank">CONTACT US</a> |
+                                        <a href="/grqerTerms?i={!$CurrentPage.parameters.i}" target="_blank">TERMS OF USAGE </a> |
+                                        <a href="/grqerPolicy?i={!$CurrentPage.parameters.i}" target="_blank">PRIVACY POLICY</a>    
+                                    </apex:outputText>
+                                    
+                                    <apex:outputText rendered="{!invalidPK}">  
+                                        <a href="/grqerAboutUS" target="_blank">ABOUT axs</a> |
+                                        <a href="/grqerContactUs" target="_blank">CONTACT US</a> |
+                                        <a href="/grqerTerms" target="_blank">TERMS OF USAGE </a> |
+                                        <a href="/grqerPolicy" target="_blank">PRIVACY POLICY</a> 
+                                    </apex:outputText>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .site-footer-wrapper -->
+                </div>
+                
+                <!-- Vendor js -->
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/>
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/moment/min/moment.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/js/select2.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/jquery.easy-autocomplete.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tablesorter/dist/js/jquery.tablesorter.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery.scrollto/jquery.scrollTo.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/kinetic.min.js')}"  />
+                <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.min.js')}"  />
+                
+                <!-- main js -->
+                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js?v=2.0.13')}"  />
+                
+            </body>
+        </apex:form>
+        <script>
+        </script>
+    </html>
+</apex:page>

@@ -1,0 +1,249 @@
+<apex:page controller="grCtrlCustProfUp" action="{!updateDetails}" docType="html-5.0" standardStylesheets="false" showHeader="true" sidebar="false" title="Customer Profile Udpate">
+    <style>
+        .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link {
+        background-color: #e7e8ef !important;
+        }
+        .nav-pagination li{
+        cursor: pointer;
+        }
+        #reqTable_length,#reqTable_filter{display:none !important;}
+        #reqTable{width:100% !important;}
+        .recommended-services-slider-wrapper .swiper-button-next {
+        right: -10px;
+        }
+        .bodyDiv.brdPalette.brandPrimaryBrd {
+        width: 100%;
+        }
+        
+        table#bodyTable {
+        table-layout: fixed;
+        width: inherit;
+        }
+        #reqTable th, #reqTable td {
+        width: 185px !important;
+        }
+        @media (max-width: 767.98px){
+        #reqTable th, #reqTable td {
+        width:auto !important;
+        }
+        }
+        .m_title:first-letter {
+        text-transform: uppercase
+        }
+        #reqTable ul{
+        padding:0px !important;
+        }
+        #reqTable th {
+        border-bottom: none !important;
+        }
+        .errDates{
+            color:red !important;
+        }
+        
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.axs2MandateCss)}" />
+    <apex:form >
+        <apex:actionFunction name="memberEditApex" action="{!saveReq}" reRender="dummy">
+            <apex:param name="memId" value="" assignTo="{!memId}" />
+        </apex:actionFunction>
+        <apex:outputPanel id="dummy"></apex:outputPanel>
+        <div id="main" data-aos="zoom-in">
+            <div id="page_content">
+                <div class="container">
+                    <div class="page-header">
+                        <ul class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li> 
+                            <li class="breadcrumb-item"><a href="/pagecompanyinfo">Company Info</a></li> 
+                            <li class="breadcrumb-item">Members</li>
+                        </ul>
+                        <div class="d-lg-flex flex-wrap align-items-center">
+                            <h1 class="page-title mr-auto">MEMBER DETAILS</h1>
+                            <h5 class="text-primary">
+                                The following individuals are designated members. To start the update process, kindly choose the relevant member and select the "Edit" button.
+                            </h5>
+                            <apex:outputPanel id="tid" >
+                                <div class="table-form-wrapper">
+                                    <!-- search field  -->
+                                    <div class="table-form-col col-6">
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-body pb-1" id='collapseGroup'>
+                            <apex:outputPanel id="tb1" rendered="{!!showData}">
+                                <apex:repeat value="{!infoList}" var="info">
+                                    <div class="form-style">
+                                        <div class="row col-12" id="vehDetails">
+                                            <div class="col-12 {!info.identityId}">
+                                                <div class="base-collapse pb-2">
+                                                    <a aria-expanded="false" class="collapse-toggle collapsed" data-target="#id_{!info.identityId}" data-toggle="collapse" href="#">
+                                                        <h3 class="collapse-title mb-2 {!IF(info.reqNum!=null,'text-primary','')}" style="text-transform: capitalize;" id="Det_{!info.identityId}">{!info.identityName} - {!info.role}
+                                                            <apex:outputText rendered="{!info.reqNum!=null}"> <span class="fs-16"> - Request submitted and under review with Dubai Development Authority</span></apex:outputText>
+                                                        </h3>
+                                                        <!--div class="people-job">{!info.passportInfo.passportNumber}</div-->
+                                                    </a>
+                                                    <div class="collapse" data-parent='#collapseGroup' id="id_{!info.identityId}" style="">
+                                                        <div class="collapse-content">
+                                                            <div class="row">
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">First name</div>
+                                                                        <div class="data-value">{!info.contactDetail.firstName}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Middle name</div>
+                                                                        <div class="data-value">{!info.contactDetail.middleName}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Last name</div>
+                                                                        <div class="data-value">{!info.contactDetail.lastName}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Date of birth</div>
+                                                                        <div class="data-value datesToFormat">{!info.contactDetail.dateOfBirth}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Nationality</div>
+                                                                        <div class="data-value">{!info.contactDetail.nationality}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Mobile number</div>
+                                                                        <div class="data-value">{!info.contactDetail.mobileNumber}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Email address</div>
+                                                                        <div class="data-value">{!info.contactDetail.emailAddress}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Passport number</div>
+                                                                        <div class="data-value">{!info.passportInfo.passportNumber}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Passport issue date</div>
+                                                                        <div class="data-value datesToFormat">{!info.passportInfo.passportIssueDate}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Passport expiry date</div>
+                                                                        <div class="data-value datesToFormat" for="passportExpiryDate">{!info.passportInfo.passportExpiryDate}</div>
+                                                                        
+                                                                    </div>
+                                                                </div>
+                                                            
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Emirates ID number</div>
+                                                                        <div class="data-value">{!info.emiratesIdInfo.emiratesIdNumber}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Emirates ID issue date</div>
+                                                                        <div class="data-value datesToFormat">{!info.emiratesIdInfo.emiratesIdIssueDate}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-sm-6">
+                                                                    <div class="data-info">
+                                                                        <div class="data-label">Emirates ID expiry date</div>
+                                                                        <div class="data-value datesToFormat" for="emiratesIdExpiryDate">{!info.emiratesIdInfo.emiratesIdExpiryDate}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                                <div class="text-right">
+                                                                    <elem class="editMem btn btn-primary" onclick="memberEdit('{!JSENCODE(info.identityId)}','{!JSENCODE(info.reqId)}')">
+                                                                        <apex:outputText rendered="{!info.reqId!=null}">Continue with SR#{!info.reqNum} </apex:outputText>
+                                                                        <apex:outputText rendered="{!info.reqId=null}">EDIT</apex:outputText>
+                                                                    </elem>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="separator-dashed"></div>
+                                        </div>
+                                    </div>
+                                </apex:repeat>
+                                
+                                
+                            </apex:outputPanel>
+                        </div>
+                        <apex:outputPanel rendered="{!showData}">
+                            <h2 style="color:red;">
+                                THE COMPANY IS NOT ELIGIBLE TO UPDATE THE MEMBER DETAILS!
+                            </h2>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:form>
+    <script>
+    var data = '{!JSENCODE(responseBody)}';
+    var table;
+    $(document).ready(function(){
+        $('.data-value').each(function(){
+            var t = $(this).text().trim();
+            if(!t){
+                $(this).html('<span style="color:red">NA</span>');
+            }
+        });
+        $('.datesToFormat').each(function(){
+            v = $(this).text();
+            if(v && v!='NA'){
+                $(this).text(getFormattedDate($(this)));
+            }
+        });
+    });
+    function memberEdit(p,reqId){
+        showGLoader();
+        if(reqId){
+            window.open('/'+reqId,'_blank');
+            return;
+        }
+        memberEditApex(p);
+    }
+    let expiryDates = ['passportExpiryDate','emiratesIdExpiryDate'];
+    function getFormattedDate(e) {
+        let d = $(e).text();
+        let f = $(e).attr('for');
+        let date = new Date(d.replace('+0000','Z'));
+        if(expiryDates.includes(f)){
+            if(date<new Date())
+                $(e).addClass('errDates');
+        }
+        let m = date.getMonth() + 1;
+        m = m<10?'0'+m:m
+        let dt = date.getDate()<10?'0'+date.getDate():date.getDate();
+        let y = date.getFullYear();
+        return dt + "/" + m + "/" + y;
+    }
+    
+    </script>
+</apex:page>

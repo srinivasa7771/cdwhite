@@ -1,0 +1,244 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="{!ispu}" standardStylesheets="false" title="{!srv.lbl__c}" >
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.AdnicPopup, '/js/jquery.cookie.js')}" />
+    
+    <script type="text/javascript">
+    var cs = {};
+    $(document).ready(function(){
+        $('.requiredFld').unbind('keyup');
+    });
+    function validateData(){
+        var elem = '';
+        var validated  = true;
+        $('.requiredFld, .applMob').each(function(){
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(!v){
+                addValError(this,'**This field is required!');
+                validated=false;
+                if(elem=='') elem = $(this);
+            }else{
+                removeValError(this);  
+            }
+        });
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0).parent());
+            validated = false;
+        }
+        if(elem!=''){
+            scrollToDiv(elem);
+        }
+        if(cs["Duration__c"] && cs["Duration__c"].value<5){
+            axsAlert('Error','This service is not allowed for the companies having lessthan 5 employees');
+            return;
+        }
+        if(validated == true){
+            toggleGLoader();
+            next();
+        }
+    } 
+    </script>
+    <style>
+        .select2-dropdown .select2-results > .select2-results__options {
+        min-height: 0px !important;
+        }
+        .errField{
+        border: 0.5px solid #ff00006e !important;
+        }
+        .frmErrMsg,.frmErrMsg1 {
+        color: #E62D38;
+        font-style: italic;
+        padding-left: 0.8rem;
+        position: absolute;
+        }  
+        .warningMsg{
+        color:#004eff;
+        font-style: italic;
+        padding-left: 0.8rem;
+        position: absolute;
+        background-color: #d5ded9;
+        }
+    </style>
+    <apex:form id="mainForm" styleClass="form-style">
+        <apex:actionFunction name="next" action="{!saveReq}" status="theStatus" reRender="btnid,msg,msgBlock"
+                             oncomplete="$('#preloader').fadeOut();">
+        </apex:actionFunction>
+        
+        <apex:outputPanel rendered="{!NOT(ispu)}">
+            <c:guheader heading="{!srv.lbl__c}" uid="{!srv.uid__c}"  />
+        </apex:outputPanel>
+        <body class="base">
+            <apex:outputPanel id="msgBlock">
+                <apex:outputpanel layout="none" rendered="true"><!--{!OR(isgu,ispu)}-->
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                        </div>
+                        <div class="container">
+                            <div class="base-layout">
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:srvdefcmp srv="{!srv}"/>
+                                            <apex:outputPanel rendered="{!isgu}">
+                                                <p>
+                                                    For companies with less than 5 employees, you may apply for insurance directly via your axs portal
+                                                </p>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="base-main">
+                                    <div class="base-main-content">
+                                        <div class="steps steps-mobile">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <b><apex:pageMessages id="msg"/></b>
+                                        
+                                        <apex:outputPanel rendered="{!OR(ISBLANK(req.id),NOT(OR(isgu,ispu)))}">
+                                            <h4 class="mb-3 base-main-title">Company and contact information</h4>
+                                            <div class="row row-lg">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>Name</Label>
+                                                        <apex:inputField id="xchn__c" value="{!req.xchn__c}"
+                                                                         styleClass="requiredFld form-control"/>
+                                                        <script type="text/javascript">
+                                                        console.log('Name::::'+getC('{!$Component.xchn__c}'));
+                                                        cs['xchn__c']=document.getElementById('{!$Component.xchn__c}');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>Job title</Label>
+                                                        <apex:inputField id="xbtnm__c" value="{!req.xbtnm__c}"
+                                                                         styleClass="requiredFld form-control"/>
+                                                        <script type="text/javascript">
+                                                        console.log('Name::::'+getC('{!$Component.xbtnm__c}'));
+                                                        cs['xbtnm__c']=document.getElementById('{!$Component.xbtnm__c}');
+                                                        if(cs['xbtnm__c'].value){
+                                                            $(cs['xbtnm__c']).addClass('disabledApex');
+                                                        }
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>Company Name</Label>
+                                                        <apex:inputField id="xdedc__c" value="{!req.xdedc__c}"
+                                                                         styleClass="requiredFld form-control"/>
+                                                        <script type="text/javascript">
+                                                        console.log('Name::::'+getC('{!$Component.xdedc__c}'));
+                                                        cs['xdedc__c']=document.getElementById('{!$Component.xdedc__c}');
+                                                        if(cs['xdedc__c'].value){
+                                                            $(cs['xdedc__c']).addClass('disabledApex');
+                                                        }
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>No of employees</Label>
+                                                        <apex:inputField id="Duration__c" value="{!req.Duration__c}" html-maxlength="5"
+                                                                         styleClass="numOnly requiredFld form-control"/>
+                                                        <script type="text/javascript">
+                                                        console.log('Name::::'+getC('{!$Component.Duration__c}'));
+                                                        cs['Duration__c']=document.getElementById('{!$Component.Duration__c}');
+                                                        cs["Duration__c"].value = cs["Duration__c"].value.split('.')[0];
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>Business Community</Label>
+                                                        <apex:inputField id="xzn__c" value="{!req.xzn__c}"
+                                                                         styleClass="input-select2-flat requiredFld form-control"/>
+                                                        <script type="text/javascript">
+                                                        console.log('Name::::'+getC('{!$Component.xzn__c}'));
+                                                        cs['xzn__c']=document.getElementById('{!$Component.xzn__c}');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                
+                                                
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label>Mobile</label>
+                                                        <div class="d-flex">
+                                                            <div style="flex-basis: 150px;width: 150px;">
+                                                                <div class="form-control">
+                                                                    +971
+                                                                </div>
+                                                            </div>
+                                                            <apex:inputField type="text"  value="{!req.xcmob__c}" id="xcmob__c"
+                                                                             styleClass="applMob form-control ml-3 numOnly"
+                                                                             onchange="isUAEMobNum(this)"/>
+                                                            <script type="text/javascript">
+                                                            cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <Label>Email</Label>
+                                                        <apex:inputField value="{!req.xceml__c}" styleClass="requiredFld form-control"
+                                                                         onkeyup="checkEmail(this)" id="xceml__c"/>
+                                                        <script type="text/javascript">
+                                                        cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                            <div class="base-main-footer">
+                                                <apex:outputPanel styleClass="base-nav">
+                                                    <a href="#" onclick="validateData()"
+                                                       class="btn btn-primary base-nav-next">
+                                                        {!IF(OR(isgu,ispu,req.id==null),'SUBMIT','UPDATE')}
+                                                    </a>                                                
+                                                </apex:outputPanel>
+                                            </div>
+                                        </apex:outputPanel><!-- {!ISBLANK(req.id)} -->
+                                        <apex:outputPanel rendered="{!AND(NOT(ISBLANK(req.id)),OR(isgu,ispu))}">
+                                            <h2 class="text-primary">
+                                                THANK YOU
+                                            </h2>
+                                            <p class="fs-18 text-primary">A member of the ADNIC team will get in touch with you soon.</p>
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputpanel>
+                
+            </apex:outputPanel>
+        </body>
+    </apex:form>
+</apex:page>

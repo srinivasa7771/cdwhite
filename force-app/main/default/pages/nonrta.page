@@ -1,0 +1,1238 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <style>
+        
+        span.select2-selection__clear {
+        display: none !important;
+        }
+        .text-light {
+        color: #9B9B9B !important;
+        }
+        .itmName {
+        display: block;
+        min-height: 2em;
+        }
+        .itmName a {
+        float: right;
+        }
+        .onPrkType{{!IF(ISBLANK(req.id),'display:none;','')}}
+        .noParkData{display:none;}
+        
+        .newVehHead, .addedVeh {
+        font-family: "Helvetica Neue Cond", "Helvetica Neue", Arial, sans-serif;
+        font-size: 1rem;
+        color: #4a4a4a;
+        vertical-align: bottom !important;
+        letter-spacing: 0.75px;
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dcdcdc;
+        }
+        .newVehHead{
+        font-weight: 500;
+        background-color: #f5f5f5;
+        text-transform: uppercase;
+        }
+        .displayblock {
+        display: block;
+        }
+        .displaynone {
+        display: none;
+        }
+    </style>
+    
+    <apex:form >
+        <apex:actionFunction name="removeAttch"  action="{!deleteAttach}" status="theStatus"  rerender="random1,VehicleCards1,msg,eidaDet,se,sne,sne1" oncomplete="hideTempLoader_input();removeEmptyLables();">
+            <apex:param name="attId" value=""/> 
+        </apex:actionFunction>
+        <apex:actionFunction name="checkVeh1" action="{!checkVehVal}"  rerender="dummy" oncomplete="addMore({!isValidVeh})" >
+            <apex:param name="reqJson" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="updItems" action="{!updateItemSTA}" reRender="msg"/>
+        <apex:actionFunction name="pushPD" action="{!saveDraft}" reRender="msg" oncomplete="toggleGLoader();"/>
+        <apex:actionFunction name="saveDraft" action="{!saveDraft}" reRender="random1,msg,VehicleCards1"  oncomplete="hideTempLoader_input();removeTempLoader();" /><!--oncomplete="toggleGLoader();"-->
+        <apex:actionFunction name="loadVehicles" action="{!loadPNums}" oncomplete="toggleGLoader();loadSelected();" status="theStatus" rerender="cardList" />
+        <apex:actionFunction name="attachmentSave" action="{!saveAtt}" oncomplete="errMsgScroll();removeEmptyLables();" status="theStatus" rerender="docSec,VehicleCards1,random1,msg"/>
+        <apex:actionFunction name="saveAttachment_RC" action="{!saveAtt}" reRender="random1,VehicleCards1,eidaDet,se,sne,sne1,msg" oncomplete="hideGLoader();" />
+        <apex:actionFunction name="saveAttachment_Eida" action="{!saveAtt}" reRender="VehicleCards1,eidaDet,se,sne,sne1,msg" oncomplete="toggleGLoader();" />
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="$('select').select2({placeholder: 'Select',allowClear: true});createDD();loadPrevData();;" rerender="cardList" /><!--loadVehicles1()-->
+        <apex:actionFunction name="saveReq_RC" action="{!saveReq1}" oncomplete="hideTempLoader_input()" reRender="msg,random1,VehicleCards1" /> <!-- saveAttachment_RC();-->
+        <apex:actionFunction name="saveReq" action="{!saveReq1}" reRender="msg,random1,VehicleCards1" oncomplete="hideGLoader()" /> 
+        <apex:actionFunction name="saveReq_UR" action="{!saveReq}" reRender="msg" oncomplete="toggleGLoader()" />
+        <apex:actionFunction name="copyApplicantInfo1" action="{!saveReq1}" onbeforedomupdate="toggleGLoader()" oncomplete="window.open('/{!req.id}','_self')" reRender="msg" />
+        <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+        <apex:inputHidden id="docname" value="{!docName}" />
+        <apex:inputHidden id="parseId"  />  
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <apex:inputHidden id="rtacn__c" value="{!req.rtacn__c}" />
+        <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" />
+        <!--<apex:inputHidden id="xchn__c" value="{!req.xchn__c}" /> Card Holder Name -->
+        <!--<apex:inputHidden id="xoln__c" value="{!req.xoln__c}" /> Office Land Line -->
+        <apex:inputHidden id="rmob__c" value="{!req.rmob__c}" /><!-- Mobile Number -->
+        <!--<apex:inputHidden id="xceml__c" value="{!req.xceml__c}" /> Emai Id -->
+        <apex:inputHidden id="xps__c" value="{!req.xps__c}" />
+        <apex:inputHidden id="xvn__c" value="{!req.xvn__c}" />
+        <apex:inputHidden id="xvnum__c" value="{!req.xvnum__c}" />
+        <apex:inputHidden id="xceidid__c" value="{!req.xceidid__c}" />
+        <apex:inputHidden id="xpveh__c" value="{!req.xpveh__c}" />
+        <apex:inputHidden id="xppor__c" value="{!req.xppor__c}" />
+        <apex:inputHidden id="xspor__c" value="{!req.xspor__c}" />
+        <apex:inputHidden id="xsvn__c" value="{!req.xsvn__c}" />
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        <apex:inputHidden id="uid"  /> 
+        <script>
+        var cs={};
+        cs["uid"] = getC("{!$Component.uid}");
+        cs["imageBase64"] = getC("{!$Component.imageBase64}");
+        cs["docname"] = getC("{!$Component.docname}");
+        cs["parseId"] = getC("{!$Component.parseId}");
+        cs['xadh__c']=getC('{!$Component.xadh__c}');
+        cs['ias__c']=getC('{!$Component.ias__c}');
+        cs['rtacn__c']=getC('{!$Component.rtacn__c}');
+        cs['xcslt__c']=getC('{!$Component.xcslt__c}');
+        cs['xvn__c']=getC('{!$Component.xvn__c}');
+        cs['xvnum__c']=getC('{!$Component.xvnum__c}');
+        cs['xceidid__c']=getC('{!$Component.xceidid__c}');//emirates ID#
+        cs['rmob__c']=getC('{!$Component.rmob__c}');//emirates ID#
+        cs['xadtx4__c']=getC('{!$Component.xadtx4__c}');
+        cs['xps__c']=getC('{!$Component.xps__c}');//Sector
+        cs['xpveh__c']=getC('{!$Component.xpveh__c}');//Primary Vehicle number
+        cs['xsvn__c']=getC('{!$Component.xsvn__c}');//Secondary Vehicle number
+        cs['xppor__c']=getC('{!$Component.xppor__c}');//Place of Registraion
+        cs['xspor__c']=getC('{!$Component.xspor__c}');//Place of Registraion Secondary Vehicle
+        </script>
+        
+        
+        <apex:pageBlock id="pbMainHide" rendered="{!pgHide}">
+            <!--c:HidePage /-->
+        </apex:pageBlock>
+        <apex:outputPanel id="mainDiv" rendered="{!NOT(pgHide)}">
+            <div id="main">
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                Using this service, you can register a new user to one of your existing parking permits.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!--div class="mt-4">
+<h3 class="text-primary d-md-block d-none">DOCUMENTS YOU NEED</h3>
+
+<a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+data-target="#base_side_content_2">
+<h3 class="text-primary">DOCUMENTS YOU NEED</h3>
+</a>
+<div class="collapse collapse-content-wrapper" id="base_side_content_2">
+<p>JPG / JPEG / PDF / PNG / TIFF Formats (max 4 MB each)</p>
+
+<ul class="ul-style"> 
+<li>Emirates ID - front (for non-employees)</li> 
+</ul>                                       
+
+</div>
+</div-->
+                            </div>
+                        </div>
+                        <apex:outputText rendered="true">
+                            <div class="base-main">
+                                <div class="base-main-content">
+                                    <h3 class="base-main-title">Register User</h3>
+                                    <b><apex:pageMessages id="msg"  /></b>
+                                    <!--<div class="form-group">
+<label class="mb-3 fs-18">Please select type of parking to proceed.</label><br />
+<select id="parkType" class="form-control" onchange=""
+data-placeholder="Select Card">
+<option itemCode="" value=''>--Select--</option>
+<option itemCode="fnp" value='free'>Free</option>
+<option itemCode="pnp" value='paid'>Paid</option>
+</select>
+</div>
+<div class="mb-5"></div>
+<!-- lst_pd  -- {!lst_pd} <br />
+parkingString  -- {!parkingString} <br />-->
+                                    <!--<apex:outputPanel rendered="{!AND(ISBLANK(lst_pd),ISBLANK(req.id))}">
+<h1>
+No eligible cards.
+</h1>
+</apex:outputPanel>-->
+                                    <apex:outputPanel rendered="true">
+                                        <div class="noParkData">
+                                            <h2 style="color:red;">
+                                                No Data available!
+                                            </h2>
+                                        </div>
+                                        <apex:outputPanel styleClass="parkData" id="cardList">
+                                            <apex:inputHidden id="parkingString" value="{!parkingString}"/>
+                                            <script>
+                                            cs['parkingString']=getC('{!$Component.parkingString}'); 
+                                            </script>
+                                            <div class="form-group">
+                                                <label class="fs-18">Select a parking permit to register vehicles (max 5 vehicles per permit)</label>
+                                                <div class="row">
+                                                    <div class="col-xl-6 col-lg-10">
+                                                        <div class="form-style">
+                                                            <select id="cardDet" class="form-control input-select-member" onchange="settoFld(this)"
+                                                                    data-placeholder="Select Card">
+                                                                <option></option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!req.id==''}">
+                                            <button class="mb-3 btn btn-outline-primary btn-outline-primary2 btn-select-non-employee addEmp"  attr1="nonEmp"  onclick="swapButtons(this);">
+                                                ADD NON-SPONSORED EMPLOYEES / 3RD PARTY EMPLOYEES
+                                            </button> 
+                                        </apex:outputPanel>
+                                        <apex:outputPanel styleClass="" id="sEmp">
+                                            <apex:outputPanel >
+                                                <div id="select_employee" class="parkData" style="{!IF(AND(OR(req.id=='',req.Con__c!=''),Acc.Type!='Customer-DED'),'','display:none;')}">
+                                                    <div class="form-group">
+                                                        <c:gconlookup id="conlookup" heading="Select an employee who owns this vehicle" saveRq="true" Request="{!req}" role="Employee;Non Sponsored" accId="{!req.Acc__c}" sta="Active"/>
+                                                    </div>
+                                                </div>
+                                                <div class="pbSwap" style="{!IF(OR(req.id=='',req.Con__c!=''),'display:none;','')}">
+                                                    
+                                                    <!--parking enhancement to remove eida card-->
+                                                    <!--apex:outputPanel id='tps' styleClass="displaynone"-->
+                                                    
+                                                    <div class="form-style">
+                                                        
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <div class="form-group">
+                                                                    <label class="d-block">Title</label>
+                                                                    <div class="from-group reqRadio">
+                                                                        <apex:outputPanel style="display:inline-block" styleClass="mb-4">
+                                                                            <label class="custom-radio mr-5">
+                                                                                <input type="radio" name="sal" id="Mr" value="Mr." onchange="SalOnChange('Mr.')"/>
+                                                                                <span> Mr. </span>
+                                                                            </label>
+                                                                            <label class="custom-radio mr-5">
+                                                                                <input type="radio" name="sal" id="Mrs" value="Mrs." onchange="SalOnChange('Mrs.')"/>
+                                                                                <span> Mrs. </span>
+                                                                            </label>
+                                                                            <label class="custom-radio mr-5">
+                                                                                <input type="radio" name="sal" id="Ms" value="Ms." onchange="SalOnChange('Ms.')"/>
+                                                                                <span> Ms. </span>
+                                                                            </label>
+                                                                            <div class="option-error frmErrMsg" id="titleErr" style="display:none">Please select an option!</div>
+                                                                            
+                                                                        </apex:outputPanel>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="form-group">
+                                                                    <div>
+                                                                        <label>Name</label>
+                                                                        <apex:inputField id="xchn__c" styleClass="form-control requiredFld"  value="{!req.xchn__c}" />
+                                                                        <script>
+                                                                        cs["xchn__c"] = getC("{!$Component.xchn__c}");
+                                                                        </script>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="form-group">
+                                                                    <div>
+                                                                        <label>Email</label>
+                                                                        <input id="emailEid" type="text" value="{!req.xceml__c}" class="form-control requiredFld" onchange="setToRQFld('xceml__c',this);checkEmail(this);" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="form-group">
+                                                                    <label>Mobile number</label>
+                                                                    <div class="d-flex">
+                                                                        <div style="flex-basis: 110px;width: 110px;">
+                                                                            <input type="text" disabled="true" class="form-control" value="+971" />
+                                                                        </div>
+                                                                        <apex:inputField styleClass="form-control ml-3 requiredFld" id="xcmob__c" value="{!req.xcmob__c}" onchange="isUAEMobNum(this);setToRQFld('xcmob__c',this);setToRQFld('rmob__c',this);" onkeyup="validDigits(this);"/>
+                                                                        <script type="text/javascript"> cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                                                        </script> 
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- end of parking enhancement-->
+                                                        <!--/apex:outputPanel-->
+                                                    </div>
+                                                    
+                                                </div>
+                                            </apex:outputPanel>
+                                            <!-- #select_employee -->
+                                        </apex:outputPanel>
+                                        <div class="mb-5"></div>
+                                        <apex:outputPanel id="random1" style="{!IF(ISBLANK(req.id),'display:none;','')}"></apex:outputPanel>
+                                        <div class="" style="{!IF(ISBLANK(req.id),'display:none;','')}">
+                                            <h3 class="text-light mb-3">VEHICLE DETAILS</h3>
+                                            <p class="text-primary py-2">
+                                                Please fill out the form below and click the <b>Add</b> button.
+                                            </p>
+                                            <div class="newVehs mb-4" id="addedVehs">
+                                                <div class="row newVehHead col-12" style="display:none;">
+                                                    <div class="col-4">Vehicle Number</div>
+                                                    <div class="col-4">Place Of Registration</div>
+                                                    <div class="col-4">Actions</div>
+                                                </div>
+                                            </div>
+                                            <div class="separator-dashed"></div>
+                                            <apex:outputPanel id="vehSec1" styleClass="newVehSec1" style="display:none;">
+                                                <div class="mb-3 row col-12">
+                                                    <div class="col-6 form-group">
+                                                        <label>Plate number</label>
+                                                        <input fldName="PlateNumberCode" type="text" id="vehNum1" onkeyup="removeValError(this);validAlphaNumeric(this);" class="form-control forEdit" value=""/>
+                                                    </div>
+                                                    <div class="col-6 form-group">
+                                                        <label>Place of registration</label>
+                                                        <select fldName="PlaceOfReg" id="por1" class="form-control input-select2-flat">
+                                                            <option value=''>--None--</option>
+                                                        </select>
+                                                        <script>
+                                                        var porNations='';
+                                                        var por = [ "Dubai","Abu Dhabi", "Ajman", "Bahrain", "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                                        for(var x=0;x<por.length;x++){
+                                                            var j = por[x];
+                                                            var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                                            porNations += opt1;
+                                                        }
+                                                        $('#por').append(porNations);
+                                                        setTimeout(function(){$('#xppor__c').select2();},2000);                                                
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                
+                                                <a onclick="checkVeh(this)" style="" id="addNewVeh" class="btn btn-outline-primary btn-outline-primary-2 btn-add-vehicle-detail">
+                                                    <i class="icon-plus-circle fs-20 text-light align-middle mr-1" style="line-height: 1;"></i>
+                                                    ADD
+                                                </a>
+                                                <p class="mt-4">
+                                                    <b>Note:</b> 
+                                                    You can add up to 5 vehicles per permit, however, only one vehicle will be allowed access to the parking at any point of time. 
+                                                </p>
+                                                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+                                                
+                                            </apex:outputPanel>
+                                            <apex:outputPanel id="vehSec" styleClass="newVehSec" style="{!IF(ISBLANK(req.id),'display:none;','')}">
+                                                <div class="mb-3 row col-12">
+                                                    <div class="col-4 form-group">
+                                                        <label>Place of registration</label>
+                                                        <select fldName="PlaceOfReg"  id="por" class="form-control input-select2-flat" onchange="createvCodeVals(this)">
+                                                            <option value=''>--None--</option>
+                                                        </select>
+                                                        <script>
+                                                        var porNations='';
+                                                        var por = ["Dubai","Abu Dhabi", "Ajman", "Bahrain",  "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                                        for(var x=0;x<por.length;x++){
+                                                            var j = por[x];
+                                                            var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                                            porNations += opt1;
+                                                        }
+                                                        $('#por').append(porNations);                                           
+                                                        </script>
+                                                    </div>
+                                                    <div class="col-8 row">
+                                                        <div class="col-4 form-group">
+                                                            <label>Plate number code</label>
+                                                            <input class="requiredFldPop form-control forEdit" maxLength='3' id="vncdd" fldName="PlateNumberCode"  onkeyup="validAlphaNumeric(this);" type="text" />
+                                                            <!--<select disabled="true" onchange="checkCode(this)" fldName="PlateNumberCode" id="vncdd" class="form-control input-select2-flat">
+<option value=''>--None--</option>
+</select>-->
+                                                        </div>
+                                                        <div class="col-4 form-group" id='othCodePrnt' style="display:none;">
+                                                            <label>Code</label>
+                                                            <input class="requiredFldPop form-control forEdit" maxLength="6" fldName="PlateNumberCode" id="othCode" onkeyup="removeValError(this)" type="text" />
+                                                        </div>
+                                                        <div class="col-4 form-group">
+                                                            <label>Plate number</label>
+                                                            <input class="requiredFldPop form-control forEdit numOnly" maxLength="6" fldName="PlateNumberCode" id="vehNum" onkeyup="removeValError(this)" type="text" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <a onclick="checkVeh(this)" style="" id="addNewVeh" class="btn btn-outline-primary btn-outline-primary-2 btn-add-vehicle-detail">
+                                                    <i class="icon-plus-circle fs-20 text-light align-middle mr-1" style="line-height: 1;"></i>
+                                                    ADD
+                                                </a>
+                                                <p class="mt-4">
+                                                    <b>Note:</b> 
+                                                    You can add up to 5 vehicles per permit, however, only one vehicle will be allowed access to the parking at any point of time. 
+                                                </p>
+                                                <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+                                                
+                                            </apex:outputPanel>
+                                            
+                                        </div>
+                                        <apex:outputPanel rendered="{!ISBLANK(EID)}" style="{!IF(ISBLANK(req.id),'display:none;','')}">
+                                            <div class="form-style" id="eConInfo">
+                                                <c:eContactInfo req="{!req}" noNotes="true" /> 
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputText rendered="{!req.id!=null}">
+                                            <p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+                                                <label class="custom-checkbox mr-4">
+                                                    <input id="tANDc" onchange="rmErronTC()" type="checkbox" />
+                                                    <!--span>I have read and agreed to the <a href="/servlet/servlet.FileDownload?file=0156D000000WvPa" target="_blank"><u>Terms and Conditions</u></a></span-->
+                                                    <span>I hereby confirm the following :<br/> • Parking access provided will only be used by the assigned employee<br/>•  Information provided by the assigned employee is up-to-date and correct<br/>•   The assigned employee will be responsible for any damages or misbehavior towards parking personnel/staff </span>
+                                                </label>  
+                                            </p>
+                                        </apex:outputText>
+                                        <apex:outputPanel rendered="{!req.id==''}">
+                                            <div class="col-12 text-right pbSwap" style="display:none;">
+                                                <label>&nbsp;</label><br />
+                                                <a id="addEIDABtn" style="color: white !important;" onclick="submitNonEmp(this)" class="btn btn-primary">CONFIRM</a>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <!--<button class="btn btn-primary" style="width: 150px;{!if(DocList1.size>1,'','display:none;')}" onclick="submitPage(this,event)">SUBMIT</button>
+
+<c:ocrcmp accPrk="{!Acc.park__c}" />-->
+                                        <div class="base-main-footer" style="{!IF(ISBLANK(req.id),'display:none;','')}">
+                                            <div class="base-nav">
+                                                <a class="btn btn-primary base-nav-next" onclick="submitPage(this,event)" style="color: #fff; width: 150px;">
+                                                    SUBMIT
+                                                </a>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="pb-5"></div>
+                                    </apex:outputPanel>
+                                    
+                                </div>
+                            </div>
+                        </apex:outputText>
+                        <!--apex:outputText rendered="{!Acc.park__c='doc'}">
+<div class="base-main">
+<div class="base-main-content">
+<h3 class="base-main-title">This service is not allowed!</h3>
+</div>
+</div>
+</apex:outputText-->
+                    </div>
+                </div>
+            </div>
+        </apex:outputPanel>
+        <c:fileuploadpopupnew13 R="{!req}" /> 
+        <apex:actionFunction name="afs" action="{!saveAtt}" reRender="VehicleCards1,eidaDet,se,sne,sne1,msg" oncomplete="removeTempLoader();" />
+    </apex:form>
+    <script>
+    var vehicleadd = false;
+    var vehicleReserved = false;
+    var vehicleObj = {};//{'cardHolderName':'','refMobile':'','email':'','landlineNo':','sector':'','items':''};
+    var selectedJSON = [];
+    var addingNE = ('{!ISBLANK(req.Con__c)}');
+    var currentVehicle = 1;
+    var serviceId = '{!JSENCODE(srv.uid__c)}';
+    var uid;
+    var cNum = '';
+    var fldToEIDAFlds = {'Name':'xchn__c','ID_Number':'xceidid__c','country2':'','emailid':'xceml__c','mobileid':'rmob__c'};
+    var allJSON = {};
+    var allJSONStr = '';
+    var data = [];
+    var docStr= '';
+    var reqId = getUrlParameter('id');
+    $(document).ready(function(){
+        if(cs["xadtx4__c"].value)
+            ad4 = JSON.parse(cs["xadtx4__c"].value);
+        if(ad4.CardsDetail[0]){
+            if(ad4.CardsDetail[0].Vehicles.length>0){
+                for([i,v] of ad4.CardsDetail[0].Vehicles.entries()){
+                    $('#addedVehs').append(newVehSection(v['PlateNumberCode'],v['PlaceOfReg']));
+                }
+                $('.newVehHead').show();
+            }
+        }
+        if(cs['xcslt__c'] && cs['xcslt__c'].value){
+            $('[name="sal"][value="'+cs['xcslt__c'].value+'"]').prop('checked',true);
+        }
+        cs["uid"].value = "{!srv.uid__c}";
+        cNum = getUrlParameter('c');
+        callWS();
+        $('#addEIDABtn1').removeAttr('onclick').unbind().on('click',function(){
+            if($('[name="sal"]:checked').val()==undefined)
+                addValError($('[name="sal"]'),'This field is required!');
+            if(vaidateData()!=false){
+                cs['xchn__c'].value = $('#neName').val();
+                //cs['xoln__c'].value = '08061606161';
+                $('#modal_EIDA_confirm_information').find('input,select').each(function(){
+                    var v = $(this).val();
+                    var f = $(this).attr('fldname');
+                    if(f!=undefined && fldToEIDAFlds[f]!=''){
+                        cs[fldToEIDAFlds[f]].value = v;
+                    }
+                });
+                if($('#modal_EIDA_confirm_information').find('.frmErrMsg').length>0){
+                    return;
+                }
+                $('#modal_EIDA_confirm_information').modal('hide');
+                if(reqId == ''){
+                    toggleGLoader();
+                }
+                //$('[forload="Eida Card Front Side"]').find('.loader_img').show();
+                $('[forload="Emirates ID Front Side"]').find('.loader_img').show();
+                saveAttachment_RC();
+                //saveReq_RC();
+            }
+        });
+        $('.btn').on('click',function(event){
+            event.preventDefault();
+        });
+        $('.btn-select-non-employee').click(function () {
+            if(!$('#cardDet').val()){
+                addValError('.input-select-member','Select card to proceed!');
+                scrollToDiv($('.input-select-member'));
+                return;
+            }
+            $('#eConInfo').hide();
+            removeValError('#conSerachVal');
+            addingNE = true;
+            //$('#select_employee').hide();
+            //$('#select_non_employee1').show();
+            //$('#modal_EIDA_confirm_information .inEditOnly').hide();
+            //$('#modal_EIDA_confirm_information').modal('show');
+            //$('#modal_add_non_employee_1').modal('show');
+        });
+        $('.btn-select-employee').click(function () {
+            $('#eConInfo').show();
+            $('#select_non_employee1').find('.frmErrMsg').remove();
+            addingNE = false;
+            $('#select_employee').show();
+            $('#select_non_employee1').hide();
+        });
+        
+        //$('.btn-add-vehicle-detail').click();
+        $('.requiredFldPop').on('change keyup',function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                return;
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        $(cs["xcmob__c"]).on('change',function(){
+            cs["rmob__c"].value = cs["xcmob__c"].value;
+            
+        });
+        
+        $('.newVehSec input,.newVehSec select').on('change',function(){
+            var filled = true;
+            $('#addNewVeh').hide();
+            if(!$(this).val()||$(this).val()=="--None--"){
+                filled = false;
+            }
+            if(filled){
+                $('#addNewVeh').show();
+            }
+        });
+        
+    });
+    var newVehicles = [];
+    
+    /* calling from ocrcmp component */
+    function makeVehRsrvd(e){
+        vehicleReserved = $(e).prop('checked');
+        if($(e).prop('checked')){
+            alert('This action will assign the parking slot only for this vehicle, so you cannot add any other vehicles and added vehicles will be removed automatically');
+        }
+    }
+    
+    function checkCode(e){
+        let v = $(e).val();
+        $('#othCodePrnt').hide();
+        if(v=='Other'){
+            $('#othCodePrnt').show();
+        }
+    }    
+    /* arrays for Add more method */
+    var itemArr, avlblItemArr, newItemArr;
+    var srvItmCodes = '0np;1np;2np;3np;4np;';/*5np;6np;7np;8np;9np;0xp;1xp;2xp;3xp;4xp;*/
+    function checkVeh(e) {
+        var canNotProceed = false;
+        $('.newVehSec [fldName]:visible').each(function(e){
+            if(!$(this).val() || $(this).val()=='--None--'){
+                addValError($(this),'Please enter a value.');
+                canNotProceed = true;
+            }
+        });
+        if(canNotProceed)
+            return;
+        var v1; 
+        if($('#vncdd').val() == 'No Code'){
+            v1 = ($('#vehNum').val()).toLowerCase();
+        }else{
+            v1 = ($('#vncdd').val()+''+$('#vehNum').val()).toLowerCase();
+        }
+        var justAdded = false;
+        let pCode = $('#vncdd').val();
+        pCode = (pCode == 'Other')?$('#othCode').val():pCode;
+        $('.addedVeh').each(function(){
+            var v = $(this).attr('for');
+            var xv;
+            if(pCode == 'No Code'){
+                xv = $('#vehNum').val();
+            }else{
+                xv = pCode+''+$('#vehNum').val();
+            }
+            if(v==xv)
+                justAdded = true;
+        });
+        if(justAdded){
+            addValError($('#vehNum'),'Vehicle has been already added!');
+            return;
+        }
+        let reqJson = {"ActionName": "checkvehiclevalidity","VehicleNumber": "","CardNumber": "","Sector": ""};
+        if(pCode == 'No Code'){
+            reqJson['VehicleNumber'] = $('#vehNum').val();
+        }else{
+            reqJson['VehicleNumber'] = (pCode+''+$('#vehNum').val());
+        }
+        reqJson['CardNumber'] = $('#cardDet').val();
+        reqJson['Sector'] = cs["xps__c"].value;
+        checkVeh1(JSON.stringify(reqJson));
+        vehicleadd=true;
+        showTempLoader('#addNewVeh');
+    }
+    
+    function validAlphaNumeric(e){ 
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    
+    function addMore(b) {
+        removeTempLoader();
+        if(b){
+            axsAlert('Error','vehicle is already registered!');
+            return;
+        }
+        
+        var vehicle = {'PlateNumberCode':'','PlaceOfReg':''};
+        $('.newVehSec input,.newVehSec select').each(function(){
+            var v = $(this).val();
+            var f = $(this).attr('fldName');
+            if(v!= 'No Code'){
+                if(vehicle[f]){
+                    if(vehicle[f] == 'Other'){
+                        vehicle[f]= v;
+                    }
+                    else
+                        vehicle[f]+= v;
+                }
+                else
+                    vehicle[f] = v;
+            }
+            
+        });
+        $('#addedVehs').append(newVehSection(vehicle['PlateNumberCode'],vehicle['PlaceOfReg']));
+        $('.newVehHead').show();
+        newVehicles.push(vehicle);
+        if($('.addedVeh').length>4){
+            $('.newVehSec').hide();
+        }
+        $('.newVehSec input,.newVehSec select').val('').trigger('change');
+        $('#vncdd').attr('disabled',true);
+    }
+    
+    function newVehSection(vn,vp){
+        var h = '<div class="row col-12 addedVeh" for="'+vn+'">';
+        h +='<div class="col-4">'+vn+'</div><div class="col-4">'+vp+'</div><div class="col-4"><elem class="btn" onclick="removeAdded(\''+vn+'\')" style="color: #bf0000;padding:0px;">Remove</elem></div></div>';
+        return h;
+    }
+    
+    function removeAdded(vn){
+        for([i,v] of newVehicles.entries()){
+            if(vn==v.PlateNumberCode){
+                newVehicles.splice(i,1);
+                $('[for="'+vn+'"]').remove();
+            }
+        }
+        if(newVehicles.length<1)
+            $('.newVehHead').hide();
+        if($('.addedVeh').length<5){
+            $('.newVehSec').show();
+        }
+    }
+    function createDD(){
+        let str = cs['parkingString'].value;
+        data = [];
+        allJSONStr = str.replaceAll('\t', ' ');
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        var allJSONObj = JSON.parse(allJSONStr);
+        for(i of allJSONObj){
+            //if(i.cardType.toLowerCase()==$('#parkType option:selected').val()){//$('[name="parkType"]:checked').val()
+            var d ={};
+            d.cardNum = i.cardNum;
+            d.text = i.cardNum;
+            d.subtext = i.sector;
+            d.cHolderNm = (i.cHolderNm==null)?'NA':i.cHolderNm;
+            d.expDate = i.expDate;
+            d.cardType = i.cardType;
+            d.sector = i.sector;
+            d.id = i.cardNum;
+            d.cardId = i.cardId;
+            if(!i.vDetails || i.vDetails.length<1)
+                data.push(d);
+            //}
+        }
+        
+        $('.input-select-member').change(function () {
+            if ($(this).val() === '') {
+                $(this).next('.select2').removeClass('selected');
+            } else {
+                $(this).next('.select2').addClass('selected');
+            }
+        });
+        
+        
+        
+        $('.input-select-member').select2({
+            data: data,
+            placeholder: "Select a card",
+            allowClear: true,
+            escapeMarkup: function (markup) {
+                return markup;
+            },
+            templateResult: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.cardNum;
+                }
+                
+                var ptype = (data.cardType=='Free')?'Standard Parking':'Free Parking';
+                var html = '<div class="user-title-media user-title-media-sm">' +
+                    '<div>' +
+                    '<div class="user-name mb-2">' + data.cardNum + ' - '+ptype+'</div>' +
+                    '<div class="user-title font-weight-normal">' + data.sector +
+                    ' - Expires on '+data.expDate+'</div>' +
+                    '</div>' +
+                    '</div>';
+                return html;
+            },
+            templateSelection: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.cardNum;
+                }
+                
+                var html = '<div class="user-title-media user-title-media-sm">' +
+                    '<div>' +
+                    '<div class="user-name mb-2">' + data.cardNum + '</div>' +
+                    '<div class="user-title font-weight-normal">' + data.sector +
+                    ' - Expires on '+data.expDate+'</div>' +
+                    '</div>' +
+                    '</div>';
+                return html;
+            }
+        });
+        
+        
+        if(cs['rtacn__c'].value!=''&&cs['rtacn__c'].value!=undefined)
+            $('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+        var cardNum = getUrlParameter('c');
+        if(cardNum){
+            $('.input-select-member').val(cardNum).attr('disabled',true).trigger('change');
+            //$('.input-select-member option[value="'+cardNum+'"]').prop('selected',true);
+        }
+        setTimeout(function () {
+            $('.input-select-member').trigger('change');
+        }, 100);
+        removeTempLoader();
+        if(data.length>0){
+            $('.noParkData').hide();
+            $('.onPrkType,.base-nav-next').show();
+        }
+        else{
+            $('.onPrkType,.base-nav-next,.parkData').hide();
+            $('.noParkData').show();
+        }
+    }
+    
+    
+    function setToRQFld1(e){
+        var id = $(e).attr('id');
+        var id1 = $(e).attr('id1');
+        if(!cs['xadh__c'].value.includes('1np')){
+            setToRQFld(id,e);
+        }
+        else{
+            setToRQFld(id1,e);
+        }
+    }
+    function returnTrue(){
+        return true;
+    }
+    function returnFalse(){
+        return false;
+    }
+    function removeItem1(cd,iName){
+        axsConfirmation('Confirmation','Do you want to delete '+iName+'?',false,'removeItem',cd,'');
+    }
+    function removeItem(cd){
+        //cs['xadh__c'].value='0np;';
+        showTempLoader('#'+cd);
+        var arr = cs['xadh__c'].value.split(';').filter((v,i)=> v!=cd);
+        cs['xadh__c'].value = arr.join(';');
+        saveDraft();
+    }
+    function loadPrevData(){
+        $('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+    }
+    function settoFld(e){
+        //var cardNum = $(e).attr('num');
+        var cardNum = $(e).val();
+        $('.addEmp').removeClass('disabled').removeAttr('disabled');
+        //var cardNum = $(e).find('option:selected').val();
+        cs['rtacn__c'].value = cardNum;
+        parkingCard = cardNum;
+        removeValError($(e));
+        //$('.table-parking').parent().parent().find('.frmErrMsg').remove();
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        if(allJSONStr.length>0){
+            allJSON = JSON.parse(allJSONStr);
+            for(i=0;i<allJSON.length;i++){
+                if(cardNum == allJSON[i].cardNum){
+                    selectedJSON[0] = allJSON[i];
+                }
+            }
+        }
+        if(selectedJSON != null)
+        { 
+            cs["xps__c"].value = selectedJSON[0].sector;
+            vehicleObj["sector"] = selectedJSON[0].sector;
+        }
+        
+        vehicleObj["cardNo"] = cs['rtacn__c'].value;
+        if(cs["Con__c"].value&&getUrlParameter('id')==''){
+            cs['xchn__c'].value = cs['selectedCon'].value;
+            /*if(conJson['eml']!=null&&conJson['eml']!='')
+                cs["xceml__c"].value = conJson['eml'];
+            cs["rmob__c"].value = (conJson['mob'])?conJson['mob']:'';*/
+            //cs['xchn__c'].value = cs['selectedCon'].value;
+            copyApplicantInfo1();
+            toggleGLoader();
+        }
+    }
+    function copyApplicantInfo(){
+        cs["xcmob__c"].value = cs["rmob__c"].value;
+        if(cs['rtacn__c'].value==''){
+            addValError('.input-select-member','Select card to proceed!')
+            scrollToDiv($('.input-select-member'));
+            return;
+        }
+        else if(getUrlParameter('id')==''){
+            removeValError('#conSerachVal');
+            cs['xchn__c'].value = cs['selectedCon'].value;
+            toggleGLoader();
+            copyApplicantInfo1();
+        }
+    }
+    var currentDoc;
+    function uploadDoc(docname,parseFlg,rqFlg,itemCd){
+        currentItemCd = itemCd;
+        $('.frmErrMsg').remove();
+        currentDoc = docname;
+        document.getElementById("udDocType").value = docname;
+        cs["docname"].value = docname;
+        cs["parseId"].value = parseFlg; 
+        $(".docname").text(docname);
+        $('#modal_upload_passport').find('input,select').val('');
+        //$('#modal_upload_passport').modal('show');
+        $('#modal_fileuploadPopUp').modal('show');
+    }
+    
+    function removeScndVeh(){
+        cs['xadh__c'].value='0np;';
+        $('.btn-add-vehicle-detail').removeClass('disabled');
+        showTempLoader_input('.btn-add-vehicle-detail');
+        saveDraft();
+    }    
+    
+    function keepScndVeh(){
+        axsAlert('Alert','Please make sure to upload required documents for Second vehicle, before proceeding!');
+    }    
+    // for OCR Component
+    var backOrFront, currentItemCd;
+    var currVehicle = {"status":"","sequence":"","pltNum_RC": "", "RegDate_RC": "", "por_RC": "", "VehType_RC": "", "VehModel_RC": ""};
+    var vehicleObj1 = {};
+    function attachmentSaveVRC(){
+        if($('[name="resrVeh"]').prop('checked'))
+            axsConfirmation('Confirm','This action will assign the parking slot only for this vehicle, so you cannot add any other vehicles and added vehicles will be removed automatically',false,'attachmentSaveVRC1','','uncheckRsrv');
+        else
+            attachmentSaveVRC1();
+    }
+    function uncheckRsrv(){
+        $('[name="resrVeh"]').prop('checked',false);
+    }
+    function attachmentSaveVRC1(){
+        //currVehicle = [];
+        backOrFront = (cs["docname"].value.indexOf('front')>0)?'modal_RC_confirm_information':'modal_RC_confirm_information_back';
+        isValidData = true;
+        $('#modal_RC_confirm_information').find('.requiredFldPop').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+                //return false;
+            }
+            else{
+                //currVehicle = {"status":"","sequence":"","pltNum_RC": "", "RegDate_RC": "", "por_RC": "", "VehType_RC": "", "VehModel_RC": ""};
+                
+                showErrMsg($(this),'rqrd',true);
+                
+            }
+            
+            $('#'+backOrFront).find('select,input').each(function(i,v){
+                var k = $(v).attr('fldName');
+                var vl = $(v).val();
+                currVehicle[k] = vl;
+            });
+            
+            
+            checkAllDates('vRegDate','152');
+        });
+        if($('[name="resrVeh"]').prop('checked')){
+            currVehicle['isReserved'] = true;
+            uncheckRsrv();
+            for(i of srvItmCodes.split(';')){
+                if(i!=currentItemCd){
+                    $('[forItem="'+i+'"]').remove();
+                    $('#'+i).parent().remove();
+                }
+            }
+            
+        }
+        currVehicle['status'] = 'a0W2y000000qaEX';
+        currVehicle['sequence'] = currentItemCd;
+        var xx = {"status":"","sequence":"","pltNum_RC": "", "RegDate_RC": "", "por_RC": "", "VehType_RC": "", "VehModel_RC": ""};
+        if(!vehicleObj1[currentItemCd])
+            vehicleObj1[currentItemCd] = xx;
+        vehicleObj1[currentItemCd] = currVehicle;
+        vehicleObj['refMobile'] = cs["xcmob__c"].value;
+        vehicleObj['email'] = cs["xceml__c"].value;
+        vehicleObj['cardHolderName'] = cs["xchn__c"].value;
+        Object.keys(vehicleObj1).forEach(function(v,i){
+            vehicleObj.items.push(vehicleObj1[v])
+        });
+        cs['xadtx4__c'].value = JSON.stringify(vehicleObj);
+        if($('#modal_RC_confirm_information,#modal_RC_confirm_information_back').find('.frmErrMsg').length>0&&$('#modal_RC_confirm_information,#modal_RC_confirm_information_back').find('.frmErrMsg').is(':visible')){
+            isValidData = false;
+        }
+        
+        //if(checkVehicle() == true){
+        //    return;
+        //}
+        //alert('isValidData --'+isValidData+' && vaidateData()-- '+vaidateData() );
+        if(isValidData!=false&&vaidateData()!=false){
+            $('#modal_RC_confirm_information,#modal_RC_confirm_information_back').find('input:visible,select:visible').trigger('change');
+            $('#modal_RC_confirm_information,#modal_RC_confirm_information_back').modal('hide');
+            $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+            /*Object.keys(vehicleObj1).forEach(function(v,i){
+                vehicleObj.items.push(vehicleObj1[v])
+            });
+            cs['xadtx4__c'].value = JSON.stringify(vehicleObj);*/
+            saveAttachment_RC();
+        }
+    }
+    
+    function vaidateData(){
+        isValidData = true;
+        $('.applMob').each(function(){//.requiredFldPop, 
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'||v=='Select'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        checkAllDates('vRegDate','152');
+        if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+            isValidData = false;
+            //return isValidData;
+        }
+        return isValidData;
+    }
+    function checkVehicle(e){
+        var vnu = $('#xpveh__c').val();
+        for(i of allJSON){
+            if(vnu == i.vehicleNumber || vnu == i.secVclNum){
+                addValError($('#xpveh__c'),'This vehicle already exists!');
+                return true;
+            }
+            else
+                removeValError($('#xpveh__c'));
+        }
+        return false;
+    }
+    function SalOnChange(salt){
+        removeValError($('[name="sal"]'));
+        cs['xcslt__c'].value=salt;
+    }
+    
+    function loadVehicles1(){
+        if(cNum!='' ){
+            toggleGLoader();
+            loadVehicles();
+        }
+    }
+    function loadSelected(){
+        let l = cs['parkingString'].value;
+        $('[num="'+cNum+'"]').prop('checked',true).trigger('change');
+        var s=l.replace("\"Items\"",'\'Items\'')
+        selectedJSON[0] = JSON.parse(s);
+        //toggleGLoader();
+    }
+    var ad4 = {"ActionName":"insertparkingrequest","OracleID":"","AgNo":"","SectorLocationId":"","AXSId":"","CardNumber":"","Eligibility":"","RequestType":"Parking Card","BusinessPark":"","Sector":"","CardRequestType":"Registration","ParkingType":"Free","EndDate":"","CardsDetail":[{"cardHolderName":"","Email":"","Mobile":"","Phone":"","Vehicles":[]}]};
+    function createAD4(){
+        ad4.CardNumber = $('#cardDet').val();
+        ad4.Sector= selectedJSON[0].sector;
+        var dt = selectedJSON[0].expDate.split('/')[2]+'-'+selectedJSON[0].expDate.split('/')[1]+'-'+selectedJSON[0].expDate.split('/')[0];
+        ad4.EndDate = dt;
+        ad4.CardsDetail[0].cardHolderName = (addingNE)?cs["xchn__c"].value:cs["selectedCon"].value;
+        ad4.CardsDetail[0].Email = cs['xceml__c'].value;
+        ad4.CardsDetail[0].Mobile = '+971'+cs["rmob__c"].value;
+        ad4['Eligibility'] = selectedJSON[0].EligibilityName;
+        ad4.CardsDetail[0].Vehicles = newVehicles;
+        ad4['SectorLocationId'] = selectedJSON[0].sectorId;
+        cs['xadtx4__c'].value = JSON.stringify(ad4);
+    }
+    
+    // update in axs2customjs
+    
+    function hideGLoader(){
+        $('#preloader').fadeOut();
+    }
+    function showErrMsg(elem,elemType,errType){
+        if(errType == true){
+            elem.removeClass('is-invalid');
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+            elem.next().find('.select2-selection').removeClass('is-invalid');
+            return;
+        }
+        var errElem = '<div class="frmErrMsg">'+formErrMsgs1[elemType][errType]+'</div>';
+        elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+        elem.parents('.form-group').eq(0).append(errElem);
+        elem.addClass('is-invalid');
+        //elem.next().find('.select2-selection, .select2-selection--single, .select2-selection--multiple').addClass('is-invalid')
+        return false;
+    }
+    
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            if(id=='xpveh__c' || id=='xsvn__c')
+                cs[id].value=$(el).val().split(' ').join('');
+            else
+                cs[id].value=$(el).val();
+    }
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    function mandateVehAdd(){
+        axsAlert('Alert','Please click on ADD to add the entered vehicle to the list');
+    }
+    function submitPage(el,ev){
+        if($('.addedVeh').length<1){
+            axsAlert('Error','Please add atlease one vehicle to proceed.');
+            return;
+        }
+        if($('#por').val() && $('#vncdd').val() && $('#vehNum').val()){
+            axsConfirmation('Confirm','Do you want to proceed with out adding the entered vehicle?',false,'submitPage1','','mandateVehAdd');
+        }
+        else
+            submitPage1();
+    }
+    function submitPage1(el,ev){
+        
+        
+        $('.requiredFld').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined){
+                addValError($(this),'This field is required.');
+                scrollToDiv($(this));
+            }
+        });
+        if(!$('#cardDet').val()){
+            addValError('#cardDet','Please select card to poceed!');
+            scrollToDiv($('#cardDet'));
+            return;
+        }
+        if(vehicleadd!='true'){
+            //addValError('#cardDet','Please add vechile to poceed!');
+            // scrollToDiv($('#cardDet'));
+            // return;
+        }
+        if(addingNE){
+            if(cs['xchn__c'].value=='' || cs['xchn__c'].value==undefined){
+                addValError('#eida','Please upload EIDA or click on "SELECT EMPLOYEE"!');
+                scrollToDiv($(cs['xchn__c']));
+                return;
+            }
+        }
+        /*else{
+            if(cs['selectedCon'].value==''&&'{!JSENCODE(Eid)}'==''){
+                addValError('#conSerachVal','Please select an employee or click on "ADD NON-EMPLOYEE AS A CARDHOLDER"!');
+                return;
+            }
+        }*/
+        $('.chk').find('.frmErrMsg').remove();
+        if(!$('#tANDc').prop('checked')){
+            var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+            scrollToDiv($('.chk'));
+            return;
+        }
+        
+        if(cs['xcmob__c'] && isUAEMobNum($(cs['xcmob__c']))==false)
+            return;
+        else if(cs['rmob__c'] &&isUAEMobNum($(cs['rmob__c']))==false)
+            return;
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0).parent());
+            return;
+        }
+        if( cs["xcmob__c"]&& cs["xcmob__c"].value&& cs["xcmob__c"].value!=''){
+            cs["rmob__c"].value = cs["xcmob__c"].value;
+        }
+        createAD4();
+        //ev.preventDefault();
+        toggleGLoader();
+        saveReq_UR();
+    }
+    var plateCodes = {'Dubai':["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","Other","No Code"],'Abu Dhabi':['1','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','50',"Other","No Code"],'Ajman':["Other","No Code"],'Bahrain':["Other","No Code"],'Fujairah':["Other","No Code"],'Kuwait':["Other","No Code"],'Oman':["Other","No Code"],'Qatar':["Other","No Code"],'Ras Al Khaimah':["Other","No Code"],'KSA':["Other","No Code"],'Sharjah':["Other","No Code"],'Umm Al Quwain':["Other","No Code"]};
+    function createvCodeVals(e){
+        $('#vncdd').html('').removeAttr('disabled');
+        /*var v = $(e).val();
+        if(v=='--None--')
+            return;
+        var codes = plateCodes[v];
+        var codeOtions='<option value="">--None--</option>';
+        if(codes){
+            for([i,v] of codes.entries()){
+                var opt1 = '<option value="'+v+'">'+v+'</option>';
+                codeOtions += opt1;
+            }
+            $('#vncdd').html(codeOtions);
+        }
+        else{
+            //$('#vncdd').removeAttr('disabled');
+        }
+        $('#vncdd').removeAttr('disabled').select2({
+            tags: true,
+            "language": {
+                "noResults": function(){
+                    return "<span class='text-primary'>Type plate number code</span>";
+                }
+            },
+            escapeMarkup: function (markup) {
+                return markup;
+            }
+        });*/
+    }
+    
+    function rmErronTC(){
+        
+        $('.chk').find('.frmErrMsg').remove();
+        if(!$('#tANDc').is(':checked'))
+        {
+            
+            var errElem = '<div class="frmErrMsg">Please accept Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+        }
+    }
+    //parking enhancement
+    function swapButtons(e){
+        var a = $(e).attr('attr1');
+        if(!$('#cardDet').val()){
+            addValError('.input-select-member','Select card to proceed!');
+            scrollToDiv($('.input-select-member'));
+            return;
+        }
+        if(a == 'nonEmp'){
+            $(e).attr('attr1','emp');
+            $(e).text('SELECT EMPLOYEE');
+            $('.pbSwap').show();
+            $('#select_employee').hide();
+            addingNE = false;
+        }
+        else if(a == 'emp'){
+            $(e).attr('attr1','nonEmp');
+            $(e).text('ADD NON-SPONSORED EMPLOYEES / 3RD PARTY EMPLOYEES');
+            $('.pbSwap').hide();
+            $('#select_employee').show();
+            addingNE = true;
+        }
+        
+    }
+    function submitNonEmp(e){
+        let isValidData = true;
+        $('.requiredFld:visible').each(function(){
+            var v = $(this).val();
+            if(!v){
+                isValidData = false;
+                addValError($(this),'**This field is required!');
+            }
+            else{
+                removeValError($(this));
+            }
+            
+        });
+        if(!$('[name="sal"]').is(':checked')){
+            isValidData = false;
+            addValError($('[name="sal"]'),'**This field is required!');
+        }
+        else{
+            
+            removeValError($('[name="sal"]'));
+        }
+        // if($('#tANDc').is(':checked'))
+        // $('.chk').find('.frmErrMsg').remove();
+        // else{
+        // isValidData = false;
+        // var errElem = '<div class="frmErrMsg">Please accept Terms and Conditions.</div>';
+        // $('.chk').append(errElem);
+        // }
+        
+        if(isValidData){
+            toggleGLoader();
+            saveDraft();
+        }
+    }
+    </script>
+</apex:page>

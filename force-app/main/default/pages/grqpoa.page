@@ -1,0 +1,155 @@
+<apex:page cache="false" controller="ApplicantDetailController" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" title="PO Box (Amendment)" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    
+    <script type="text/javascript">
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}, empInd ;  var jsonExistingReps = []; 
+    var POBundles = {"PO Box Light":"pl","PO Box Standard":"ps","EziMail Bronze":"eb","EziMail Silver":"es","EziMail Gold":"eg"};
+    
+    $(document).ready(function () {    
+        //$('#colldelinfo').hide(); 
+        loadDetails('amendment'); pobType = 'amendment'; 
+        if('{!JSENCODE(req.id)}'==""){$("#pobcomp").hide();}
+    });
+    
+    function keysOnChange(e){
+        if($(e).prop( "checked")){
+            addonItems = addonItems.replace('lpkNO;','');  addonItems += 'lpk;'; 
+            cs['xoca__c'].value = true;  $('#colldelinfo').show(); $('#eConInfo').hide();
+            /*addonItems = addonItems.replace('lpk;',''); addonItems += 'lpkNO;'; 
+            cs['xoca__c'].value = false; $('#colldelinfo').hide();*/
+        }else{
+            addonItems = addonItems.replace('lpk;',''); addonItems += 'lpkNO;'; 
+            cs['xoca__c'].value = false; $('#colldelinfo').hide(); $('#eConInfo').show();
+            /*addonItems = addonItems.replace('lpkNO;','');  addonItems += 'lpk;'; 
+            cs['xoca__c'].value = true;  $('#colldelinfo').show();*/
+        }
+    }
+    
+    function keysSelected(){
+        getC('keysErr').style.display='none';
+        var keysSelected = getC('keysTrue').checked || getC('keysFalse').checked;
+        if(!keysSelected){ getC('keysErr').style.display=''; $("#keyTrue").focus();}
+        return !keysSelected;
+    }
+    
+    </script> 
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main">
+                <apex:actionFunction name="afsd" action="{!saveDraftR}" status="theStatus" rerender="msg2,compupload"  oncomplete="toggleGLoader();removeTempLoader();reloadDocDiv();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <apex:outputPanel id="rerenderImage">
+                    <apex:inputHidden id="imageBase64" value="{!tImageBase64}" />
+                    <apex:inputHidden id="docname" value="{!docname}" />
+                    <apex:inputHidden id="parseId" />
+                    <script>
+                    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                    cs["docname"] = document.getElementById("{!$Component.docname}");
+                    cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                    </script>
+                </apex:outputPanel>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        <!--<apex:outputPanel rendered="{!req.id==''}">
+                        <a style="color:#fff;" onclick="assignDataToFields();afsd();" class="btn btn-black">SAVE DRAFT</a>
+                        </apex:outputPanel>-->
+                        
+                        <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+                        
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                 <div>
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                     <div class="pt-4 pb-4">
+                                         <h3 class="text-primary d-md-block d-none">Download forms</h3>
+                                         <div class="upload-list">
+                                             <div class="upload-list-item box box-white box-padding">
+                                                 <a href="/servlet/servlet.FileDownload?file=0152y000000RKnG" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                     <u>Miscellaneous services form</u>
+                                                 </a>
+                                             </div>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    
+                                    <h3 class="base-main-title">Amend P.O. Box</h3>
+                                    <div class="form-group form-style mb-2">
+                                        <label>Select a P.O. Box </label>
+                                        <c:allocatedpob id="gpboxlookup" accId="{!req.acc__r.id}"  Request="{!req}" srvc="amendment" />
+                                    </div>
+                                    
+                                    <div id="pobcomp">
+                                        <c:poboxagents_ocr id="poboxagents" req="{!req}"  salutations="{!salutations}"  srvcType="amendment"/>
+                                    </div>
+                                    
+                                    <!--<div id="conInfoCmp">
+                                    <c:eContactInfo req="{!req}" cmpTitle="Contact Details"/>
+                                    </div>-->
+                                </apex:pageBlock>
+                            </div>
+                            <!--<div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a onclick="saveDetails();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                        CONTINUE
+                                    </a>
+                                </div>
+                            </div>-->
+                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}" />
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+            
+            <!--<apex:inputHidden id="xln__c" value="{!req.xln__c}" />
+            <script type="text/javascript">
+//cs['xln__c']=getC('{!$Component.xln__c}'); 
+            </script>-->
+            
+        </body>
+    </apex:form> 
+    
+</apex:page>

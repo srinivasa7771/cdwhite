@@ -1,0 +1,243 @@
+<apex:page cache="false"  Controller="grqbgtocdCtrl" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"
+           title="{!srv.sdg__r.slbl__c}" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    <script type="text/javascript">
+    var ispu={!ispu}, isgu={!isgu}, lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}, empInd ; var jsonExistingReps = [];var addonItems='';
+    var errorMsg = '';
+    $(document).ready(function () {  
+        checkExistingItems();
+    });
+    
+    function chkAccount(accID){
+        console.log('accID===',accID);
+        if(!ispu && !isgu){
+            $(cs['acc_lkwgt']).addClass("lookupcc");
+            
+            var urlParam = getAxsURLParam('m');
+            if(urlParam!='edit'){
+                isEditBO = false;
+                $(".base-nav-next").text('CONTINUE');
+            }
+            
+            if(accID==null || accID==undefined ||accID==""){
+                $("#bgrSection").hide();
+            }else{
+                $("#bgrSection").show();
+            }
+        }
+    }
+    
+    function checkExistingItems(){
+        var alItms ;
+        if(alItms!= null && alItms.includes('lpk;')){ $('#keysTrue').prop("checked",""); cs['xoca__c'].value = false;}
+        if(alItms!= null && alItms.includes('xlp;')){ $('#keysTrue').prop("checked","true"); cs['xoca__c'].value = true;}
+    }
+    
+    function validateRefund(refund, avbg)
+    {
+        console.log('refund===', refund.value);
+        errorMsg = '';
+        rfbg=refund.value;
+        console.log('avbg====',avbg+'===rfbg====='+rfbg);
+        var refundErrMsg = 'Please enter refund amount less than or equal to available bank gaurantee.';
+        var refundErrMsgMul = 'Please enter refund amount in multiple of 2500.';
+        var refundErrReq = 'Please enter refund amount.';
+        var flg=true;
+        if(rfbg == '')
+        {
+            errorMsg= refundErrReq;
+             $('#errorDiv').find('.error').html(errorMsg);
+             $('#errorDiv').show();
+             
+        }
+        else if(rfbg && rfbg != '' && rfbg > avbg)
+        {
+            
+            errorMsg = refundErrMsg;
+            $('#errorDiv').find('.error').html(errorMsg);
+             $('#errorDiv').show();
+
+        }
+        else if(rfbg % 2500 != 0)
+        {
+             errorMsg = refundErrMsgMul;
+             $('#errorDiv').find('.error').html(errorMsg);
+             $('#errorDiv').show();
+            
+        }
+        else
+        {
+             $('#errorDiv').find('.error').html('');
+             $('#errorDiv').hide();
+            
+        }
+        
+        
+    }
+    
+     function boSave(){
+         
+        var brk = vflds('.requiredFld', true);
+         var rfbg = parseInt(cs['xtpa__c'].value);
+         var avbg=parseInt(cs['bg__c'].value);
+        var refundErrMsg = 'Please enter refund amount less than or equal to available bank gaurantee.';
+        var refundErrMsgMul = 'Please enter refund amount in multiple of 2500.';
+        var refundErrReq = 'Please enter refund amount.';
+        
+        
+        if(rfbg && rfbg != '' && rfbg > avbg)
+        {  
+        
+            errorMsg = refundErrMsg;
+            $('#errorDiv').find('.error').html(errorMsg);
+             $('#errorDiv').show();
+            brk=true;
+        }
+        else if(rfbg % 2500 != 0)
+        {
+             errorMsg = refundErrMsgMul;
+             $('#errorDiv').find('.error').html(errorMsg);
+             $('#errorDiv').show();
+            brk=true;
+        }
+        if(!brk){toggleGLoader(); afso(); }
+    }
+    function isNumber(evt) {
+        $('.frmErrMsg').remove();
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode=190){
+            
+        }
+        else if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
+    
+    function vflds(clsName){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){ 
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        return brk;
+    }
+    
+    </script>
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main" >
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" isBo="{!AND(NOT(ispu),NOT(isgu))}"/> 
+                </apex:outputPanel>
+                <apex:actionFunction name="assignAccount" action="{!assignAccount}" status="theStatus" rerender="bgrpanel" oncomplete="toggleGLoader();chkAccount('{!JSENCODE(req.Acc__c)}');" />
+                 <apex:actionFunction name="afso" action="{!processPay}" status="theStatus" rerender="bgrpanel" oncomplete="toggleGLoader();hideTempLoader_input();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:outputPanel id="rerenderImage">
+                   <!--
+                    <apex:inputHidden id="imageBase64" value="{!tImageBase64}" />
+                    <apex:inputHidden id="docname" value="{!docname}" />
+                    <apex:inputHidden id="parseId" />
+-->
+                    <script>
+                    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                    cs["docname"] = document.getElementById("{!$Component.docname}");
+                    cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                    </script>
+                </apex:outputPanel>
+               
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <apex:outputPanel rendered="{!IF(req.id=='',true,false)}">
+                                        <c:srvdefcmp srv="{!srv}"/>
+                                    </apex:outputPanel>
+                                </div>
+                                
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:outputPanel id="pbMain">
+                                   
+                                    
+                                    
+                                    <apex:outputPanel id="bgrpanel">
+                                        <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                        <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                        </apex:outputPanel>
+                                        <c:accountcmp req="{!req}" rendered="{!AND(NOT(ispu),NOT(isgu))}" />
+                                        
+                                        <div id="bgrSection">
+                                            <div class="form-group form-style mb-2">
+                                                 <div class="form-group">
+                                                    <label>Avaliable BG</label>
+                                                   
+                                                    <apex:outputText label="Available BG" styleClass=" form-control numOnly" value="{!Acc.bg__c}"></apex:outputText>
+                                                <apex:inputHidden id="bg__c" value="{!Acc.bg__c}"/>
+                                                <script type="text/javascript">
+                                                            cs['bg__c'] = getC('{!$Component.bg__c}');
+                                                            </script>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>BG refund</label>
+                                                    <apex:inputField id="xtpa__c" value="{!req.xtpa__c}" styleclass="form-control numOnly" onchange="validateRefund(this, {!Acc.bg__c})" onkeypress="return isNumber(event)" />
+                                                   
+                                                    <div id="errorDiv" style="display:none">
+                                                          <span class ="error" style="color:red" ></span>
+                                                    </div>
+                                                    
+                                                            <script type="text/javascript">
+                                                            cs['xtpa__c'] = getC('{!$Component.xtpa__c}');
+                                                            </script>
+                                                </div>
+                                                 
+                                            </div>
+                                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}"  rendered="{!phide}"/>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+        </body>
+    </apex:form>
+</apex:page>

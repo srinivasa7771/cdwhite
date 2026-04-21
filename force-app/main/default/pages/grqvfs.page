@@ -1,0 +1,589 @@
+<apex:page cache="false" controller="ApplicantDetailController" docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false" title="{!srv.sdg__r.slbl__c}" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <apex:includeScript value="{!$Resource.vfs_country_msg}"  />
+    
+    
+    <style>
+        .info-msg {color:green !important;}
+        .selectCertificateFirst {color:red !important;}
+        #Attestation{display:none;}
+        #Attestation_msg ul.pl-3 {
+        /*text-transform: capitalize;*/
+        }
+    </style>
+    
+    <script type="text/javascript">
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}, empInd ; 
+    var xadtx3__c = '{!JSENCODE(req.xadtx3__c)}';  var jsonVFSDetails={};
+    
+    
+    </script>
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main"> 
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="msg2,compupload"  oncomplete="toggleGLoader();removeTempLoader();reloadDocDiv();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();">
+                    <apex:param name="nextPage"  value="lrqup" assignTo="{!nxtPgUrl}"/>
+                </apex:actionFunction>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraftR}" status="theStatus" rerender="msg,ricPanel" oncomplete="draftComplete()"></apex:actionFunction>
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        
+                        <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+                        
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    
+                                    <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                    <apex:pageMessages id="msg3" escape="false"/> 
+                                    <div class="form-style">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <apex:outputPanel rendered="{!req.id==null}">
+                                                        <c:gconlookup id="conlookup" Request="{!req}" role="Employee;Student;Child;Spouse;Non Sponsored" accId="{!acc.id}" sta="Active" heading="Select the applicant" /> 
+                                                    </apex:outputPanel>  
+                                                    <apex:outputPanel rendered="{!req.id!=null}">
+                                                        <div class="form-group">
+                                                            <label>Selected Applicant</label>
+                                                            <span class="form-control" >
+                                                                {!req.con__r.name}
+                                                            </span>
+                                                        </div>
+                                                    </apex:outputPanel>  
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Select the issuing country of the certificate</label>
+                                                    <apex:selectList styleClass="form-control input-select2-tags dum requiredFld countryOptions" id="country" multiselect="false" onChange="showHideAttestation()"> 
+                                                        <apex:selectOptions value="{!vfsCountriesOptions}"/>
+                                                    </apex:selectList>                                                                                                      
+                                                    
+                                                    <script>
+                                                    cs['country2']=document.getElementById('{!$Component.country}');
+                                                    $(cs['country2']).find('option[value="uae"]').remove();
+                                                    if('{!JSENCODE(req.id)}')//'{!JSENCODE(req.id)}'
+                                                        $(cs['country2']).attr('disabled',true);
+                                                    </script>                                                     
+                                                </div>
+                                                <script>
+                                                cs['country']=getC('country');
+                                                </script>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Select certification type</label>
+                                                    <select id="certificate" class="form-control requiredFld certificate-placeholder requiredFldpop input-select2-flat" onchange="showHideNumberOfCertificate()">
+                                                        <option></option>
+                                                        <option mDoc="Education certificate" value="Education certificate">Education certificate</option>
+                                                        <option mDoc="Birth certificate" value="Birth certificate">Birth certificate</option>
+                                                        <option mDoc="Marriage certificate" value="Marriage certificate">Marriage certificate</option>
+                                                    </select>
+                                                    <script>
+                                                    if('{!JSENCODE(req.id)}')//
+                                                        $('#certificate').attr('disabled',true);
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <label class="text-primary pl-3" id="Attestation">
+                                                <span class="fs-14 font-weight-bold my-3 text-underline">Required Documents</span>
+                                                <span id="Attestation_msg"></span>
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">    
+                                                <div class="form-group">
+                                                    <label>Country of pickup</label>
+                                                    <apex:selectList styleClass="requiredFld requiredFldpop country-placeholder input-select2-flat" id="countryOfPickup"  multiselect="false"> 
+                                                        <apex:selectOptions value="{!vfsCountriesOptions}"/>
+                                                    </apex:selectList>
+                                                    
+                                                    <script>
+                                                    cs['countryOfPickup']=document.getElementById('{!$Component.countryOfPickup}');
+                                                    
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6" id="NumberOfCertif" style="display:none;">
+                                                <div class="form-group">
+                                                    <label>Number of certification required</label>
+                                                    <select id="NumberofcertifOptions" class="form-control requiredFld certificate-placeholder requiredFldpop input-select2-flat">
+                                                        <option></option>
+                                                        <script>
+                                                        let i=1; 
+                                                        var listOptions = document.getElementById("NumberofcertifOptions");                                       
+                                                        while (i <= 10) {
+                                                            var newOption = document.createElement("option");
+                                                            newOption.text = i;
+                                                            newOption.value = i; 
+                                                            listOptions.options.add(newOption);
+                                                            i++;
+                                                        }
+                                                        cs['NumberofcertifOptions'] = getC('NumberofcertifOptions');
+                                                        </script>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Certificate issuing <elem id="unv">university</elem></label>
+                                                    <input type="text" id="university"  class="form-control requiredFldpop requiredFld alphaChar" value=""/>
+                                                </div>
+                                                
+                                                <script>
+                                                cs['university']=getC('university');
+                                                </script>
+                                                
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Address for certificate collection</label>
+                                                    <input type="text" id="colladdress"  class="form-control requiredFldpop requiredFld" value=""/>
+                                                </div>
+                                                <script>
+                                                cs['colladdress']=getC('colladdress');
+                                                </script>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>P.O. Box</label>
+                                                    <apex:inputField ignoreEditPermissionForRendering="true" type="text" styleClass="requiredFld form-control numOnly"
+                                                                     value="{!req.xcpobx__c}" id="xcpobx__c"/> <!--  onchange="makeMandatory([cs['xcpobx__c']])"-->
+                                                    <script type="text/javascript">
+                                                    cs['xcpobx__c']=document.getElementById('{!$Component.xcpobx__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label id="appEmail">Email ID
+                                                        <i  class="India fa fa-question-circle text-primary" aria-hidden="true" 
+                                                           data-html="true" data-toggle="tooltip" data-placement="top" title="" data-original-title='<div><p>This email will be used as point of contact for this service request.</p></div>'></i>
+                                                    </label>
+                                                    <apex:inputField ignoreEditPermissionForRendering="true" value="{!req.xceml__c}" styleClass="form-control requiredFld"
+                                                                     onkeyup="checkEmail(this)" id="xceml__c"/>
+                                                    <script type="text/javascript">
+                                                    cs['xceml__c']=document.getElementById('{!$Component.xceml__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Contact number</label>
+                                                    <div class="d-flex">
+                                                        <select id="countryCode" class="form-control requiredFld requiredFldpop input-select2-flat">                                                
+                                                        </select>
+                                                        <!--<input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:70px;"/> <!--  background-color:#f5f5f5 !important;border-color:#DCDDDE !important; -->
+                                                        <input type="text" onchange="checkMob(this)" onkeyup="validDigits(this);"  id="contactnum" class="form-control ml-3 requiredFld" value="" />
+                                                    </div>
+                                                    <apex:inputHidden value="{!req.xui__c}" id="xui__c"/>
+                                                    <script>
+                                                    cs['xui__c']=document.getElementById('{!$Component.xui__c}');
+                                                    cs['contactnum']=getC('contactnum');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <!-- script for country code--> 
+                                            <script type="text/javascript"> 
+                                            //we have an array countryCodeObj_new of the following format in the static resource AXS2_formValidations : 
+                                            //------------format example-------------
+                                            /*  var countryCodeObj_new = [{
+                                                "name": "United Arab Emirates",
+                                                "dial_code": "+971",
+                                                "code": "AE"
+                                            }, {
+                                                "name": "Afghanistan",
+                                                "dial_code": "+93",
+                                                "code": "AF"
+                                            },*/
+                                            //--------------------------------------
+                                            var countryCodeOptions = ''; 
+                                            for(i of countryCodeObj_new){
+                                                var option = ''; 
+                                                if(i.dial_code && i.name) {                                   
+                                                    option = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                                    countryCodeOptions += option; 
+                                                }
+                                            }
+                                            $('#countryCode').html(countryCodeOptions); 
+                                            //cs['countryCode'] = getC('{!$Component.countryCode}');
+                                            cs['countryCode'] = document.getElementById('countryCode');
+                                            console.log('COUNTRY CODE HEREEEE' + cs['countryCode'].value);
+                                            </script>
+                                            
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Contact person's name</label>
+                                                    <input type="text" id="contactperson"  class="form-control requiredFldpop requiredFld alphaChar" value=""/>
+                                                </div>
+                                                <script>
+                                                cs['contactperson']=getC('contactperson');
+                                                </script>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div class="mb-4"></div>
+                                    <div class="form-style">
+                                        <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp" cmpTitle="Office location"/> 
+                                    </div>
+                                    
+                                    <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+                                    <apex:inputHidden id="xadtx3__c" value="{!req.xadtx3__c}" />
+                                    <apex:inputHidden id="xvnum__c" value="{!req.xvnum__c}" />
+                                    <apex:inputHidden id="xdedc__c" value="{!req.xdedc__c}" />
+                                    <apex:inputHidden id="xpveh__c" value="{!req.xpveh__c}" />
+                                    <apex:inputHidden id="xcst__c" value="{!req.xcst__c}" />
+                                    <apex:inputHidden id="xcmob__c" value="{!req.xcmob__c}" />
+                                    <apex:inputHidden id="xcln__c" value="{!req.xcln__c}" />
+                                    <apex:inputHidden id="xrp__c" value="{!req.xrp__c}" />
+                                    <apex:inputHidden id="xcddocs__c" value="{!req.xcddocs__c}" />
+                                    <script type="text/javascript">
+                                    cs['xadh__c']=getC('{!$Component.xadh__c}');
+                                    cs['xadtx3__c']=getC('{!$Component.xadtx3__c}'); 
+                                    cs['xvnum__c']=getC('{!$Component.xvnum__c}');
+                                    cs['xdedc__c']=getC('{!$Component.xdedc__c}'); 
+                                    cs['xpveh__c']=getC('{!$Component.xpveh__c}');
+                                    cs['xcst__c']=getC('{!$Component.xcst__c}');
+                                    cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                                    cs['xcln__c']=getC('{!$Component.xcln__c}');
+                                    cs['xrp__c']=getC('{!$Component.xrp__c}');
+                                    cs['xcddocs__c']=getC('{!$Component.xcddocs__c}');
+                                    /* Select certification type - xvnum__c; Select the issuing country of the certificate - xcsnc__c; Certificate issuing university - xpveh__c; Address for certificate collection - xcst__c; Contact number - xcmob__c; Contact person's name - xcsfn__c */
+                                    </script> 
+                                    
+                                </apex:pageBlock>
+                                <div class="chk" style="vertical-align: middle;font-size: 1em;">
+                                    <label class="custom-checkbox mr-4"><!-- data-value-->
+                                        <input type="checkbox" id="tANDc" onchange="rmErronTC()" />
+                                        <span class="">&nbsp;&nbsp;I affirm that I have read and understood all the terms, conditions, and disclaimers mentioned above, and I agree to abide by them.
+                                         (Click <a href='{!$Resource.VFS_DeclarationForm}' target='_blank'>here</a>).</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="vfs" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- <c:fileuploadpopupnew13 R="{!req}" /> --> 
+        </body>
+        
+    </apex:form> 
+    
+    <script type="text/javascript">    
+    
+    $(document).ready(function () {    
+        setTimeout(function(){
+            $(".country-placeholder").select2({
+                placeholder: "Select country of pickup",
+                // enableSearch: true
+            }); 
+            
+            $(".certificate-placeholder").select2({
+                placeholder: "Select a certificate",
+                enableSearch: true
+            });
+            $(".countryOptions").select2({
+                placeholder: "Select issuing country",
+                enableSearch: true
+            });
+            updatePopupDetails();
+        },2000);
+        
+    });
+    function rmErronTC(){
+        if($('#tANDc').is(':checked')==true)
+            $('.chk').find('.frmErrMsg').remove();
+        else{
+            var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+        }
+    }
+    function draftComplete(msg,rName){
+        window.location.reload();
+        //showDraftAlert1(rName);
+    }
+    function showDraftAlert1(reqNum){
+        axsAlert('Success','Request has been updated');
+    }
+    
+    function updateadhoc(){
+        cs['xadh__c'].value = $(cs['country']).val().trim() + ';';
+    }
+    var vfsDet = [];
+    function updatePopupDetails(){
+        cs['xadtx3__c'].value=xadtx3__c; 
+        
+        if(cs['xadtx3__c'].value!=""){
+            vfsDet = JSON.parse(cs['xadtx3__c'].value);
+            $('#university').val(vfsDet['university']);
+            $('#colladdress').val(vfsDet['colladdress']);
+            $('#contactnum').val(vfsDet['contactnum']);
+            $('#contactperson').val(vfsDet['contactperson']);
+            cs['NumberofcertifOptions'].value = vfsDet['NumberofcertifOptions'];$('#NumberofcertifOptions').select2();
+            $('#certificate').val(vfsDet['certificate']); $('#certificate').trigger('change');
+            cs['countryOfPickup'].value= vfsDet["countryOfPickup"]; $(cs['countryOfPickup']).trigger('change');
+            cs['country2'].value= vfsDet["issuingCountryCode"]; $(cs['country2']).trigger('change');
+        }
+        if(cs['xui__c'].value)
+            $('#countryCode').val(cs['xui__c'].value).trigger('change')
+        if(cs['xrp__c'].value!=undefined && cs['xrp__c'].value!='' ){
+            $(".requiredFld").each(function(){$(this).prop( "disabled", true );});
+        }
+    }
+    
+    
+    function validateData(){
+        var brk2 = false; brk2 = vPopFlds();
+        
+                
+                
+        
+        if(!brk2){
+            if(!$('#tANDc').prop('checked')){
+                var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+                $('.chk').append(errElem);
+                return;
+            }
+            try{
+                
+                var selectedValuesCode = ' ';
+                var selectedValuesLabel = ' ';
+                
+                selectedValuesLabel = cs['country2'].selectedOptions[0].label;
+                selectedValuesCode = cs['country2'].selectedOptions[0].value;
+                jsonVFSDetails['country']  = selectedValuesLabel;
+                jsonVFSDetails['issuingCountryCode']  = selectedValuesCode;
+                jsonVFSDetails['countryOfPickup']  = cs['countryOfPickup'].value;
+                
+                //jsonVFSDetails['country']  = $(cs['country']).find("option:selected").text().trim();          
+                          
+                jsonVFSDetails['countrycode']  = $('#country').val();   
+                jsonVFSDetails['reqstID']  = '';
+                jsonVFSDetails['certificate']  = $('#certificate').val();
+                cs['xvnum__c'].value= jsonVFSDetails['certificate'];
+                jsonVFSDetails['university']  = $('#university').val();
+                cs['xpveh__c'].value= jsonVFSDetails['university'];
+                jsonVFSDetails['colladdress']  = $('#colladdress').val();
+                cs['xcst__c'].value= jsonVFSDetails['colladdress'];
+                jsonVFSDetails['contactnum']  = $('#contactnum').val();
+                cs['xcmob__c'].value= jsonVFSDetails['contactnum'];
+                jsonVFSDetails['contactperson']  = $('#contactperson').val();
+                jsonVFSDetails['NumberofcertifOptions']  = cs['NumberofcertifOptions'].value;
+                cs['xui__c'].value = $('#countryCode').val();
+                cs['xdedc__c'].value= $('#contactperson').val();
+                cs['xcln__c'].value= cs['country2'].selectedOptions[0].label;  
+                
+                
+
+                cs['xadtx3__c'].value = JSON.stringify(jsonVFSDetails); 
+                cs['xadh__c'].value='vfs;'+selectedValuesCode+';';
+                if(cs['countryOfPickup'].value!='uae')
+                     cs['xadh__c'].value+='ipu;';
+                
+            }catch(err) {
+                alert( err.message);
+            }
+            toggleGLoader(); 
+                afso();
+        }
+    }
+    
+    
+    
+    function vPopFlds(){
+        var brk = false;var elem = '';
+        
+        $(".requiredFld").each(function(){
+            var v = $(this).val();
+            
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ 
+                    removeValError(this);
+                }
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        
+        return brk;
+    }
+    //show or hide "Number of certification required " field based on the selected value "Select certification type "
+    function showHideNumberOfCertificate() {
+        //console.log('education education 1');
+        var selectedCertificate = document.getElementById('certificate').value;
+        //console.log('education education 2 ' + selectedCertificate);
+        $('#unv').text('authority');
+        if(selectedCertificate == "Education certificate"){     
+            //console.log('education education 3 ');
+            //document.getElementById('NumberOfCertif').style.display= 'block'; 
+            $('#unv').text('university');
+        } else {
+            //console.log('birth certif birth');
+            // document.getElementById('NumberOfCertif').style.display= 'none';
+            
+        }
+        showHideAttestation();
+    }
+    
+    var docsTobeSkipped = ['passport','birth','marriage','degree','educational','additional requirements'];
+    var docsTobeSkipped_subText = ['(NAWA form attached in the email)','(format will be provided on attestation confirmation)','(Attached in the email)'];
+    var certToBeSkipped = [{"Bahrain":"Education certificate"},{"China":"Birth certificate,Marriage certificate"},{"Kenya":"Education certificate"}];
+    var showRqDocs = false;
+    function showHideAttestation(){//show hide documents and attestations
+        showRqDocs = false;
+        $('#Attestation').hide();
+        cs['xcddocs__c'].value = '';
+        //1- check if Select certification type is choosed first                
+        var certificateValue = document.getElementById('certificate').value;
+        if(!cs['country2'].value)
+            return;
+        else
+        {
+            $('#certificate option').removeAttr('disabled');
+            for([i,v] of certToBeSkipped.entries()){
+                if(cs['country2'].selectedOptions[0].label == Object.keys(v)){
+                    for(j of Object.values(v).join().split(',')){
+                        $('option[value="'+j+'"]').attr('disabled','true')
+                    }
+                }
+            }
+        }
+        if(!$('#certificate').val()){ 
+            return;            
+        } 
+        else {              
+            $('#unv').text('authority');
+            if(certificateValue=='Education certificate')
+                $('#unv').text('university');
+            document.getElementById('Attestation').classList.remove('selectCertificateFirst');
+            //console.log('country2Val' + cs['country2']); 
+            //initiate msg_to_display 
+            var msg_to_display = '',client_docs='';
+            var msg_html = '<ul class="pl-3">';
+            var selectedValues;
+            for (let i = 0; i < cs['country2'].selectedOptions.length; i++) {
+                // var selectedValuesCode = cs['country2'].selectedOptions[i].value;
+                selectedValues = selectedValues + cs['country2'].selectedOptions[i].label;
+            }      
+            //console.log('returned val'); 
+            //console.log(selectedValues);     
+            const map_country_msg = msg_countries; //msg_countries imported from a static resource    
+            //concatenate msg_to_display based on selected country in multipicklist
+            var new_key = '';
+            //check if employee visa or educational certificate
+            new_key = $(cs['country2']).find('option:selected').text().trim() +'_'+ certificateValue.split(' ')[0];
+           
+        }
+        msg_countries.forEach(function(value,ind){
+            if(value.hasOwnProperty('attType')&&value['attType']==new_key){
+                let docs = value['docsToDisplay'];
+                let docs_upload = value['docsToUpload'];
+                //console.log('requiredDocs --- '+docs);
+                docs.split(';').forEach(function(v, i) {
+                    if(v)
+                        msg_html += '<li>' + v + '</li>';
+                    docsTobeSkipped.forEach(function(dV, dI) {
+                        if (v.toLowerCase().includes(dV)){
+                            v = '';
+                            return;
+                        }
+                    });
+                    if (v)
+                        msg_to_display += v+';';
+                });
+                
+                if(docs_upload){
+                    docs_upload.split(';').forEach(function(v, i) {
+                        docsTobeSkipped.forEach(function(dV, dI) {
+                            if (v.toLowerCase().includes(dV)){
+                                v = '';
+                                return;
+                            }
+                        });
+                        if(!v)
+                            return;
+                        docsTobeSkipped_subText.forEach(function(dV, dI) {
+                            if (v.toLowerCase().includes(dV.toLowerCase())){
+                                v = v.replace(dV,'');
+                                return;
+                            }
+                        });
+                        if(v.trim().toLowerCase().includes('uae adress proof')||v.trim().toLowerCase().includes('uae visa')||v.trim().toLowerCase().includes('emirates id')||v.trim().toLowerCase().includes('offer letter'))
+                            v= v.trim();
+                        else
+                            v= v.trim()+'_'+cs['country2'].selectedOptions[0].label;
+                        if (v)
+                            client_docs += v+';';
+                    });
+                }
+                client_docs += 'Applicant passport copy;'+$('#certificate option:selected').attr('mDoc')+';';
+                if($('#certificate').val()=="Birth certificate")
+                    client_docs += 'Father passport copy;Mother passport copy;';
+                else if($('#certificate').val()=="Marriage certificate")
+                    client_docs += 'Spouse passport copy;';
+                showRqDocs = true;
+                cs['xcddocs__c'].value = client_docs;
+                console.log('client_docs -- ' + client_docs); 
+            }
+        });
+    
+    console.log('msg_to_display -- ' + msg_to_display);
+    $('#Attestation_msg').html(msg_html);
+    if(showRqDocs)
+        $('#Attestation').show();
+    //document.getElementById('Attestation').innerHTML= msg_to_display;            
+    }
+    
+    //select id, name, xadh__c,xadtx3__c from g_req__c where id= 'a0E5D000004pFCPUA2'
+    </script> 
+    
+</apex:page>

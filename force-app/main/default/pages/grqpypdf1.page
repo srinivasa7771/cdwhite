@@ -1,0 +1,150 @@
+<apex:page id="x" sidebar="false" cache="false" showHeader="false"  expires="0" tabStyle="g_Req__c"  title="Proforma invoice" standardController="g_Req__c" extensions="gctlReqpy">
+<style type="text/css">.actionColumn.c1 {width:1%;white-space:nowrap;} .message.infoM3.d1 {background-color:#f5fcff;border-color:#bee6ff;}</style>    
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+
+<apex:stylesheet value="{!$Resource.gCss}"/>
+ <script>
+ var ADB=AD=VAT=0;SC=0;SCV=0;var dvChq,dvBD,cs={};
+    var oldval = '';
+    function c2s(cur){cur += ''; x = cur.split('.'); x1 = x[0];  x2 = x.length > 1 ? '.' + x[1] : '';var rgx = /(\d+)(\d{3})/; while (rgx.test(x1)) {x1 = x1.replace(rgx, '$1' + ',' + '$2');}return x1 + x2;}
+    
+ function drawAmount(){
+ alert('test');
+ alert('AD'+AD);
+ alert('VAT'+VAT);
+ var divA=document.getElementById("dvTAB");void 0!=divA&&(divA.innerHTML="AED "+c2s(AD));divA=document.getElementById("dvVAT");void 0!=divA&&(divA.innerHTML="AED "+c2s(VAT.toFixed(2)));/*divA=document.getElementById("dvSC");void 0!=divA&&(divA.innerHTML="AED "+c2s(SC.toFixed(2)));*/}
+  
+     window.onload = function() {
+         drawAmount();
+         }
+  
+ </script>
+<apex:form id="f">
+    <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.payq__c}" rendered="false" />
+    <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="p,sH,twinPp,pFS" onbeforedomupdate="javascript:toggle_inputs();" oncomplete="javascript:SDEG();"/>        
+    <apex:actionFunction name="afcp" action="{!CnclPayment}" status="theStatus" rerender="p,sH,twinPp,pFS" onbeforedomupdate="javascript: toggle_inputs();">
+        <apex:param name="aid" value=""/>
+    </apex:actionFunction>  
+    <apex:actionFunction name="pmd"  status="theStatus" rerender="p"  />        
+   
+    <apex:pageBlock mode="edit" id="p" tabStyle="g_Req__c" title="Proforma invoice" >
+        <apex:variable var="shP" value="{!IF(true,false,false)}" /><apex:repeat id="rP" value="{!rq.Transactions__r}" var="t"><apex:variable var="shP" value="{!IF(AND(t.TP__c='Payment',t.STA__c='Open'),true,shP)}" /></apex:repeat>
+         <apex:pageMessages id="msg"  escape="false"/>
+        <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}">
+            <script type="text/javascript">ADB=AD=VAT=0;SC=0;SCV=0;</script>
+            
+           <apex:pageBlockSection columns="2">
+             
+            <apex:pageBlockSectionItem >
+                   <apex:outputLabel value="Request"/>
+                   <apex:outputField value=" {!rq.srvc__r.lbl__c}"/>
+                </apex:pageBlockSectionItem>
+               <apex:pageBlockSectionItem >
+                   <apex:outputLabel value="Company Name"/>
+                   <apex:outputField value="{!rq.Acc__c}"/>
+                </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                   <apex:outputLabel value="Invoice Printed Date"/>
+                       <apex:outputText value="{0,date,MM/dd/yy}"> <apex:param value="{!TODAY()}" /> </apex:outputText>
+                   
+                </apex:pageBlockSectionItem>
+                   </apex:pageBlockSection>           
+            <apex:pageBlockSection id="b" collapsible="true" columns="1" rendered="{!NOT(payDone)}">
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Details" />  
+                    <apex:outputpanel id="c">                               
+                        <table class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">
+                            <tbody>
+                                <tr class="headerRow">
+                                    <th scope="col" class="actionColumn c1">{!$ObjectType.g_reqitem__c.label}</th>
+                                    <th scope="col" class="actionColumn c1" >{!$ObjectType.g_reqitem__c.fields.exp__c.label}</th>
+                                    <th scope="col" class="actionColumn CurrencyElement">
+                                    <apex:outputLabel rendered="{!Not(ispu)}">
+                                    {!$ObjectType.g_reqitem__c.fields.AD__c.label}
+                                    </apex:outputLabel>
+                                    </th>
+                                </tr>
+                                <apex:repeat id="r0" value="{!Is}" var="I">
+                                    <tr class="dataRow">
+                                        <td class="actionColumn c1">{!IF(ispu,I.I.itm__r.lbl__c,I.I.Name)}{!IF(ISNULL(I.I.m__c),'','(&nbsp;&nbsp;{!i.I.m__r.Name}&nbsp;)')}</td>
+                                        <td class="actionColumn c1"><apex:outputField value="{!I.I.exp__c}" rendered="{!I.I.exp__c}" /></td>
+                                        <td class="dataCell CurrencyElement" nowrap="nowrap" >
+                                            <apex:outputText value="{!I.I.AD__c+I.I.tvatp__c+I.I.tvngp__c}" rendered="{!Not(ispu)}" />
+                                            <script type="text/javascript"> AD+= {!IF(ISNULL(I.I.AD__c),0,I.I.AD__c)};
+                                            AD += {!IF(ISNULL(I.I.AV__c), 0, I.I.AV__c)};AD += {!IF(ISNULL(I.I.tvatp__c), 0, I.I.tvatp__c)};AD += {!IF(ISNULL(I.I.tvngp__c), 0, I.I.tvngp__c)};VAT += {!IF(ISNULL(I.I.AV__c), 0, I.I.AV__c)};
+                                            /*if(cs['md__c'].value == 'Cash'){
+                                               SC += {!IF(ISNULL(I.I.su__c), 0, I.I.su__c)};SCV += {!IF(ISNULL(I.I.vsu__c), 0, I.I.vsu__c)};
+                                               AD += {!IF(ISNULL(I.I.su__c), 0, I.I.su__c)}+{!IF(ISNULL(I.I.vsu__c), 0, I.I.vsu__c)}; 
+                                               VAT += {!IF(ISNULL(I.I.vsu__c), 0, I.I.vsu__c)};
+                                             }*/
+                                             </script>
+                                           
+                                        </td>
+                                    </tr>                                           
+                                </apex:repeat>
+       
+                                    <tr class="dataRow">
+                                            <td class="actionColumn c1">VAT</td>
+                                            <td class="actionColumn c1"></td>
+                                            <td class="actionColumn CurrencyElement">
+                                            <apex:outputLabel rendered="{!Not(ispu)}" >
+                                              <div id="dvVAT"/>  
+                                              </apex:outputLabel>
+                                            </td>
+                                    </tr>
+                                    
+                                <tr class="headerRow">
+                                    <th scope="col" class="actionColumn c1" colspan="2"></th>
+                                    <th scope="col" class="actionColumn CurrencyElement">
+                                     <apex:outputLabel rendered="{!Not(ispu)}" >
+                                    <div id="dvTAB"/>
+                                     </apex:outputLabel>
+                                    </th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!shP}" >                                
+                    <apex:outputLabel value="Payment History"  /> 
+                    <apex:outputpanel id="c2">
+                        <table class="list" border="0" cellpadding="0" cellspacing="0" id="tData2" style="width:100%;font-size:11px;">
+                            <tbody>
+                                <tr class="headerRow">
+                                    <th scope="col" class="actionColumn c1">Actions</th>
+                                    <th scope="col" class="actionColumn c1">{!$ObjectType.g_Tran__c.fields.Name.label}</th>
+                                    <th scope="col" class="actionColumn c1" >{!$ObjectType.g_Tran__c.fields.STA__c.label}</th>
+                                    <th scope="col" class="actionColumn c1" >{!$ObjectType.g_Tran__c.fields.TP__c.label}</th>
+                                    <th scope="col" class="actionColumn c1" >{!$ObjectType.g_Tran__c.fields.dt__c.label}</th>
+                                    <th scope="col" class="actionColumn c1" >{!$ObjectType.g_Tran__c.fields.md__c.label}</th>
+                                    <th scope="col" class="actionColumn CurrencyElement" >{!$ObjectType.g_Tran__c.fields.A__c.label}</th>
+                                </tr>
+                                <apex:repeat id="r1" value="{!rq.Transactions__r}" var="t">
+                                    <apex:outputpanel layout="none" rendered="{!IF(AND(t.TP__c='Payment',t.STA__c='Open'),true,false)}">
+                                        <tr class="dataRow">                                                        
+                                            <td class="actionColumn c1">
+                                                <apex:outputpanel layout="none" rendered="{!AND(t.STA__c='Open',t.md__c!='Credit / Debit Card',t.TP__c='Payment')}">
+                                                    <a href="" class="actionLink" style="cursor:pointer;" title="Cancel Payment" onclick="afcp('{!JSENCODE(t.Id)}');">Cancel Payment</a>
+                                                </apex:outputpanel>
+                                            </td>
+                                            <td class="dataCell"><apex:outputField value="{!t.Name}"/></td>
+                                            <td class="dataCell"><apex:outputField value="{!t.STA__c}"/></td>
+                                            <td class="dataCell"><apex:outputField value="{!t.TP__c}"/></td>
+                                            <td class="dataCell"><apex:outputField value="{!t.dt__c}"/></td>
+                                            <td class="dataCell"><apex:outputField value="{!t.md__c}"/></td>
+                                            <td class="dataCell CurrencyElement"><apex:outputField value="{!t.A__c}"/></td>
+                                        </tr>
+                                    </apex:outputpanel>
+                                    
+                                </apex:repeat>
+                            </tbody>
+                        </table>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+           
+        </apex:outputPanel>
+    </apex:pageBlock>
+</apex:form>                   
+</apex:page>

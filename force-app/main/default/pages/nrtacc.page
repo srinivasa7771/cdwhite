@@ -1,0 +1,498 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .srvcs{display:none}
+    </style>
+    <apex:outputPanel rendered="{!!ispu}">
+        <c:onlyBOCss />
+    </apex:outputPanel>
+    
+    
+    <script type="text/javascript">
+    var cs = {};
+    var selectedSer = '';
+    var ad4 = {"ActionName":"insertparkingrequest","SectorLocationId":"","OracleID":"","AgNo":"","AXSId":"","CardNumber":"","Eligibility":"","RequestType":"Parking Card","BusinessPark":"","Sector":"","CardRequestType":"","ParkingType":"Paid","EndDate":"","CardsDetail":[{"cardHolderName":"","Email":"","Mobile":"","Phone":"","Vehicles":[]}]};
+    
+    function createAD4(){
+        ad4.CardNumber = $('#cardDet').val();
+        ad4.Sector= selectedJSON[0].sector;
+        var dt = selectedJSON[0].expDate.split('/')[2]+'-'+selectedJSON[0].expDate.split('/')[1]+'-'+selectedJSON[0].expDate.split('/')[0];
+        ad4.EndDate = dt;
+        ad4['SectorLocationId'] = selectedJSON[0].sectorId;
+        ad4['Eligibility'] = selectedJSON[0].EligibilityName;
+        ad4['ParkingType'] = selectedJSON[0].cardType;
+        ad4['CardRequestType'] = cs['Reason__c'].value;
+        ad4['reason'] = cs['Reason__c'].value;
+        cs['xadtx4__c'].value = JSON.stringify(ad4);
+    }
+    function saveDetails(){
+        //cs['ias__c'].value='0np';
+        if($('#cardDet').val()==undefined||$('#cardDet').val()==''){
+            addValError('#cardDet','Please select a card.');
+            return;
+        }
+        if($('[name="ser"]:checked').val()==undefined||$('[name="ser"]:checked').val()==''){
+            // $('#Paid .services .form-group .frmErrMsg').remove();
+            //$('#Paid .services .form-group').append('<div class="frmErrMsg">Please choose an option.</div>');
+            scrollToDiv($('#Paid .services .form-group'));
+           addValError('[value="Cancel"]','Please choose an option.');
+            return;
+        }
+        var cardNum = $('.input-select-member').val();
+        cs['rtacn__c'].value = selectedJSON[0].cardNum;
+        cs['xpveh__c'].value=selectedJSON[0].vehicleNumber;
+        cs['xchn__c'].value=selectedJSON[0].cHolderNm;
+        cs['xppor__c'].value=selectedJSON[0].pPlaceOfReg;
+        cs['xps__c'].value=selectedJSON[0].sector;
+        var brk = vflds('.requiredFld,.applMob', true);
+        /*if(cs["rtacn__c"].value=='' || cs["rtacn__c"].value==undefined){
+            $('.table-parking').parent().parent().append('<div class="frmErrMsg">Please select vehicle number to proceed</div>');
+            scrollToDiv($('.table-parking'));
+            brk = true;
+        }*/
+        if($('[name="ser"]:checked').val() == 'Cancel'){
+            // $('#rsns,#cdCmp').show();
+            if(cs['Reason__c'].value!='' && cs['Reason__c'].value!=undefined){
+                cs['xadh__c'].value='xnp';
+                if(!brk){createAD4();toggleGLoader(); saverq();return; }
+            }
+            else
+              cs['xadh__c'].value='0np';
+        }
+        else{
+            //$('#rsns,#cdCmp').hide();
+            cs['xadh__c'].value='1np';
+        }
+        if(!brk){createAD4();toggleGLoader();saverq(); /*(pushPD();*/ }
+    }
+    
+    
+    function vflds(clsName){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){ 
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'This field is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }//else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        return brk;
+    }
+    
+    
+    </script> 
+    
+    <apex:form styleClass="pbform" id="prkMain">
+        <apex:actionFunction name="updItems" action="{!updateItemSTA}" reRender="msg"/>
+        <apex:actionFunction name="pushPD" action="{!loadCards}" reRender="msg" />
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="createDD();aftrLoad();" status="theStatus" rerender="prkTable" />
+        <apex:actionFunction name="loadVehicles" action="{!loadPNums}" oncomplete="toggleGLoader();loadSelected();" status="theStatus" rerender="prkTable" />
+        <apex:actionFunction name="saverq" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+        
+        <body class="base">
+            <div id="main">
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="msg2"  oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                Using this service, you can cancel or deregister your parking permits.
+                                                <br/><br/>
+                                                Kindly note, eligible parking permits as part of your lease agreement can only be deregistered but not cancelled.
+                                                <br/><br/>
+                                                However, additional parking/user permits purchased can be cancelled or deregistered.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    <h3 class="base-main-title">Cancel / Deregistration Parking Permits</h3>
+                                    <p class="fs-18">Select the permit you would like to cancel/deregister.</p>
+                                    <apex:outputPanel id="prkTable">
+                                        <!--parkingString -- {!parkingString} <br />-->
+                                        <apex:inputHidden id="parkingString" value="{!parkingString}"/>
+                                        <script>
+                                        cs['parkingString']=getC('{!$Component.parkingString}'); 
+                                        var allJSON = {};
+                                        var allJSONStr = '';
+                                        var data = [];
+                                        </script>
+                                        
+                                        <!-- drop down -->
+                                        <div class="form-group">
+                                            <select id="cardDet" class="form-control input-select-member" onchange="settoFld(this)"
+                                                    data-placeholder="Start typing the number or select from the list">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- drop down -->
+                                        
+                                      <div class="" style="max-height:300px;overflow:hidden;overflow-y:auto;" >
+                                            <!--<table class="table table-align-middle table-parking">
+                                                <thead>
+                                                    <tr>
+                                                        <th>SELECT</th>
+                                                        <th>PLATE NUMBER</th>
+                                                        <th>CITY</th>
+                                                        <th>VEHICLE OWNER</th>
+                                                        <th>CONTACT NUMBER</th>
+                                                        <th>EXPIRY</th>
+                                                        <th>CARD NUMBER</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <apex:repeat value="{!lst_pd}" var="p">
+                                                        <tr>
+                                                            <td>
+                                                                <label class="custom-radio">
+                                                                    <input num="{!p.cardNum}" type="radio" name="Vehicle number" onchange="settoFld(this)" /><span></span>
+                                                                </label>
+                                                            </td>
+                                                            <td>
+                                                                <div class="vehicle-number mb-1">
+                                                                    {!p.vehicleNumber}
+                                                                </div>
+                                                            </td>
+                                                            <td>{!p.pPlaceOfReg}</td>
+                                                            <td>
+                                                                <apex:outputText rendered="{!ISBLANK(p.cHolderNm)}"><b style="color: #E62D38;">NA</b></apex:outputText>
+                                                                <apex:outputText rendered="{!!ISBLANK(p.cHolderNm)}">{!p.cHolderNm}</apex:outputText>
+                                                            </td>
+                                                            <td><b style="color: #E62D38;">NA</b></td>
+                                                            <td>{!p.expDate}</td>
+                                                            <td>{!p.cardNum}</td>
+                                                        </tr>
+                                                    </apex:repeat>
+                                                </tbody>
+                                            </table>-->
+                                        </div>
+                                    </apex:outputPanel>
+                                    <!--
+                                    <p class="chk" style="display:none;vertical-align: middle; font-size: 1em;">
+                                        <label class="custom-checkbox mr-4">
+                                            <input id="toBereserved" onchange="" type="checkbox" />
+                                            <span>Do You want to convert the vehicles to enrollment?</span>
+                                        </label>  
+                                    </p>
+                                    -->
+                                    <div id="Paid" class="srvcs">
+                                        <div class="mb-4 services" id="srvcs">
+                                            <label class="mb-3 fs-18">Selected card is addtional parking permit, apply for deregistration if you want to reassgin to someone else</label>
+                                            <div class="form-group">
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="ser" onchange="selSer(this)" r='c' value="Cancel" />
+                                                    <span>Cancel</span>
+                                                </label>
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="ser" onchange="selSer(this)" r='d' value="Deactivate" />
+                                                    <span>Deregister</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!--
+                                        <div class="mb-4" id="rsns" style="display:none;">
+                                            <label class="mb-3 fs-18">Do you have the parking permit?</label>
+                                            <div class="form-group">
+                                                <label class="custom-radio mr-5">
+                                                    <input onclick="LorD(this)" type="radio" name="reason" r='l' value="Lost" />
+                                                    <span>Lost</span>
+                                                </label>
+                                                <label class="custom-radio mr-5">
+                                                    <input onclick="LorD(this)" type="radio" name="reason" r='d' value="Damaged" />
+                                                    <span>Damaged</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        -->
+                                        <div class="mb-4"></div>
+                                        <div class="form-style eConInfo" id="eConInfo" style="display:none">
+                                            <c:eContactInfo noNotes="true" req="{!req}" uid="{!srv.uid__c}" /> 
+                                        </div>
+                                        <div class="form-style" id="cdCmp" style="display:none" >
+                                             <c:eContactInfo noNotes="true" req="{!req}" uid="{!srv.uid__c}" /> 
+                                        </div>
+                                        
+                                    </div>
+                                    <div id="Free" class="srvcs">
+                                        <div class="mb-4 services" id="srvcs" style="display:none;!important">
+                                            <label class="mb-3 fs-18">Service to apply</label>
+                                            <div class="form-group">
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="ser" onchange="selSer(this)" r='d' checked='true' value="Deactivate" />
+                                                    <span>Deactivate</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!--<div class="form-style eConInfo"  style="display:none">
+                                            <c:eContactInfo req="{!req}" /> 
+                                        </div>-->
+                                    </div>
+                                </apex:pageBlock>
+                            </div>
+                            <div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a onclick="saveDetails();" id="sbmtBtn" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                        SUBMIT
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </body>
+        
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        
+        <apex:inputHidden id="xbrnd__c" value="{!req.xbrnd__c}" />
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <apex:inputHidden id="Reason__c" value="{!req.Reason__c}" />
+        <apex:inputHidden id="rtacn__c" value="{!req.rtacn__c}" />
+        <apex:inputHidden id="xpveh__c" value="{!req.xpveh__c}" />
+        <apex:inputHidden id="xppor__c" value="{!req.xppor__c}" />
+        <apex:inputHidden id="xchn__c" value="{!req.xchn__c}" />
+        <apex:inputHidden id="xps__c" value="{!req.xps__c}" />
+        <apex:inputHidden id="rmob__c" value="{!req.rmob__c}" />
+        
+        <script type="text/javascript">
+        cs['xadh__c']=getC('{!$Component.xadh__c}'); 
+        cs['xadtx4__c']=getC('{!$Component.xadtx4__c}'); 
+        cs['Reason__c']=getC('{!$Component.Reason__c}'); 
+        cs['rtacn__c']=getC('{!$Component.rtacn__c}'); 
+        cs['ias__c']=getC('{!$Component.ias__c}'); 
+        cs['xpveh__c']=getC('{!$Component.xpveh__c}'); 
+        cs['xppor__c']=getC('{!$Component.xppor__c}'); 
+        cs['xchn__c']=getC('{!$Component.xchn__c}'); 
+        cs['xps__c']=getC('{!$Component.xps__c}');//Sector
+        cs['rmob__c']=getC('{!$Component.rmob__c}');
+        </script> 
+    </apex:form> 
+    <script>
+    var selectedJSON = [];
+    var reqId = '', cNum='', reason='';
+    $(document).ready(function(){
+        cNum = getUrlParameter('c');
+        reason = getUrlParameter('r');  
+        callWS();
+        reqId = '{!JSENCODE(req.id)}';
+        cs['xadh__c'].value='1np';
+        //Axs2CustomJS
+        if(cs["xcmob__c"] && cs["rmob__c"]){
+            $(cs["xcmob__c"]).on('change',function(){
+                cs["rmob__c"].value = cs["xcmob__c"].value;
+            });
+        }
+    });
+    function createDD(){
+        let e = cs['parkingString'].value;
+        allJSONStr = e.replaceAll('\t', ' '); 
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        (function ($) {
+            $(function () {
+                var allJSONObj = JSON.parse(allJSONStr);
+                for(i of allJSONObj){
+                    var d ={};
+                    d.text = i.cardNum;//cardType;
+                    d.cardNum = i.cardNum;
+                    d.cardType = i.cardType;
+                    d.cHolderNm = (i.cHolderNm==null)?'NA':i.cHolderNm;
+                    d.expDate = i.expDate;
+                    d.id = i.cardNum;
+                    d.cardId = i.cardId;
+                    d.actStat = i.actStat;
+                    if(i.actStat=='Active'||i.actStat=='Inactive')
+                        data.push(d);
+                }
+                $('.input-select-member').change(function () {
+                    if ($(this).val() === '') {
+                        $(this).next('.select2').removeClass('selected');
+                    } else {
+                        $(this).next('.select2').addClass('selected');
+                    }
+                });
+                
+                setTimeout(function () {
+                    $('.input-select-member').trigger('change');
+                }, 100);
+                
+                $('.input-select-member').select2({
+                    data: data,
+                    allowClear: true,
+                    escapeMarkup: function (markup) {
+                        return markup;
+                    },
+                    templateResult: function (data) {
+                        if (!data.id && data.id!=undefined) {
+                            return data.cardNum;
+                        }
+                        
+                        var tex = (data.cardType=="Paid"?"Additional parking permit":"Standard parking permit");
+                        var html = '<div class="user-title-media user-title-media-sm">' +
+                            '<div>' +
+                            '<div class="user-name mb-2">' + data.cardNum + '</div>' +
+                            '<div class="user-title font-weight-normal"> ' + tex +' in  <b>'+data.actStat+'</b> status'+
+                            /*'<div class="user-title font-weight-normal">Expires on '+data.expDate+'</div>' +*/
+                            '</div>' +
+                            '</div>';
+                        return html;
+                    },
+                    templateSelection: function (data) {
+                        if (!data.id && data.id!=undefined) {
+                            return data.cardNum;
+                        }
+                        
+                        var tex = (data.cardType=="Paid"?"Additional parking permit":"Standard parking permit");
+                        var html = '<div class="user-title-media user-title-media-sm">' +
+                            '<div>' +
+                            '<div class="user-name mb-2">' + data.cardNum + '</div>' +
+                            '<div class="user-title font-weight-normal"> ' + tex +' in  <b>'+data.actStat+'</b> status'+
+                            '</div>' +
+                            '</div>';
+                        return html;
+                    }
+                });
+                
+            });
+            // .ready
+        }(jQuery));
+        setTimeout(function(){
+            if(reqId!='')
+                loadPrevData();
+        },400);
+    }
+    function LorD(elem){
+        cs['Reason__c'].value = $(elem).val();
+        $('#sbmtBtn').text('PROCEED TO PAY');
+        $('#cdCmp').hide();
+        $('#Paid .eConInfo').show();
+    }
+    function selSer(elem){
+        $('#sbmtBtn').text('SUBMIT');
+        selectedSer = $(elem).val();
+        $('.services').find('.frmErrMsg').remove();
+        $('[name="reason"]').prop('checked',false);
+        if(selectedSer == 'Cancel'){
+            $('#rsns,#cdCmp').show();
+            $('#Paid .eConInfo').hide();
+            cs['Reason__c'].value='Cancellation';
+            if(cs['Reason__c'].value!='' && cs['Reason__c'].value!=undefined)
+                cs['xadh__c'].value='xnp';
+            else
+              cs['xadh__c'].value='0np';
+        }
+        else{
+            $('#rsns,#cdCmp').hide();
+            $('#Paid .eConInfo').show();
+            cs['xadh__c'].value='1np';
+            cs['Reason__c'].value='Deactivation';
+        }
+    }
+    function loadSelected(){
+        let l = cs['parkingString'].value;
+        $('[r="'+reason+'"]').prop('checked',true).trigger('change');
+        $('[num="'+cNum+'"]').prop('checked',true).trigger('change');
+        var s=l.replace("\"Items\"",'\'Items\'')
+        selectedJSON = JSON.parse(s);
+    }
+    function loadPrevData(){
+        $('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+        $('#'+selectedJSON[0].cardType).show();
+        if(cs["Reason__c"].value.includes('Cancel')){
+            $('#'+selectedJSON[0].cardType).find('[value="Cancel"]').prop('checked',true).trigger('change');
+            $('#rsns').find('[value="'+cs["Reason__c"].value+'"]').prop('checked',true).trigger('click');
+        }
+        else if(cs["Reason__c"].value.includes('Deact'))
+            $('#'+selectedJSON[0].cardType).find('[value="Deactivate"]').prop('checked',true).trigger('change');
+        // $('[num="'+cs['rtacn__c'].value+'"]').prop('checked',true).trigger('change');
+        //$('.input-select-member').val(cs['rtacn__c'].value).trigger('change');
+    }
+    function aftrLoad(){
+        //cs['Reason__c'].value = "Lost";
+        if(reqId!='')
+            loadPrevData();
+    }
+    function settoFld(e){
+        removeValError('#cardDet');
+        $('[name="ser"]:checked').prop('checked',false);
+        var cardNum = $(e).val();
+        if(cardNum==''||cardNum==undefined)
+            return; 
+        //var cardNum = $(e).attr('num');
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        if(allJSONStr.length>0){
+            allJSON = JSON.parse(allJSONStr);
+            for(i=0;i<allJSON.length;i++){
+                if(cardNum == allJSON[i].cardNum){
+                    selectedJSON[0] = allJSON[i];
+                }
+            }
+        }
+        $('.srvcs').hide();
+        $('#Paid ').show()
+        $('#Paid .eConInfo').hide();
+        if(selectedJSON[0].cardType=='Free'){
+            $('#Free').find('[value="Deactivate"]').prop('checked',true).trigger('change');
+            $('#Paid .eConInfo').show();
+            $('#Paid #srvcs').hide();
+        }
+        else{
+            $('#'+selectedJSON[0].cardType).show();
+            $('#Paid #srvcs').show();
+        }
+        /*cs["xcmob__c"].value = selectedJSON[0].refMobile;
+        cs["rmob__c"].value = selectedJSON[0].refMobile;
+        cs["xceml__c"].value = selectedJSON[0].email;*/
+        
+        //cs['rtacn__c'].value = cardNum;
+        $('.table-parking').parent().parent().find('.frmErrMsg').remove();
+        $('.chk').show();
+    }
+    
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    
+    
+    </script>
+</apex:page>

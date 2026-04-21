@@ -1,0 +1,1929 @@
+<apex:page cache="false" controller="gctlRQ1" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" action="{!redirectService}" title="AXS - Home" >
+    <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/> 
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>    
+    <style>
+        .disabled-box{
+        opacity: 0.5 !important;
+        pointer-events: none;
+        cursor: not-allowed !important;
+        }
+        .loadingProgress{
+        cursor: wait !important;
+        pointer-events: none !important;
+        }
+        .select2-container.select2-container--default {
+        width: 100% !important;
+        }
+        .bootstrap-datetimepicker-widget table td {
+        padding: 5px !important;
+        }
+        .visaNum {padding: 0.9rem;display: inline-block;}
+    </style>
+    <script>
+    var cs= {};
+    </script>
+    <body>
+        
+        
+        <div id="main">
+            <div class="container pt-2 pb-2">
+                <div class="text-right">
+                    <apex:outputPanel id="SRId">
+                        <apex:outputText rendered="{!rq.id!=''}">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!rqNo} </span>
+                                </span>
+                                <!-- <c:drftCnclBtns req="{!rq}" shwCncl="true" shwDraft="false"/>-->
+                            </div>
+                        </apex:outputText>
+                    </apex:outputPanel>
+                </div>
+            </div>
+            <apex:form >
+                <apex:outputPanel id="validateVisaId">
+                    <apex:inputHidden id="depListStr" value="{!depListStr}"/> <!--for dependent list to avoid single quote issue-->
+                    <script>
+                    cs["depListStr"] = document.getElementById("{!$Component.depListStr}");
+                    function updateDepList(){
+                        if('{!sd.cv__c}' == 'DepInsCmp'){cs['xadh__c'].value  = 'inr;';}
+                        console.log('inside updateDepList');
+                        $('.deplist').show();
+                        var depListStr = {};
+                        depSel = document.getElementById('depSelId');
+                        $('#depSelId option').remove();
+                        $('#depSelId').append(new Option('Select', 'Select'));
+                        if($(cs["depListStr"]).val()){
+                            depListStr = JSON.parse($(cs["depListStr"]).val());
+                            for(var x=0;x<depListStr.length;x++){
+                                var dep = depListStr[x];    
+                                myOption = document.createElement("option");
+                                myOption.text = dep.Name;
+                                if('{!sd.cv__c}' == 'DepRenewal' || '{!sd.cv__c}' == 'DepGVTrns')
+                                    myOption.value = dep.rol__c+'_'+dep.Id;
+                                else
+                                    myOption.value = dep.Id;  
+                                depSel.appendChild(myOption);
+                            }
+                        }
+                        if('{!sd.cv__c}' != 'DepGVTrns'){
+                            myOption = document.createElement("option");
+                            myOption.text = 'Add new dependent';
+                            myOption.value = 'Add';
+                            depSel.appendChild(myOption);
+                        }
+                    }
+                    function displayService(){
+                        
+                        var isValidVisa = '{!isVisaTransfer}';
+                        $('#verify_visa_details').show(); 
+                        $('#priority_id').show();
+                        var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                        var visa=$('.radio-visa:checked').val(); 
+                        console.log('visa#######'+visa);
+                        $('#ofl').hide(); $('#inc').show();
+                        
+                        var v1= $('#visa1').val();  var v2= $('#visa2').val(); var v3= $('#visa3').val();
+                        if(isValidVisa == 'n')
+                        {
+                            $('#vmsg').show();
+                        }
+                        else{
+                            $('#vmsg').hide();
+                        }
+                        if(isValidVisa == 'int' && visa=='yes'){
+                            
+                            $('.srvNew').hide();$('.vNew').hide();
+                            $('.srvTransfers').show(); $('.vTransfers').hide(); 
+                            $('.vIntTransfers').show(); 
+                            cs["visaTransferId"].value = 'int';
+                            cs["xeidav__c"].value = 'Yes';
+                            $('#inc').show();
+                            //to select Residence Visa Type by defaul -vmkr
+                            $('[att1="residence"]').prop('checked',true);
+                            $('[name="visaType"]').attr('disabled',true)
+                            
+                        }
+                        else if(v1 == '201' && v3.substring(0, 1) == '7' && validVisa && visa=='yes' && isValidVisa != 'n'){
+                            
+                            $('.srvNew').hide();$('.vNew').hide();
+                            $('.srvTransfers').show(); $('.vTransfers').show(); 
+                            $('.vIntTransfers').hide(); 
+                            cs["xeidav__c"].value = 'Yes';
+                            cs["visaTransferId"].value = 'y'; $('#inc').show();
+                        }
+                            else{
+                                cs["xeidav__c"].value = 'No';
+                                $('.srvNew').show();$('.vNew').show();
+                                $('.srvTransfers').hide(); $('.vTransfers').hide(); 
+                                $('.vIntTransfers').hide(); 
+                                if(v1 != '204')
+                                    $('#ofl').show();
+                            }    
+                        
+                        
+                    }  
+                    </script>
+                </apex:outputPanel>
+                <script>
+                var validVisa = true;
+                var serviceId = '{!srv.uid__c}';
+                function copyApplicantInfo(){
+                    var srvId = $('[name="service_id"]:checked').val(); 
+                    cs['xadh__c'].value  = 'md;';
+                    var healthinsurance = $('input[name="healthinsurance"]:checked').length > 0;
+                    
+                    if(healthinsurance)
+                        cs['InsChk__c'].value = true;
+                    cs["srvc__c"].value = srvId;
+                    $('#preloader').fadeIn();
+                    //axsAlert('Contact',cs['Con__c'].value);
+                    applicantSave();
+                }
+                function copyCancelApplicantInfo(){
+                    $('#preloader').fadeIn();
+                    applicantSave();
+                    
+                }
+                function checkinsurance(){
+                    if($('#depSelId').val()=='Add' && '{!sd.cv__c}' == 'DepRenewal' && $('#inschk').prop('checked')==true){
+                        cs['InsChk__c'].value = true;
+                    }else if($('#depSelId').val()=='Add' && '{!sd.cv__c}' == 'DepRenewal' && $('#inschk').prop('checked')==false){
+                        cs['InsChk__c'].value = false;
+                    }
+                    
+                    if($('#inschk').prop('checked')==true && ('{!sd.cv__c}' == 'VisaCorrection' || ('{!sd.cv__c}' == 'DepRenewal' && $('#depSelId').val()!='Add'))){
+                        $('#preloader').fadeIn();
+                        $('[name="amendvisa"]:checked').each(function(){
+                            var amendSrv =$(this).val();
+                            console.log('amendSrv======'+amendSrv);
+                            if(amendSrv == 'ntc'){
+                                if(!cs['xadh__c'].value.includes("ntc;np;")) {
+                                    cs['xadh__c'].value  += amendSrv+';np;';
+                                }
+                            }
+                            else if(amendSrv == 'pc'){
+                                if(!cs['xadh__c'].value.includes("pc;")) {
+                                    cs['xadh__c'].value  += amendSrv+';jt;';
+                                }
+                            }
+                                else
+                                    cs['xadh__c'].value += amendSrv+';';
+                        }) 
+                        console.log('xadh=====>'+cs['xadh__c'].value);    
+                        saveRequest('true','lp',cs['xadh__c'].value); 
+                    } if($('#inschk').prop('checked')==false && ('{!sd.cv__c}' == 'VisaCorrection' || ('{!sd.cv__c}' == 'DepRenewal' && $('#depSelId').val()!='Add'))){
+                        $('#preloader').fadeIn();
+                        $('[name="amendvisa"]:checked').each(function(){
+                            var amendSrv =$(this).val();
+                            console.log('amendSrv======'+amendSrv);
+                            if(amendSrv == 'ntc'){
+                                if(!cs['xadh__c'].value.includes("ntc;np;")) {
+                                    cs['xadh__c'].value  += amendSrv+';np;';
+                                }
+                            }
+                            else if(amendSrv == 'pc'){
+                                if(!cs['xadh__c'].value.includes("pc;")) {
+                                    cs['xadh__c'].value  += amendSrv+';jt;';
+                                }
+                            }
+                                else
+                                    cs['xadh__c'].value += amendSrv+';';
+                        })
+                        
+                        console.log('xadh=====>'+cs['xadh__c'].value);    
+                        saveRequest('false','lp',cs['xadh__c'].value); 
+                    }
+                } 
+                function setToRQFld1(e){}
+                function uploadDoc(docname,parseFlg,rqFlg){
+                    currentDoc = docname;
+                    if(rqFlg == 'true' && ('{!sd.cv__c}' == 'NewVisa' || '{!sd.cv__c}' == 'missvVisa' || '{!sd.cv__c}' == 'Visa' || '{!sd.cv__c}' == 'StuNewVisa' || '{!sd.cv__c}' == 'VisaCorrection' || '{!sd.cv__c}' == 'DepNewCmp' ||
+                                           '{!sd.cv__c}' == 'VisitVisa' || '{!sd.cv__c}' == 'VisitVisaM' || '{!sd.cv__c}' == 'DepTransferCmp' || '{!sd.cv__c}' == 'DepRenewal' || '{!sd.cv__c}' == 'LostPassport'  || '{!sd.cv__c}' == 'DepInsCmp')){
+                        
+                        var msg = ''; 
+                        var srvId = $('[name="service_id"]:checked').val(); 
+                        //var priority = $('[name="priority_type"]:checked').val();
+                        if ( typeof srvId === "undefined" || srvId == "") {
+                            msg = msg + 'Please select Service Type'
+                        }
+                        if(msg != ''){
+                            axsAlert('Alert',msg);
+                            return false;
+                        }
+                        cs['xadh__c'].value  += 'md;';
+                        
+                        cs["srvc__c"].value = srvId;
+                        if('{!sd.cv__c}' == 'NewVisa' || '{!sd.cv__c}' == 'DepNewCmp' || '{!sd.cv__c}' == 'missvVisa'){
+                            var insideUAE = $('[name="radio-visa"]:checked').val(); 
+                            var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                            if(isIncountryChecked){ 
+                                cs['xadh__c'].value +='ic;la;';
+                                var oflFlg = $('input[name="offerleter"]:checked').length > 0;
+                                if(oflFlg)
+                                    cs['xadh__c'].value +='ofl;';  
+                            }
+                            var outsourceFlg = $('input[name="outsource"]:checked').length > 0;
+                            if(outsourceFlg)
+                                cs['xosa__c'].value = 'Yes';  
+                        }  
+                        
+                        /*if('{!sd.cv__c}' == 'LostPassport'){
+                            cs["Con1__c"].value = cs["Con__c"].value;
+                            cs["xcnc__c"].value = (conJson['ntc']!=undefined) ? conJson['ntc']: '';
+
+                            if( cs['xoca__c'].value=='true'){
+                                $( ".lostpassport" ).prop( "value", 'yes');
+                            }else{
+                                $( ".lostpassport" ).prop( "value", 'no');
+                            }
+                            $( ".lostpassport" ).prop( "checked", true );
+                            
+                        }*/
+                        if('{!sd.cv__c}' == 'DepNewCmp'){
+                            var chld = $('[name="child_relationship"]:checked').val();
+                            if(chld != undefined && chld != '' &&  chld == 'bornuae'){
+                                cs['xadh__c'].value +='ic;la;';
+                            }
+                        }
+                        if('{!sd.cv__c}' == 'VisitVisaM'){
+                            var v1= $('#visa1').val(); 
+                            var v2= $('#visa2').val();
+                            var v3= $('#visa3').val();
+                            cs["e__c"].value = v1+'/'+v2+'/'+v3;
+                        } 
+                        if('{!sd.cv__c}' == 'VisitVisa' || '{!sd.cv__c}' == 'missvVisa' || '{!sd.cv__c}' == 'VisitVisaM'){ 
+                            // var acrdFlg = $('input[name="accesscard"]:checked').length > 0;
+                            var qtFlg = $('input[name="qtextn"]:checked').length > 0;
+                            var visasetup = '{!acc.vvsfp__c}'; 
+                            if ('{!sd.cv__c}' == 'missvVisa') { //Added by Sorna
+                                visasetup = '{!acc.mvsfp__c}';
+                            }
+                            var srvAttr = $('[name="service_id"]:checked').attr('attlbl');
+                            
+                            /*if(acrdFlg)alert(
+                               cs['xadh__c'].value +='id;';  */
+                            console.log('srvAttr::'+srvAttr);  console.log('visasetup::'+visasetup); 
+                            if(srvAttr == '3 months' && (!visasetup.includes('Long Term'))){
+                                
+                                cs['xadh__c'].value +='vfl;ddl;'; 
+                                if ('{!sd.cv__c}' == 'missvVisa') { //Added by Sorna
+                                    cs['xadh__c'].value +='iff;sd;';
+                                }
+                                
+                            }
+                            
+                            if(srvAttr == '1 month' && ( !visasetup.includes('Short Term'))){
+                                cs['xadh__c'].value +='vfs;dd;'; 
+                            }
+                            
+                            if(qtFlg){
+                                if(srvAttr == '3 Months')
+                                    cs['xadh__c'].value +='qel;';
+                                if(srvAttr == '1 Month')
+                                    cs['xadh__c'].value +='qe;';
+                            }
+                        }
+                        
+                        if('{!sd.cv__c}' == 'StuNewVisa'){
+                            var insideUAE = $('[name="stdInsideUAE"]:checked').val();
+                            var adh = cs['xadh__c'].value;
+                            if(insideUAE == 'yes' && !adh.includes('ic;'))
+                                cs['xadh__c'].value +='ic;la;';
+                        }
+                        if('{!sd.cv__c}' == 'Visa'){
+                            var sponsoredBy = $('[name="sponsoredby"]:checked').val();
+                            if('{!sd.vtyp__c}' == 'nid')
+                                cs["xcspb__c"].value = sponsoredBy;
+                            if('{!sd.vtyp__c}' == 'tid')
+                                cs["xcstp__c"].value = sponsoredBy;
+                        }
+                        if('{!sd.cv__c}' == 'VisaCorrection'){
+                            // var amendSrv = $('[name="amendvisa"]:checked').val();
+                            $('[name="amendvisa"]:checked').each(function(){
+                                var amendSrv =$(this).val();
+                                console.log('amendSrv======'+amendSrv);
+                                if(amendSrv == 'ntc'){
+                                    // cs['xadh__c'].value  += amendSrv+';np;';
+                                }
+                                else
+                                    cs['xadh__c'].value += amendSrv+';';
+                            }) 
+                            console.log('xadh=====>'+cs['xadh__c'].value);    
+                        }
+                    }
+                    var healthinsurance = $('input[name="healthinsurance"]:checked').length > 0;
+                    if(healthinsurance)
+                        cs['InsChk__c'].value = true;
+                    // alert( cs['xadh__c'].value );
+                    cs["docname"].value = docname;cs["parseId"].value = parseFlg; 
+                    $(".docname").text(docname);
+                    if(cs["visaTransferId"].value == 'int')
+                        cs["parseId"].value = 'false';
+                    if(rqFlg == 'true' && ('{!sd.cv__c}' == 'DepRenewal' || '{!sd.cv__c}' == 'CancelVisaDep') && (cs['Con__c'].value == 'undefined' ||  cs['Con__c'].value == ''))
+                        cs["parseId"].value = 'true';
+                    //alert('tsts::');
+                    //$('#modal_upload_passport').modal('show');
+                    $('#modal_fileuploadPopUp').modal('show');
+                }
+                
+                function formatDate(date){
+                    var d = date.split('/');
+                    var dd = new Date();
+                    dd.setFullYear(d[2], (parseInt(d[0]))-1, d[1]);
+                    console.log(dd);
+                    return dd;
+                }
+                function formatDate2(date){
+                    let d = date.split('/');
+                    let dd = d[1]+'/'+d[0]+'/'+d[2];
+                    return dd;
+                }
+                function chkVisaValidity(dt){
+                    var days = (new Date(formatDate2(dt))-new Date())/1000/60/60/24;
+                    //alert(days);
+                    if(days>=90)
+                        return true;
+                    return false;
+                }  
+                function visaValidityChange(){
+                    var isvisaBtn = $('#verify_visa_details_button').is(':visible');
+                    if(!isvisaBtn) 
+                        $('#verify_visa_details_button').trigger('click');
+                }
+                function removeAttch1(attchid,docName){
+                    $('[forLoad="'+docName+'"]').find('.loader_img').show();
+                    $('*').addClass('loadingProgress');
+                    removeAttch(attchid);
+                }
+                function filePreview(fName,src){
+                    console.log('In filePreview>>'+fName);
+                    fileSrc=document.getElementById("{!$Component.fileSrc}");
+                    fileSrc.value=src;
+                    document.getElementById("mdHeader").innerHTML = fName;
+                    document.getElementById("previewDiv").src = src;
+                    //$('#modal_vfs').modal('show');
+                    window.open(src, '_blank');
+                }
+                function backpg(){
+                    $('#srv_id_page').show();
+                    $('#doc_details').hide(); 
+                    $('.messageTable').remove();
+                    $('#btn_id').hide();
+                }
+                function depTypeSelect(e){
+                    if($('#depTypeId').val()!='Select'){
+                        $('#depTypeId').parents('.form-group').find('.frmErrMsg').remove();
+                    }
+                    // to skip age validation on DOB for dependent cancellation
+                    cs["uid"].value = 'onlyPast';
+                    //
+                    cs["xcsrs__c"].value=$(e).val() ;
+                }
+                function depSelect(e){
+                    if($('#depSelId').val()!='Select'){
+                        $('#depSelId').parents('.form-group').find('.frmErrMsg').remove();
+                    }
+                    
+                    cs["xard__c"].value=false;
+                    if('{!sd.cv__c}' == 'CancelVisaDep' ){
+                        $('.depType').hide();
+                        
+                        if($(e).val() != null && $(e).val() != '' && $(e).val() != 'Add'){
+                            cs['Con__c'].value =$(e).val(); 
+                            
+                        }
+                        else{
+                            cs['Con__c'].value = ''; cs["xard__c"].value=true;
+                            $('.depType').show();
+                        }
+                    }
+                    else if( '{!sd.cv__c}' == 'DepInsCmp'){
+                        $('.depType').hide();
+                        
+                        if($(e).val() != null && $(e).val() != '' && $(e).val() != 'Add'){
+                            cs['Con__c'].value =$(e).val();
+                            // saveRequest('true','lp',); 
+                            cs['xadh__c'].value='inr';
+                            
+                            cs["srvc__c"].value = $('[name="service_id"]').val();
+                            
+                            toggleGLoader();applicantSave();
+                        }
+                        else{
+                            cs['Con__c'].value = ''; cs["xard__c"].value=true;
+                            $('.depType').show();
+                        }
+                    }
+                        else if( '{!sd.cv__c}' == 'DepGVTrns'){
+                            var lst = $(e).val().split("_");
+                            cs['Con__c'].value = lst[1];
+                            cs["srvc__c"].value = $('[att1="'+lst[0]+'"]').val();
+                            //cs["srvc__c"].value = $('[name="service_id"]').val();
+                            toggleGLoader();applicantSave();
+                        }
+                            else{
+                                $('.depSrv').show(); 
+                                var lst = $(e).val().split("_");
+                                if(lst[0] == 'Spouse'){
+                                    cs['Con__c'].value = lst[1];
+                                    $('.vSpouse').show();$('.vChild').hide();$('.srvNew').show();$('.srvTransfers').hide();
+                                    
+                                    
+                                }
+                                else if(lst[0] == 'Child'){
+                                    cs['Con__c'].value = lst[1];
+                                    $('.vChild').show();$('.vSpouse').hide();$('.srvNew').hide();$('.srvTransfers').show();
+                                }
+                                    else{
+                                        cs['Con__c'].value = ''; cs["xard__c"].value=true;
+                                        $('.vChild').show();$('.vSpouse').show();$('.srvNew').show();
+                                    }
+                            }
+                }
+                function copyDepInfo(){
+                    if('{!sd.cv__c}' == 'LostPassport'){
+                        console.log('Spr1:'+cs["Spr__c"].value);
+                        cs["Spr1__c"].value = cs["Spr__c"].value;
+                    }
+                    copyDepDtls();
+                }
+                function nextPgValidate(isRPCorrection){
+                    console.log('nextPgValidate::::::::');
+                    console.log('adhoc Items:::'+cs['xadh__c'].value);  
+                    if('{!sd.cv__c}' == 'VisaCorrection' ){
+                        // var amendSrv = $('[name="amendvisa"]:checked').val();
+                        $('[name="amendvisa"]:checked').each(function(){
+                            var amendSrv =$(this).val();
+                            console.log('amendSrv======'+amendSrv);
+                            if(amendSrv == 'ntc'){
+                                if(!cs['xadh__c'].value.includes("ntc;np;")) {
+                                    // cs['xadh__c'].value  += amendSrv+';np;';
+                                }
+                            }
+                            else if(amendSrv == 'pc'){
+                                if(!cs['xadh__c'].value.includes("pc;")) {
+                                    cs['xadh__c'].value  += amendSrv+';jt;';
+                                }
+                            }
+                                else
+                                    cs['xadh__c'].value += amendSrv+';';
+                        }) 
+                        console.log('xadh=====>'+cs['xadh__c'].value);    
+                    }
+                    
+                    var healthinsurance = $('input[name="healthinsurance"]:checked').length > 0;
+                    
+                    if(healthinsurance)
+                        cs['InsChk__c'].value = true;
+                    if('{!sd.cv__c}' == 'CancelVisa'  || '{!sd.vtyp__c}' == 'egv'){
+                        if (cs['xadh__c'] != null) {
+                            var adh = cs['xadh__c'].value;
+                            var isexpletter = $('input[name="expletter"]:checked').length > 0;
+                            if (isexpletter) {
+                                if (!adh.includes('exp;'))                                     
+                                    cs['xadh__c'].value += 'exp;';
+                            }
+                            var isimgdeposit = $('input[name="imgdeposit"]:checked').length > 0;
+                            if (isimgdeposit) {
+                                if (!adh.includes('fid;') && '{!sd.vtyp__c}' != 'egv')                                     
+                                    cs['xadh__c'].value += 'fid;';
+                                if($('#depId').val() != ''){
+                                    if($('#depId').val() == '0ip'){  
+                                        cs['xadh__c'].value += '0ip;'; cs["xnry__c"].value='1';
+                                    }
+                                    if($('#depId').val() == '1ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;'; cs["xnry__c"].value='2';
+                                    }
+                                    if($('#depId').val() == '2ip')  {
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;'; cs["xnry__c"].value='3';
+                                    }
+                                    if($('#depId').val() == '3ip')  {
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;'; cs["xnry__c"].value='4';
+                                    }
+                                    if($('#depId').val() == '4ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;4ip;'; cs["xnry__c"].value='5';
+                                    }
+                                    if($('#depId').val() == '5ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;4ip;5ip;';cs["xnry__c"].value='6';
+                                    }
+                                    if($('#depId').val() == '6ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;4ip;5ip;6ip;';cs["xnry__c"].value='7'; 
+                                    }
+                                    if($('#depId').val() == '7ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;4ip;5ip;6ip;7ip;'; cs["xnry__c"].value='8';
+                                    }
+                                    if($('#depId').val() == '8ip'){  
+                                        cs['xadh__c'].value += '0ip;1ip;2ip;3ip;4ip;5ip;6ip;7ip;8ip;'; cs["xnry__c"].value='9';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(isRPCorrection!=undefined && isRPCorrection){
+                        //doNOthing
+                    }else{nextPg()};
+                }
+                </script> 
+                <apex:actionFunction name="removeAttch"  action="{!deleteAttach}" status="theStatus"  rerender="btnDisplayId,docSec,SRId,btnid,msg" oncomplete="enableAllatt();removeEmptyLables();">
+                    <apex:param name="attId" value=""/> 
+                </apex:actionFunction>
+                <apex:actionFunction name="nextPg" action="{!nextPage}" status="theStatus" rerender="docSec,SRId,btnid,msg,btnDisplayId" oncomplete="$('#preloader').fadeOut();removeEmptyLables();" />
+                <apex:actionFunction name="visaValidate" action="{!validateVisa}" oncomplete="$('#preloader').fadeOut();displayService();" status="theStatus" rerender="validateVisaId,rqfldId,vmsgId"/>
+                <apex:actionFunction name="visitVisaValidate" action="{!saveRequestInfo}" oncomplete="$('#preloader').fadeOut();removeEmptyLables();$('.visa-file-number-group').parent().find('.serErr').text('Visa is not valid!').show();$('#verify_visa_details_button').show();" status="theStatus" rerender="docSec,SRId,btnid,msg,errMsgId"/>
+                <apex:actionFunction name="copyDepDtls" action="{!fetchDependentInfo}" status="theStatus" rerender="validateVisaId,docSec,SRId,btnid,msg,errMsgId" oncomplete="updateDepList();$('#preloader').fadeOut();removeEmptyLables();"/>
+                <apex:actionFunction name="attachmentSave" action="{!saveAttachment}" oncomplete="enableAllatt();removeEmptyLables();" status="theStatus" rerender="docSec,SRId,btnid,msg,btnDisplayId"/>
+                <apex:actionFunction name="saveRequest" action="{!saveDraft}" status="theStatus" oncomplete="$('#preloader').fadeOut();enableAllatt();removeEmptyLables();" rerender="docSec,SRId,btnid,msg,btnDisplayId"  onbeforedomupdate="javascript: toggle_inputs();">
+                    <apex:param name="insurancereq" value=""/> 
+                    <apex:param name="landingpage" value=""/> 
+                    <apex:param name="xadhvals" value=""/> 
+                </apex:actionFunction>
+                <apex:actionFunction name="saveRequest2" action="{!saveDraft}" status="theStatus" rerender="docSec,SRId,btnid,msg,btnDisplayId" oncomplete="toggleGLoader();" onbeforedomupdate="javascript: toggle_inputs();">
+                    <apex:param name="insurancereq" value=""/> 
+                </apex:actionFunction>
+                
+                <apex:actionFunction name="applicantSave" action="{!saveApplicantInfo}" status="theStatus" rerender="docSec,SRId,btnid,msg,errMsgId" oncomplete="$('#preloader').fadeOut();"/>
+                <apex:outputPanel id="rqfldId">
+                    
+                    <apex:inputHidden id="xsgv__c" value="{!rq.xsgv__c}"/>
+                    <apex:inputHidden id="Visa_Type__c" value="{!rq.Visa_Type__c}" />
+                    <apex:inputhidden id="firstNameCountries" value="{!firstNameCountries}" />
+                    
+                    <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+                    <apex:inputHidden id="docname" value="{!docname}" />
+                    <apex:InputHidden id="fileSrc"/>
+                    <apex:inputHidden id="xcfn__c" value="{!rq.xcfn__c}" /><!--First Name-->
+                    <apex:inputHidden id="xcslt__c" value="{!rq.xcslt__c}" /><!-- Salutation-->
+                    <apex:inputHidden id="Gender__c" value="{!rq.Gender__c}" /><!-- Salutation-->
+                    <apex:inputHidden id="xcmn__c" value="{!rq.xcmn__c}" /><!--Middle Name-->
+                    <apex:inputHidden id="xcln__c" value="{!rq.xcln__c}" /><!--Last Name-->
+                    <apex:inputHidden id="xcnc__c" value="{!rq.xcnc__c}" /><!--Current Nationality-->
+                    <apex:inputHidden id="xcpic__c" value="{!rq.xcpic__c}" /><!--passport issueing country-->
+                    <apex:inputHidden id="xcp__c" value="{!rq.xcp__c}" /><!--Passport-->
+                    <apex:inputHidden id="xnry__c" value="{!rq.xnry__c}" /><!--Passport-->
+                    <apex:inputHidden id="pid__c" value="{!pid}" /><!--Passport-->    
+                    <apex:inputHidden id="ped__c" value="{!ped}" /><!--Passport-->   
+                    <apex:inputHidden id="xard__c" value="{!rq.xard__c}" />
+                    <apex:inputHidden id="xadtx1__c" value="{!rq.xadtx1__c}" />
+                    <apex:inputHidden id="parseId"  />   
+                    <apex:inputHidden id="srvc__c" value="{!rq.srvc__c}" /><!--Service Id-->    
+                    <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+                    <apex:inputHidden id="bd__c" value="{!dob}"/>
+                    <apex:inputHidden id="xcpip__c" value="{!rq.xcpip__c}"/>
+                    <apex:inputHidden id="xcstp__c" value="{!rq.xcstp__c}"/>
+                    <apex:inputHidden id="xcbp__c" value="{!rq.xcbp__c}"/>
+                    <apex:inputHidden id="e__c" value="{!rq.e__c}"/>
+                    <apex:inputHidden id="xcspb__c" value="{!rq.xcspb__c}"/>
+                    <apex:inputHidden id="xaed__c" value="{!ved}" />
+                    <apex:inputHidden id="InsChk__c" value="{!rq.InsChk__c}"/>
+                    <apex:inputHidden id="xosa__c" value="{!rq.xosa__c}"/>
+                    <apex:inputHidden id="xeidav__c" value="{!rq.xeidav__c}"/>
+                    <apex:inputHidden id="xceidid__c" value="{!rq.xceidid__c}"/>
+                    <apex:inputHidden id="xceidedt__c" value="{!eed}"/>
+                    <!-- <apex:inputHidden id="xdedc__c" value="{!rq.xdedc__c}"/>
+<apex:inputHidden id="xdedln__c" value="{!rq.xdedln__c}"/> -->
+                    <apex:inputHidden id="visaTransferId" value="{!isVisaTransfer}"/>
+                    <apex:inputHidden id="uid" />
+                    <apex:inputHidden id="csRole" />
+                    <!--to skip Surname-->
+                    <apex:inputHidden id="noFnm__c" value="{!rq.noFnm__c}" />
+                    <!--to skip Given Name-->
+                    <!--apex:inputHidden id="xddatc__c" value="{!rq.xddatc__c}" /--> <!-- Commented on 03/06/2022 -->
+                    <apex:inputHidden id="vfsFlag__c" value="{!rq.vfsFlag__c}" />
+                    <script>
+                    
+                    
+                    cs["Visa_Type__c"] = document.getElementById("{!$Component.Visa_Type__c}");
+                    cs['firstNameCountries'] = document.getElementById("{!$Component.firstNameCountries}");
+                    
+                    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                    cs["docname"] = document.getElementById("{!$Component.docname}");
+                    cs["xcfn__c"] = document.getElementById("{!$Component.xcfn__c}");
+                    cs["xcslt__c"] = document.getElementById("{!$Component.xcslt__c}");
+                    cs["Gender__c"] = document.getElementById("{!$Component.Gender__c}");
+                    cs["xcmn__c"] = document.getElementById("{!$Component.xcmn__c}");
+                    cs["xcln__c"] = document.getElementById("{!$Component.xcln__c}");
+                    cs["xcnc__c"] = document.getElementById("{!$Component.xcnc__c}");
+                    cs["xcpic__c"] = document.getElementById("{!$Component.xcpic__c}");
+                    cs["xcspb__c"] = document.getElementById("{!$Component.xcspb__c}");
+                    cs["xcp__c"] = document.getElementById("{!$Component.xcp__c}");
+                    cs["xard__c"] = document.getElementById("{!$Component.xard__c}");
+                    cs["xnry__c"] = document.getElementById("{!$Component.xnry__c}");
+                    cs["xcstp__c"] = document.getElementById("{!$Component.xcstp__c}");
+                    cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                    cs["xadh__c"]=document.getElementById("{!$Component.xadh__c}");
+                    cs["srvc__c"]=document.getElementById("{!$Component.srvc__c}");
+                    cs["pid__c"]=document.getElementById("{!$Component.pid__c}");
+                    cs["ped__c"]=document.getElementById("{!$Component.ped__c}");
+                    cs["bd__c"]=document.getElementById("{!$Component.bd__c}");
+                    cs["xcpip__c"]=document.getElementById("{!$Component.xcpip__c}");
+                    cs["xcbp__c"]=document.getElementById("{!$Component.xcbp__c}");
+                    cs["e__c"]=document.getElementById("{!$Component.e__c}");
+                    cs["xaed__c"]=document.getElementById("{!$Component.xaed__c}");
+                    cs["InsChk__c"]=document.getElementById("{!$Component.InsChk__c}");
+                    cs["xosa__c"]=document.getElementById("{!$Component.xosa__c}");
+                    cs["xeidav__c"]=document.getElementById("{!$Component.xeidav__c}");
+                    cs["xceidid__c"]=document.getElementById("{!$Component.xceidid__c}");
+                    cs["xceidedt__c"]=document.getElementById("{!$Component.xceidedt__c}");
+                    /*cs["xdedc__c"]=document.getElementById("{!$Component.xdedc__c}");
+                    cs["xdedln__c"]=document.getElementById("{!$Component.xdedln__c}");*/
+                    cs["visaTransferId"]=document.getElementById("{!$Component.visaTransferId}");
+                    cs["xadtx1__c"]=document.getElementById("{!$Component.xadtx1__c}");
+                    cs["uid"]=document.getElementById("{!$Component.uid}");
+                    cs["csRole"]=document.getElementById("{!$Component.csRole}");
+                    cs["xsgv__c"]=document.getElementById('{!$Component.xsgv__c}');
+                    /*to skip Surname */
+                    cs['noFnm__c']=document.getElementById('{!$Component.noFnm__c}');
+                    /*to skip Given name */
+                    //cs['xddatc__c']=document.getElementById('{!$Component.xddatc__c}'); commented on 03/06/2022
+                    cs["vfsFlag__c"] = document.getElementById("{!$Component.vfsFlag__c}");
+                    //cs["vfslabel"] = document.getElementById("{!$Component.vfslabel}");
+                    // cs["vfsOpt"] = document.getElementById("{!$Component.vfsOpt}");
+                    
+                    </script>
+                </apex:outputPanel>
+                <div class="container">
+                    
+                    <div class="base-layout">
+                        
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    
+                                    <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                       data-target="#base_side_content_1">
+                                        <h3 class="text-primary">ABOUT THIS SERVICE</h3>
+                                    </a>
+                                    <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000" id="serDef">
+                                                <apex:outputText escape="true" value="{!sd.sd__c}" />
+                                            </p>
+                                            
+                                            <apex:outputText rendered="{!srvList.size > 0}">
+                                                
+                                                <div class="srvNew">
+                                                    <strong>{!sd.vtyp__c} includes:</strong>
+                                                    <ul class="ul-style">
+                                                        <apex:repeat value="{!srvList}" var="s">
+                                                            <li>{!s}</li>
+                                                        </apex:repeat>
+                                                    </ul>
+                                                </div>
+                                                <div class="srvTransfers" style="diplay:none;">
+                                                    <strong>{!sd.vtyp__c} includes:</strong>
+                                                    <ul class="ul-style">
+                                                        <apex:repeat value="{!srvTrnsList}" var="s">
+                                                            <li>{!s}</li>
+                                                        </apex:repeat>
+                                                    </ul>
+                                                </div>
+                                            </apex:outputText>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h3 class="text-primary d-md-block d-none">DOCUMENTS YOU NEED</h3>
+                                    
+                                    <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                       data-target="#base_side_content_2">
+                                        <h3 class="text-primary">DOCUMENTS YOU NEED</h3>
+                                    </a>
+                                    <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                        <p>JPG / JPEG / PDF / PNG / TIFF Formats (max 4 MB each)</p>
+                                        
+                                        <ul class="ul-style">
+                                            <apex:repeat value="{!docLblList}" var="doc">
+                                                <li><apex:outputText value="{!doc}" escape="true" /></li>
+                                            </apex:repeat>  
+                                        </ul>
+                                        
+                                        <span >
+                                            
+                                            <apex:repeat value="{!infoDocLst}" var="idoc">
+                                                {!idoc}<br/><br/>
+                                            </apex:repeat>  
+                                        </span>
+                                        
+                                        
+                                    </div>
+                                    <!--<div class="srvTransfers collapse collapse-content-wrapper" style="display:none;">
+<p>JPG / PDF / PNG Formats (max 5 MB each)</p>
+
+<ul class="ul-style">
+<apex:repeat value="{!docTrnsList}" var="d">
+<li>{!d.DocLabel}</li>
+</apex:repeat>  
+</ul>
+</div> -->
+                                    <!-- .collapse-content-wrapper -->
+                                </div>
+                                
+                            </div>
+                            <!-- .base-side-content -->
+                            
+                        </div>
+                        <!-- .base left -->
+                        <apex:outputpanel rendered="{!hasSanctions}">
+                            <b><apex:pageMessages id="msg1"/></b>
+                        </apex:outputpanel>
+                        <apex:outputpanel rendered="{!!hasSanctions}" styleclass="base-main">
+                            <div >
+                                
+                                <apex:pageMessages id="msg"  />
+                                
+                                
+                                <apex:outputPanel rendered="{!NOT(pgHide)}">
+                                    <div class="base-main-content">
+                                        <apex:outputPanel rendered="{!OR(sd.cv__c=='StuNewVisa',sd.cv__c=='CancelStuVisa',sd.cv__c=='NewVisa',sd.cv__c=='CancelVisa',sd.cv__c=='VisaCorrection')}"> 
+                                            
+                                            <div class="text-right">
+                                                <ul >
+                                                    <li class="breadcrumb-item">
+                                                        <a onclick="helpDoc('{!sd.cv__c}','{!sd.Category__c}')" contenteditable="false" style="color:tomato;cursor: pointer;">
+                                                            <u class="blinkAny">Help on this service</u>
+                                                            <i class="fa fa-question-circle"></i>
+                                                        </a>
+                                                    </li>
+                                                    
+                                                </ul>
+                                                
+                                            </div>
+                                        </apex:outputPanel>
+                                        <div id="srv_id_page">
+                                            <h3 class="base-main-title">{!sd.slbl__c}</h3>
+                                            
+                                            <div id='vmsg' style="display: none;">
+                                                <div style="color: #8a6d3b;background-color: #fcf8e3;border-color: #faebcc; padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px;">
+                                                    <b>Active Employee record exist; please arrange to cancel the existing visa after that proceed the new visa request.</b>
+                                                </div>
+                                            </div>
+                                            <apex:outputPanel rendered="{!sd.cv__c == 'NewVisa'}">
+                                                <div > 
+                                                    <!--
+<div style="color: #fff;background-color: #e62d38;border-color: #e62d38;padding: 15px;margin-bottom: 20px;border: 1px solid transparent;border-radius: 4px;">
+<b>GDRFA temporarily stopped issuing new employment visa (entry visas) BELOW 50 Yrs outside the country applicant(s).</b>
+</div>
+-->
+                                                </div>
+                                            </apex:outputPanel>
+                                            <apex:outputText rendered="{!sd.cv__c == 'FLDeregistration'}">
+                                                <c:FLDeregistration Acc="{!Acc}" req="{!rq}"  srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}" activeDep="{!isactiveDep}" accType="{!acc.Type}"/>
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'missvVisa'}">
+                                                <c:missVVisa srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}" accType="{!acc.Type}"/>
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'NewVisa'}">
+                                                <c:visanewcmp srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}" accType="{!acc.Type}"/>
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'StuNewVisa'}">
+                                                <c:studentnewcmp srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}"/>
+                                            </apex:outputText>   
+                                            <apex:outputText rendered="{!sd.cv__c == 'DepNewCmp'}">
+                                                <c:depnewcmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}"/>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!OR(sd.cv__c == 'DepRenewal',sd.cv__c == 'DepGVTrns')}">
+                                                <c:deprenewcmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}"  />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'DepInsCmp'}"> 
+                                                <c:addDepInsCmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'DepTransferCmp'}">
+                                                <c:deptransfercmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srv="{!srv}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'Visa'}">
+                                                <c:servicecmp srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'DocAttestation'}">
+                                                <c:docattestationcmp rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'VisitVisa'}">
+                                                <c:visitvisacmp srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'VisitVisaM'}">
+                                                <c:mevisitvisacmp srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'LostPassport'}"> 
+                                                <c:lostpassportcmp rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!OR(sd.cv__c == 'VisaRenewal',sd.cv__c == 'IDCorrection')}">
+                                                <c:visarenewalcmp rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}"  srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}"  /><!--- removed conId="{!preConId}" 03/06/2022--->
+                                            </apex:outputText> 
+                                            <apex:outputText rendered="{!sd.cv__c == 'VisaCorrection'}">
+                                                <c:visacorrectioncmp rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}" srvCT="{!sd.Sub_Category__c}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText> 
+                                            
+                                            <apex:outputText rendered="{!sd.cv__c == 'updateAttr'}">
+                                                <c:updateAttr rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}" srvCT="{!sd.Sub_Category__c}" srvLbl="{!sd.srvlbl__c}" srvTp="{!sd.vtyp__c}" />
+                                            </apex:outputText> 
+                                            
+                                            <apex:outputText rendered="{!sd.cv__c == 'CancelVisa'}">
+                                                <c:visacancelcmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'CancelVisaDep'}">
+                                                <c:depvisacancmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'Absconder'}">
+                                                <c:abscondercmp rqSave="{!If(sd.srat__c =='Contact' ,true,false)}" rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" />
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!sd.cv__c == 'CancelStuVisa'}">
+                                                <c:visacancelstucmp rq="{!rq}" srvLst="{!srvLst}" srvLbl="{!sd.srvlbl__c}" />
+                                            </apex:outputText>
+                                            <div id="priority_id">
+                                                <apex:outputText rendered="{!priorityList.size > 0}">
+                                                    <c:prioritytypecmp priorityList="{!priorityList}" slaMp="{!slaMp}" req="{!rq}" sd="{!sd}"/>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!AND(sd.insreq__c,isInsAct == false,Acc.Type != 'Customer - Internal',Acc.Type != 'Customer - DH')}">
+                                                    <div class="form-group">
+                                                        <label class="mb-3 fs-18">Health insurance</label><br/>
+                                                        <label class="custom-checkbox custom-checkbox-sm mb-4">
+                                                            <input id="inschk" type="checkbox" name="healthinsurance" onclick="checkinsurance()"/>
+                                                            <span>Select if you would like to purchase health insurance for the applicant.</span>
+                                                        </label>
+                                                    </div>
+                                                </apex:outputText>
+                                                <div class="row row-lg" id="vfslabel" style="display:none">
+                                                    <div class="col-lg-12">
+                                                        <apex:outputPanel rendered="true">
+                                                            <label class="d-block">Do you want an attestation done by VFS ? </label>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-12" id="vfsOpt" style="display:none">
+                                                    <div class="col-lg-12">
+                                                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                            <label class="custom-radio mr-4">
+                                                                <input type="radio" value="Yes" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                                                <span>Yes</span>
+                                                            </label>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel style="display:inline-block" styleClass="mb-4" rendered="true">
+                                                            <label class="custom-radio mr-4">
+                                                                <input type="radio" value="No" class="requiredFld" name="vfsOption" onchange="vfsOnChange();" />
+                                                                <span>No</span>
+                                                            </label>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div> 
+                                                <div>
+                                                    <a href="#" id="upload_button" class="btn btn-primary mr-3"
+                                                       style="max-width: 100%;color:#FFF;">CONTINUE TO UPLOAD DOCUMENTS</a>
+                                                </div>
+                                            </div>
+                                        </div>         
+                                        <div id="doc_details" style="display: none;">
+                                            <!-- .form-group -->                                     <!-- .form-group -->
+                                            <apex:outputText rendered="{!OR(sd.cv__c == 'NewVisa',sd.cv__c == 'StuNewVisa')}">
+                                                <c:ocrcmp cv="{!sd.cv__c}" accPrk="{!Acc.park__c}"/>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!AND(sd.cv__c != 'NewVisa',sd.cv__c != 'StuNewVisa')}">
+                                                <c:ocrdepcmp cv="{!sd.cv__c}" accPrk="{!Acc.park__c}" />
+                                            </apex:outputText>
+                                            
+                                            <h4>Document Uploads</h4>
+                                            <apex:outputpanel id="docSec" >
+                                                <apex:outputPanel rendered="{!rq.id == null}">
+                                                    <div class="mb-0 vid" >
+                                                        <div class="srvNew row">
+                                                            <apex:repeat value="{!docList}" var="doc">
+                                                                <div class="col-lg-6">
+                                                                    <apex:outputLabel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                                                        <div class="box box-block attBox">
+                                                                            <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                                                                <label class="fs-18">{!doc.DocName}</label>
+                                                                                <span class="loader_img" style="float:right;display:none">
+                                                                                    <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                                                </span>
+                                                                            </div>
+                                                                            <apex:outputPanel rendered="{!doc.attId != ''}">
+                                                                                <div class="upload-list">
+                                                                                    <div class="upload-list-item box box-white box-padding">
+                                                                                        <i class="fa fa-check-circle text-success"></i>
+                                                                                        <!--  <span class="upload-item-title">{!doc.attName}</span> -->
+                                                                                        <a href="#" class="upload-item-title text-li" onclick="filePreview('{!doc.DocName}','/servlet/servlet.FileDownload?file={!doc.attId}');" ><u>{!doc.attName}</u></a>
+                                                                                        <a onclick="removeAttch1('{!doc.attId}','{!doc.DocName}');"  class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </apex:outputPanel>
+                                                                            <apex:outputPanel rendered="{!doc.attId == ''}">
+                                                                                <div class="upload-field d-flex">
+                                                                                    <div
+                                                                                         class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                                        <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                                                            <a onclick="uploadDoc('{!doc.DocName}','{!doc.parse}','{!doc.isSaveRQ}');" class="btn btn-outline-primary btn-outline-primary-3 fff-Font-hover">BROWSE</a>
+                                                                                        </apex:outputtext> 
+                                                                                        <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                                                            <a onclick="uploadDoc('{!doc.DocName}','{!doc.parse}','{!doc.isSaveRQ}')" class="btn btn-outline-primary btn-outline-primary-3 fff-Font-hover">BROWSE</a>
+                                                                                        </apex:outputtext> 
+                                                                                        <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                                                    </div>
+                                                                                </div>
+                                                                            </apex:outputPanel>
+                                                                            <!-- .upload-list -->
+                                                                        </div>
+                                                                    </apex:outputLabel>
+                                                                    <apex:outputtext rendered="{!OR(doc.tmpltId != '')}">
+                                                                        <a href="/servlet/servlet.FileDownload?file={!doc.tmpltId}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                                    </apex:outputtext>
+                                                                    <!-- .box -->
+                                                                </div>
+                                                                
+                                                            </apex:repeat>
+                                                            
+                                                            <!-- .col -->
+                                                        </div>
+                                                        <!-- .row -->
+                                                        <div class="srvTransfers row">
+                                                            <apex:repeat value="{!docTrnsList}" var="doc">
+                                                                <div class="col-lg-6">
+                                                                    <apex:outputLabel styleClass="{!IF(OR(doc.isSaveRQ,rq.id != null),'','disabled-box')}">
+                                                                        <div class="box box-block attBox">
+                                                                            <div class="forLoader" forLoad="{!doc.DocName}" style="display:block">
+                                                                                <label class="fs-18">{!doc.DocName}</label>
+                                                                                <span class="loader_img" style="float:right;display:none">
+                                                                                    <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                                                    <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                                                </span>
+                                                                            </div>
+                                                                            <apex:outputPanel rendered="{!doc.attId != ''}">
+                                                                                <div class="upload-list">
+                                                                                    <div class="upload-list-item box box-white box-padding">
+                                                                                        <i class="fa fa-check-circle text-success"></i>
+                                                                                        <!--  <span class="upload-item-title">{!doc.attName}</span> -->
+                                                                                        <a href="#" class="upload-item-title text-li" onclick="filePreview('{!doc.DocName}','/servlet/servlet.FileDownload?file={!doc.attId}');" ><u>{!doc.attName}</u></a>
+                                                                                        <a onclick="removeAttch1('{!doc.attId}','{!doc.DocName}');"  class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </apex:outputPanel>
+                                                                            <apex:outputPanel rendered="{!doc.attId == ''}">
+                                                                                <div class="upload-field d-flex">
+                                                                                    <div
+                                                                                         class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                                        <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <apex:outputtext rendered="{!OR(doc.isSaveRQ,rq.id != null)}">
+                                                                                            <a onclick="uploadDoc('{!doc.DocName}','{!doc.parse}','{!doc.isSaveRQ}');" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</a>
+                                                                                        </apex:outputtext> 
+                                                                                        <apex:outputtext rendered="{!AND(NOT(doc.isSaveRQ),rq.id == null)}">
+                                                                                            <a onclick="uploadDoc('{!doc.DocName}','{!doc.parse}','{!doc.isSaveRQ}')" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</a>
+                                                                                        </apex:outputtext> 
+                                                                                        <!--<button data-toggle="modal" data-target="#modal_upload_passport" class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> -->
+                                                                                    </div>
+                                                                                </div>
+                                                                            </apex:outputPanel>
+                                                                            <!-- .upload-list -->
+                                                                        </div>
+                                                                    </apex:outputLabel>
+                                                                    <apex:outputtext rendered="{!OR(doc.tmpltId != '')}">
+                                                                        <a href="/servlet/servlet.FileDownload?file={!doc.tmpltId}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                                    </apex:outputtext>
+                                                                    <!-- .box -->
+                                                                </div>
+                                                                
+                                                            </apex:repeat>
+                                                            
+                                                            <!-- .col -->
+                                                        </div>
+                                                        <!-- .row -->
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel rendered="true"> 
+                                                    <c:grqupd Dim="L"  PayDone="false"/>
+                                                </apex:outputPanel> 
+                                                <!--<apex:outputPanel rendered="{!rq.id != null}"> 
+<c:grqupd Dim="L"  PayDone="false"/>
+</apex:outputPanel>-->
+                                            </apex:outputpanel>
+                                        </div>
+                                        
+                                    </div>
+                                    <!-- .base-main-content -->
+                                    <apex:outputPanel id="btnDisplayId">
+                                        <script>
+                                        $('#btn_id').show(); 
+                                        if(cs["visaTransferId"].value == 'y'){
+                                            $('.srvNew').hide();
+                                            $('.srvTransfers').show(); 
+                                            $('.vNew').hide();
+                                            $('.vIntTransfers').hide();
+                                            $('.vTransfers').show();
+                                        }
+                                        else if(cs["visaTransferId"].value == 'int'){
+                                            $('.srvNew').hide();
+                                            $('.srvTransfers').show(); 
+                                            $('.vNew').hide();
+                                            $('.vIntTransfers').show();
+                                            $('.vTransfers').hide();
+                                        }
+                                            else if(cs["xcspb__c"].value == 'Husband or Father'){
+                                                $('.srvNew').show(); $('.srvTransfers').hide();
+                                            }else if(cs["xcspb__c"].value == 'Parent Company'){
+                                                $('.srvNew').hide(); $('.srvTransfers').show();
+                                            }
+                                                else{
+                                                    $('.srvNew').show();
+                                                    $('.srvTransfers').hide(); 
+                                                    $('.vNew').show();
+                                                    $('.vTransfers').hide();
+                                                    $('.vIntTransfers').hide();
+                                                }
+                                        </script>
+                                    </apex:outputPanel>    
+                                    <apex:outputPanel id="btnid">
+                                        <div class="base-main-footer" id="btn_id" style="display:none;">
+                                            <div class="base-nav">
+                                                <a id="backButtonId" href="#" onclick="backpg();"
+                                                   class="btn btn-primary base-nav-prev">
+                                                    <i class="fa fa-angle-left text-primary"></i> <span>BACK</span>
+                                                </a>
+                                                
+                                                <apex:outputText rendered="{!rq.id != null}">
+                                                    <a onclick="toggleGLoader();nextPgValidate();" href="#" class="btn btn-primary base-nav-next">
+                                                        REVIEW APPLICANT DETAILS
+                                                    </a>
+                                                </apex:outputText>
+                                                
+                                                <apex:outputText rendered="{!rq.id == null}">
+                                                    <a  href="#" class="btn btn-outline-primary mb-4 base-nav-next">
+                                                        REVIEW APPLICANT DETAILS
+                                                    </a>
+                                                </apex:outputText>
+                                            </div>
+                                            
+                                        </div>
+                                    </apex:outputPanel>
+                                    <!-- .base-main-footer -->
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!(pgHide)}">
+                                    <div class="base-main-content">
+                                        <h2 class="text-primary">
+                                            You don't have permissions to create the Service request.<br />
+                                            Please contact your Super user.
+                                        </h2>
+                                    </div>
+                                </apex:outputPanel>
+                            </div>
+                        </apex:outputpanel>
+                        <!-- .base-main -->
+                        
+                    </div>
+                    <!-- .base-layout -->
+                    
+                </div>
+                <!-- .container -->
+                
+                
+                <script>
+                /* code for Help on this page starts */
+                function axsConfirmation_doc(ch,cb,options,doclink,yesBtnText,noBtnText,yesDocId,noDocId){
+                    $('#modal_confirm_global').remove();
+                    if(cb==undefined) cb='';
+                    var cBlock = '<div class="modal fade modal-base" id="modal_confirm_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;">';
+                    cBlock+= '<div class="modal-content"><button aria-label="Close" class="close" data-dismiss="modal" type="button"><i class="icon-close"></i></button>';
+                    cBlock+= '<div class="modal-body"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto">'; 
+                    if(ch)
+                        cBlock+= '<h2 class="mb-4">'+ch+'</h2>';
+                    if(cb)
+                        cBlock+= '<p>'+cb+' </p>';
+                    cBlock+= '<p class="row col-xl-12 col-lg-12" style="text-align: right;">';
+                    cBlock+= '<button class="col-xl-4 col-lg-12 btn btn-primary mr-2 btn-block-sm cBtns" id="cYes" val1="yes"> '+(yesBtnText?yesBtnText:"YES")+' </button> <br/>';
+                    cBlock+= '<button class="col-xl-4 col-lg-12 btn btn-outline-primary btn-block-sm cBtns" val1="no"> '+(noBtnText?noBtnText:"NO")+' </button> <br />';
+                    cBlock+= '</div> </div> </div> </div> </div> </div> </div> </div> </div>';
+                    $('body').append(cBlock);
+                    if(options){
+                        $('#modal_confirm_global').modal('show');
+                    }
+                    else{
+                        window.open('/servlet/servlet.FileDownload?file='+doclink,'_blank');
+                    }
+                    $('.cBtns').on('click',function(){
+                        $('#modal_confirm_global').modal('hide');
+                        if($(this).attr('val1').includes('yes')){
+                            window.open('/servlet/servlet.FileDownload?file='+yesDocId,'_blank');
+                        }
+                        if($(this).attr('val1').includes('no')){
+                            window.open('/servlet/servlet.FileDownload?file='+noDocId,'_blank');
+                        }
+                    });
+                }
+                
+                function helpDoc(cv,ctg){
+                    if(cv=='NewVisa')
+                        axsConfirmation_doc('','Kindly select whether the applicant is',true,'','Inside the UAE','Outside the UAE','015Ii000000kU1b','015Ii000000kU1c');
+                    else if(cv=='StuNewVisa'){
+                        axsConfirmation_doc('','Kindly select whether the applicant is',true,'','Inside the UAE','Outside the UAE','015Ii000000kVcE','015Ii000000kVcJ');
+                    }
+                        else if(cv=='CancelStuVisa')
+                            axsConfirmation_doc('','Kindly select whether the applicant is',true,'','Inside the UAE','Outside the UAE','015Ii000000kVcO','015Ii000000kVcT');
+                            else if(cv=='CancelVisa')
+                                axsConfirmation_doc('','Kindly select whether the applicant is',true,'','Inside the UAE','Outside the UAE','015Ii000000kU1d','015Ii000000kU1e');
+                                else if(cv=='VisaCorrection' && ctg=='Students')
+                                    axsConfirmation_doc('','Please choose',false,'015Ii000000kVcY');
+                                    else
+                                        axsConfirmation_doc('','Please choose',false,'015Ii000000kU1f');
+                }
+                /* code for Help on this page end */
+                
+                var checked1=false;
+                (function ($) {
+                    //code to capture visa type starts
+                    $('[name="visaType"]').on('change',function(){
+                        //console.log('val -- '+$(this).val());
+                        //console.log('<br/> att1 -- '+$(this).attr('att1'));
+                        var v1= $('#visa1').val(); 
+                        var v2= $('#visa2').val();
+                        var v3= $('#visa3').val();
+                        if(v1.length!=$('#visa1').attr('maxlength') || v2.length!=$('#visa2').attr('maxlength') || v3.length!=$('#visa3').attr('maxlength')){
+                            $('.visa-file-number-group').parent().find('.serErr').show();
+                            $('[name="visaType"]').prop('checked',false);;
+                        }
+                        else if($('#datepicker1').val()==''){
+                            $('#datepicker1').parent().parent().find('.serErr').show();
+                            $('[name="visaType"]').prop('checked',false);;
+                        }
+                        cs['Visa_Type__c'].value = $(this).attr('att1');
+                        console.log('Visa Type -- ' + cs['Visa_Type__c'].value);
+                    });
+                    //code to capture visa type starts
+                    $(function () {
+                        $('.radio-visa').change(function () {
+                            $('#doc_details').hide();
+                            $('#btn_id').hide();
+                            console.log('VType -- ' + "{!sd.vtyp__c}" +serviceId);
+                            if('{!sd.cv__c}' == 'NewVisa')
+                                $('#priority_id').hide();
+                            
+                            if ($('.radio-visa:checked').val() === 'yes') {
+                                $('#verify_visa_details_button').show();
+                                $('#verify_visa_details').hide();
+                                
+                                $('#visa_file_number').show();
+                                $('[name="incountry"]').prop('checked',true);
+                                
+                            } else if ($('.radio-visa:checked').val() === 'no') {
+                                $('#verify_visa_details').show();
+                                
+                                $('#priority_id').show();
+                                $('#visa_file_number').hide(); 
+                                $('.srvNew').show();
+                                $('.vNew').show();
+                                $('.srvTransfers').hide();
+                                $('.vTransfers').hide();
+                                $('.vIntTransfers').hide();
+                                $('[name="incountry"]').prop('checked',false);
+                            }
+                        });
+                        if('{!sd.cv__c}' == 'NewVisa')
+                            $('.radio-visa').trigger('change');
+                        if('{!sd.cv__c}' == 'LostPassport')
+                            $('#priority_id').hide();
+                        /*if('{!sd.cv__c}' == 'Visa'){
+                            $('.goldVisa').hide(); // commented on 03/06/2022
+                        }*/                       
+                        $('.sponsoredby').change(function () {
+                            $('#gvOptions').hide();
+                            if ($('.sponsoredby:checked').val() === 'Husband or Father') {
+                                /* $('.srvNew').show(); $('.srvTransfers').hide();
+                                $('.goldVisa').hide(); */  // commented on 03/06/2022
+                                $('.service_id').eq(0).prop('checked',true);
+                                cs['xadh__c'].value = 'id;';
+                                cs['xsgv__c'].value = false;
+                            }
+                            else if($('.sponsoredby:checked').val() === 'Parent Company'){
+                                $('.srvTransfers').show(); $('.srvNew').hide();
+                                /* $('.goldVisa').hide();
+                                $('.service_id').eq(0).prop('checked',true); */  // commented on 03/06/2022
+                                cs['xadh__c'].value = 'id;';
+                                cs['xsgv__c'].value = false;
+                            }else if($('.sponsoredby:checked').val() == 'Golden Visa'){//Golden visa  Non SponseredId  card
+                                /*$('.goldVisa').show();
+                                $('.service_id').prop('checked',false);*/ // commented on 03/06/2022
+                                $('#gvOptions').show();
+                                /*cs['xadh__c'].value = 'gid;';*/ // commented nad moved to servicecmp
+                                cs['xsgv__c'].value = true;
+                            }
+                        });   
+                        $('.service_id').change(function () { 
+                            if('{!sd.cv__c}' == 'DepRenewal'){
+                                var depType = $('[name="service_id"]:checked').attr('att1');
+                                if(depType != null && depType == 'Child'){
+                                    cs["visaTransferId"].value = 'y';  cs["uid"].value = '017';
+                                    $('.srvNew').hide();$('.srvTransfers').show();
+                                }
+                                else{
+                                    cs["visaTransferId"].value = '';
+                                    $('.srvNew').show();$('.srvTransfers').hide();
+                                }
+                                if(cs['Con__c'].value != 'undefined'  && cs['Con__c'].value != '')
+                                {
+                                    copyApplicantInfo();
+                                }
+                            }
+                            if('{!sd.cv__c}' == 'VisaRenewal' || '{!sd.cv__c}' == 'VisaCorrection' || '{!sd.cv__c}' == 'DocAttestation' || '{!sd.cv__c}'=='updateAttr'){
+                                if(cs['Con__c'] != undefined && cs['Con__c'].value != '')
+                                {
+                                    //alert('335 tsts');
+                                    //alert(cs['Con__c'].value);
+                                    
+                                    var docAttType = $('[name="service_id"]:checked').attr('att1');
+                                    if(docAttType != null && docAttType == 'Employee Contract')
+                                        cs["visaTransferId"].value = 'y';
+                                    copyApplicantInfo();
+                                }
+                                else{
+                                    $('.service_id').prop('checked',false);
+                                    //axsAlert('Alert','Please select Applicant');
+                                    
+                                }
+                            }
+                        });
+                        
+                        
+                        
+                        $('input[name=insideUAE]').change(function () {
+                            if($('.conLkp').is(':visible') &&'{!sd.vtyp__c}' != 'DepRen' && '{!sd.cv__c}' != 'CancelVisaDep' && cs['Con__c'] && cs['Con__c'].value==''){
+                                $('.conLkp').find('.frmErrMsg1').html('Please select an applicant.').show();
+                                $('[name="insideUAE"]').prop('checked',false);
+                                return;
+                            }
+                            if ($(this).val() === 'NO') {
+                                $('#insideUAE').show();
+                            } else {
+                                $('#insideUAE').hide();
+                                //copyCancelApplicantInfo();
+                            }
+                            if (cs['xadh__c'] != null) {
+                                var adh = cs['xadh__c'].value;
+                                if ($(this).val() === 'YES') {
+                                    cs['xadh__c'].value = adh.replace('rpc;', '').replace('ip;', '');
+                                    if('{!sd.cv__c}' == 'CancelVisaDep'){cs['xadh__c'].value = adh.replace('oua;', '').replace('oup;', '');}
+                                    if (!adh.includes('ins;')){ 
+                                        cs['xadh__c'].value += 'ins;';
+                                    }
+                                    
+                                }
+                                else{
+                                    cs['xadh__c'].value = adh.replace('ins;', ''); 
+                                    if (!adh.includes('rpc;'))                                     
+                                        cs['xadh__c'].value += 'rpc;';
+                                    if (!adh.includes('ip;'))                                     
+                                        cs['xadh__c'].value += 'ip;';
+                                    
+                                    if('{!sd.cv__c}' == 'CancelVisaDep'){cs['xadh__c'].value ='oup;';}
+                                }
+                            }
+                            if(cs['Con__c'] && cs['Con__c'].value !='')
+                                copyCancelApplicantInfo();
+                        });
+                        $('#insideUAE').change(function () { 
+                            if (cs['xadh__c'] != null) {
+                                var adh = cs['xadh__c'].value;
+                                var isPassportAvailable = $('input[name="passport_available"]:checked').length > 0;
+                                if (isPassportAvailable) {
+                                    cs['xadh__c'].value = adh.replace('rpc;', '').replace('ip;', ''); 
+                                    if('{!sd.cv__c}' == 'CancelVisaDep'){cs['xadh__c'].value = adh.replace('oup;', '')}
+                                    if (!adh.includes('oua;'))                                     
+                                        cs['xadh__c'].value += 'oua;';
+                                    
+                                }
+                                else{
+                                    cs['xadh__c'].value = adh.replace('oua;', ''); 
+                                    if (!adh.includes('rpc;'))                                     
+                                        cs['xadh__c'].value += 'rpc;';
+                                    if (!adh.includes('ip;'))                                     
+                                        cs['xadh__c'].value += 'ip;';
+                                    
+                                    if('{!sd.cv__c}' == 'CancelVisaDep'){cs['xadh__c'].value ='oup';}
+                                }
+                                
+                            }
+                            
+                        });  
+                        
+                        
+                        
+                        $('#imgdeposit').change(function () { 
+                            
+                            var isimgdp = $('input[name="imgdeposit"]:checked').length > 0;
+                            if(isimgdp)
+                                $('#dpnoid').show(); 
+                            else
+                                $('#dpnoid').hide();
+                        }); 
+                        $('#rcid').change(function () { 
+                            var rpcardFlg = $('input[name="rpcard"]:checked').length > 0;
+                            var adh = cs['xadh__c'].value;
+                            if(rpcardFlg){
+                                adh = adh + 'xpc;';
+                            }
+                            else{
+                                adh.replace('xpc;', '');
+                            }
+                            cs['xadh__c'].value =adh; 
+                        });
+                        $('#inc').change(function () { 
+                            $('[name="offerleter"]').prop('checked',false);
+                            var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                            var visaNum = cs["e__c"].value;
+                            if(isIncountryChecked)
+                                $('#visa_file_number').show();
+                            else
+                                $('#visa_file_number').hide();
+                            /*if('{!sd.cv__c}' == 'NewVisa'){
+                                if(isIncountryChecked){
+                                    $('#visa_file_number').show();
+                                    $('#priority_id').hide();
+                                    $('#verify_visa_details').hide();
+                                    
+                                }
+                                else{
+                                    $('#visa_file_number').hide(); 
+                                    $('#priority_id').show(); $('#verify_visa_details').show();
+                                }
+                            }  */
+                            if(isIncountryChecked )
+                                $('#ofl').show(); 
+                            else
+                                $('#ofl').hide();
+                            /*var isvisaBtn = $('#verify_visa_details_button').is(':visible');
+                            if(!isvisaBtn && visaNum != '') 
+                                $('#verify_visa_details_button').trigger('click');*/
+                        });
+                        $('.service_id').on('change',function(){
+                            $(this).parent().parent().parent().parent().find('.serErr').hide();
+                        })
+                        
+                        $('#upload_button').click(function (ev) {//
+                            console.log('upload button::::');
+                            
+                            //Sorna - To show alert to select Service Type for Mission Visa
+                            if (serviceId == '301' || serviceId == '302' || serviceId == '071') {
+                                var selectedService = cs["uid"].value; //$('[name="service_id"]:checked').val(); 
+                                console.log(':::selectedService:::',selectedService);
+                                if ( typeof selectedService === "undefined" || selectedService == "") {
+                                    var msg = 'Please select Service Type';
+                                    axsAlert('Alert',msg);
+                                    return;
+                                }
+                                
+                                var priority = $('[name="priority_type"]:checked').val();
+                                if ( typeof priority === "undefined" || priority == "") {
+                                    var msg = 'Please select the Priority type';
+                                    axsAlert('Alert',msg);
+                                    return;
+                                }
+                                
+                                if(serviceId == '071' )
+                                {
+                                    console.log('in1');
+                                    var gvot  = $('[name="gvOpt"]:checked').val();
+                                    console.log('gvot==',gvot);
+                                    console.log('gvot1==',(typeof gvot === "undefined"));
+                                    if ( typeof gvot === "undefined" || gvot == "") {
+                                        var msg = 'Please select duration.';
+                                        console.log('in1');
+                                        axsAlert('Alert',msg);
+                                        return;
+                                    }
+                                }
+                                
+                            } //End
+                            
+                            if('{!sd.vtyp__c}' == 'visarelocate'){
+                                cs["xeidav__c"].value = 'Yes';
+                            }
+                            if(serviceId == '068'){
+                                if($('.serRadio:checked').val()=='Golden Visa'){
+                                    if($('.gvOpt:checked').length<1){
+                                        addValError($('.gvOpt'),'Please choose duration!');
+                                        return;
+                                    }
+                                }
+                            }
+                            if('{!sd.vtyp__c}' == 'EmpIns'){
+                                console.log('upload button inside EmpIns::::');
+                                //toggleGLoader();nextPgValidate(true); saveRequest2();
+                            }
+                            
+                            if($('.conLkp').is(':visible') &&'{!sd.vtyp__c}' != 'DepRen' && cs['Con__c'] && cs['Con__c'].value==''){
+                                $('.conLkp').find('.frmErrMsg1').html('Please select an applicant.').show();
+                                return;
+                            }
+                            if($('.spnLkp').is(':visible') && cs['xcsp__c'] && cs['xcsp__c'].value == '' && '{!sd.vtyp__c}' != 'DepRen' && '{!sd.cv__c}' != 'DepGVTrns' && '{!sd.cv__c}' != 'CancelVisaDep'){
+                                $('.spnLkp').find('.frmErrMsg').html('Please select an employee.').show();
+                                return;
+                            }/*else  if(!$("input[name='relationship']").is(':checked')){
+                                console.log('please select the option::::');
+                                axsAlert('Alert','Please select an option'); return false;
+                            }*/else{
+                                $('.spnLkp').find('.frmErrMsg').hide();
+                            }
+                            if($('#depSelId').val()=='Select'){
+                                addValError('#depSelId','Please choose an option.');
+                            }
+                            $('.serRadio').each(function(){
+                                if($(this).prop('checked'))
+                                    checked1= true;
+                            });
+                            if($('.serRadio').parent('label:visible').length>0 && !checked1 && '{!sd.vtyp__c}' != 'EmpIns'){
+                                $('.serRadio').parent().parent().parent().parent().find('.serErr').show();
+                                return;
+                            }
+                            if('{!sd.cv__c}'  == 'NewVisa' && $('[name="service_id"]:checked').val()==undefined){
+                                $('[name="service_id"]').parent().parent().parent().parent().find('.serErr').show();
+                                return;
+                            }
+                            if($('.messageCell').is(':visible')){
+                                errMsgScroll();
+                                return;
+                            }
+                            if('{!sd.cv__c}' == 'LostPassport' ){
+                                if($('#conSerachVal').val()=='' && $('#spnSerachVal').val()==''){
+                                    axsAlert('Alert','Please select applicant'); return false;
+                                }
+                                /*if($('#spnSerachVal').val()!='' && $('#depSelId').val()=='Select'){
+                                    
+                                    axsAlert('Alert','Please select dependent'); return false;
+                                }*/ // Changed on 19 Dec -- VMKR
+                                if( $('#depSelId').val()=='Add'){
+                                    $('.srvTransfers').hide();
+                                }
+                                
+                                
+                                if(!$( ".lostpassport" ).prop( "value", 'no').is(":checked") && !$( ".lostpassport" ).prop( "value", 'yes').is(":checked")){
+                                    axsAlert('Alert','Please select where your passport has been lost.'); return false;
+                                }
+                                
+                            }
+                            if('{!sd.cv__c}' == 'DepTransferCmp' && checkVisaValidity() == false){
+                                errMsgScroll();
+                                return ;
+                            }
+                            if('{!sd.cv__c}' == 'VisitVisaM' && checkArrivalDate()==false){
+                                errMsgScroll();
+                                return ;
+                            }
+                            //For Rp correction
+                            //if('{!sd.cv__c}' == 'VisaCorrection'){
+                            //console.log('visa correction::::::::');
+                            //if($('input[name="amendvisa"]:checked').length  == 0){
+                            //console.log('length::::: 0');
+                            //$('[name="amendvisa"]').parent().parent().parent().parent().find('.frmErrMsg1').show();
+                            //return;    
+                            //}
+                            //}
+                            //if('{!sd.cv__c}' == 'VisaCorrection' && ($('input[name="amendvisa"]').is(':visible') && $('input[name="amendvisa"]:checked').length == 0)){
+                            if('{!sd.cv__c}' == 'VisaCorrection' && '{!sd.Sub_Category__c}' != 'Renewals' && $('input[name="amendvisa"]:checked').length == 0){
+                                console.log('No change selected:::::');
+                                $('[name="amendvisa"]').parent().parent().parent().parent().find('.frmErrMsg1').show();
+                                
+                                return;
+                            }
+                            else{
+                                if(serviceId=='050' || serviceId=='051' || serviceId=='052' || serviceId=='053' ||  serviceId=='071'){
+                                    toggleGLoader();nextPgValidate(true); saveRequest2();
+                                }
+                                
+                                if(serviceId=='uae'){ //for update attributes
+                                    var selectedAtr = cs["xadh__c"].value;
+                                    if(serviceId=='uae' && !selectedAtr.includes('sd;') && !selectedAtr.includes('ci;')){
+                                        addValError('.frmErrMsg1','Please choose an option.');
+                                        return;
+                                    }
+                                    toggleGLoader(); saveRequest2();
+                                }
+                                removeEmptyLables();
+                                $('#doc_details').show(); 
+                                $('#btn_id').show(); 
+                                $('#srv_id_page').hide();
+                            }
+                            
+                        }); 
+                        
+                        
+                        $('.visanumber').change(function () {
+                            var isvisaBtn = $('#verify_visa_details_button').is(':visible');
+                            if(!isvisaBtn) 
+                                $('#verify_visa_details_button').trigger('click');
+                        });                    
+                        $('#verify_visa_details_button').click(function () {
+                            //ev.preventDefault();
+                            validVisa = chkVisaValidity($('#datepicker1').val());
+                            var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                            
+                            var v1= $('#visa1').val(); 
+                            var v2= $('#visa2').val();
+                            var v3= $('#visa3').val();
+                            var msg = '';
+                            if(v1.length!=$('#visa1').attr('maxlength') || v2.length!=$('#visa2').attr('maxlength') || v3.length<4)
+                                $('.visa-file-number-group').parent().find('.serErr').show();
+                            else if($('#datepicker1').val()==''){
+                                $('#datepicker1').parent().parent().find('.serErr').show();
+                            }
+                                else{
+                                    $('.serErr').hide();
+                                    cs["e__c"].value = v1+'/'+v2+'/'+v3;
+                                    if($('#datepicker1').val() != '') 
+                                        cs["xaed__c"].value = $('#datepicker1').val();
+                                    if('{!sd.cv__c}' == 'NewVisa'){
+                                        if(v1 != '201' || !isIncountryChecked || (v1 == '201' && !validVisa)){
+                                            $('.srvNew').show();$('.vNew').show();
+                                            $('.srvTransfers').hide();$('.vTransfers').hide();
+                                            $('.vIntTransfers').hide();
+                                            $('#verify_visa_details').show(); 
+                                            $('#priority_id').show();
+                                            cs["xeidav__c"].value = 'No';
+                                            if(isIncountryChecked) 
+                                                $('#ofl').show();    
+                                        }
+                                        else{
+                                            $('#preloader').fadeIn();
+                                            visaValidate();
+                                        }
+                                    }
+                                    else{
+                                        cs["srvc__c"].value = $('[name="service_id"]:checked').val(); 
+                                        if(checkArrivalDate()==false)
+                                            return;
+                                        $('#preloader').fadeIn();
+                                        var visasetup = '{!acc.vvsfp__c}'; 
+                                        
+                                        if((visasetup == '' || !visasetup.includes('Multiple Entry')))
+                                            cs['xadh__c'].value +='vfm;ddm;'; 
+                                        
+                                        visitVisaValidate();
+                                        
+                                        
+                                    }
+                                    $(this).hide();
+                                }
+                            
+                        });
+                    });
+                }(jQuery));
+                
+                
+                var MEorOA=''; // for multi entry and on arrival
+                function checkArrivalDate(){
+                    var date1 = $('#datepicker1').val();
+                    var date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+                    var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+                    $('#datepicker1').parents('.form-group').find('.frmErrMsg,.serErr').remove();
+                    if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+                        $('#datepicker1').parents('.form-group').append('<div class="frmErrMsg">Invalid Date type!</div>');
+                        return false;
+                    }
+                    if(MEorOA == 'convert to multi-'){
+                        if(days<0||days>7){
+                            $('#datepicker1').parents('.form-group').append('<div class="frmErrMsg">Service has to be applied within 7 days from Arrival!</div>');
+                            return false;
+                        }
+                    }
+                    else if(MEorOA=='extend visa'){
+                        if(days<23||days>30){
+                            $('#datepicker1').parents('.form-group').append('<div class="frmErrMsg">Service has to be applied within 7 days of Expiry!</div>');
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                $('.serRadio').on('change',function(){
+                    $(this).parent().parent().parent().parent().find('.serErr').hide();
+                    if(cs['Con__c'] != undefined && cs['Con__c'].value == ''){
+                        $('#contactLookup').parent().find('.serErr').show()
+                        return;
+                    }
+                });
+                </script>
+            </apex:form>
+            
+        </div>
+        <div class="modal fade modal-base" id="modal_vfs" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <h2 class="modal-title" style="margin-left: 1.8rem;" ><u><label id="mdHeader">File Preview</label></u></h2>
+                    <!--
+<button type="button" class="btn btn-primary btn-icon mb-4" data-dismiss="modal"  onclick="printFile();" ><i class="icon icon-print"></i></button> -->
+                    
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body" style="padding: 0px 30px 30px;">
+                        <div class="mb-3"></div>
+                        <img src="" id='previewDiv' />
+                    </div>
+                    
+                    <!-- <a href="#"  onclick="printFile();" style="align-self: flex-end;margin: 0px 30px 5px;"><u>Print</u></a> -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade modal-base" id="modal_alert_gv" role="dialog" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 607px;">
+                <div class="modal-content">
+                    <div class="modal-body text-center pt-5 pb-5">
+                        <div class="row">
+                            <div class="col-12 order-md-2">
+                                <div class="d-flex flex-column h-100">
+                                    <div class="mb-auto">
+                                        <h2 class="mb-4" style="text-align:center;">Your company must have at least 10 active sponsored employees to proceed with a Golden Visa application.</h2>
+                                        <p style="text-align: center;"></p>
+                                        <p class="col-xl-12 col-lg-12" style="text-align: right;">
+                                            <a class="col-xl-2 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" href="/gpm" id="cYes">OK</a>
+                                            <br class="" />
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- main js -->
+        
+        <script>
+        var currentDoc = '';
+        $(document).ready(function() {
+            if(serviceId=='gv' &&'{!Acc.vcspe__c}'<10){/* && '{!Acc.lc__c}'!='97816'*/
+                if('{!Acc.agv__c}'=='Allowed')
+                    return;
+                $('#main').remove();
+                $('#modal_alert_gv').modal('show');
+            }
+            console.log('page load'); 
+            /*to disable service checkboxes*/
+            if('{!rq.id}'!=''){
+                $('[name="service_id"]').attr('disabled','disabled');
+            }
+            
+            // defining array includes for IE
+            if(!Array.prototype.includes){
+                Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+            }
+            $('#btn_id').hide();
+            if('{!rqId}' != ''){
+                console.log('req id diff null');
+                var adhoc = '{!rq.xadh__c}' 
+                if(adhoc.includes('ef;'))
+                    $('[value="express"]').prop('checked',true);
+                else if(adhoc.includes('pf;')) 
+                    $('[value="platinum"]').prop('checked',true); 
+                $('#priority_id').show();  
+                if('{!sd.cv__c}' == 'NewVisa'){
+                    console.log('New Visa');
+                    if('{!rq.e__c}' != ''){
+                        $('[att1="visayes"]').prop('checked',true);
+                    }
+                    else
+                        $('[att1="visano"]').prop('checked',true);
+                    $('#verify_visa_details_button').hide();
+                    if(cs["e__c"].value != null)
+                    {
+                        var estlst = cs["e__c"].value.split('/');
+                        $('#visa1').val(estlst[0]);$('#visa2').val(estlst[1]);$('#visa3').val(estlst[2]);
+                        
+                        $('#datepicker1').val(cs["xaed__c"].value);
+                        $('#visa_file_number').show();
+                        $('#verify_visa_details_button').hide();
+                        $('#inc').show();
+                    }
+                    if(cs["visaTransferId"].value == 'y'){
+                        $('.srvNew').hide();$('.vNew').hide();
+                        $('.srvTransfers').show();$('.vTransfers').show(); 
+                        $('.vIntTransfers').hide();  
+                    }
+                    else{
+                        $('.srvNew').show();$('.vNew').show();
+                        $('.srvTransfers').hide();  $('.vTransfers').hide();
+                        $('.vIntTransfer').hide(); 
+                    }
+                    
+                    $('#verify_visa_details').show(); 
+                    
+                    if(adhoc.includes('ic;')){ 
+                        $('[name="incountry"]').prop('checked',true);
+                        $('#ofl').show();
+                    }
+                    if(adhoc.includes('ofl;')) 
+                        $('[name="offerleter"]').prop('checked',true);
+                    if(cs['xosa__c'].value == 'Yes')
+                        $('[name="outsource"]').prop('checked',true);
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                }
+                if('{!sd.cv__c}' == 'StuNewVisa'){
+                    console.log('student visa'); 
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                    if(adhoc.includes('ic;')) 
+                        $('[att1="insideUAEyes"]').prop('checked',true);
+                    else
+                        $('[att1="insideUAEno"]').prop('checked',true);
+                }
+                if('{!sd.cv__c}' == 'Visa'){
+                    console.log('Visa'); 
+                    if('{!sd.vtyp__c}' == 'nid'){   
+                        $('[value="{!rq.xcspb__c}"]').prop('checked',true);
+                        if("{!rq.xcspb__c}" == 'Husband or Father'){
+                            $('.srvNew').show(); $('.srvTransfers').hide();
+                            $('.goldVisa').hide();
+                        }
+                        if("{!rq.xcspb__c}" == 'Parent Company'){
+                            $('.srvTransfers').show(); $('.srvNew').hide();
+                        }
+                        /* if("{!rq.xcspb__c}" == 'Golden Visa'){
+                            $('.goldVisa').show();
+                        } */ // commented on 03/06/2022 
+                    }
+                    else if('{!sd.vtyp__c}' == 'tid')
+                        $('[value="{!rq.xcstp__c}"]').prop('checked',true);  
+                }
+                if('{!sd.cv__c}' == 'DocAttestation'){
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                    var docAttType = $('[name="service_id"]:checked').attr('att1');
+                    if(docAttType == 'Passport'){
+                        $('.srvNew').show(); $('.srvTransfers').hide();
+                    }
+                    if( docAttType == 'Employee Contract'){
+                        $('.srvTransfers').show(); $('.srvNew').hide();
+                    } 
+                }
+                if('{!sd.cv__c}' == 'DepTransferCmp'){
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                }
+                if('{!sd.cv__c}' == 'DepNewCmp'){
+                    console.log('DEPENDENT VISA 1'); 
+                    // if(adhoc.includes('vfs;')){
+                    //    console.log('DEPENDENT VISA 2'); 
+                    //  document.getElementById('vfsOpt').display='block';
+                    //  document.getElementById('vfslabel').display='block';
+                    //} 
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                    if(adhoc.includes('ic;')){ 
+                        $('[name="incountry"]').prop('checked',true);
+                        
+                    }
+                    $('.depSrv').show();
+                    if(cs["visaTransferId"].value == 's')
+                    {
+                        $('.vspouse').show();$('.vchild').hide();$('.vnewborn').hide();
+                        $('#incountryChk').show();$('#newborn_relationship').hide();
+                        $('[value="spouse"]').prop('checked',true);
+                    }
+                    else if(cs["visaTransferId"].value == 'b'){
+                        $('[value="newborn"]').prop('checked',true);
+                        $('.vspouse').hide();$('.vchild').hide();$('.vnewborn').show();
+                        $('#newborn_relationship').show();$('#incountryChk').hide();
+                        $('[name="newbornchk"]').prop('checked',true);
+                        $('.vchild').hide();$('.vnewborn').show();
+                    }
+                        else if(cs["visaTransferId"].value == 'c'){
+                            $('[value="child"]').prop('checked',true);
+                            $('.vspouse').hide();$('.vchild').show();$('.vnewborn').hide();
+                            $('#newborn_relationship').hide();$('#incountryChk').show();
+                            $('.vchild').show();$('.vnewborn').hide();
+                        }
+                    //vfs show buttons for dependent visa only
+                    
+                }
+                if('{!sd.cv__c}' == 'LostPassport'){
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                    $('#block2').show();   $('#block1').hide(); 
+                    if('{!rq.srvc__r.kstp__c}' == 'contact'){
+                        $('.con_details').show();$('.dep_details').hide();
+                    }
+                    else if('{!rq.srvc__r.kstp__c}' == 'sponsor'){
+                        $('.con_details').hide();$('.dep_details').show();
+                    }
+                    if( cs['xoca__c'].value=='true'){
+                        $( ".lostpassport" ).prop( "value", 'yes');
+                    }else{
+                        $( ".lostpassport" ).prop( "value", 'no');
+                    }
+                    $( ".lostpassport" ).prop( "checked", true );
+                }
+                
+                if('{!sd.cv__c}' == 'CancelVisaDep'){
+                    $('.depSrv').show();
+                    updateDepList();
+                    $('#depSelId').val('{!rq.Con__c}');
+                }
+                if('{!sd.cv__c}' == 'DepGVTrns'){
+                    $('.selDep').show();
+                    /* updateDepList();
+                    if('{!rq.srvc__r.kstp__c}' == 'Spouse'){
+                        $('#depSelId').val('Spouse_{!rq.Con__c}');
+                       
+                    }
+                    else if('{!rq.srvc__r.kstp__c}' == 'Child'){
+                        $('#depSelId').val('Child_{!rq.Con__c}');
+                        
+                    }*/
+                }
+                if('{!sd.cv__c}' == 'DepRenewal'){
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                    $('.depSrv').show();
+                    updateDepList();
+                    
+                    if('{!rq.srvc__r.kstp__c}' == 'Spouse'){
+                        $('#depSelId').val('Spouse_{!rq.Con__c}');
+                        $('.vSpouse').show();$('.vChild').hide();$('.srvNew').show();$('.srvTransfers').hide();
+                    }
+                    else if('{!rq.srvc__r.kstp__c}' == 'Child'){
+                        $('#depSelId').val('Child_{!rq.Con__c}');
+                        $('.vChild').show();$('.vSpouse').hide();$('.srvNew').hide();$('.srvTransfers').show();
+                    }
+                }
+                if('{!sd.cv__c}' == 'VisaRenewal' || '{!sd.cv__c}' == 'VisaCorrection' || '{!sd.cv__c}' == 'VisitVisa' || '{!sd.cv__c}' == 'VisitVisaM'){
+                    $('[value="{!rq.srvc__c}"]').prop('checked',true);
+                }
+                console.log('adhoc---'+adhoc);
+                console.log('{!sd.cv__c}---'+ '{!sd.cv__c}');
+                if('{!sd.cv__c}' == 'CancelVisa' || '{!sd.cv__c}' == 'CancelStuVisa' || '{!sd.cv__c}' == 'CancelVisaDep'){
+                    if(adhoc.includes('ins;')){ 
+                        $('[att1="insideUAEYES"]').prop('checked',true);
+                        $('#expltr').show();
+                        if(adhoc.includes('exp;')) 
+                            $('[name="expletter"]').prop('checked',true);
+                        if(adhoc.includes('fid;')) 
+                            $('[name="imgdeposit"]').prop('checked',true);
+                        if(adhoc.includes('0ip;')) $('#depId').val('0ip');
+                        if(adhoc.includes('1ip;'))  $('#depId').val('1ip');
+                        if(adhoc.includes('2ip;')) $('#depId').val('2ip');
+                        if(adhoc.includes('3ip;'))$('#depId').val('3ip');
+                        if(adhoc.includes('4ip;'))  $('#depId').val('4ip');
+                        if(adhoc.includes('5ip;')) $('#depId').val('5ip');
+                        if(adhoc.includes('6ip;'))  $('#depId').val('6ip');
+                        if(adhoc.includes('7ip;'))$('#depId').val('7ip');
+                        if(adhoc.includes('8ip;'))$('#depId').val('8ip');
+                        if(adhoc.includes('9ip;')) $('#depId').val('9ip');  
+                    }
+                    else if(adhoc.includes('rpc;') || adhoc.includes('oua;') || adhoc.includes('oup;'))
+                    {
+                        console.log('adhoc---'+adhoc);
+                        $('[att1="insideUAENO"]').prop('checked',true);
+                        // $('#insideUAE').show();
+                        if(adhoc.includes('oua;')) 
+                            $('[name="passport_available"]').prop('checked',true); 
+                    }
+                    
+                }
+                
+                if('{!isdoc}' == 'y') 
+                {
+                    $('#doc_details').show(); 
+                    $('#btn_id').show(); 
+                    $('#srv_id_page').hide();
+                    
+                }   
+            }
+            if('{!sd.cv__c}' == 'DepNewCmp'){
+                console.log('depNewCMP rq diff null'); 
+                document.getElementById('vfsOpt').style.display = 'block';
+                document.getElementById('vfslabel').style.display = 'block';
+                //              document.getElementById("{!$Component.vfslabel}");
+                //document.getElementById("{!$Component.vfsOpt}");            
+            }
+            $('.attBox').eq(0).removeClass('disabled-box').find('.loader_img')
+            .html('<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />')
+            .hide();
+            if(cs["InsChk__c"].value=='true')
+                $('#inschk').prop('checked',true);
+            
+        });
+        
+        function vfsOnChange(){ 
+            console.log('---------entering on change method------'); 
+            var vfsOption = $("input[name='vfsOption']:checked").val();
+            cs["vfsFlag__c"] .value=false;
+            if(vfsOption=='Yes'){
+                cs["vfsFlag__c"] .value=true;
+            }
+            console.log(cs["vfsFlag__c"] .value);
+        }
+        //check if spouse, child or new born visa and show the vfs blocks
+        
+        </script>
+        <!--<apex:form id="uploadFrm" rendered="{!rq.id != null}">
+<c:fileuploadpopupnew13 R="{!rq}" /> 
+</apex:form>-->
+        <apex:form id="uploadFrm" rendered="true">
+            <c:fileuploadpopupnew13 R="{!rq}" /> 
+        </apex:form>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    </body>
+    
+</apex:page>

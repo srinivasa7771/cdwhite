@@ -1,0 +1,438 @@
+<apex:component controller="gctlAxs2" allowDML="true">
+    
+
+    <style>
+        .waterMark {
+        height: 100%;
+        width: 100%;
+        //border: 1px solid #e8e1e1;
+        border-radius: 12px;
+        position: relative;
+        }
+        
+        .waterMark span {
+        position: absolute;
+        display: block;
+        transform: translate(-100%, -100%) rotate(-45deg);
+        left: 100%;
+        top: 58%;
+        font-size: 3rem;
+        width: 100%;
+        color: #ebebeb;
+        font-weight: 500;
+        }
+        .onboarding-main-content{
+            margin : {!IF(OR(dispUnits.size>0,NOT(AND(rq.os__c=='Lead qualified',rq.os__c=='Lead generated',rq.os__c=='businessName'))),'0;', '0 4em !important;')}
+        }
+    </style>
+    
+    <!--apex:attribute name="req" description=".." type="g_Req__c" assignTo="{!rq}" required="true" />
+<apex:attribute name="rid" description="request ID" type="String" assignTo="{!rqid}" required="false"  /-->
+    <apex:attribute name="R" description="Request" type="g_Req__c" assignTo="{!rq}" required="true"/>
+    <apex:attribute name="segStr" description="json for fee breakdown" type="String" assignTo="{!segJson}" required="true"  />
+    <apex:actionFunction name="updateOfferStatus"  action="{!updateOffer}"  rerender="leaseId" oncomplete="location.reload(true);">
+        <apex:param name="itmCd" value=""/> 
+    </apex:actionFunction> 
+    <div  class="onboarding-left" style="height: 100%; {!IF(OR(dispUnits.size>0,NOT(OR(rq.os__c=='Lead qualified',rq.os__c=='Lead generated',rq.os__c=='businessName'))),'display:flex', 'display:none')}">
+        <apex:outputText id="leaseId">
+            <div class="onboarding-side-main"><!--onboarding-side-main-->
+                <div class="onboarding-side-header text-primary d-md-block d-none">
+                    <div class="onboarding-side-content" style="{!IF(AND(dispUnits.size==0,rq.os__c != 'confpage'), 'display:block', 'display:none')}">
+                        <h3>ABOUT THIS SERVICE</h3>
+                    </div>
+                    <div class="onboarding-side-content" style="{!IF(rq.os__c == 'confpage', 'display:block', 'display:none')}">
+                        BUSINESS SETUP APPLICATION
+                    </div>
+                </div>
+                <a href="#" class="onboarding-side-header d-block d-md-none collapsed" data-toggle="collapse"
+                   data-target="#onboarding_side_content">
+                    <h3 class="text-primary">SPACE REQUIREMENTS (LEASE)</h3> 
+                </a>
+                <div class="collapse" id="onboarding_side_content">
+
+                    <div class="onboarding-side-content" style="{!IF(dispUnits.size>0,'display:block', 'display:none')}">
+                  
+                        
+                            <p>
+                                The below unit(s) is now reserved for you
+                            </p>
+                            
+                         
+                        
+                        <div style="height:400px; overflow: auto;" >
+                            <!--<apex:outputPanel rendered="{!d3Rec=null}"><div class="waterMark"><span>Yet to be Confirmed</span></div></apex:outputPanel>-->
+                            
+                            <!--<apex:repeat value="{!d3Rec}" var="l" id="theRepeat2"><div class="onboarding-unit"><i class="{! IF(l.Category == 'Office', 'icon-commercial','icon-lease-3')} onboarding-unit-icon text-primary"></i><div class="onboarding-unit-value badge-status">{!l.OppArea} SQFT</div><h5>{!l.Category}</h5><div><strong><apex:repeat value="{!LeaseNameMap[l.AgNo]}" var="key2">{!key2}</apex:repeat></strong></div><div><apex:repeat value="{!finalAgreeLoc[l.AgNo]}" var="key2">{!key2}</apex:repeat></div></div></apex:repeat>-->
+                            <apex:repeat value="{!dispUnits}" var="l" id="theRepeat2">
+                                <div class="onboarding-unit">
+                                    <i class="{! IF(l.Category == 'Office', 'icon-commercial','icon-lease-3')} onboarding-unit-icon text-primary"></i>
+                                    <div class="onboarding-unit-value badge-status">{!l.OppArea} SQFT</div>
+                                    <h5>{!l.Category}</h5>
+                                     <div><strong>
+                                      {!l.park}
+                                        </strong></div>
+                                    <div><strong>
+                                      {!l.buildingName}
+                                        </strong></div>
+                                    <!--<div><strong>
+                                      Unit# {!l.ProductName}
+                                        </strong></div>
+                                    -->
+                                    <div>
+                                      {!l.floor}  {!l.UnitNumber}
+                                    </div>
+                                </div>
+                            </apex:repeat>
+                            
+                        </div>
+                    </div>
+                    <div class="onboarding-side-content"  style="{!IF(AND(dispUnits.size==0,rq.os__c != 'confpage'), 'display:block', 'display:none')}">
+                        <div >
+                            <p>
+                                As part of your application, follow our step-by-step wizard that will guide you towards securing your business setup with {!rq.Acc__r.Prk__c}. 
+                            </p>
+                            <div style="height:400px; overflow: auto;" >
+                                <apex:outputPanel rendered="{!dispUnits.size==0}"><div class="waterMark"><span>Yet to be Confirmed</span></div></apex:outputPanel>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="onboarding-side-content"  style="{!IF(rq.os__c == 'confpage', 'display:block', 'display:none')}">
+                        <div >
+                            <p>
+                               Kindly provide us with the necessary information in order to proceed with your business setup application
+                            </p>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="my-4" style="{!IF(OR(rq.os__c =='LCL Issued',rq.os__c =='LCL Rereview', rq.os__c =='CCL Issued',rq.os__c =='LCL Accepted'), 'display:block', 'display:none')}"> <!-- , rq.os__c =='Provisional Approval Issuance'-->
+                        View your lease offer below <br/><br/>
+                        <a href="/DisplayDoc?id={!ritm.ccrmid__c}" target="_new" class="btn btn btn-primary">
+                            <i class="fa fa-arrow-down"></i>
+                            VIEW OFFER
+                        </a>
+                        
+                        <!-- <button type="button" class="btn btn-outline-primary"><i class="fa fa-arrow-down"></i> VIEW OFFER</button> -->
+                    </div>
+                    
+                    
+                    <div style="{!IF(OR(rq.os__c =='LCL Issued',rq.os__c =='CCL Issued'), 'display:block', 'display:none')}"> <!-- , rq.os__c =='Provisional Approval Issuance'-->
+                        
+                        <a href="#" onclick="showRejectModal();" class="btn btn-primary">REJECT</a>
+                        <a href="#" onclick="showTempLoader(this);updateOfferStatus('ok');"  class="btn btn-primary">ACCEPT*</a>
+                        
+                        <p class="fs-12">
+                        *Your lease will be generated within 2 working days of accepting the offer.
+                        </p>
+
+                        
+                    </div>  
+                    
+                    
+                   <div class="my-4" style="{!IF(OR(rq.os__c =='LCL Issued',rq.os__c =='LCL Rereview', rq.os__c =='CCL Issued',rq.os__c =='LCL Accepted'), 'display:block', 'display:none')}"> <!-- , rq.os__c =='Provisional Approval Issuance'--> 
+                    <p class="mt-4">
+                            Please contact your relationship manager if you have any questions or comments. 
+
+                   </p>
+                    </div>
+                </div>
+                <!-- .onboarding-side-content -->
+            </div>
+            <!-- .onboarding-side-main -->
+        </apex:outputText>
+        <div class="onboarding-side-footer" style="display:none;" ><!--{!IF(AND(rq.STA__c=='Draft',rq.acc__r.lctp__c != 'DED' ), 'display:block', 'display:none')}-->
+            <a href="#" class="onboarding-side-footer-modal-toggle" data-toggle="modal"  onclick="showFormation();"> <!-- data-toggle="modal"  data-target="#modal_changeName" -->
+                <i class="icon-formation"></i>
+            </a>
+            <div class="data-info ">
+                <div class="data-label">Type of formation</div>
+                <div id ="xfbdisp" class="data-value">{!rq.xfb__c}</div>
+            </div>
+        </div>
+        <!---|| rq.acc__r.lctp__c == 'DED'-->
+        <div class="onboarding-side-footer" style="{!IF((rq.STA__c == 'Draft' || rq.os__c=='confpage' || rq.os__c=='businessName'  ), 'display:none', 'display:block')}"> <!--  || rq.ap__c>0 || rq.aop__c>0-->
+            <apex:outputPanel id="dueAmount"  >
+                <a href="#" class="onboarding-side-footer-modal-toggle" data-toggle="modal" data-target="#modal_fees_breakdown">
+                    <i class="icon-popup"></i>
+                </a>
+                <div class="data-info data-info-lg">
+                    <h4 class="data-label">{!pydueDesc} </h4>
+                    <div class="data-value"> 
+                        <apex:outputText rendered="{!NOT(rq.os__c=='segments')}" id="dueAmt" value="AED {0, number, ###,##0.00}"><apex:param value="{!DueAmt}" /> </apex:outputText>
+                        <!--</apex:outputText> <apex:outputText  value="{!DueAmt}" />--> 
+                        <apex:outputPanel rendered="{!rq.os__c=='segments'}">
+                            <span class="totalDue1"> </span>
+                        </apex:outputPanel>
+                                                   
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </div> 
+        
+        
+   </div>
+    
+    
+    <!-- fees_breakdown Modal Start-->
+    <div class="modal fade modal-base" id="modal_fees_breakdown" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="padding-right: 17px;">
+        <div class="modal-dialog" role="document" style="width: 600px;">
+            <apex:outputPanel id="feeBreak"  >
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body px-xl-5">
+                        <h2 class="modal-title mb-2">Fees breakdown</h2>
+                        <p>
+                            Below are the fees and costs we have calculated for you so far. These are subject to change as you
+                            go along setting up your business and select various options.
+                        </p>
+                        
+                        <!--###SHUI -->
+                        <div class="onboarding-review-table onboarding-review-table-static">
+                            <div id="popupfees">
+                              
+                                <apex:repeat value="{!segments}" var="key1">
+                                    
+								<apex:outputText rendered="{!OR(AND(NOT(ISBLANK(key1.price)),key1.price !='0.0'),AND(ISBLANK(key1.price),NOT(ISBLANK(key1.totalPrice)),key1.totalPrice !='0.0'))}">
+                                    <div class="onboarding-review-toggle">
+                                        <div class="onboarding-review-row">
+                                            
+                                            <span class="onboarding-review-label">{!key1.name}</span>
+                                            
+                                            <span class="onboarding-review-value">
+                                                <apex:outputText value="AED {0, number, ###,##0.00}" rendered="{!NOT(ISBLANK(key1.price))}"><apex:param value="{!VALUE(key1.price)}" /> </apex:outputText>
+                                                <apex:outputText value="AED {0, number, ###,##0.00}" rendered="{!AND(ISBLANK(key1.price),NOT(ISBLANK(key1.totalPrice)))}"><apex:param value="{!VALUE(key1.totalPrice)}" /> </apex:outputText>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <apex:repeat value="{!key1.SegActivities}" var="key2">
+                                        <div class="onboarding-review-body">
+                                            <div class="onboarding-review-row">
+                                                <span class="onboarding-review-label">
+                                                    <apex:outputText escape="true" value="{!key2.name}"/>
+                                                </span>
+                                                <!--Starts Ms 1.1 -->
+                                                <span class="onboarding-review-value">
+                                                    <apex:outputText value="AED {0, number, ###,##0.00}" rendered="{!NOT(ISBLANK(key2.price))}"><apex:param value="{!VALUE(key2.price)}" /> </apex:outputText>
+                                            	</span>
+                                                <!--Ends Ms 1.1 -->
+                                                <!--<span class="onboarding-review-label">{!key2.totalPrice} AED</span>-->
+                                            </div>
+                                        </div>
+                                    </apex:repeat> 
+							 </apex:outputText>   
+                                </apex:repeat>
+                            </div>
+                            
+                            <apex:outputPanel id="footer1"  >
+                                <div class="onboarding-review-row total"
+                                     style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                                    <span class="onboarding-review-label"></span>
+                                    <span class="onboarding-review-value font-weight-bold totalDue1" >
+                                        <apex:outputText value="AED {0, number, ###,##0.00}"><apex:param value="{!DueAmt}" /> </apex:outputText>
+                                    </span>
+                                </div>
+                            </apex:outputPanel>
+                            
+                            
+                            <apex:outputPanel id="nxtterms" rendered="{!AND(pyTerms!=null,pyTerms.size>0)}">
+                                <h3 class="modal-title mt-2 mb-2" style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                                   Payment schedule 
+                                </h3>
+                                <apex:repeat value="{!pyTerms}" var="key1">
+                                   
+                                    <div class="onboarding-review-toggle">
+                                        <div class="onboarding-review-row">
+                                            <span class="onboarding-review-label">
+                                                <apex:outputText escape="true" value="{!key1.name}"/>   
+                                            </span>
+                                            <span class="onboarding-review-value">
+                                                <apex:outputText value="AED {0, number, ###,##0.00}"><apex:param value="{!VALUE(key1.totalPrice)}" /> </apex:outputText>
+                                            </span>
+                                        </div>
+                                    </div>
+                                   
+                                    <apex:repeat value="{!key1.SegActivities}" var="key2">
+                                      
+                                        <div class="onboarding-review-body">
+                                            <div class="onboarding-review-row">
+                                                <span class="onboarding-review-label">
+                                                     <apex:outputText escape="true" value="{!key2.name}"/>
+                                                </span>
+                                                <!--<span class="onboarding-review-label">{!key2.price} AED</span>-->
+                                            </div>
+                                        </div>
+                                    </apex:repeat> 
+                                </apex:repeat>
+                                
+                                <apex:outputPanel id="footer2"  >
+                                    <div class="onboarding-review-row total2"
+                                         style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                                        <span class="onboarding-review-label"></span>
+                                        <span class="onboarding-review-value font-weight-bold">
+                                            <apex:outputText value="AED {0, number, ###,##0.00}"><apex:param value="{!DueAmt2}" /> </apex:outputText>
+                                        </span>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </div>
+    </div>
+    <!-- fees_breakdown Modal End -->
+    
+    
+    <!-- edit Modal Strat -->
+    <div class="modal fade modal-base" id="modal_changeName" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="padding-right: 17px;">
+    <!--<div class="modal fade modal-base" id="modal_changeName" tabindex="-1" role="dialog" aria-hidden="true">-->
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Modify or Confirm</h2>
+                    <p> 
+                        Kindly review the type of business formation you would like to apply for below.
+                    </p>
+                    <!--<p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        All fields are mandatory
+                    </p>-->
+                    
+                    <div class="form-style">
+                        <div class="row">
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label>Type of formation</label>
+                                    <div>
+                                        <!--<apex:actionRegion >-->
+                                        <apex:selectlist size="1" multiselect="false" styleclass="form-control input-select2-flat" value="{!formation}"  id="formation"  >
+                                            <apex:selectoptions value="{!Pick2}" />
+                                            <!--<apex:actionSupport event="onchange" reRender="false" action="{!formationUpdate}"  />-->
+                                        </apex:selectlist>
+                                        <!-- </apex:actionRegion>-->
+                                        <script type="text/javascript">
+                                        cs['formation']=getC('{!$Component.formation}');
+                                        </script>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br/>
+                                    <apex:commandButton onclick="updtformation();return false;" value="Save" id="theButton" styleClass="btn btn-primary"/> <!--  action="{!editFromLeaseCmp}"-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- edit Modal End -->
+
+     <!--Reject Modal Start--> 
+    <div class="modal fade modal-base" id="modal_reject" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 1000px;">
+            <div class="modal-content">
+                 <div class="modal-header">
+        			<div style="margin-right: 26px;"><h6 class="modal-title " style="margin-right: 9px;">Kindly share the reason for rejecting the offer letter. This will help us understand the requirement better. Once shared, we will review the case and our Partner Relationship Manager will contact you soon.</h6></div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"  onclick = "cs['rjReason'].value='';">
+                    <i class="icon-close"></i>
+                </button>
+                </div>
+                <div class="modal-body">
+                     <div class="form-style">
+                        <div class="row">
+                            <div class="col-md-12">
+                                
+                                <div class="form-group">
+                                    <label>Rejection Reason</label>
+                                    <div>
+                                       <textarea  maxlength = '200' class="form-control"  value="{!rejectionReason}" rows="5" cols="50" id="rjReason" onKeyUp= "removeValError(cs['rjReason']);" />
+                                        <div class="rjReason-error frmErrMsg" style="display:none">Please provide rejection reason</div>
+                                        <script type="text/javascript">
+                                        cs['rjReason']=getC('rjReason');
+                                        </script>
+                                    </div>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="rejectRq();">Submit</button>
+        			<button type="button" class="btn btn-secondary" aria-label="Close"  data-dismiss="modal"  onclick = "cs['rjReason'].value='';">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Reject Modal END-->
+    
+    <script>
+    // auto open popup
+    $(function () {
+        //  $('#modal_changeName').modal('show');
+    });
+    </script>
+    <script type="text/javascript">
+    ///console.log('LeaseDueAmount >>>'+ LeaseDueAmount);
+    //jQuery('[id$=dueAmt]').text(LeaseDueAmount) ; 
+    
+    function showFormation(){
+        cs['formation'].value =  cs['xfb__c'].value; 
+        $(cs['formation']).trigger('change');
+        $('#modal_changeName').modal('show');
+    }
+    function updtformation(){
+        
+        cs['xfb__c'].value = cs['formation'].value;
+        getC('xfbdisp').innerText = cs['formation'].value;
+        $("#modal_changeName").modal('hide');
+        //showCmpInfo();
+    }
+
+    function showRejectModal()
+    {
+        
+        // axsConfirmation('Confirm','Do you want to Reject the Offer?',true,'updateOfferStatus','cr','','');
+        axsConfirmation('Confirm','Are you sure you want to reject the offer?',true,'showRejectModal1','cr','','');
+               
+    }
+    
+    function showRejectModal1()
+    {
+        stopLoaderThis();
+         $('#modal_reject').modal('show');
+
+    }
+    
+    function rejectRq()
+    {
+        console.log('rjReason',cs['rjReason'].value);
+        console.log(cs['rjReason'].id);
+        if(cs['rjReason'].value )
+        {
+            showTempLoader();
+            updateOfferStatus('cr', cs['rjReason'].value);
+        	removeValError(cs['rjReason']);
+        }
+        else
+        {
+            addValError(cs['rjReason'],'*Please provide rejection reason');
+        }
+    }
+    </script>
+</apex:component>

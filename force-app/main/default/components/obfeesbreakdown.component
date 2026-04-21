@@ -1,0 +1,125 @@
+<apex:component >
+    
+    <apex:attribute name="req" description="Request " type="g_Req__c" />
+    
+    <div class="base-side-footer">
+        <div class="onboarding-side-footer">
+            <apex:outputPanel id="dueAmount"  >
+                <a href="#" class="side-footer-icon" data-toggle="modal" data-target="#modal_fees_breakdown"><i class="icon-popup"></i> </a>
+                <div class="data-info data-info-lg">
+                    <h4 class="data-label">Payment Due </h4>
+                    <div class="data-value"> 
+                        <span id="dueAmt" class="dueAmt"> 0 </span>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </div> 
+    </div>
+    
+    
+    <div class="modal fade modal-base" id="modal_fees_breakdown" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="padding-right: 17px;">
+        <div class="modal-dialog" role="document" style="width: 600px;">
+            <apex:outputPanel id="feeBreak"  >
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body px-xl-5">
+                        <h2 class="modal-title mb-4">Fees breakdown</h2>
+                        <div class='mb-4'> 
+                            <p>
+                                Below is the list of fees and costs we have calculated for you so far. These are subject to change as you 
+                                go along  setting up your freelance permit and select various options. 
+                            </p>
+                        </div>
+                    
+                        <div  class="onboarding-review-table onboarding-review-table-static"> <!-- class="onboarding-review-table onboarding-review-table-static" -->
+                            
+                            <div class="onboarding-review-toggle">
+                                <div class="onboarding-review-row">
+                                    <span class="onboarding-review-label">Freelance Permit</span>
+                                    <span class="onboarding-review-value">AED 7,520.00</span>
+                                </div>
+                            </div>
+                            
+                            <div id="ecbrkdown" style="display:none">
+                                <div class="onboarding-review-toggle">
+                                    <div class="onboarding-review-row">
+                                        <span class="onboarding-review-label">Establishment Card</span>
+                                        <span class="onboarding-review-value">AED 2,008.75</span>
+                                    </div>
+                                </div>
+                            </div>
+                           
+                            <div id="othrbrkdwn">
+                                <apex:outputPanel rendered="false"><!--{!AND(req.id!=null,req.id!='')}-->
+                                    <apex:repeat value="{!req.Items__r}" var="itm">
+                                        <apex:outputPanel rendered="{!AND(itm.ATV__c != 0,NOT(OR(itm.name=='Knowledge Dirham Fee',itm.name=='Innovation Dirham Fee',itm.name=='Additional freelance activity',itm.itm__r.cd__c=='tsf',itm.itm__r.cd__c=='frl',itm.itm__r.cd__c=='ec')))}">
+                                            <div class="onboarding-review-toggle">
+                                                <div class="onboarding-review-row">
+                                                    <span class="onboarding-review-label">{!itm.name}</span>
+                                                    <span class="onboarding-review-value">AED {!itm.ATV__c}</span> <!-- {!IF(itm.AD__c==0.00,0.00,itm.ATV__c)} AED-->
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </apex:repeat>
+                                </apex:outputPanel>
+                            </div>
+                            
+                            <div class="onboarding-review-toggle divbrkseg">
+                                <div class="onboarding-review-row">
+                                    <span id="brkseg" class="onboarding-review-label"></span>
+                                    <span id="brksegamnt" class="onboarding-review-value"> </span>
+                                </div>
+                            </div>
+                            <div class="onboarding-review-body dynaacts"></div>
+                            <apex:outputPanel id="footer1">
+                                <div class="onboarding-review-row total" style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                                    <span class="onboarding-review-label"></span>
+                                    <span class="onboarding-review-value font-weight-bold dueAmt"> </span>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+                        
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </div>
+    </div>
+    
+    
+    <script>
+    
+    
+    $(document).ready(function(){
+        setAmnt();
+    });
+    
+    function setAmnt(){
+        var totalpaymnt = '{!req.ATV__c}'; totalpaymnt= parseFloat(totalpaymnt);
+        if(!isNaN(totalpaymnt)) {
+            //totalpaymnt = parseFloat(totalpaymnt) + 225.00; // VAT for tecom fees
+            var tPym = numberWithCommas(''+totalpaymnt.toFixed(2));
+            $('.dueAmt').text('AED ' + tPym);
+        }
+    }
+    
+    function numberWithCommas(x) {
+        var parts = x.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+    }
+    
+
+    
+    function dynaActivities(selectedAct){
+        document.querySelectorAll(".actRomove").forEach(el => el.remove());
+        if(!isNaN(parseFloat(cs['xcmoa__c'].value)) && parseFloat(cs['xcmoa__c'].value)>0){
+            for(var i=0; i< selectedAct.length; i++){
+                var actElem = '<div class="onboarding-review-row actRomove"><span id="brkacts" class="onboarding-review-label">'+ selectedAct[i]  +'</span></div>';
+                $('.dynaacts').append(actElem);
+            }  
+        }
+    }
+    </script>
+</apex:component>

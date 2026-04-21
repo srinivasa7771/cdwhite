@@ -1,0 +1,201 @@
+<apex:component controller="gulkpCtrl2" allowDML="true" >
+    <style>
+        
+        .icon-request-preference:before {
+        content: "\e968";
+        }
+        .selectData1{
+        display:block;
+        max-height : 24em;
+        overflow-y:scroll;
+        }
+    </style>
+    <div class="custLookup">
+        <apex:attribute name="role" description="Contact Role" type="String" required="true" assignTo="{!cRole}" />
+        <apex:attribute name="sta" description="Contact Status" type="String" required="true" assignTo="{!cSta}" />
+        <apex:attribute name="accId" description="Account Id" type="String" required="true" assignTo="{!cAccId}" />
+        <apex:attribute name="Request" description="Request" type="g_Req__c" assignTo="{!rq}" />
+        <apex:attribute name="saveRq" description="Save Applicant details" type="Boolean"  />
+        <apex:attribute name="sponsor" description="true for sponsor" type="String" required="false" assignTo="{!isSponsor}" />
+        <apex:attribute name="heading" description="leable for the search" type="String" required="false" />
+        
+        <!-- <h4>DETAILS</h4>
+Contact Role ---* {!role}<br />
+Contact Status ---* {!sta}<br />
+Account Id ---* {!cAccId}<br />
+Request ---* {!Request}<br />-->
+        
+        <div class="modal fade modal-base" id="modal_lookup_values_spn" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body pt-5 pb-5">
+                        <div class="mb-4 d-flex">
+                            <h3 class="modal-title">
+                                Available Sponsor
+                            </h3>
+                            
+                            <div class="search-field mb-0 ml-5" style="width: auto;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search for Sponsor" id="searchSPN" />
+                                    
+                                    <div class="input-group-append">
+                                        <div class="btn" onclick="searchSPNWithVal()">
+                                            <div class="icon-search"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <apex:outputPanel styleClass="selectData1" id="selectData_spn">
+                            <input type="hidden" id="serSpnString" value="{!serSpnString}" />
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%;">PHOTO</th>
+                                        <th style="width: 25%;">NAME</th>
+                                        <th style="width: 25%;">PASSPORT #</th>
+                                        <th style="width: 25%;">JOB TITLE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!serSpnList}" var="s">
+                                        <tr style="cursor: pointer;" onclick="setData_spn(this);" cId="{!s.id}">
+                                            <td>
+                                                <img width="60" src='/servlet/servlet.FileDownload?file={!s.Photo_ID__c}' />
+                                            </td>
+                                            <td>{!s.name}</td>
+                                            <td>{!s.p__c}</td>
+                                            <td>{!s.jb__r.name}</td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-12 spnLkp">
+            <div class="form-group">
+                <apex:outputLabel value="{!heading}"></apex:outputLabel>
+                <div class="input-group input-group-transparent" onclick="searchSpn()">
+                    <input disabled="true" type="text" class="form-control" id="spnSerachVal" />
+                    <div class="input-group-append">
+                        <span class="input-group-text">
+                            <i id="spnLkpSearch" onclick="searchSpn()" class="icon-request-preference text-primary"></i><!--  data-toggle="modal" data-target="#modal_ticket_requests" -->
+                        </span>
+                    </div>
+                </div>
+                <div class="frmErrMsg">
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div id='spn'>
+            
+        </div>
+        <!--<div>
+<label for="selLookUpVal">Selected:</label>
+<span type="text" id="selLookUpVal"></span>
+</div>-->
+        <apex:actionFunction name="sdraft2" immediate="true" action="{!saveDraft1}" oncomplete="$('#preloader').fadeOut();removeEmptyLables();" rerender="attDetail">
+            <apex:param name="lkpCon" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="loadData_spn" action="{!init_spn}" oncomplete="removeEmptyLables();preSpnData()" rerender="selectData">
+        </apex:actionFunction>
+        <apex:actionFunction name="prsnSrch1" immediate="true"  action="{!searchPersons}" oncomplete="console.log('on complete!');showLkpModel_spn('#serSpnString');hideTempLoader_input();setData();" rerender="selectData_spn">
+            <apex:param name="prsn" assignTo="{!prsn}" value=""/>
+        </apex:actionFunction>
+        <!-- <span class="select2-container select2-container--default select2-container--open" style="position: absolute; top: 376.792px; left: 315.375px;"><span class="select2-dropdown select2-dropdown--below" dir="ltr" style="width: 511.292px;"><span class="select2-search select2-search--dropdown"><input class="select2-search__field" type="search" tabindex="0" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" role="textbox" /></span><span class="select2-results"><ul class="select2-results__options" role="tree" id="select2-f9qa-results" aria-expanded="true" aria-hidden="false"><li role="treeitem" aria-live="assertive" class="select2-results__option select2-results__message">No results found</li></ul></span></span></span>-->
+        <apex:outputPanel id="selectData">
+            <apex:inputHidden id="serSpnString" value="{!serSpnString}"/>
+            <apex:inputHidden id="selectedSpn" value="{!selectedSpn}"/>
+            <apex:inputHidden id="Con__c" value="{!Request.Con__c}"/>
+            <apex:inputHidden id="Spr__c" value="{!Request.Spr__c}"/>
+            <apex:inputHidden id="xcsfn__c" value="{!Request.xcsfn__c}"/>
+            <apex:inputHidden id="xcsnc__c" value="{!Request.xcsnc__c}"/>
+            <apex:inputHidden id="xcsp__c" value="{!Request.xcsp__c}"/>
+            <script>
+            cs['serSpnString']=document.getElementById('{!$Component.serSpnString}');
+            cs['selectedSpn']=document.getElementById('{!$Component.selectedSpn}');
+            
+            cs["Spr__c"] = document.getElementById("{!$Component.Spr__c}");
+            cs["Con__c"] = document.getElementById("{!$Component.Con__c}");
+            cs["xcsfn__c"] = document.getElementById("{!$Component.xcsfn__c}");
+            cs["xcsnc__c"] = document.getElementById("{!$Component.xcsnc__c}");
+            cs["xcsp__c"] = document.getElementById("{!$Component.xcsp__c}");
+            function preSpnData(){
+                //serSpnString = JSON.parse('{!preloadedContact}');
+                cs['Spr__c'].value = '{!preloadedContact.id}';
+                cs['selectedSpn'].value = '{!preloadedContact.name}';
+                $('#spnSerachVal').val(cs['selectedSpn'].value);
+            }
+            </script>
+        </apex:outputPanel>
+    </div>
+    <script><!-- -->
+    $(document).ready(function(){
+        loadData_spn();
+    });
+    function searchSpn(){
+        showTempLoader_input('#spnSerachVal');
+        let sv = $('#spnSerachVal').val();
+        $('#searchCON').val(sv);
+        console.log('in sponl...!');
+        prsnSrch1(sv);
+    }
+    var serSpnString = {};
+    function showLkpModel_spn(el){
+        var ell = $(el).val();
+        serSpnString = JSON.parse(ell);
+        if(!$('#modal_lookup_values_spn').is(':visible'))
+            $('#modal_lookup_values_spn').modal('show');
+    }
+    function searchSPNWithVal(elem){
+        let v = $("#searchSPN").val();
+        showTempLoader_input('#searchSPN');
+        prsnSrch1(v);
+    }
+    function setData_spn(elem){
+        let id = $(elem).attr('cid');
+        let n = $(elem).find('td').eq(1).text();
+        $('#spnSerachVal').val(n);
+        $('#modal_lookup_values_spn').modal('hide');
+        cs['selectedSpn'].value = n;
+        cs['Spr__c'].value = id;
+        for(j=0;j<serSpnString.length;j++){
+            var i = serSpnString[j]
+            if(id == i.Id){
+                cs['xcsfn__c'].value = i.Name;
+                cs['xcsnc__c'].value = i.nc__c;
+                cs['xcsp__c'].value = i.p__c;
+            }
+        }
+        $('.spnLkp').find('.frmErrMsg').hide();
+        if( '{!saveRq}' == 'true' && '{!Request.id}' == ''){
+            //alert('tst33:;');
+            copyDepInfo();
+        }
+    }
+    
+    
+    function sdraft(){
+        let v = $('#spnSerachVal').val();
+        let v1 = cs['selectedSpn'].value;
+        if(v!=v1){
+            $('.spnLkp').find('.frmErrMsg').html('** Selected look up value has changed!').show();
+        }
+        else{
+             $('.spnLkp').find('.frmErrMsg').hide();
+            sdraft2(cs['Con__c'].value);
+           
+        }
+    }
+    </script>
+</apex:component>

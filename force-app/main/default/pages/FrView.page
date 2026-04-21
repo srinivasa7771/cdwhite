@@ -1,0 +1,322 @@
+<apex:page sidebar="false" controller="FrViewCntrl" lightningStylesheets="true" readOnly="true" action="{!queryReq}" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    
+    <style type="text/css" media="screen">
+    #testTable{
+        table-layout: auto!important;
+    }
+        #testTable_filter{
+            display:contents;
+        }
+        .dataTables_paginate {
+        display: none;
+        }
+        
+        div#testTable_paginate {
+        display: block;
+        }
+        
+        #testTable_paginate a {
+        padding: 0.75rem;
+        }
+        .slds-table th,.slds-table td {
+        padding: 1rem !important;
+        width:auto !important;
+        }
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+        .dataTables_filter {
+        float: left !important;
+        }
+        table.dataTable tbody tr:nth-child(odd){
+            background-color: white;
+        }
+        table.dataTable tbody tr:nth-child(even){
+            background-color: #f3f3f3;
+        }
+        .dataTables_filter input[type=search]{
+        padding-top: 0;
+        padding-right: 1rem;
+        padding-bottom: 0;
+        padding-left: .75rem;
+        min-height: calc(1.875rem + (1px * 2));
+        line-height: 1.875rem;
+        border: 1px solid var(--slds-g-color-border-base-4, rgb(201, 201, 201));
+        border-radius: .25rem;
+        background-color: var(--slds-g-color-neutral-base-100, rgb(255, 255, 255));
+        color: var(--slds-c-input-text-color, var(--sds-c-input-text-color));
+        box-shadow: var(--slds-c-input-shadow, var(--sds-c-input-shadow));
+        transition: border .1s linear,background-color .1s linear;
+        display: inline-block
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+    function openNewTab(id){
+        window.open('/'+id, '_blank');
+    }
+    function resetSTA(){
+        cs['status'].value='';
+    }
+   
+    
+   
+    
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+            <apex:pagemessages />
+        </head>
+        <body>
+            <div class="slds-builder-header_container">
+                <header class="slds-global-header_container slds-border_bottem slds-page-header">
+                    <div class="slds-media slds-no-space slds-grow">
+                        <div class="slds-media__figure">
+                            <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                                <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                            </svg>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-text-title--caps slds-line-height--reset">axs</p>
+                            <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                        </div>
+                    </div>
+                </header>
+            </div>
+            <div class="slds-scope" style="margin-top:4rem;">  
+                <apex:form id="listForm">
+                    <div class="slds-grid slds-wrap slds-m-around_small"> 
+                        <div class="slds-col slds-grid">
+                        </div>
+                        <div class="slds-col slds-grid">
+                            <div class="slds-form-element__label">Choose Filter:</div>
+                            <div class="slds-col slds-form-element__control">
+                                <apex:selectList value="{!selStat}" multiselect="false" size="1" id="status" >
+                                    <apex:selectOption itemvalue="-None-"  itemLabel="None"  />
+                                    <apex:selectOption itemvalue="p90"  itemLabel="Past 30 days"  />                                                   
+                                    <apex:selectOption itemvalue="rCall"  itemLabel="Remainder call"  />
+                                    <apex:selectOption itemvalue="prmCall"  itemLabel="Assigned to PRM"  />
+                                    <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm" status="sts" />
+                                </apex:selectList> 
+                                <apex:actionFunction action="{!queryReq}" name="queryReqJS" rerender="listForm"/>
+                                <script type="text/javascript">
+                                cs['status']=getC('{!$Component.status}');
+                                
+                                </script>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-grid">
+                        </div>
+                    </div>
+                    <script type="text/javascript" charset="utf8">
+                    var oTable;var currentNumberDisplayed = 500;
+                    $(document).ready(function() {
+                        jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+                            "date-eu-pre": function ( date ) {
+                                date = date.replace(" ", "");
+                                
+                                if ( ! date ) {
+                                    return 0;
+                                }
+                                
+                                var year;
+                                var eu_date = date.split(/[\.\-\/]/);
+                                
+                                /*year (optional)*/
+                                if ( eu_date[2] ) {
+                                    year = eu_date[2];
+                                }
+                                else {
+                                    year = 0;
+                                }
+                                
+                                /*month*/
+                                var month = eu_date[1];
+                                if ( month.length == 1 ) {
+                                    month = 0+month;
+                                }
+                                
+                                /*day*/
+                                var day = eu_date[0];
+                                if ( day.length == 1 ) {
+                                    day = 0+day;
+                                }
+                                
+                                return (year + month + day) * 1;
+                            },
+                            
+                            "date-eu-asc": function ( a, b ) {
+                                return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+                            },
+                            
+                            "date-eu-desc": function ( a, b ) {
+                                return ((a < b) ? 1 : ((a > b) ? -1 : 0));
+                            }
+                        } );
+                        $('#load').click( function () {
+                            var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                        oTable = $('[id$=testTable]').DataTable({"iDisplayLength": 20,"autoWidth": false}); 
+                        
+                        $("#testTable_info").detach().prependTo('#testTable_wrapper');
+                        $("#testTable_paginate").detach().prependTo('#testTable_wrapper');
+                        //$('#testTable').parent().prepend($('#testTable_info'));
+                        //$('#testTable').parent().prepend($('#testTable_paginate'));
+                    });
+                    </script>
+                    
+                    <apex:actionstatus id="sts">
+                        <apex:facet name="start">
+                            <div class="slds-spinner_container">
+                                <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                    <span class="slds-assistive-text">Loading</span>
+                                    <div class="slds-spinner__dot-a"></div>
+                                    <div class="slds-spinner__dot-b"></div>
+                                </div>
+                            </div>
+                        </apex:facet>
+                    </apex:actionstatus>
+                    <apex:outputPanel rendered="{! IF(ISBLANK(reqList), false, true) }">
+                        <table id="testTable" class="slds-table slds-table_fixed-layout slds-table_bordered slds-table--header-fixed" aria-label="">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Request">Request</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Mobile #">Mobile #</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Remainder Call">Remainder Call</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Created Date">Created Date</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Call Due Date">Call Due Date</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="SLA">SLA</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="No Of Attempts">No Of Attempts</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Status">Status</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Account">Account</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Email">Email</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="Brand">Brand</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="PRM Name">PRM Name</div>
+                                    </th>
+                                    <th class="" scope="col">
+                                        <div class="slds-truncate" title="PRM Email">PRM Email</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                             <tbody>
+                                <apex:repeat value="{!reqList}" var="record">
+                                    <tr class="slds-hint-parent">
+                                        <td data-label="Request" scope="row">
+                                            <div class="slds-truncate" title="{!record.name}">
+                                                <a href="/{!record.id}" target="_blank">{!record.name}</a>
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.ldmob__c}">
+                                                {!record.ldmob__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!if(record.onhold__c,'Yes','')}">
+                                                {!if(record.onhold__c,'Yes','')}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="Created Date">
+                                                <apex:outputText value="{0, date, dd/MM/yyyy}">                                         
+                                                    <apex:Param value="{!record.CreatedDate}" />
+                                                </apex:outputText>
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="Call Due Date">
+                                                <apex:outputText value="{0, date, dd/MM/yyyy}">                                         
+                                                    <apex:Param value="{!record.cldt__c}" />
+                                                </apex:outputText>
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="SLA">
+                                                <apex:outputLabel value="{!if(AND(NOT(ISNULL(record.cldt__c)),record.cldt__c>Today(),record.clcnt__c>0),'Out Side SLA','With In SLA')}"/>  
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.clcnt__c}">
+                                                <apex:outputLabel value="{!record.clcnt__c}"/>  
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.STA__c}">
+                                                {!record.STA__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.Account_Name__c}">
+                                                {!record.Account_Name__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.xceml__c}">
+                                                {!record.xceml__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.bprk__c}">
+                                                {!record.bprk__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.PRM_Name__c}">
+                                                {!record.PRM_Name__c}
+                                            </div>
+                                        </td>
+                                        <td data-label="">
+                                            <div class="slds-truncate" title="{!record.PRM_Email__c}">
+                                                {!record.PRM_Email__c}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                 </apex:repeat>
+                            </tbody>
+                        </table>
+                    </apex:outputPanel>
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

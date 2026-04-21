@@ -1,0 +1,821 @@
+<apex:page cache="false" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlPrk" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .text-light {
+        color: #9B9B9B !important;
+        }
+        #scriptErr{
+        position: absolute;
+        background-color:#fff;
+        width:100%;
+        height:100%;
+        z-index: 10000;
+        }
+        .errDate{color:red !important;}
+        .parkingOptions,.onPrkType{display:none;}
+    </style>
+    <apex:outputPanel rendered="{!!ispu}">
+        <c:onlyBOCss />
+    </apex:outputPanel>
+    <apex:form >
+        
+        
+        <apex:actionFunction name="callWS1" action="{!loadCards}" oncomplete="createDD('{!JSENCODE(parkingCardString)}');loadPrevData();" rerender="cardList" /><!--$('#cardDet').select2({placeholder: 'Select',allowClear: true});-->
+        <apex:actionFunction name="saveReq_DR" status="theStatus" action="{!saveDraft}"  />
+        <!--<apex:actionFunction name="getAmnt" status="theStatus" action="{!getAmntAP}" reRender="msg" oncomplete="updtAmnt('{!JSENCODE(amnt)}');" />-->
+        <apex:actionFunction name="attachmentSave" action="{!saveAtt}" oncomplete="errMsgScroll();enableAllatt();removeEmptyLables();" status="theStatus" rerender="docSec,VehicleCards1,random1,msg"/>
+        <apex:actionFunction name="saveAttachment_RC" action="{!saveAtt}" reRender="random1,VehicleCards1,eidaDet,se,sne,sne1,msg" oncomplete="hideGLoader();" />
+        <apex:actionFunction name="saveReq_RC" action="{!SR_AddPrk}" oncomplete="window.open('/grqpy?id={!req.id}','_self')" reRender="msg"  />
+        <apex:actionFunction name="saveReq" action="{!saveReq}"  reRender="msg"  />
+        <apex:actionFunction name="saveReq_UR" action="{!saveReq1_UR}" reRender="msg" />
+        <apex:actionFunction name="copyApplicantInfo" action="{!saveReq1}" onbeforedomupdate="toggleGLoader()" oncomplete="window.open('/{!req.id}','_self')" reRender="msg" />
+        <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />
+        <apex:inputHidden id="ias__c" value="{!req.ias__c}" />
+        <!--<apex:inputHidden id="rmob__c" value="{!req.rmob__c}" />-->
+        <apex:inputHidden id="xceml__c" value="{!req.xceml__c}" />
+        <apex:inputHidden id="slaN__c" value="{!req.slaN__c}" />
+        <apex:inputHidden id="uid"  /> 
+        <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+        <apex:inputHidden id="docname" value="{!docName}" />
+        <apex:inputHidden id="parseId"  />  
+        <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+        <apex:inputHidden id="xps__c" value="{!req.xps__c}" />
+        <apex:inputHidden id="xanum__c" value="{!req.xanum__c}" />
+        <script>
+        var cs={};
+        cs['xanum__c']=document.getElementById('{!$Component.xanum__c}');
+        cs["imageBase64"] = getC("{!$Component.imageBase64}");
+        cs['xadtx4__c']=getC('{!$Component.xadtx4__c}');
+        cs["docname"] = getC("{!$Component.docname}");
+        cs["parseId"] = getC("{!$Component.parseId}");
+        cs["uid"] = getC("{!$Component.uid}");
+        cs['xadh__c']=getC('{!$Component.xadh__c}');
+        cs['ias__c']=getC('{!$Component.ias__c}');
+        cs['rmob__c']=getC('{!$Component.rmob__c}');
+        cs['xceml__c']=getC('{!$Component.xceml__c}');
+        cs['slaN__c']=getC('{!$Component.slaN__c}');
+        cs['xps__c']=getC('{!$Component.xps__c}');
+        </script>
+        
+        <apex:outputPanel id="mainDiv">
+            <div id="main">
+                <b><apex:pageMessages id="msg"  /></b>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            <p class="text-000">
+                                                Using this service, you can request for additional parking permits or users. <br /><br />
+                                                The additional parking permits purchased will be added to your total parking eligibility.<br /><br />
+                                                The additional users will be allowed access to parking  based on current parking eligibility and  availability. This will not increase the total eligibility.
+                                                <!--{!srv.sdg__r.sd__c}-->
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <apex:outputText ><!-- rendered="{!Acc.park__c!='doc'}"-->
+                            
+                            <div class="base-main">
+                                <div class="base-main-content">
+                                    <h3 class="base-main-title">Request for Parking Permits</h3>
+                                    <div class="fs-18 my-2 locSection">Select parking location to proceed</div><!--request for additional parking permits / enroll a user-->
+                                    <apex:outputPanel id="cardList" styleClass="locSection">
+                                        <div class="form-group">
+                                            <select id="cardDet" class="form-control input-select-member" 
+                                                    data-placeholder="Select a sector" onchange="settoFld(this)">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <label class="fs-18 parkingOptions">Select a service to apply for</label><br />
+                                    <div class="form-group parkingOptions" id="0np">
+                                        
+                                        <label class="custom-radio custom-radio-sm mb-4 nonDoc">
+                                            <input value="addPar" id="addPar" itemCode='0np' onchange="updateItem(this);" name="parkType" type="radio" />
+                                            <span data-original-title="" data-placement="top" data-toggle="tooltip">Additional parking</span>
+                                        </label>&nbsp;
+                                        <label class="custom-radio custom-radio-sm mb-4 nonDoc">
+                                            <input value="enUsr" id="enUsr" itemCode='1np' onchange="updateItem(this);" name="parkType" type="radio" />
+                                            <span data-original-title="" data-placement="top" data-toggle="tooltip">Additional user</span>
+                                        </label>
+                                        <label class="custom-radio custom-radio-sm mb-4 docExtra">
+                                            <input value="stdPaid" id="stdPar" itemCode='snp' onchange="updateItem(this);" name="parkType" type="radio" />
+                                            <span data-original-title="" data-placement="top" data-toggle="tooltip">Standard parking</span><!--Surface-->
+                                        </label>&nbsp;
+                                        <label class="custom-radio custom-radio-sm mb-4 docExtra">
+                                            <input value="execPaid" id="excPar" itemCode='enp' onchange="updateItem(this);" name="parkType" type="radio" />
+                                            <span data-original-title="" data-placement="top" data-toggle="tooltip">Executive parking</span>
+                                        </label>
+                                    </div>
+                                    <label style="display:none;" class="text-primary fs-15">
+                                        Your company has been pre-approved for <span id="totPermits"></span> <span id='paidType'></span> parking permits based on the size of your leased area.
+                                        Currently, <span id="avlblPermits"></span> pre-approved parking permits available
+                                    </label>
+                                    <div id="selectedSector" class="" style="display:none"> 
+                                        
+                                        <span  id="addTile" style="{!if(req.xadh__c ==  'snp;', 'display:none', 'display:block')}">
+                                            <h4  class="mt-2">Additional parking permits information</h4>
+                                        </span>
+                                        <span id="stdTile" style="{!if(req.xadh__c ==  'snp;', 'display:block', 'display:none')}">
+                                            <h4  class="mt-2">Standard parking permits information</h4>
+                                        </span>
+                                        
+                                        <div class="row row-lg">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Choose number of parking permits</label>
+                                                    <apex:inputField type="text" onkeyup="validDigits(this)" onchange="updateReqPrkSlots(this.value,this)" styleClass="disabledApex requiredFld form-control numOnly jsnfld" value="{!req.xrap__c}" id="xrap__c"
+                                                                     />
+                                                    <script type="text/javascript">
+                                                    cs['xrap__c']=document.getElementById('{!$Component.xrap__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 onPrkType 0np">
+                                                <div class="form-group">
+                                                    <label>Expiry date</label>
+                                                    <!--<input id="xaed" disabled="true" class="form-control" style="height:50px;" />-->
+                                                    <div class="input-datepicker-group input-group">
+                                                        <input type="text" onchange="checkDate_custom(this,'fid');" class="requiredFld vRegDate dateCheck requiredFldPop form-control input-datepicker forEdit" id="cExpDate"
+                                                               data-toggle="datetimepicker" validationname="fid" data-target="#cExpDate" />
+                                                        <div class="input-group-append">
+                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#cExpDate">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <label class="mt-2 text-primary cExpErr">
+                                                        <i class="icon icon-info-circle"></i>
+                                                        Expiry date should fall within a minimum of 2 month and a maximum of 12 months from the current date, or it can be set to the next lease anniversary date comes before the 12-month limit
+                                                    </label>
+                                                    <!--<apex:inputHidden id="xaed__c1" value=""/>-->
+                                                    <script type="text/javascript">
+                                                    cs['xaed__c1']=document.getElementById('{!$Component.xaed__c1}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Total amount (AED)</label>
+                                                    <apex:inputHidden value="{!req.xtpa__c}" id="xtpa__c"/>
+                                                    <input class="form-control disabledApex" value="{!req.xtpa__c}" id="xtpa"/>
+                                                    <script type="text/javascript">
+                                                    cs['xtpa__c']=document.getElementById('{!$Component.xtpa__c}');
+                                                    cs['xtpa__c'].disabled = true;
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-style">
+                                            <c:eContactInfo req="{!req}" noNotes="true"  id="conTactcmp" cmpTitle="Contact Details"/>
+                                        </div>
+                                    </div>
+                                    <div class="pb-5"></div>
+                                </div>
+                                <!--<button class="btn btn-primary" style="width: 150px;" onclick="submitPage(this,event)">SUBMIT</button>-->
+                                <div class="base-main-footer">
+                                    <div class="base-nav">
+                                        <a class="btn btn-primary base-nav-next d-none" onclick="submitPage(this,event)" style="color: #fff;">
+                                            PROCEED 
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputText>
+                    </div>
+                </div>
+            </div>
+        </apex:outputPanel>
+    </apex:form>
+    <script type="text/javascript">
+    var axs2CusomJS = "{!$Resource.AXS2CustomJs}";
+    var allJSON = {};
+    var allJSONStr = '';
+    var data = [];
+    var selectedJSON = [];
+    var uPrc = 0;
+    var currentVehicle = 1;
+    var serviceId = '{!JSENCODE(srv.uid__c)}';
+    var uid,locationExceptions;
+    var fldToEIDAFlds = {'Name':'xchn__c','ID_Number':'xceidid__c','country2':'','emailid':'xceml__c','mobileid':'rmob__c'};
+    var vehicleObj ={};
+    var totEmp = '{!JSENCODE(Acc.vetemp__c )}';
+    var park = 'DOC';
+    var optionSeleted = false;
+    $(document).ready(function(){
+        locationExceptions = "{!$Label.AdditionalParkingExceptionLoc}";
+        cs["uid"].value = "{!srv.uid__c}";
+        callWS();
+        if('{!JSENCODE(req.id)}'=='')
+            cs["xadh__c"].value='';
+        if('{!JSENCODE(req.id)}'!='' &&cs["xadh__c"].value){
+            $('[itemCode="'+cs["xadh__c"].value.split(';')[0]+'"]').prop('checked',true);
+            setTimeout(function(){$('[name="parkType"] ').trigger('change');},500);
+        }
+        
+        $('.btn').on('click',function(event){
+            //  event.preventDefault();
+        });
+        
+    });
+    var backOrFront, currentItemCd;
+    var currVehicle = {"status":"","sequence":"","pltNum_RC": "", "RegDate_RC": "", "por_RC": "", "VehType_RC": "", "VehModel_RC": ""};
+    var vehicleObj1 = {};
+    
+    function updateItem(e){
+        if('{!JSENCODE(req.id)}'!='')
+            return;
+        if($('[name="parkType"]:checked').val()){
+            removeValError('[name="parkType"]');
+            var iCode = $(e).attr('itemCode');
+            console.log('---iCode---'+iCode);
+            $('.locSection').show();
+            cs['xadh__c'].value= iCode+';';
+            $(cs['xrap__c']).removeClass('disabledApex');
+            $('.onPrkType').hide();
+            if(iCode=='0np'){
+                
+                $('.onPrkType.0np').show();
+            }
+            formatTitle(iCode);
+        }
+        else{
+            $(cs['xrap__c']).addClass('disabledApex');
+        }
+    }
+    
+    function formatTitle(selType)
+    {
+        console.log('selType===',selType);
+        if(selType == 'snp')
+        {
+            $('#stdTile').show();
+            $('#addTile').hide();
+        }
+        else if(selType == '1np' || selType == '0np')
+        {
+            $('#stdTile').hide();
+            $('#addTile').show();
+        }
+    }
+    
+    function checkDate_custom(elem){  
+        var e = $(elem);
+        var date,date2
+        $('.cExpErr').removeClass('errDate');
+        removeValError(elem);
+        var date1 = e.val();
+        //var date3 = cs['xaed__c'].value;
+        //cs['xaed__c'].value = e.val();
+        var date3 = selectedJSON[0].locExp;
+        date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+        date2 =  date3.split('/')[1]+'/'+date3.split('/')[0]+'/'+date3.split('/')[2];
+        var days = new Date(new Date(date) - new Date())/1000/60/60/24;
+        var days1 = new Date(new Date(date2) - new Date(date))/1000/60/60/24;
+        var r = true;
+        if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+            r = 'invalid'
+        }
+        
+        var exp= date1.split('/'); 
+        var expDate = new Date(exp[2]+'-'+exp[1]+'-'+exp[0]);
+        exp= selectedJSON[0].locExp.split('/');
+        var expDate2 = new Date(exp[2]+'-'+exp[1]+'-'+exp[0]);
+        
+        if(days<60 || days1<0 || expDate > expDate2 || days>365){ 
+            $('.cExpErr').addClass('errDate').fadeOut().fadeIn().fadeOut().fadeIn();
+            e.focus();
+            return false;
+        }
+        return true;
+        /*
+        if(days<(30) || days>365 || days1<0){
+            $('.cExpErr').addClass('errDate').fadeOut().fadeIn().fadeOut().fadeIn();
+            e.focus();
+        }*/
+    }
+    
+    function callWS(){
+        setTimeout(function(){
+            callWS1();
+        },200);
+    }
+    var crAgNo;
+    var hideAddOptions = false;
+    var execParkings = [];
+    var paidStdParkings = [];
+    function createDD(str){
+        allJSONStr = str;
+        allJSONStr = allJSONStr.split("\"Items\"").join('\'Items\'');
+        createDD1();
+    }
+    function removeDOCoptions(jsonStr){
+        if(!allJSONStr)
+            return;
+        var jsonoObj = JSON.parse(allJSONStr);
+        for(let i of jsonoObj){
+            if(i.PaidStandardEligibility>0)
+                hideAddOptions = true;
+        }
+    }
+    function createDD1(itmCode){
+        $('#cardDet').find('option[value^="AG"]').remove();
+        $('#cardDet').select2(); 
+        if($('#cardDet').hasClass("select2-hidden-accessible"))
+            $('#cardDet').select2('destroy'); 
+        console.log('---allJSONStr---'+allJSONStr);
+        var allJSONObj = JSON.parse(allJSONStr);
+        var allJSONObj1 = [];
+        var agObj = {};
+        var z=0;
+        var optionData = [];
+        try{
+            for(let i of allJSONObj){
+                var d ={};
+                z++;
+                d.Sequence = i.Sequence;
+                d.LocationName = i.LocationName;
+                d.id=(locationExceptions.includes(i.LocationName) && i.AgNumber=='')?'AG-'+z:i.SectorID;//+'_'+i.SectorID;
+                d.LocaionId = i.LocaionId;
+                d.SectorID = i.SectorID;
+                d.Sector = i.Sector;
+                d.EligibilityID = i.EligibilityID;
+                d.NewEligibility = i.NewEligibility;
+                d.isDefault = i.isDefault;
+                d.AgNumber=(locationExceptions.includes(i.LocationName) && i.AgNumber=='')?'AG-'+z:i.AgNumber;
+                d.LeaseExp = i.LeaseExp;
+                d.PaidEligibility = i.PaidEligibility;
+                d.RemainingPaidEligible = i.RemainingPaidEligible;
+                if(i.PaidStandardEligibility>=0){
+                    d.PaidStandardPrice = i.PaidStandardPrice;
+                    d.PaidStandardEligibility = d.noOfAO = i.PaidStandardEligibility;
+                    /*if(itmCode=='enp'){
+                        if(!i.LocationName.toLowerCase().includes('executive')){
+                            d.disabled = true;
+                        }
+                        else
+                            d.disabled = false;
+                    }
+                    else if(itmCode=='snp'){
+                         if(i.LocationName.toLowerCase().includes('executive')){
+                            d.disabled = true;
+                        }
+                        else
+                            d.disabled = false;
+                    }*/
+                }
+                optionData.push(d);
+            }
+        }catch(e){
+            console.log(e);
+        }
+        $('.input-select-member').change(function () {
+            if ($(this).val() === '') {
+                $(this).next('.select2').removeClass('selected');
+            } else {
+                $(this).next('.select2').addClass('selected');
+            }
+        });
+        
+        setTimeout(function () {
+            $('.input-select-member').trigger('change');
+        }, 100);
+        
+        $('.input-select-member').select2({
+            data: optionData,
+            allowClear: true,
+            escapeMarkup: function (markup) {
+                return markup;
+            },
+            templateResult: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.id;
+                }
+                
+                //var html = '<div class="user-title-media user-title-media-sm" num="'+data.id+'">' +
+                var html ='';
+                if(data.disabled)
+                    return;
+                /*html = '<div class="user-title-media user-title-media-sm" disabled="disabled" num="'+data.LocaionId+'">';
+                else*/
+                html = '<div class="user-title-media user-title-media-sm" num="'+data.LocaionId+'">';
+                html+='<div>' +
+                    '<div class="user-name mb-2">' + data.LocationName + '</div>' +
+                    '<div class="user-title font-weight-normal"> Agreement Number:' + data.AgNumber +
+                    ' • Expires on '+data.LeaseExp+'</div>' +
+                    '</div>' +
+                    '</div>';
+                var pp = {"locSeq":data.Sequence,"PaidStandardEligibility":data.PaidStandardEligibility,"RemainingPaidEligible":data.RemainingPaidEligible,"NewEligibility":data.NewEligibility,"pel":data.PaidEligibility,"PaidStandardPrice":data.PaidStandardPrice,"locId":data.LocaionId,"locName":data.LocationName,"locExp":data.LeaseExp,"locAgNum":data.AgNumber,"secId":data.SectorID,"sec":data.Sector,"elgID":data.EligibilityID, "default": data.isDefault}
+                $('[num="'+data.SectorID+'"]').attr('pp',JSON.stringify(pp));
+                $('[value="'+data.id+'"]').attr('pp',JSON.stringify(pp));
+                $('[value="'+data.SectorID+'"]').attr('secId',data.SectorID);
+                return html;
+            },
+            templateSelection: function (data) {
+                if (!data.id && data.id!=undefined) {
+                    return data.id;
+                }
+                
+                var html = '<div class="user-title-media user-title-media-sm" num="'+data.LocaionId+'">' +  
+                    '<div>' +
+                    '<div class="user-name mb-2">' + data.LocationName + '</div>' +
+                    '<div class="user-title font-weight-normal"> Agreement Number:' + data.AgNumber +
+                    ' • Expires on '+data.LeaseExp+'</div>' +
+                    '</div>' +
+                    '</div>';
+                //var pp = {"cardId":data.id,"elg":data.elg,"sector":data.sector,"add":data.add,"cntrExp":data.cntrExp,"noOfAO":data.noOfAO,"noOfDays":data.noOfDays};
+                var pp = {"locSeq":data.Sequence,"PaidStandardEligibility":data.PaidStandardEligibility,"RemainingPaidEligible":data.RemainingPaidEligible,"NewEligibility":data.NewEligibility,"pel":data.PaidEligibility,"PaidStandardPrice":data.PaidStandardPrice,"locId":data.LocaionId,"locName":data.LocationName,"locExp":data.LeaseExp,"locAgNum":data.AgNumber,"secId":data.SectorID,"sec":data.Sector,"elgID":data.EligibilityID, "default": data.isDefault}
+                $('[num="'+data.SectorID+'"]').attr('pp',JSON.stringify(pp));
+                $('[value="'+data.SectorID+'"]').attr('pp',JSON.stringify(pp));
+                $('[value="'+data.id+'"]').attr('pp',JSON.stringify(pp));
+                $('[value="'+data.SectorID+'"]').attr('secId',data.SectorID);
+                return html;
+            }
+        });
+        optionSeleted = true;
+    }
+    let prevData = '', selectedItem='';
+    function loadPrevData(){
+        if(!(cs['xadtx4__c'] || cs['xadtx4__c'].value))
+            return;
+        prevData = JSON.parse(cs['xadtx4__c'].value);
+        selectedItem = cs['xadh__c'].value.replace(';','');
+        $('#cardDet').val( prevData.SectorID).attr('disabled',true);//a0E0p00000E1kvNEAR
+        $('[itemcode='+selectedItem+']').prop('checked',true);
+        $('[name="parkType"]').attr('disabled',true);
+        $('.onPrkType').hide();
+        $(cs['xrap__c']).val(prevData['ReqSlots']).attr('disabled', true);
+        if(selectedItem=='0np'){
+            $('#xtpa').parent().hide();
+            $('.onPrkType.0np').show();
+            selecteEndDate = prevData['EndDate'].split('-');
+            $('#cExpDate').val(selecteEndDate[2]+'/'+selecteEndDate[1]+'/'+selecteEndDate[0]);//.attr('disabled',true);removed to avoid undefined cases
+        }
+    }
+    var avlblPermits = 0; 
+    var orgnlPermits = 0;
+    var usedPermits = 0;
+    function settoFld(e){
+        selectedJSON[0] = {};
+        var cardNum = $(e).val();
+        
+        if(!cardNum){
+            $('#selectedSector').hide();
+            $('.frmErrMsg').remove();
+            $('.base-nav-next').addClass('d-none');
+            return;
+        }
+        $('#selectedSector').show();
+        var ppData = JSON.parse($('[value="'+cardNum+'"]').attr('pp'));
+        
+        if('{!JSENCODE(req.id)}'==''){
+            $('#totPermits').parent().hide();
+            $('#xtpa').parent().hide();
+            $('.parkingOptions').hide();
+            // $(cs['xrap__c'],cs['xtpa__c']).val('');
+            $('#xtpa').val('');
+            cs["xrap__c"].value='';
+            $('[name="parkType"]').prop('checked',false).trigger('change');
+        }
+        selectedJSON[0] = ppData;
+        $('.parkingOptions').show();
+        $('.parkingOptions label').hide();
+        
+        //avlblPermits = 0;
+        
+        orgnlPermits = selectedJSON[0].PaidStandardEligibility - selectedJSON[0].NewEligibility;
+        usedPermits = selectedJSON[0].pel;
+        let rm = selectedJSON[0].PaidStandardEligibility-selectedJSON[0].pel;
+        let ng=selectedJSON[0].RemainingPaidEligible;
+        let rmng = rm>ng?rm:ng;
+        avlblPermits = parseInt(usedPermits>orgnlPermits?selectedJSON[0].NewEligibility:rmng);
+        
+        var isDefault = selectedJSON[0].default;
+        
+        
+        if(avlblPermits>0 && isDefault == 'true'){
+            $('#totPermits').html('<b>'+(selectedJSON[0].PaidStandardEligibility)+'</b>');
+            $('#avlblPermits').html('<b>'+avlblPermits+'</b>');
+            $('#totPermits').parent().show();
+            $('#paidType').html('<b>Standard</b>');
+            //if('{!JSENCODE(req.id)}'!='')cs['xrap__c'].value = 0;
+            //selectedJSON[0].PaidStandardEligibility-selectedJSON[0].pel;enUsr
+            if(selectedJSON[0].locName.includes('Executive')){
+                $('#excPar').prop('checked',true).trigger('change');;
+                $('#paidType').text('Executive');
+                $('.parkingOptions #excPar').parent().show();
+            }
+            else{
+                $('.parkingOptions #stdPar').parent().show();
+                $('#stdPar').prop('checked',true).trigger('change');;
+            }
+            updateReqPrkSlots(cs['xrap__c'].value);
+            $('#xtpa').parent().show();
+        }
+        else if('{!JSENCODE(req)}' != null && '{!JSENCODE(req.xadh__c)}' != 'snp;' && '{!JSENCODE(req.AUP__c)}' > 0 )
+        {
+            if(selectedJSON[0].locName.includes('Executive')){
+                $('#excPar').prop('checked',true).trigger('change');;
+                $('#paidType').text('Executive');
+                $('.parkingOptions #excPar').parent().show();
+            }
+            else{
+                $('.parkingOptions #stdPar').parent().show();
+                $('#stdPar').prop('checked',true).trigger('change');;
+            }
+            
+            getEDate();
+            
+        }
+            else{
+                
+                $('.parkingOptions,.nonDoc').show();
+                if(usedPermits==0 && "{!el.tUtlzd}"==0 && '{!JSENCODE(Acc.lc__c)}'!='19072' && '{!JSENCODE(Acc.lc__c)}'!='19339' && '{!JSENCODE(Acc.lc__c)}'!='18188' && '{!JSENCODE(Acc.lc__c)}'!='19299' ){
+                   $('.parkingOptions #enUsr').parent().hide();
+                }
+            }
+        $('.base-nav-next').removeClass('d-none');
+        cs["xps__c"].value = selectedJSON[0].locName;
+        $('#xaed').val(selectedJSON[0].cntrExp);
+        cs["xanum__c"].value = selectedJSON[0].locAgNum;
+        if('{!JSENCODE(Acc.lc__c)}'=='19339'){
+            $('.parkingOptions #enUsr').parent().show();
+        }
+        if('{!JSENCODE(Acc.lc__c)}'=='19299'){
+            $('.parkingOptions #enUsr').parent().show();
+        }
+        if('{!JSENCODE(Acc.lc__c)}'=='18188'){
+            $('.parkingOptions #enUsr').parent().show();
+        }
+    }
+    
+    function updtAmnt(amnt) {
+        var dAmt=0;
+        hideTempLoader_input();
+        $('#selectedSector').show();
+        uPrc = amnt;
+        dAmt = Math.round(cs['xrap__c'].value * uPrc);
+        $('#xtpa').val(dAmt+(dAmt*0.05));
+        cs['xtpa__c'].value = dAmt;
+    }
+    var eDate;
+    var totPermits;
+    //var daysDiff;
+    var onlyDate;
+    
+    function getEDate()
+    {
+        var todayDate = new Date();
+        var crmLeaseExpiryDate = new Date(selectedJSON[0].locExp.split('/')[1]+'/'+selectedJSON[0].locExp.split('/')[0]+'/'+selectedJSON[0].locExp.split('/')[2]);
+        
+        var docday = todayDate.getDate();
+        var docmonth = todayDate.getMonth()+1;// axsAppliedDate
+        var docyear = todayDate.getFullYear();
+        var axsAppliedDate = new Date(docmonth+'/'+docday+'/'+docyear);
+        eDate = getEndDate(axsAppliedDate,crmLeaseExpiryDate);
+        
+    }
+    function updateReqPrkSlots(v,elem){
+        
+        var todayDate = new Date();
+        var crmLeaseExpiryDate = new Date(selectedJSON[0].locExp.split('/')[1]+'/'+selectedJSON[0].locExp.split('/')[0]+'/'+selectedJSON[0].locExp.split('/')[2]);
+        
+        var docday = todayDate.getDate();
+        var docmonth = todayDate.getMonth()+1;// axsAppliedDate
+        var docyear = todayDate.getFullYear();
+        var axsAppliedDate = new Date(docmonth+'/'+docday+'/'+docyear);
+        eDate = getEndDate(axsAppliedDate,crmLeaseExpiryDate);
+        if('{!JSENCODE(req.id)}'!==''&&eDate == 'Invalid Date - Minimum validity should be one month'){
+            axsAlert('Error','Minimum validity should be one month');
+            cs['xrap__c'].value = 0;
+            return;
+        }
+        var priceDays;
+        var crmPrice=selectedJSON[0].PaidStandardPrice/365;
+        if(crmLeaseExpiryDate<new Date()){
+            axsAlert('ERROR','Lease already expired');
+            setTimeout(function(){
+                $('#cardDet').val('');
+                $('#cardDet').val('').trigger('change')
+            },500);
+            return;
+        }
+        console.log('----crmPrice----'+crmPrice);
+        //daysDiff = (new Date(selectedJSON[0].locExp.split('/')[1]+'/'+selectedJSON[0].locExp.split('/')[0]+'/'+selectedJSON[0].locExp.split('/')[2])-new Date())/(24*60*60*1000);
+        //console.log('--daysDiff--'+daysDiff);
+        //onlyDate = selectedJSON[0].locExp.split('/')[0]+'/'+selectedJSON[0].locExp.split('/')[1]+'/' > docday +docmonth;
+        
+        /*if(daysDiff < 365 && daysDiff > 30){
+            eDate =   selectedJSON[0].locExp.split('/')[2]+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+            console.log('--end Date---'+eDate);
+        }
+        else if(daysDiff > 365){
+            eDate = docyear+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+        }*/
+        //console.log('End Date'+eDate);
+        
+        var todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        //  priceDays = (new Date((eDate.getMonth()+1)+'/'+eDate.getDate()+'/'+eDate.getFullYear())-new Date())/(24*60*60*1000);
+        priceDays = (eDate - todayDate)/(24*60*60*1000);
+        console.log('---Days Difference to End Date from Applied Date----'+priceDays);
+        var isErr=false;
+        totPermits = parseInt($('#totPermits').text());
+        
+        if((cs["xadh__c"].value=='snp;' || cs["xadh__c"].value =='enp;') && parseInt(cs['xrap__c'].value)>parseInt(avlblPermits)){
+            cs['xrap__c'].value = '';
+            axsAlert('Alert','Requested parking are greater than total permits');
+            isErr = true;
+            $('#totPermits').parent().addClass('font-weight-bolder text-primary');
+        }
+        if(isErr){
+            $(e).val('');
+            $(e).focus();
+        }
+        var count  = cs['xrap__c'].value?cs['xrap__c'].value:0;
+        if(cs["xadh__c"].value=='snp;' || cs["xadh__c"].value =='enp;')cs["xtpa__c"].value = Math.round((parseInt(count)*parseFloat(crmPrice)*parseFloat(priceDays)));
+        $("#xtpa").val(cs["xtpa__c"].value);
+    }
+    function updateReqPrk(e){
+        var m = parseInt($(e).attr('maxVal'));
+        var v = parseInt($(e).val());
+        if(v===''||isNaN(v)){
+            $(e).val(m);
+        }else if(v<1){
+            axsAlert('Alert','Requested parking slots should be minimum 1');
+            $(e).val('1');
+        }else if(v>m){
+            axsAlert('Alert','Requested parking slots exceeds total eligibility');
+            $(e).val(m);
+            // return;
+        }else{
+            showTempLoader_input($(cs['xrap__c']));
+            var t = cs['xtpa__c'].value;
+            var q = cs['xrap__c'].value;
+            //getAmnt();
+        }
+    }
+    function setToRQFld1(e){
+        var id = $(e).attr('id');
+        var id1 = $(e).attr('id1');
+        if(!cs['xadh__c'].value.includes('1np')){
+            setToRQFld(id,e);
+        }
+        else{
+            setToRQFld(id1,e);
+        }
+    }
+    var ad4Data = {"ActionName":"insertparkingrequest","SectorLocationId":"","OracleID":"","AgNo":"","AXSId":"","Eligibility":"","RequestType":"","Sector":"","CardRequestType":"Activation","ParkingType":"","ExpiryDate":"","EndDate":"","ReqSlots":"","cardRate":"","SectorID":"","EligibilityID":"","cardRatePerCardAmount":""};
+    //WsParking.parkReq
+    function submitPage(el,ev){
+        if(!$('[name="parkType"]').is(':checked')){
+            addValError('[name="parkType"]','Please select an option!');
+            return;
+        }
+        ad4Data['SectorLocationId'] = selectedJSON[0].locId;
+        ad4Data['SectorID'] = selectedJSON[0].secId;
+        ad4Data['EligibilityID'] = selectedJSON[0].elgID;
+        ad4Data['AgNo'] = selectedJSON[0].locAgNum;
+        ad4Data['ReqSlots'] = cs['xrap__c'].value;
+        
+        
+        // var dt = selectedJSON[0].locExp.split('/')[2]+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+        
+        // if(selectedJSON[0].locExp.split('/')[2] > date.getFullYear()){
+        //  eDate =year+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+        //}
+        var dt = selectedJSON[0].locExp.split('/')[2]+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+        var dt1 = $('#cExpDate').val().split('/')[2]+'-'+$('#cExpDate').val().split('/')[1]+'-'+$('#cExpDate').val().split('/')[0];
+        ad4Data['ExpiryDate'] = selectedJSON[0].locExp.split('/')[2]+'-'+selectedJSON[0].locExp.split('/')[1]+'-'+selectedJSON[0].locExp.split('/')[0];
+        var selCode = $('[name="parkType"]:checked').attr('itemCode');
+        ad4Data['RequestType'] = 'Additional Parking';
+        ad4Data['ParkingType'] = 'Paid';
+        
+        //cs["xtpa__c"].value = (parseFloat(cs['xrap__c'].value)*parseFloat(selectedJSON[0].PaidStandardPrice));
+        if(selCode=="snp" || selCode=="enp"){
+            ad4Data['cardRate']=parseFloat(selectedJSON[0].PaidStandardPrice);
+            ad4Data['cardRatePerCardAmount']=cs["xtpa__c"].value;
+        }
+        if(selCode=="0np"){
+            ad4Data['EndDate'] = dt1;
+        }
+        else if(selCode=="1np"){
+            ad4Data['RequestType'] = 'Card Enrollment';
+            ad4Data['ParkingType'] = 'Enrollment';
+            ad4Data['EndDate'] = dt;
+        }
+            else{
+                ad4Data['EndDate'] = eDate.getFullYear()+'-'+(eDate.getMonth()+1)+'-'+eDate.getDate();
+            }
+        
+        
+        cs['slaN__c'].value = cs['xrap__c'].value;
+        var validated = true;
+        validated = validateData();
+        $('.applMob').trigger('keyup');
+        if($('#cExpDate:visible').length>0)
+            validated = checkDate_custom($('#cExpDate'));
+        if($('.frmErrMsg').is(':visible')){
+            scrollToDiv($('.frmErrMsg').eq(0));
+            return;
+        }
+        if(cs['xrap__c'].value=='' || cs['xrap__c'].value<=0){
+            axsAlert('Error','Please enter valid number of parking permits');
+            validated=false;
+        }
+        /*if(cs["xadh__c"].value=='snp;' && cs["xadh__c"].value =='enp;' && cs['xrap__c'].value>selectedJSON[0].PaidStandardEligibility-selectedJSON[0].pel){
+            axsAlert('Error','Requested parking are greater than total permits');
+            isErr = true;
+            $('#totPermits').parent().addClass('font-weight-bolder text-primary');
+            validated=false;
+        }*/
+        //if(daysDiff<30){
+        // axsAlert('Error','Lease expiry date should be more than 30 days from  current date.');
+        //validated=false;
+        //}
+        if(validated){
+            ev.preventDefault();
+            cs['xadtx4__c'].value=JSON.stringify(ad4Data);
+            toggleGLoader()
+            //saveReq_RC();
+            saveReq();
+        }
+        //saveReq();
+    }
+    
+    function validateData(){
+        isValidData = true;
+        $('.requiredFld').each(function(){
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if(v==''||v==undefined||v=='--None--'){
+                isValidData = false;
+                if($(this).is('select'))
+                    showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                else
+                    showErrMsg($(this),'rqrd','invalid');
+            }
+            else
+                showErrMsg($(this),'rqrd',true);
+        });
+        checkAllDates('vRegDate','152');
+        if($('.frmErrMsg').length>1&&$('.frmErrMsg').is(':visible')){
+            isValidData = false;
+            //return isValidData;
+        }
+        return isValidData;
+    }
+    
+    
+    // update in axs2customjs
+    
+    function showErrMsg(elem,elemType,errType){
+        if(errType == true){
+            elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+            elem.next().find('.select2-selection').removeClass('is-invalid');
+            elem.removeClass('is-invalid');
+            return;
+        }
+        var errElem = '<div class="frmErrMsg">'+formErrMsgs1[elemType][errType]+'</div>';
+        elem.parents('.form-group').eq(0).find('.frmErrMsg').remove();
+        elem.parents('.form-group').append(errElem);
+        elem.addClass('is-invalid');
+        //elem.next().find('.select2-selection, .select2-selection--single, .select2-selection--multiple').addClass('is-invalid')
+        return false;
+    }
+    
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            cs[id].value=$(el).val();
+    }
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    </script>
+</apex:page>

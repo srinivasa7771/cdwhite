@@ -1,0 +1,30 @@
+<apex:page standardController="Issue_Tracker__c" extensions="connCompCTL">
+<apex:outputPanel id="thePanel" rendered="false">{!Issue_Tracker__c.CreatedDate}{!Issue_Tracker__c.Assignment_Date__c}{!Issue_Tracker__c.Closure_Date__c}{!Issue_Tracker__c.Status__c}</apex:outputPanel>
+<apex:includeScript value="{!$Resource.eiJS}"/>
+<head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["timeline"]});
+      google.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var container = document.getElementById('timeline');
+        var chart = new google.visualization.Timeline(container);
+        var dataTable = new google.visualization.DataTable();
+
+        dataTable.addColumn({ type: 'string', id: 'Timeline' });
+        dataTable.addColumn({ type: 'string', id: 'Name' });
+        dataTable.addColumn({ type: 'date', id: 'Start' });
+        dataTable.addColumn({ type: 'date', id: 'End' });
+        dataTable.addRows([
+          ['Timeline','Assignment', new Date({!createdDateYear}, {!createdDateMonth}, {!createdDateDay}, {!createdDateHour}, {!createdDateMinute} ), new Date({!assignDateYear}, {!assignDateMonth}, {!assignDateDay}, {!assignDateHour}, {!assignDateMinute}) ],
+          ['Timeline','Closure', new Date({!assignDateYear}, {!assignDateMonth}, {!assignDateDay}, {!assignDateHour}, {!assignDateMinute}), new Date({!closeDateYear}, {!closeDateMonth}, {!closeDateDay}, {!closeDateHour}, {!closeDateMinute}) ]
+          ]);
+
+        chart.draw(dataTable);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="timeline" style="width: 900px; height: 180px;"></div>
+  </body></apex:page>

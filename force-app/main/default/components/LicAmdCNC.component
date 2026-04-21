@@ -1,0 +1,184 @@
+<apex:component controller="ApplicantDetailController">
+    <apex:attribute name="mdList" type="DDAMembersWrapper" description="" />
+    <apex:inputHidden id="Duration__c" value="{!req.Duration__c}" />
+    <div id="OpenReq">
+        <span class="text-primary" style="font-size: 125%">
+            <b>You have an ongoing service request {!OpenCNCreq} for this service. Please check the status under the Request Tab.</b>
+        </span>
+    </div>
+
+   <div class="row" id="noOpenReq">
+        <div >
+            <apex:outputPanel >
+                <div class="form-group">
+                    <c:cmpnamereg rq="{!req}"></c:cmpnamereg>
+                    <c:cmpNameRegJs rq="{!req}"></c:cmpNameRegJs>
+                    <script>
+                    console.log("AMD Cat Value"+cs['xcamc__c'].value);
+                    let pcnValue = "Parent Company Name Change";
+                    let label = $('#fpnLabel')[0];
+                    if(cs['xcamc__c'].value!=='Parent Company Name Change'){
+                        $('.fzllcblock').show();
+                    }
+                    
+                    else if(cs['xcamc__c'].value=='Parent Company Name Change'){
+                        label.childNodes[0].textContent = "New Parent Company Name";
+                        $('.fzllcblock').show();
+                        $('#spn').hide();
+                        $('#tpn').hide();
+                         $('#propsal3names').hide()
+                    }
+                     $('#cnReg').hide();
+                   </script>
+                 
+                </div>
+            </apex:outputPanel>
+          
+            <div id="legaRepDiv">
+                <input type="checkbox" id="legalRepCheckbox" /> 
+                 Do you want to appoint the Legal Representative to sign the AoA?
+            </div>
+            <br/> 
+            <apex:outputText styleClass="text-primary" rendered="{!commaSeparatedPOBNames != ''}" 
+                 value="You have these PO boxes: {!commaSeparatedPOBNames}. You will be charged 250 per each PO box."/>
+            <script>
+            const checkbox = document.getElementById("legalRepCheckbox");
+            checkbox.onclick = function() {
+                if (checkbox.checked) {
+                    console.log("Checkbox is checked");
+                    cs['xcddocs__c'].value='Passport Copy'+';';
+                } else {
+                    console.log("Checkbox is unchecked");
+                    cs['xcddocs__c'].value=';';
+                }
+            };
+            </script>
+        </div>
+    </div>
+    
+    <apex:actionFunction name="callActiveLease"  action="{!loadActiveLease}"   reRender="leasePanel" oncomplete="afterLeaseLoad();"/>
+    <apex:outputPanel id="leasePanel" style="display:none;">
+        <apex:outputText value="{!isActiveLease}" styleClass="leaseFlag"/>
+        <apex:outputText value="{!activePoBoxSize}" styleClass="poBoxFlag"/>
+    </apex:outputPanel>
+
+    <script>
+    cs["Duration__c"] = document.getElementById("{!$Component.Duration__c}");
+    var adhoc3Proto = '{"serviceRequests":[{"serviceId":"","axsRefNo":"","licenseNo":"","isPaid":false,"proposedName1":"","proposedName2":"","proposedName3":"","proposedParentName":"","members":[{"positions":"Legal Representative","isMobilePhoneVerified":"","mobilePhoneVerificationDatetime":"","perEmail":"","isEmailVerified":"","emailVerificationDatetime":"","nationality":"","lastName":"","gender":"","firstName":"","ddaId":"","birthDate":"","dateOfIncorporation":"","countryOfIncorporation":"","operatingName":"","registrationNo":"","proposedNumberOfShares":"","currentNumberOfShares":"","registrationDate":"","cessationDate":"","passports":[{"countryOfIssuance":"","placeOfIssuance":"","issueDate":"","expiryDate":"","docNo":""}],"emiratesId":{"issueDate":"","expiryDate":"","docNo":""},"addresses":[{"type":"HOME","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""},{"type":"UAE","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""}],"actionType":"ADD"}]}]}';
+    var members = [];
+    /*function callDDAFee(){
+     if(cs['xcamc__c'] && cs['xcamc__c'].value){
+         if(cs['xcamc__c'].value==='Company Name Change - FZ-LLC' || cs['xcamc__c'].value==='Company Name Change - Operating Name'){
+           if(cs['xcfn__c']  && cs['xcfn__c'].value && cs['xcmn__c']  && cs['xcmn__c'].value && cs['xcln__c']  && cs['xcln__c'].value){
+           
+           }
+         }
+     }   
+    }*/
+    function afterLeaseLoad(){
+        var isActiveLease = $('.leaseFlag').text().trim();
+        var activepoBox = Number($('.poBoxFlag').text().trim());
+        console.log('---activepoBox---'+activepoBox);
+        if(activepoBox!=0 && cs['xcamc__c'].value!=='Parent Company Name Change'){
+            cs["Duration__c"].value=activepoBox;
+            cs['xadh__c'].value += 'pob;'.repeat(activepoBox);
+        }
+        if(isActiveLease === 'true' && cs['xcamc__c'].value!=='Parent Company Name Change'){
+            console.log(' Active Lease ');
+            cs['xadh__c'].value+='tlf;';
+        } else {
+            console.log('No Active Lease');
+        }
+    }
+    
+    $(document).ready(function(){
+        if('{!req.id}'=='' )
+        {
+            cs['xcddocs__c'].value='';
+        }
+        callActiveLease();
+        var OpenCNCreqCat = '{!JSENCODE(OpenCNCreqCat)}';
+        var selectedValue = cs['xcamc__c'] ? cs['xcamc__c'].value : null;
+        function isAllowed() {
+        if (!OpenCNCreqCat) return true;
+            if (OpenCNCreqCat === 'Company Name Change - Operating Name & Parent Company Name') {
+            return false;
+        }
+            if (OpenCNCreqCat === 'Company Name Change - Operating Name' && selectedValue === 'Parent Company Name Change') {
+            return true;
+        }
+            if (OpenCNCreqCat === 'Parent Company Name Change' && selectedValue === 'Company Name Change - Operating Name') {
+            return true;
+        }
+            if (OpenCNCreqCat === 'Company Name Change - FZ-LLC' && selectedValue === 'Company Name Change - FZ-LLC') {
+            return false;
+        }
+            if (OpenCNCreqCat === selectedValue) {
+            return false;
+        }
+             return false;
+        }
+        if (isAllowed()) {
+        $('#noOpenReq').show();
+        $('#OpenReq').hide();
+    } else {
+        $('#OpenReq').show();
+        $('#noOpenReq').hide();
+    }
+
+    // Listen to picklist changes dynamically
+    if (cs['xcamc__c']) {
+        $(cs['xcamc__c']).on('change', function() {
+            selectedValue = cs['xcamc__c'].value;
+            if (isAllowed()) {
+                $('#noOpenReq').show();
+                $('#OpenReq').hide();
+            } else {
+                $('#OpenReq').show();
+                $('#noOpenReq').hide();
+            }
+        });
+    }
+        if(cs['xcamc__c'] && cs['xcamc__c'].value && cs['xcamc__c'].value!=='Company Name Change - FZ-LLC'){
+            $('#legaRepDiv').hide();
+        }
+        if(cs['xcamc__c'] && cs['xcamc__c'].value && cs['xcamc__c'].value==='Parent Company Name Change' && '{!JSENCODE(framwrk)}'=='Branch of a UAE Company'){
+            cs['xcddocs__c'].value='Copy of UAE license';
+        }
+        else if(cs['xcamc__c'] && cs['xcamc__c'].value && cs['xcamc__c'].value==='Parent Company Name Change' && '{!JSENCODE(framwrk)}'=='Branch of a Foreign Company'){
+            cs['xcddocs__c'].value='Certificate of Name Change / Company Extract / Company Register';
+        }
+        if (cs['xadtx3__c'] && cs['xadtx3__c'].value && cs['xcamc__c'] && cs['xcamc__c'].value && '{!req.id}'!='' ) {
+            try {
+                let data = JSON.parse(cs['xadtx3__c'].value);
+                let sr = data.serviceRequests && data.serviceRequests.length > 0 ? data.serviceRequests[0] : null;
+                
+                if (sr) {
+                    if (sr.proposedName1) $("[id$='xcfn']").val(sr.proposedName1).trigger('change');
+                    if (sr.proposedName2) $("[id$='xcmn']").val(sr.proposedName2).trigger('change');
+                    if (sr.proposedName3) $("[id$='xcln']").val(sr.proposedName3).trigger('change');
+                    if (sr.proposedParentName) {
+                        if(cs['xadh__c'].value.includes('pcn')){
+                            $("[id$='xcfn']").val(sr.proposedParentName).trigger('change');
+                        }
+                        else{
+                            $("[id$='xcpn']").val(sr.proposedParentName).trigger('change');
+                        }
+                    }
+                    var fw = '{!JSENCODE(framwrk)}';
+                    console.log('framwrk value:', fw);
+
+                    if (cs['xcddocs__c'].value && cs['xcddocs__c'].value!==';' && !'{!JSENCODE(framwrk)}'.includes('Branch')) {
+                        $('#legalRepCheckbox').prop('checked', true);
+                        cs['xcddocs__c'].value = 'Passport Copy;';
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing cs['xadtx3__c'].value", e);
+            }
+        }
+    });
+
+    
+ </script>
+</apex:component>

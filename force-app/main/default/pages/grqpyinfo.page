@@ -1,0 +1,204 @@
+<apex:page cache="false"  controller="gctlReqpyChk" docType="html-5.0" standardStylesheets="false"  showHeader="{!IF(isgu=true,false,true)}" sidebar="false" title="Payment Validate" action="{!Chk}" >
+    <link rel="icon" href="./favicon.ico" />
+    <script>
+    $(document).ready(function(){
+       if("{!T.RQ__r.srvc__r.suvtp__c}"=="After Payment"){
+            $('#modal_Survey_submission').modal('show');
+        }
+        setTimeout(function(){
+            hideGLoader();
+        },400);
+    });
+    </script>
+    <style>
+        
+        i.selectPay {
+        position: relative;
+        padding: 5px 5px 0px 0px;
+        cursor: pointer;
+        }
+        
+        .myDiv {        
+        padding-right: 100px;
+        padding-left: 130px;
+        }
+        .myDiv1 {        
+        padding-right: 100px;
+        padding-left: 150px;
+        }
+        .myDiv2 {        
+        padding-left: 18px;
+        }
+    </style>
+    <body>
+        <div id="main">
+            <apex:form id="f">
+                <script type="text/javascript">
+                </script>
+                <apex:outputPanel rendered="{!isgu}">
+                    <c:guheader heading="{!T.RQ__r.srvc__r.Name}" />
+                </apex:outputPanel>
+                <div class="container">
+                    
+                    <div class="onboarding-layout">
+                        <div class="modal fade modal-base" id="modal_Survey_submission" role="dialog" aria-hidden="true" data-backdrop="static">
+                            <div class="modal-dialog" role="document" style="width:90%;height:90%"><!--width: 990px;-->
+                                <div class="modal-content" style="height:100%">
+                                    <div class="modal-body">
+                                        <button aria-label="Close" class="close" data-dismiss="modal" type="button" onclick="closesrvpop()"> 
+                                            <i class="icon-close"></i> </button>
+                                        
+                                        <!-- <apex:outputPanel rendered="{!T.RQ__r.srvc__r.uid__c == '001'}"> 
+                                        <iframe style="min-height: 100%;width: 98%;margin-left: 1%;" src="https://tecom.eu.qualtrics.com/jfe/form/SV_5w3jvqrVVd0ZLds?sfid={!surveyId}&srvRID={!surveyId}&svrRDetails={!T.RQ__r.name}" id="ifrm" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                                        </iframe>-->
+                                        <iframe style="min-height: 100%;width: 98%;margin-left: 1%;" src="https://tecom.eu.qualtrics.com/jfe/form/SV_bqtL3lMumKsmvki?sfId={!surveyId}" id="ifrm" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                                        </iframe>
+                                        <!--  </apex:outputPanel> -->
+                                    </div>
+                                    <!-- .modal-body -->
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="onboarding-main">
+                            
+                            <div class="onboarding-main-content">
+                                <apex:outputText rendered="{!AND(T.RQ__r.srvc__r.uid__c != 'dnc')}">
+                                <h3 class="text-center pt-4">
+                                    Payment Validation
+                                </h3>
+                                </apex:outputText>
+                                <apex:outputText rendered="{!AND(T.RQ__r.srvc__r.uid__c == 'dnc')}"><h3>
+                                    Thank you for submitting this request. Once issued, we will notify you to download the DDA NOC.
+                                </h3>
+                                </apex:outputText>
+                                <div class="row mt-5 mb-3">
+                                    <div class="col-xl-12 col-lg-6">
+                                        <div class="onboarding-finish-status" style="background-color: #DCDCDC;" ><!--data-aos="fade-up" data-aos-once="true"-->
+                                            <apex:outputText rendered="{!errMsg != ''}">
+                                                <i class="icon-high-priority warning-icon-high-priority onboarding-finish-status-icon" style="background-color: darkred;"></i>
+                                                <h4>{!T.RQ__r.srvc__r.Name}</h4>
+                                                <p>{!errMsg}</p>
+                                                <div class="my-4">
+                                                    
+                                                    &nbsp; &nbsp;
+                                                    <apex:outputText rendered="{!!isgu}">
+                                                        <a href="/grqpy?id={!T.RQ__c}" class="btn btn-primary" style="color: #fff;">PAY AGAIN</a>
+                                                    </apex:outputText>
+                                                </div>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!errMsg == ''}">
+                                                <apex:outputText rendered="{!OR(T.md__c == 'Customer Deposit',T.md__c == 'Debit Memo',T.md__c == 'Credit / Debit Card')}">
+                                                    <i class="icon-ok circle-icon-ok onboarding-finish-status-icon"></i>
+                                                    <h3 class="d-lg-none d-sm-none d-xl-none">SR# {!T.RQ__r.Name}</h3>
+                                                    <h4>{!T.RQ__r.srvc__r.Name}</h4>
+                                                    <p>Payment has been processed successfully.</p>
+                                                </apex:outputText> 
+                                                <apex:outputText rendered="{!OR(T.md__c == 'Cash',T.md__c == 'Wire Transfer',T.md__c == 'Cheque')}">
+                                                    
+                                                    <div class="status-box-icon">
+                                                        <i class="icon-high-priority warning-icon-high-priority onboarding-finish-status-icon"></i>
+                                                    </div>
+                                                    <h3 class="d-lg-none d-sm-none d-xl-none">SR# {!T.RQ__r.Name}</h3>
+                                                    <h4>{!T.RQ__r.srvc__r.Name}</h4>
+                                                    <p>Transaction has been registered successfully. Once we receive the payment, the transaction will be completed automatically</p>
+                                                </apex:outputText> 
+                                                
+                                                
+                                                <div class="amount-row amount-row-head row-cols-2 d-lg-none d-sm-none d-xl-none">
+                                                    <div class="amount-row-title mr-4" style="">Transaction Ref#</div>
+                                                    <div class="amount-row-title " style="">Status</div>
+                                                    
+                                                    
+                                                </div>
+                                                <div class="amount-row row-cols-2 d-lg-none d-sm-none d-xl-none">
+                                                    <div class="mr-4">{!T.name}</div>
+                                                    <div class="">{!T.STA__c}</div>
+                                                    
+                                                </div>
+                                                
+                                                <div class="amount-row amount-row-head row-cols-4 d-none d-lg-flex d-sm-flex d-xl-flex">
+                                                    <div class="amount-row-title mr-2" style="">Request#</div>
+                                                    <div class="amount-row-title mr-2" style="">Transaction Ref#</div>
+                                                    <div class="amount-row-title mr-2" style="">Status</div>
+                                                    <div class="amount-row-title mr-2" style="">Amount(AED)</div>
+                                                    
+                                                    
+                                                </div>
+                                                <div class="amount-row row-cols-4 d-none d-lg-flex d-sm-flex d-xl-flex">
+                                                    <div style="">{!T.RQ__r.Name}</div>
+                                                    <div class="myDiv2">{!T.name}</div>
+                                                    <div class="myDiv">{!T.STA__c}</div>
+                                                    <div class="myDiv1">
+                                                      
+                                                        <apex:outputText value="{0,number}">
+                                                           <apex:param value="{!T.A__c}" />
+                                                        </apex:outputText>
+                                                    </div>
+                                                    
+                                                </div>
+                                                <div class="my-4">
+                                                    
+                                                    
+                                                    <apex:outputText rendered="{!OR(T.md__c == 'Customer Deposit',T.md__c == 'Debit Memo',T.md__c == 'Credit / Debit Card')}">
+                                                        <apex:outputLink styleClass="btn btn-primary" value="/apex/gtrcpt?id={!T.Id}" target="_blank"  style="color: #fff;">VIEW RECEIPT</apex:outputLink>
+                                                    </apex:outputText>
+                                                    
+                                                    <apex:outputText rendered="{!OR(T.md__c == 'Cash',T.md__c == 'Wire Transfer',T.md__c == 'Cheque')}">
+                                                        <a href="/apex/gtrinv?id={!T.Id}" target="_blank" class="btn btn-primary" style="color: #fff;">VIEW INVOICE</a>
+                                                    </apex:outputText>
+                                                    &nbsp; &nbsp;
+                                                    <apex:outputtext rendered="{!!isgu}">
+                                                        <a href="/apex/grqStatus?id={!T.RQ__c}" class="btn btn-primary" style="color: #fff;">GO BACK TO REQUEST</a>
+                                                    </apex:outputtext>
+                                                </div>
+                                                
+                                            </apex:outputText>
+                                            
+                                        </div>
+                                        <!-- .onboarding-finish-status -->
+                                    </div>
+                                    
+                                </div>
+                                <!-- .row -->
+                                
+                            </div>
+                            <!-- .onboarding-main-content -->
+                            <apex:outputtext rendered="{!!isgu}">
+                            <div class="onboarding-main-footer">
+                                <div class="onboarding-nav-wrapper">
+                                    <!--<p class="onboarding-nav-info onboarding-footer-info">
+                                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                        You can access all information related to the Lease, License and Payments in ‘Company Info’
+                                        section from your Dashboard.
+                                    </p>-->
+                                    <div class="onboarding-nav">
+                                        <!--<p class="onboarding-nav-info onboarding-footer-info">
+                                            <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                            You can access all information related to the Lease, License and Payments in ‘Company Info’
+                                            section from your Dashboard.
+                                        </p>-->
+                                        <apex:outputtext rendered="{!!isgu}">
+                                            <a href="/gpm" class="btn btn-primary onboarding-nav-next">
+                                                GO TO THE DASHBOARD
+                                            </a>
+                                        </apex:outputtext>
+                                    </div>
+                                    <!-- .onboarding-nav -->
+                                </div>
+                                <!-- .onboarding-nav-wrapper -->
+                            </div>
+                            </apex:outputtext>
+                            <!-- .onboarding-main-footer -->
+                        </div>
+                        <!-- .onboarding-main -->
+                    </div>
+                    <!-- .onboarding-layout -->
+                    
+                </div>
+                <!-- .container -->
+            </apex:form>
+        </div>
+        
+    </body>
+</apex:page>

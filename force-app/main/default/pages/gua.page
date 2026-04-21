@@ -1,0 +1,128 @@
+<apex:page cache="false" sidebar="false" deferLastCommandUntilReady="true"  label="Users: Manage Access"  title="Users: Manage Access" controller="gctlUserAccess">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+   <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <script>
+        function doSave(){"function"==typeof AF_Save && (toggle_inputs(), AF_Save());}
+        function doRefresh(){"function"==typeof AF_Refresh && (toggle_inputs(), AF_Refresh());}
+        function chkAll(ac,chk){for (var b = document.getElementsByTagName("input"), a = 0;a < b.length;a++) {null != b[a].accessKey && void 0 != b[a].accessKey && "checkbox" == b[a].type && 0 == b[a].accessKey.indexOf(ac) && (b[a].checked = chk);}}
+        function switchRows(idP,vH,hH){
+            var a = document.getElementById(vH);
+            a.style.display = "none"!=a.style.display?"none":"";
+            document.getElementById(hH).style.display = "none"!=a.style.display?"none":"";
+            for (var d = document.getElementsByTagName("tr"), c = 0;c < d.length;c++) {
+                var b = d[c];
+                null != b && 0 == b.id.indexOf(idP) && (b.style.display=a.style.display);
+            }
+            
+            for (var d = document.getElementsByTagName("img"), c = 0;c < d.length;c++) {
+                var b = d[c];
+                null != b && 0 == b.id.indexOf(vH) && (b.style.display=a.style.display);
+                null != b && 0 == b.id.indexOf(hH) && (b.style.display=document.getElementById(hH).style.display);
+            }
+        }       
+    </script>   
+    <c:pgHeader id="sH" ispu="{!ispu}" tabName="Profile" iconURL="{!URLFOR($Resource.axsRS, '/images/profile-logo.png')}" title="Manage Access" subtitle="Users" description="Providing employees with the right access levels to different services controlling data entry and payment processing for every service." />
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>     
+    <apex:form >       
+        <apex:actionFunction name="AF_Save" action="{!save}" status="theStatus" rerender="sH,pbMain,msg" onbeforedomupdate="javascript: toggle_inputs(); "/>      
+        <apex:actionFunction name="AF_Refresh" action="{!Refresh}" status="theStatus" rerender="sH,pbMain,msg" onbeforedomupdate="javascript: toggle_inputs(); "/>      
+         <apex:pageBlock mode="edit" id="pbMain" title="{!IF(isSuperUser,aU.FirstName + '' + aU.LastName + ' is a super user','Manage Access for ' + aU.FirstName + '' + aU.LastName)}"> 
+            <apex:pageBlockButtons >                
+                <div class="mgtBtn">
+                    <a href="" onClick="window.location.href='/apex/gu';" class="btnCncl">&lt; Close</a>
+                    <apex:outputPanel layout="none" rendered="{!AND(NOT(pgHide),NOT(isSuperUser))}">
+                        <a href="" onClick="javascript:doRefresh();" class="btnSave">refresh</a>
+                        <a href="" onClick="javascript:doSave();" class="btnSave">Save Changes</a>
+                    </apex:outputPanel>
+                </div>
+            </apex:pageBlockButtons>
+            <apex:pageMessages id="msg" />
+            <apex:pageBlockSection collapsible="false" columns="1" rendered="{!NOT(pgHide)}" >
+                <apex:pageBlockSectionItem >
+                     <apex:outputpanel >
+                        <table class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="border:none;">
+                            <tbody>
+                                <tr class="headerRow">
+                                    <th scope="col" colspan="3" nowrap="nowrap">{!$ObjectType.g_Srvc__c.label}</th>
+                                    <th scope="col" nowrap="nowrap">
+                                        <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                            <input type="checkbox" onclick="javascript:chkAll('DE',this.checked);"/>
+                                        </apex:outputPanel>
+                                        Data Entry
+                                    </th>
+                                    <th scope="col" nowrap="nowrap">
+                                        <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                            <input type="checkbox" onclick="javascript:chkAll('AP',this.checked);"/>
+                                        </apex:outputPanel>
+                                        Payment Approver
+                                    </th>                                    
+                                </tr>
+                                <apex:repeat value="{!uAccess}" var="c">
+                                    <tr class="dataRow pbSubheader brandTertiaryBgr first tertiaryPalette">
+                                        <td class="actionColumn" colspan="3" style="color:#fff;">
+                                            <img id="v{!c.lbl}" src="/s.gif" style="cursor:pointer;background-image:url(/img/twistySubhDown.gif);background-position:2px -2px;width:11px;height:11px;"              onclick="javascript:switchRows('{!JSENCODE(c.lbl)}','v{!c.lbl}','h{!c.lbl}');"/>                                                    
+                                            <img id="h{!c.lbl}" src="/s.gif" style="display:none;cursor:pointer;background-image:url(/img/twistySubhRight.gif);background-position:2px -2px;width:11px;height:11px;" onclick="javascript:switchRows('{!JSENCODE(c.lbl)}','v{!c.lbl}','h{!c.lbl}');"/>                                                    
+                                            {!c.lbl}
+                                        </td>
+                                        <td class="dataCell">
+                                            <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                <input type="checkbox" accesskey="DE{!c.lbl}" onclick="javascript:chkAll('DE{!c.lbl}',this.checked);"/>
+                                            </apex:outputPanel>
+                                        </td>
+                                        <td class="dataCell">
+                                            <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                <input type="checkbox" accesskey="AP{!c.lbl}" onclick="javascript:chkAll('AP{!c.lbl}',this.checked);"/>
+                                            </apex:outputPanel>
+                                        </td>
+                                    </tr>
+                                    <apex:repeat value="{!c.lst}" var="sc">
+                                        <tr id="{!c.lbl}{!sc.lbl}" class="dataRow pbSubheader brandTertiaryBgr first tertiaryPalette">
+                                            <td class="actionColumn" style="background-color:#fff;border:none;">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                                            <td class="actionColumn" colspan="2" style="color:#fff;">
+                                                <img id="v{!c.lbl}{!sc.lbl}" src="/s.gif" style="cursor:pointer;background-image:url(/img/twistySubhDown.gif);background-position:2px -2px;width:11px;height:11px;"                 onclick="javascript:switchRows('{!c.lbl}{!sc.lbl}_','v{!c.lbl}{!sc.lbl}','h{!c.lbl}{!sc.lbl}');"/>                                                    
+                                                <img id="h{!c.lbl}{!sc.lbl}" src="/s.gif" style="display:none;cursor:pointer;background-image:url(/img/twistySubhRight.gif);background-position:2px -2px;width:11px;height:11px;"   onclick="javascript:switchRows('{!c.lbl}{!sc.lbl}_','v{!c.lbl}{!sc.lbl}','h{!c.lbl}{!sc.lbl}');"/>                                                    
+                                                {!sc.lbl}
+                                            </td>
+                                            <td class="dataCell">
+                                                <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                    <input type="checkbox" accesskey="DE{!c.lbl}{!sc.lbl}" onclick="javascript:chkAll('DE{!c.lbl}{!sc.lbl}',this.checked);"/>
+                                                </apex:outputPanel>
+                                            </td>
+                                            <td class="dataCell">
+                                                <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                    <input type="checkbox" accesskey="AP{!c.lbl}{!sc.lbl}" onclick="javascript:chkAll('AP{!c.lbl}{!sc.lbl}',this.checked);"/>
+                                                </apex:outputPanel>
+                                            </td>
+                                        </tr>
+                                        <apex:repeat value="{!sc.lst}" var="w">
+                                            <tr id="{!c.lbl}{!sc.lbl}_{!w.s.lbl__c}" class="dataRow">
+                                                 <td colspan="2" class="actionColumn" style="border:none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                                                 <td class="actionColumn">{!w.s.lbl__c}</td>
+                                                 <td class="dataCell">
+                                                    <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                        <apex:inputCheckbox value="{!w.al.DE__c}" accesskey="DE{!c.lbl}{!sc.lbl}"/>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel layout="none" rendered="{!isSuperUser}">
+                                                        <input type="checkbox" disabled="disabled" checked="true" />
+                                                    </apex:outputPanel>
+                                                 </td>
+                                                 <td class="dataCell">
+                                                    <apex:outputPanel layout="none" rendered="{!NOT(isSuperUser)}">
+                                                        <apex:inputCheckbox value="{!w.al.AP__c}" accesskey="AP{!c.lbl}{!sc.lbl}"/>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel layout="none" rendered="{!isSuperUser}">
+                                                        <input type="checkbox" disabled="disabled" checked="true" />
+                                                    </apex:outputPanel>
+                                                </td>
+                                            </tr>                                           
+                                        </apex:repeat>
+                                    </apex:repeat>
+                                </apex:repeat>
+                            </tbody>
+                        </table>
+                     </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+     </apex:form>
+</apex:page>

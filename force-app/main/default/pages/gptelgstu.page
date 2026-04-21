@@ -1,0 +1,860 @@
+<apex:page cache="false" controller="gctlprtstu" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" title="Part time eligible students" >
+    <style>
+        i.fa.fa-check-circle {
+        color: green !important;
+        }
+        
+        i.fa.fa-close {
+        color: #b00404 !important;
+        }
+        .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link {
+        background-color: #e7e8ef !important;
+        }
+        .nav-pagination li{
+        cursor: pointer;
+        }
+        #reqTable_length,#reqTable_filter{display:none !important;}
+        #reqTable{width:100% !important;}
+        .recommended-services-slider-wrapper .swiper-button-next {
+        right: -10px;
+        }
+        .bodyDiv.brdPalette.brandPrimaryBrd {
+        width: 100%;
+        }
+        
+        table#bodyTable {
+        table-layout: fixed;
+        width: inherit;
+        }
+        #reqTable th, #reqTable td {
+        width: 185px !important;
+        }
+        @media (max-width: 767.98px){
+        #reqTable th, #reqTable td {
+        width:auto !important;
+        }
+        .paginate_button span{
+        display:none;
+        }
+        .table-people .people-property span.people-property-label {
+        width: 100px;
+        -ms-flex: 0 0 100px;
+        flex: 0 0 100px;
+        }
+        }
+        span.people-property-label {
+        text-transform: capitalize;
+        }
+        
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.ico" />
+    <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!URLFOR($Resource.AXS2CustomJs)}"/>
+    <apex:form id="form" >
+        <script>
+        var cs = {};
+        </script>
+        <apex:actionFunction name="clearAllFilters" action="{!clearFilters}" oncomplete="formTable(JSON.stringify({!stuStr}),'#reqTable');" rerender="panelBlock">
+        </apex:actionFunction>
+        <apex:actionFunction name="revokeOfr" action="{!revokeOffer}" oncomplete="afterRevoke('{!JSENCODE(rvkConName)}');" rerender="dummy"></apex:actionFunction>
+        <apex:actionFunction name="resendOfr" action="{!resendOffer}" oncomplete="afterResend('{!JSENCODE(rvkConName)}');" rerender="dummy"></apex:actionFunction>
+        <apex:actionFunction name="sndPrmt" action="{!sendPermit}" oncomplete="afterSendPermit('{!JSENCODE(rvkConName)}');" rerender="dummy"></apex:actionFunction>
+        <apex:actionFunction name="filterOnOffer" action="{!offerFilter}" oncomplete="clrAllFltrs();formTable(JSON.stringify({!stuStr}),'#reqTable');" rerender="panelBlock">
+            <apex:param name="ofr" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="cancelOfr" action="{!CancelOffer}" oncomplete="hideGLoader();afterCancel('{!JSENCODE(rqNum)}','{!JSENCODE(rvkConName)}');formTable(JSON.stringify({!prtEmpStuStr}),'#reqTable');" rerender="dummy"></apex:actionFunction>
+        <div id="main" data-aos="zoom-in">
+            <div id="page_content">
+                <div class="container">
+                    <div class="page-header">
+                        <ul class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li> 
+                            <li class="breadcrumb-item">Part time eligible students</li>
+                        </ul>
+                        <div class="d-lg-flex flex-wrap align-items-center">
+                            <div class="row">
+                                <h1 class="page-title mr-auto">EXPLORE STUDENTS SEEKING PART-TIME WORK</h1>
+                            </div>
+                            <apex:outputPanel id="dummy">
+                                <apex:actionFunction name="callOffer" action="{!createReq}" oncomplete="hideGLoader();afterReqCreation('{!JSENCODE(rqNum)}','{!JSENCODE(rvkConName)}');formTable(JSON.stringify({!stuStr}),'#reqTable');" rerender="dummy"/>
+                            </apex:outputPanel>
+                            <apex:outputPanel id="tid" styleClass="mt-2 table-form-wrapper row col-12">
+                                <div class="table-form-col col-2">
+                                    <div class="mb-0">
+                                        <select class="dropdown-filter form-control input-select2-flat" id="jobOfrdFilter" placeholder="Select Status Type" onchange='showTempLoader_select(this);filterOnOffer(this.value)'>
+                                            <option search="" value="All">All available</option>
+                                            <option search="Shortlisted" value="Shortlisted">Shortlisted</option>
+                                            <option search="Employed" value="Employed">Employed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- search field  -->
+                                <div class="table-form-col col-2">
+                                    <div class="search-field mb-0">
+                                        <div class="input-group">
+                                            <input type="text" colIndex='1' onkeyup="tableSearch()" class="form-control filters" placeholder="Min 3 charactes" id="p"  />
+                                            <div class="input-group-append srchDiv">
+                                                <button class="btn" type="button">
+                                                    <div class="icon-search" onclick='tableSearch()'></div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Account filter -->
+                                <div class="table-form-col col-2">
+                                    <div class="mb-0">
+                                        <select class="dropdown-filter form-control input-select2-flat filters" type="dropdown" colIndex='2' id="actFilter" placeholder="Select Status Type" onchange="tableSearch();"><!-- onchange='filterOnAct(this.value)'-->
+                                            <option search="" value="All">All universities</option>
+                                            <apex:repeat value="{!prtStuAcc}" var="u">
+                                                <option search="{!u}" value="{!u}">{!u}</option>
+                                            </apex:repeat>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- end Account filter -->
+                                <!-- Account filter -->
+                                <div class="table-form-col col-2">
+                                    <div class="mb-0">
+                                        <select class="dropdown-filter form-control input-select2-flat filters" type="dropdown" colIndex='3' id="courseFilter" placeholder="Select Status Type" onchange="tableSearch();"><!--  onchange='filterOnCourse(this.value)'-->
+                                            <option search="" value="All">All courses</option>
+                                            <apex:repeat value="{!prtStuCourse}" var="c">
+                                                <option search="{!c}" value="{!c}">{!c}</option>
+                                            </apex:repeat>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- end Account filter -->
+                                <!-- Account filter -->
+                                <div class="table-form-col col-2">
+                                    <div class="mb-0">
+                                        <select class="dropdown-filter form-control input-select2-flat filters" type="dropdown" colIndex='4'  id="degreeFilter" placeholder="Select Status Type" onchange="tableSearch();"><!-- onchange='filterOnDegree(this.value)'-->
+                                            <option search="" value="All">All programs</option>
+                                            <option search="Undergraduate" value="Undergraduate">Undergraduate</option>
+                                            <option search="Post Graduate" value="Post Graduate">Post Graduate</option>
+                                            <option search="Doctorate" value="Doctorate">Doctorate</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-form-col col-2">
+                                    <a href='#' class="btn btn-primary" id="clear" onclick="clearAll(this);"><!--()-->
+                                        Clear All Filters
+                                    </a>
+                                </div>
+                                
+                                <!-- end Account filter -->
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                    <!-- .page-header -->
+                    <apex:outputPanel id="panelBlock">
+                        <input type="hidden" value="{!stuStr}" id="rStr" />
+                        <apex:outputPanel id="tableBlock" rendered="{!AND(prtStu!=null,prtStu.size>0)}" >
+                            <div class="table-people table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0" style="">
+                                <table class="table table-hover table-responsive-sticky table-list m-0" id="reqTable">
+                                    <thead>
+                                        <tr>
+                                            <th field="forAlpha" width="20%" style="display:none !important;">DUMMY</th>
+                                            <th field="name" width="40%"><span>NAME</span></th>
+                                            <th field="Account.Name" width="20%">UNIVERSITY</th>
+                                            <th field="Course_Name__c" width="20%">COURSE</th>
+                                            <th style="display:none !important;" field="Program__c" width="20%">PROGRAM</th><!--hide all the time-->
+                                            <th field="Current_Course_Year__c" width="20%">COURSE YEAR</th>
+                                            <!--th field="offerSent" width="20%">OFFER SENT</th-->
+                                            <th field="rped__c" width="20%">VISA EXPIRY</th>
+                                            <th field="Email" width="20%">EMAIL</th>
+                                            <th field="HomePhone" width="20%">MOBILE</th>
+                                            <th field="nc__c" width="20%">NATIONALITY</th>
+                                            <th field="CV" width="20%">CV</th>
+                                            <th field="actions"  width="20%" class="actions text-center">ACTIONS</th>
+                                            <th style="display:none;" field="dummy" ></th>
+                                            <th style="display:none !important;"></th>
+                                        </tr>
+                                    </thead>
+                                    <!-- end thead -->
+                                    <tbody>
+                                        <apex:repeat value="{!prtStu}" var="c">
+                                            <tr> 
+                                                <td colspan='7'>{!c.name}</td>
+                                                <!--<td>B.tech</td>
+<td>4</td>
+<td>9</td>
+<td>{!c.account.name}</td>
+<td>{!c.mobilephone}</td>
+<td>{!c.email}</td>-->
+                                                <td>
+                                                    <apex:repeat value="{!c.attachments}" var="a">
+                                                        <a target="_blank" href="/apex/filedwnld?id={!a.id}">Click Here</a>
+                                                    </apex:repeat>
+                                                </td>
+                                            </tr>
+                                        </apex:repeat>
+                                    </tbody>
+                                    <!-- end tbody -->
+                                </table>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!AND(prtStu!=null,prtStu.size<1)}">
+                            No results for the search criteria!
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    
+                    
+                </div>
+                <!-- .container -->
+            </div>
+        </div>
+        <apex:inputHidden id="rvk_StuID" value="{!offeredCon}"/>
+        <apex:inputHidden id="rsnd_reqID" value="{!resendRq}"/>
+        <apex:inputHidden id="sndPrmt_reqID" value="{!varSendPermit}"/>
+        <script>
+        cs['rvk_StuID'] = document.getElementById('{!$Component.rvk_StuID}');
+        cs['rsnd_reqID'] = document.getElementById('{!$Component.rsnd_reqID}');
+        cs['sndPrmt_reqID'] = document.getElementById('{!$Component.sndPrmt_reqID}');
+        </script>
+        <div class="modal fade modal-base" id="modal_StuOffer" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <h2>SEND OFFER<span id='ofr_StuName'></span></h2>
+                        <div class="separator-dashed"></div>
+                        <apex:inputHidden id="ofr_StuID" value="{!selectedCon}"/>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input class="modalFlds disabledApex form-control" field="Name" id="ofr_name" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>University</label>
+                                    <input class="modalFlds disabledApex form-control" field="Account.Name" id="ofr_acc" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Course</label>
+                                    <input class="modalFlds disabledApex form-control" field="Program__c" id="ofr_course" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>GPA</label>
+                                    <input class="modalFlds disabledApex form-control" field="GPA__c" id="ofr_gpa" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Mobile</label>
+                                    <input class="modalFlds disabledApex form-control" field="HomePhone" id="ofr_phone" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input class="modalFlds disabledApex form-control" field="Email" id="ofr_email" />
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Offered Job Title</label>
+                                    <apex:input styleClass="requiredFld form-control" id="ofr_StuJT" value="{!jTitle}"/>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Allowed working hours per week(Max 40)</label>
+                                    <apex:input styleClass="requiredFld form-control numOnly" html-maxlength="2" id="ofr_StuHrs" value="{!alwdHrs}"/>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <div class="input-datepicker-group input-group">
+                                        <apex:inputHidden id="ofrDuration" value="{!ofrDuration}"/>
+                                        <input type="text" class="requiredFld form-control input-datepicker" id="xrpid__c" value="{!ofrDuration}"
+                                               data-toggle="datetimepicker" name="stDt" data-target="#xrpid__c" onchange = "changeDate(this);" validationname="pid" />
+                                        
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrpid__c">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>End Date</label>
+                                    <div class="input-datepicker-group input-group">
+                                        <apex:inputHidden id="endDate" value="{!endDate}"/>
+                                        <input type="text" class="requiredFld form-control input-datepicker" id="xrped__c" value="{!endDate}"
+                                               data-toggle="datetimepicker" name="endDt" data-target="#xrped__c" onchange = "changeDate(this);" validationname="ped" />
+                                        
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrped__c">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                            cs['ofr_StuHrs'] = document.getElementById('{!$Component.ofr_StuHrs}');
+                            //ofrDuration
+                            cs['ofrDuration'] = document.getElementById('{!$Component.ofrDuration}');
+                            cs['endDate'] = document.getElementById('{!$Component.endDate}');
+                            cs['ofr_StuID'] = document.getElementById('{!$Component.ofr_StuID}');
+                            cs['ofr_StuJT'] = document.getElementById('{!$Component.ofr_StuJT}');
+                            </script>
+                            <div>
+                                
+                            
+                            <p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+                                <label class="custom-checkbox mr-4">
+                                    <input id="tANDc" onchange="rmErronTC()" type="checkbox" />
+                                    <span>I confirm that the entered information is correct, and the student is qualified to get registered in the part-time eligibility list as per the compliance with the Student Eligibility under the article 2.1 of <a href=" https://dda.gov.ae/wp-content/uploads/Student%20Part%20Time%20Employment%20Regulations%20-%20signed.pdf" target="_blank"><u> Order No (1) of 2016</u></a> concerning Student Part-time Employment. </span>
+                                </label>  
+                            </p>
+                                </div>
+                        </div>
+                        <br/>
+                        <p class="col-xl-12 col-lg-12" style="text-align: right;">
+                            <a class="fff-Font col-2 btn btn-primary mr-2 btn-block-sm" onclick="callOffer1();" > YES </a>
+                            <a href="#" class="col-2 btn btn-outline-primary btn-block-sm" onclick="$('#modal_StuOffer').modal('hide');"> NO </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade modal-base" id="modal_StuCanOffer" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <h2>CANCEL OFFER<span id='ofr_StuName'></span></h2>
+                        <div class="separator-dashed"></div>
+                        <apex:inputHidden id="can_StuID" value="{!selectedCon_Can}"/>
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input class="modalFlds disabledApex form-control" field="Name" id="can_name" />
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label>University</label>
+                                    <input class="modalFlds disabledApex form-control" field="Account.Name" id="can_acc" />
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label>Course</label>
+                                    <input class="modalFlds disabledApex form-control" field="Program__c" id="can_course" />
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label>REMARKS</label>
+                                    <apex:input styleClass="requiredFld form-control" html-maxlength="99" id="can_Sturmrks" value="{!feedBack}"/>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label>Rating(out of 10)</label>
+                                    <apex:input styleClass="requiredFld form-control numOnly" html-maxlength="2" id="can_StuRat" value="{!rating}"/>
+                                </div>
+                            </div>
+                            <script>
+                            cs['can_StuRat'] = document.getElementById('{!$Component.can_StuRat}');
+                            cs['can_StuID'] = document.getElementById('{!$Component.can_StuID}');
+                            cs['can_Sturmrks'] = document.getElementById('{!$Component.can_Sturmrks}');
+                            </script>
+                            <!--<p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+<label class="custom-checkbox mr-4">
+<input id="tANDc" onchange="rmErronTC()" type="checkbox" />
+<span>I have read and agreed to the <a href="/grqerTerms" target="_blank"><u>Terms and Conditions</u></a></span>
+</label>  
+</p>-->
+                        </div>
+                        <br/>
+                        <p class="col-xl-12 col-lg-12" style="text-align: right;">
+                            <a class="fff-Font col-2 btn btn-primary mr-2 btn-block-sm" onclick="canOfr1();" > YES </a>
+                            <a href="#" class="col-2 btn btn-outline-primary btn-block-sm" onclick="$('#modal_StuCanOffer').modal('hide');"> NO </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:form>
+    <script>
+    var selectedFlag = '';
+    var str = '';
+    var flag='';
+    $(document).ready(function(){
+        if(!Array.prototype.includes){
+            Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+        }
+        if (!String.prototype.includes) {
+            String.prototype.includes = function() {
+                return String.prototype.indexOf.apply(this, arguments) !== -1;
+            };
+        }
+        str = document.getElementById('rStr').value;
+        formTable(str,'#reqTable');
+    });
+    function imgError(elem,g){
+        elem.onerror = "";
+        var gen = (g=="Female")?g:"Male";
+        elem.src = "./resource/assets_NUI/images/"+gen+"-Default.png";
+        return true;
+    }    
+    function showTempLoader_select(e){
+        $(e).parent().find('.select2-selection--single').addClass('tempLoader_input');
+        setTimeout(function(){
+            $('*').addClass('loadingProgress');
+        },400);
+    }
+    var dTableSearch;
+    var newSearch;
+    function tableSearch(){
+        dTableSearch  = $('#reqTable').DataTable();
+        newSearch ='';
+        $('.filters').each(function(){
+            let dTableSearchStr_temp = '';
+            let type=$(this).attr('type');
+            let searchStr = $(this).val();
+            let colIndex = $(this).attr('colIndex');
+            if(searchStr){
+                if($(this).is('input')){
+                    if(searchStr && searchStr.length<3)
+                        return;
+                    newSearch += '.column('+colIndex+').search(\''+searchStr+'\',false,false,true)';
+                    dTableSearch.column(colIndex).search(searchStr,false,false,true);
+                }
+                else{
+                    searchStr = (searchStr.toLowerCase().includes('all'))?'':searchStr;
+                    newSearch += '.column('+colIndex+').search(\''+searchStr+'\',false,true,false)';
+                    dTableSearch.column(colIndex).search(''+searchStr,false,true,false);
+                }
+            }
+        });
+        dTableSearch.draw();
+        console.log(newSearch);
+    }
+    
+    
+    /******* Datatable code starts -- VMKR *******/
+    
+    
+    function dataTableSearchByCol(tableId,columnIndex,srchCrt){ // to search each column(colIndex have to be given)
+        //$(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt,false,true,false).draw();  // for Case Sesitive
+        $(tableId).dataTable().api().columns(columnIndex).data().search(srchCrt).draw();  // for Case In-Sesitive
+    }
+    function dataTableSearch(tableId,srchCrt){ // to search entire table
+        $(tableId).dataTable().api().data().search(srchCrt).draw();
+    }
+    var table;
+    var data_m;
+    var actionLinks = {"Employee":{"ren":"a292y0000008XYCAA2","can":"a292y0000008XYiAAM","ame":"a292y0000008XYYAA2","let":"a292y0000008XYGAA2"},"Student1":{"ren":"a292y0000008XYcAAM","can":"a292y0000008XYMAA2","ame":"a292y0000008XYZAA2","let":"a292y0000008XYEAA2"},"Spouse":{"ren":"a292y0000008XYfAAM","can":"a292y0000008XYaAAM","ame":"a292y0000008XYXAA2","let":""},"Child":{"ren":"a292y0000008XYfAAM","can":"a292y0000008XYaAAM","ame":"a292y0000008XYXAA2","let":""}};
+    var roles = {"Employee":"All Employees","Non Sponsored":"All Employees","Spouse":"All Dependents","Child":"All Dependents"};
+    function formTable(dataStr, tableId) {
+        removeTempLoader();
+        hideTempLoader_input();
+        $('[val1="'+selectedFlag+'"]').attr('selected',true);
+        /* code to fix Search icon rerender issue starts */
+        $('.srchDiv button').next().find('button').remove();
+        var x = $('.srchDiv button').next();
+        $('.srchDiv button').next().remove();
+        $('.srchDiv button').append(x);
+        $('select').select2();
+        /* code to fix Search icon rerender issue ends */
+        hideGLoader();
+        $(tableId).find('tbody').html('');
+        //$(tableId).DataTable().destroy()
+        var tData = JSON.parse(dataStr);
+        data_m = tData;
+        var tableData = '';
+        //for ([ind, val]  of data.entries()) {
+        for (var ind=0;ind<tData.length;ind++) {
+            var val = tData[ind];
+            var tr = "<tr><input type='hidden' id='"+val.Id+"' str='"+JSON.stringify(val)+"'>";
+            var subActions = '';
+            var cRole = (val.rol__c=='Spouse' || val.rol__c=='Child')?'Dependent':val.rol__c;
+            if (Object.keys(actionLinks).includes(val.rol__c)) {
+                if (val.STA__c != 'Inactive') {
+                    subActions = ((val.STA__c != 'Draft') ? '<a style="'+(actionLinks[val.rol__c]['let']?'':'display:none;')+'" class="dropdown-item" href="/grqsdr?sid='+actionLinks[val.rol__c]["let"]+'">REQUEST FOR '+cRole+' LETTER</a>' : '');
+                    subActions += (val.RP_Sts__c) ? ((val.RP_Sts__c.includes('EXPIRED') || val.RP_Sts__c.includes('EXP: IN')) ? '<a class="dropdown-item" href="/grqsdr?sid='+actionLinks[val.rol__c]["ren"]+'">RENEW '+cRole+' VISA</a>' : '') : '';
+                    subActions += '<a class="dropdown-item" href="/grqsdr?sid='+actionLinks[val.rol__c]["ame"]+'">AMEND '+cRole+' VISA</a> ';
+                    subActions += ((val.STA__c != 'Draft') ? '<a class="dropdown-item" href="/grqsdr?sid='+actionLinks[val.rol__c]["can"]+'">CANCEL '+cRole+' VISA</a>' : '');
+                    
+                    actions += '<div class="action-dropdown dropdown"> <div type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown"> <val class="fa fa-ellipsis-v"></val> </div> <div class="dropdown-menu"> <h4 class="dropdown-header dropdown-header bg-primary text-light">ACTIONS</h4> ' + subActions + ' </div> </div>';
+                    
+                }   
+            }
+            var td1= '<td class="table-people-mobile-start"><div class="action-dropdown dropdown">'+
+                '<button type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown">'+
+                '<i class="fa fa-ellipsis-v"></i></button>'+
+                '<div class="dropdown-menu dropdown-menu-right"><h4 class="dropdown-header bg-primary">ACTIONS</h4>'+subActions+'</div></div></td>';
+            //tr += td1;
+            $(tableId).find('th').each(function() {
+                
+                var j = $(this).attr('field');
+                var n = $(this).text();
+                n = (n=='NAME / JOB TITLE'?'':n);
+                var v = val[j] ? val[j] : 'NA';
+                console.log(v+'--'+j);
+                
+                
+                var subText = '';
+                if (j == 'actions' || j == 'dummy' ||!j) return;
+                else if(j == 'CV'){
+                    (val.CVDocID__c)?v='<a target="_blank" href="/servlet/servlet.FileDownload?file='+val.CVDocID__c+'">Click here</a>':'Not Available';
+                }
+                    else if (j == 'STA__c') {
+                        v = (v == 'Draft') ? 'Under Activation' : v;
+                    } else if (j == 'name') {
+                        v = '<div class="people-name-wrapper" gend="'+val.Gender__c+'" index="'+ind+'"> <div class="avatar"><img loading="lazy" src="/servlet/servlet.FileDownload?file=' + val.Photo_ID__c + '" onerror="imgError(this,\''+val.Gender__c+'\');" alt="" /> </div> <div class="people-name"> ' + val.FirstName + ' </div>';
+                        if (val.GPA__c &&val.Program__c) {
+                            v += '<div class="people-job">' + val.Program__c + ' with '+val.GPA__c+' GPA.</div>';
+                        }
+                        v += '</div>';
+                    } else if (j == 'p__c') {
+                        subText = (((val.Passport_Status__c).includes('Expires') || (val.Passport_Status__c).includes('EXPIRED')) ? '<span class="text-danger">' + val.Passport_Status__c + '</span>' : (val.Passport_Status__c).includes('Valid') ? '<span class="text-grey">' + val.Passport_Status__c + '</span>' : '');
+                        v = '<div class="people-property-flex"> <div class="mr-2">' + val.p__c + '</div> ' + subText + ' </div>';
+                    } else if (j == 'rp__c') {
+                        subText = (val.RP_Sts__c) ? ((val.RP_Sts__c).includes('EXPIRED') ? '<span class="badge-status badge-status-urgent">EXPIRED</span>' : (val.RP_Sts__c).includes('MISSING') ? 'N/A' : (val.RP_Sts__c).includes('EXP: IN') ? '<span class="badge-status badge-status-process">' + val.RP_Sts__c + '</span>' : (val.RP_Sts__c).includes('Valid Till') ? '<span class="text-grey">' + val.RP_Sts__c + '</span>' : '') : 'N/A';
+                        v = '<div class="people-property-flex"> <div class="mr-2">' + (val[j] ? val[j] : '') + '</div> ' + subText + ' </div>';
+                    } else {
+                        //v = '<div class="people-property"> <span class="people-property-label">' + j + '</span> ' + (val[j] ? val[j] : 'NA') + ' </div>';
+                        v = (val[j] ? val[j] : 'N/A');
+                        //New Code - Start
+                        if(j == 'rped__c' && v != 'N/A') {
+                            const str = v.split("-");
+                            v = str[2]+'/'+str[1]+'/'+str[0];
+                        } // End
+                        
+                        if(j == 'Account.Name')
+                            v = val.Account.Name;
+                        /* else if(j == 'offerSent'){
+                            if(val.Requests__r && val.Requests__r.totalSize>0)
+                                v = '<i class="fa fa-check-circle"></i>';
+                            else
+                                v = '<i class="fa fa-close"></i>';
+                        }*/
+                    }
+                if(j == 'forAlpha'){
+                    tr += '<td style="display:none" class="people-name1">' + val.FirstName + '</td>';
+                }
+                else if(j == 'Program__c')
+                    tr += '<td style="display:none !important">' + val['Program__c'] + '</td>';/**/
+                    else{
+                        if(n)
+                            tr += '<td><div class="people-property"><span class="people-property-label">'+n.toLowerCase()+'</span>' + v + '</div></td>';
+                        else
+                            tr += '<td>' + v + '</td>';
+                    }
+            });
+            var actions = '<td class="actions">';
+            //if (Object.keys(actionLinks).includes(val.rol__c)) {
+                if(val.pte__c){
+                    subActions = '<a class="dropdown-item" onclick="provideOffer(\''+val.Name+'\',\''+val.Id+'\')" href="#">RENEW OFFER</a> ';
+                    subActions += '<a class="dropdown-item" onclick="canOfr(\''+val.Id+'\',\''+val.Name+'\')" href="#">CANCEL PERMIT</a> ';
+                    
+                }
+                else if(val.Requests__r && val.Requests__r.totalSize>0){
+                    if(val.Requests__r.records[0].STA__c=='Under Review'){
+                        subActions = '<a class="dropdown-item" href="#" onclick="rvkOfr(\''+val.Id+'\',\''+val.Name+'\')">CANCEL OFFER</a> ';
+                        if(!val.Requests__r.records[0].InsChk__c)
+                            subActions += '<a class="dropdown-item"href="#" onclick="resndOfr(\''+val.Requests__r.records[0].Id+'\',\''+val.Name+'\')">RESEND OFFER</a> ';
+                    }
+                    if(val.Requests__r.records[0].STA__c=='In Process' )
+                        subActions += '<a class="dropdown-item" onclick="sendPrmt(\''+val.Requests__r.records[0].Id+'\')" href="#">SEND PERMIT</a> ';
+                }
+                    else
+                        subActions = '<a class="dropdown-item" onclick="provideOffer(\''+val.Name+'\',\''+val.Id+'\')" href="#">SEND OFFER</a> ';
+                
+                actions += '<div class="action-dropdown dropdown"> <div type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown"> <val class="fa fa-ellipsis-v"></val> </div> <div class="dropdown-menu"> <h4 class="dropdown-header dropdown-header bg-primary text-light">ACTIONS</h4> ' + subActions + ' </div> </div>';
+                
+            //}
+            var dumTD = '<td style="display:none !important">dummy</td>';
+            actions += '</td>';
+            tr += actions + dumTD+'<td class="table-people-mobile-end"></td></tr>';
+            tableData += tr;
+        }
+        $(tableId).find('tbody').html(tableData);
+        var table = $(tableId).DataTable({
+            dom: 'Alfrtip',
+            language: {
+                'paginate': {
+                    'previous': '<i class="fa fa-long-arrow-left"></i><span> PREV</span>',
+                    'next': '<span>NEXT </span><i class="fa fa-long-arrow-right"></i>'
+                }
+            }
+        });
+    }
+    function clearAll(e){
+        showTempLoader($(e));
+        clrAllFltrs();
+        $('#jobOfrdFilter').val('All').select2();
+        clearAllFilters();
+    }
+    function clrAllFltrs(){
+        $('#p').val('');
+        $('#actFilter,#courseFilter,#degreeFilter').val('All').select2();    
+    }
+    var monthDiff = 0;
+    var visaExpiryDate;
+    function provideOffer(conName,conId){
+        axsConfirmation('Please confirm','Are you sure you want to apply part time permit for <b>'+conName+'</b>.<br>This action will create a request.',true,'provideOffer1',conId);
+    }
+    function provideOffer1(conId){
+        cs['ofr_StuID'].value = conId;
+        callOffer();
+    }
+    function callOffer1(){
+        var validated = true;
+        // addValError(cs['ofr_StuHrs'],'Maximum allowed working haours are 40!');
+        //addValError(cs['xrpid__c'],'Error!');   
+        $('.requiredFld').each(function(){
+            let v = $(this).val();
+            if(!v){
+                addValError($(this),'This field required!');
+                validated = false;
+            }
+            //else
+            //  removeValError($(this));
+        });
+        if(cs['ofr_StuHrs'].value>40 || cs['ofr_StuHrs'].value<=0 ){
+            addValError(cs['ofr_StuHrs'],'Allowed hours should be greater than 0 and less than or equal to 40');
+            return;
+        }
+       
+        else if(cs['ofr_StuHrs'].value){
+            removeValError(cs['ofr_StuHrs']);
+            }
+        /*  if(cs['ofr_StuHrs'].value>40){
+            addValError(cs['ofr_StuHrs'],'Value cannot be more than 40!');
+            return;
+        }
+        else
+            removeValError(cs['ofr_StuHrs']);*/
+        if($('.frmErrMsg').is(':visible')){
+        return;
+        }
+        if(!$('#tANDc').prop('checked')){
+            $('.chk').find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+            scrollToDiv($('.chk'));
+            return;
+        }
+        cs['ofrDuration'].value=$('#xrpid__c').val();
+        cs['endDate'].value=$('#xrped__c').val();
+        showGLoader();$('#modal_StuOffer').modal('hide');
+        callOffer();
+    }
+    function canOfr(conId,conName){
+        var d = JSON.parse($('#'+conId).attr('str'));
+        $('#modal_StuCanOffer .modalFlds').each(function(){
+            let f = $(this).attr('field');
+            console.log(f);
+            if(f!='Account.Name')
+                $(this).val(d[f]);
+            else
+                $(this).val(d.Account.Name);
+        });
+        cs['can_Sturmrks'].value = '';
+        cs['can_StuRat'].value = '';
+        cs['can_StuID'].value = d.Id;
+        $('#modal_StuCanOffer').modal('show');
+        //axsConfirmation('Please confirm','Are you sure to cancell permit for '+conName,false,'canOfr1',conId);
+    }
+    function canOfr1(){
+        if(!cs['can_Sturmrks'].value){
+            addValError(cs['can_Sturmrks'],'Please enter a value!');
+            return;
+        }
+        else
+            removeValError(cs['can_Sturmrks']);
+        if(!cs['can_StuRat'].value){
+            addValError(cs['can_StuRat'],'Please enter a value!');
+            return;
+        }
+        else if(cs['can_StuRat'].value>10){
+            addValError(cs['can_StuRat'],'Rating should not be greater than 10!');
+            return;
+        }else
+            removeValError(cs['can_StuRat']);
+        showGLoader();$('#modal_StuCanOffer').modal('hide');
+        cancelOfr();
+    }
+    function afterCancel(rNum,cNmae){
+        axsAlert('Success','Part time permit cancellation request for '+cNmae+' has been created.<br>SR# '+rNum);
+    }
+    function rmErronTC(){
+        if($('#tANDc').is(':checked')==true)
+            $('.chk').find('.frmErrMsg').remove();
+        else{
+            var errElem = '<div class="frmErrMsg">Please accept Terms and Conditions.</div>';
+            $('.chk').append(errElem);
+        }
+    }
+    function afterReqCreation(rNum,cName){
+        axsAlert('Success','An offer has been sent to '+cName+'.<br>You can track the same with SR#'+rNum);
+    }
+    function rvkOfr(conId,conName){
+        axsConfirmation('Please confirm','Are you sure to revoke offer for '+conName,false,'rvkOfr1',conId);
+    }
+    function rvkOfr1(conId){
+        showGLoader();
+        cs['rvk_StuID'].value = conId;
+        revokeOfr();
+    }
+    function afterRevoke(cNmae){
+        hideGLoader();
+        axsAlert('Success','Offer for '+cNmae+' has been revoked.');
+    }
+    function resndOfr(reqId,conName){ 
+        axsConfirmation('Please confirm','Are you sure to resend offer to '+conName+'<br>An email with Offer link will be sent to student.',false,'resndOfr1',reqId);
+    }
+    function resndOfr1(reqId){
+        showGLoader();
+        cs['rsnd_reqID'].value = reqId;
+        resendOfr();
+    }
+    function sendPrmt(reqId){
+         showGLoader();
+        cs['sndPrmt_reqID'].value = reqId;
+        sndPrmt();
+    }
+    function afterResend(cNmae){
+        hideGLoader();
+        axsAlert('Success','Offer for '+cNmae+' has been resent.');
+    }
+     function afterSendPermit(cName){
+          hideGLoader();
+        axsAlert('Success','Permit has been sent to '+cName+'');
+    }
+    function reFormTable(s){
+        formTable(s,'#reqTable');
+    }
+    
+    var date1;
+    var edate;
+    var date;
+    var edate1;
+    function changeDate(elem) {
+        var e = $(elem);
+        var vn = $(elem).attr('validationname');        
+        var date2;
+        if(vn=='pid') {
+            date1 = e.val();// start date
+            date =  date1.split('/')[2]+'/'+date1.split('/')[1]+'/'+date1.split('/')[0];
+        }
+        if(vn=='ped') {
+            edate = e.val();//end date
+            edate1 =  edate.split('/')[2]+'/'+edate.split('/')[1]+'/'+edate.split('/')[0];
+        }
+        date2 = visaExpiryDate.split('-')[0]+'/'+visaExpiryDate.split('-')[1]+'/'+visaExpiryDate.split('-')[2];// visa expiry date      
+        console.log('End date--'+edate1);
+        console.log('Start date--'+date);
+        console.log('End date1--'+edate);
+        console.log('Start date1--'+date1);
+        var days = new Date(new Date(edate1)-new Date(date))/1000/60/60/24;
+        console.log('--days----'+days);
+        console.log('----sd'+new Date(date2) < new Date(date));
+        console.log('----ed'+new Date(date) > new Date(edate1));
+        if(days<30){
+        addValError('#xrped__c','Duration should be a minimum of 30 days');
+        }else{
+            removeValError('#xrped__c');
+        }
+        
+        if(new Date(date) > new Date(edate1)){
+            console.log('ERROR');
+            addValError('#xrpid__c','Start Date should be a less than end date');
+        } else {
+            removeValError('#xrpid__c');
+         }
+        if(vn=='pid'){
+            if(new Date(date2) < new Date(date)) {
+                addValError('#xrpid__c','Start Date should not be more than visa expiry date');  
+            } 
+            else if(new Date(date) <= new Date()){
+                addValError('#xrpid__c','Start Date should be a future date');  
+            } 
+                else {
+                    removeValError('#xrpid__c');
+                }
+        }
+        else if(vn=='ped'){
+            if(new Date(date2) < new Date(edate1)) {
+                addValError('#xrped__c','End Date should not be more than visa expiry date');  
+            }
+            else if(new Date(edate1) <= new Date()){
+                addValError('#xrped__c','End Date should be a future date');  
+            } 
+                else {
+                    removeValError('#xrped__c');
+                }
+        }
+    }
+    
+    /* function showErrMsg(elem,elemType,errType){
+        if(errType == true){
+            elem.parents('.form-group').find('.frmErrMsg').eq(0).remove();
+            elem.removeClass('is-invalid');
+            elem.next().find('.select2-selection').removeClass('is-invalid');
+            return;
+        } //formErrMsgs1[elemType][errType]
+        var errElem = '<div class="frmErrMsg">Due Date should not be greater than Visa Expiry Date!</div>';
+        elem.parents('.form-group').find('.frmErrMsg').remove();
+        elem.parents('.form-group').eq(0).append(errElem);
+        elem.addClass('is-invalid');
+        //elem.next().find('.select2-selection, .select2-selection--single, .select2-selection--multiple').addClass('is-invalid')
+        return false;
+    }*/
+    
+    
+    
+    /******* Datatable code ends -- VMKR *******/
+    
+    function alert() {
+        console.log(Object.values(arguments).join())
+        console.log('From --- '+new Error().stack);
+    };
+    
+    function getUrlParameter(key){
+        var res = new RegExp('[\?&]' + key + '=([^&#]*)').exec(window.location.href);
+        return (res==undefined)?'':res[1];
+    }
+    
+    </script>
+    <!-- Vendor js -->
+    
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    
+</apex:page>

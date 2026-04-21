@@ -1,0 +1,675 @@
+<apex:page cache="false" readOnly="true" sidebar="false"  title="Reports" controller="gctRprt">
+<apex:stylesheet value="{!URLFOR($Resource.JQ, '/css/redmond/jquery-ui-1.10.4.custom.min.css')}" />
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" />
+<apex:includeScript value="{!URLFOR($Resource.JQ, '/js/jquery-ui-1.10.4.custom.min.js')}" />
+<apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+
+<script type="text/javascript">    
+   var previousOnload = window.onload;        
+   window.onload = function() { 
+       if (previousOnload) { 
+           previousOnload();
+       }
+       init();
+   }
+   
+   function init() {
+       $("[id$=fdateAD]").parent().hide();$("[id$=fdateADlbl]").hide();       
+       $("[id$=tdateAD]").parent().hide();$("[id$=tdateADlbl]").hide();      
+       $("[id$=fdateCD]").parent().hide();$("[id$=fdateCDlbl]").hide();       
+       $("[id$=tdateCD]").parent().hide();$("[id$=tdateCDlbl]").hide();
+       $("[id$=fdateBG]").parent().hide();$("[id$=fdateBGlbl]").hide();       
+       $("[id$=tdateBG]").parent().hide();$("[id$=tdateBGlbl]").hide(); 
+   }    
+   function gSt(slct, lnk, pg, fd, td) {        
+    if(fd=='fdateAD'){fd=document.getElementById('{!$Component.f1.pb1.fdateAD}').value}
+    if(td=='tdateAD'){td=document.getElementById('{!$Component.f1.pb1.tdateAD}').value}    
+    if(fd=='fdateCD'){fd=document.getElementById('{!$Component.f1.pb1.fdateCD}').value}
+    if(td=='tdateCD'){td=document.getElementById('{!$Component.f1.pb1.tdateCD}').value}    
+    if(fd=='fdateBG'){fd=document.getElementById('{!$Component.f1.pb1.fdateBG}').value}
+    if(td=='tdateBG'){td=document.getElementById('{!$Component.f1.pb1.tdateBG}').value}    
+    if(fd === "" || td === ""){
+    }
+    else
+    {           
+        var sfd = fd.split("/");
+        var tfd = td.split("/");                 
+        date1 = new Date(sfd[2],sfd[1],sfd[0]);
+        date2 = new Date(tfd[2],tfd[1],tfd[0]);            
+        if (date2 <= date1) {
+            alert("To date Should be greater than From date");
+            if(pg=='gtrAD' || pg=='gtrADcsv'){            
+                document.getElementById('{!$Component.f1.pb1.fdateAD}').value="";
+                document.getElementById('{!$Component.f1.pb1.tdateAD}').value="";          
+            }
+            if(pg=='gtrCC' || pg=='gtrCCcsv'){            
+                document.getElementById('{!$Component.f1.pb1.fdateCD}').value="";
+                document.getElementById('{!$Component.f1.pb1.tdateCD}').value="";          
+            }
+            if(pg=='gtrBG' || pg=='gtrBGcsv'){            
+                document.getElementById('{!$Component.f1.pb1.fdateBG}').value="";
+                document.getElementById('{!$Component.f1.pb1.tdateBG}').value="";          
+            }
+            
+            return false;
+         }      
+    }
+    if( document.getElementById(slct).value == 'CUSTOM' && (pg=='gtrAD' || pg=='gtrADcsv')){           
+        $("[id$=fdateAD]").parent().show();$("[id$=fdateADlbl]").show();
+        $("[id$=tdateAD]").parent().show();$("[id$=tdateADlbl]").show();                
+    }
+    else if( document.getElementById(slct).value == 'CUSTOM' && (pg=='gtrCC' || pg=='gtrCCcsv')){           
+        $("[id$=fdateCD]").parent().show();$("[id$=fdateCDlbl]").show();
+        $("[id$=tdateCD]").parent().show();$("[id$=tdateCDlbl]").show();                      
+    }
+    else if( document.getElementById(slct).value == 'CUSTOM' && (pg=='gtrBG' || pg=='gtrBGcsv')){                           
+        $("[id$=fdateBG]").parent().show();$("[id$=fdateBGlbl]").show();
+        $("[id$=tdateBG]").parent().show();$("[id$=tdateBGlbl]").show();        
+    }
+    else
+    {
+       $("[id$=fdateAD]").parent().hide();$("[id$=fdateADlbl]").hide();       
+       $("[id$=tdateAD]").parent().hide();$("[id$=tdateADlbl]").hide();      
+       $("[id$=fdateCD]").parent().hide();$("[id$=fdateCDlbl]").hide();       
+       $("[id$=tdateCD]").parent().hide();$("[id$=tdateCDlbl]").hide();
+       $("[id$=fdateBG]").parent().hide();$("[id$=fdateBGlbl]").hide();       
+       $("[id$=tdateBG]").parent().hide();$("[id$=tdateBGlbl]").hide();          
+    }
+    var sN = 1,
+        stP = "THIS_MONTH";        
+        
+    switch (document.getElementById(slct).value) {
+        case "THIS_MONTH":
+            stP = "THIS_MONTH";
+            sN = 1;
+            break;
+        case "LAST_MONTH":
+            stP = "LAST_MONTH";
+            sN = 1;
+            break;
+        case "LAST_N_QUARTERS1":
+            stP = "LAST_N_QUARTERS";
+            sN = 1;
+            break;
+        case "LAST_N_QUARTERS2":
+            stP = "LAST_N_QUARTERS";
+            sN = 2;
+            break;
+        case "LAST_N_QUARTERS3":
+            stP = "LAST_N_QUARTERS";
+            sN = 3;
+            break;
+        case "THIS_YEAR":
+            stP = "THIS_YEAR";
+            sN = 1;
+            break;
+        case "LAST_N_YEARS1":
+            stP = "LAST_N_YEARS";
+            sN = 1;
+            break;
+        case "LAST_N_YEARS2":
+            stP = "LAST_N_YEARS", sN = 2
+        case "CUSTOM":
+            stP = "CUSTOM", sN = 0
+    }       
+        document.getElementById(lnk).setAttribute("href", "/apex/" + pg + "?id={!A.Id}&p=" + stP + "&n=" + sN + "&fd=" + fd + "&td=" + td);
+                
+    }
+    function gPpl(slct, lnk, pg) {
+        switch (document.getElementById(slct).value) {
+            case "All_Employees":
+                stP = "All_Employees"; 
+                dR = 0;               
+                break;
+            case "All_Dependents":
+                stP = "All_Dependents";    
+                dR = 0;            
+                break;
+            case "All_Outsourced":
+                stP = "All_Outsourced";    
+                dR = 0;            
+                break;    
+            case "All_Students":
+                stP = "All_Students"; 
+                dR = 0;               
+                break;
+            case "Sponsored_Employees":
+                stP = "Sponsored_Employees";
+                dR = 0;
+                break;
+            case "Non_Sponsored_Employees":
+                stP = "Non_Sponsored_Employees";
+                dR = 0;
+                break;
+            case "Everyone":
+                stP = "Everyone";
+                dR = 0;
+                break;
+            case "Expired_Passports":
+                stP = "Expired_Passports";
+                dR = 0;
+                break;
+            case "Expired_Residence_Permits":
+                stP = "Expired_Residence_Permits";
+                dR = 0;
+                break;
+            case "Passports_Expiring_in_next_30_days":
+                stP = "Passports_Expiring";
+                dR = 30;
+                break;
+            case "Passports_Expiring_in_next_60_days":
+                stP = "Passports_Expiring";
+                dR = 60;
+                break;
+            case "Passports_Expiring_in_next_90_days":
+                stP = "Passports_Expiring";
+                dR = 90;
+                break;
+            case "Residence_Expiring_in_next_30_days":
+                stP = "Residence_Expiring";
+                dR = 30;
+                break;
+            case "Residence_Expiring_in_next_60_days":
+                stP = "Residence_Expiring";
+                dR = 60;
+                break;
+            case "Residence_Expiring_in_next_90_days":
+                stP = "Residence_Expiring";
+                dR = 90;
+                break;
+        }       
+        document.getElementById(lnk).setAttribute("href", "/apex/" + pg + "?id={!A.Id}&p=" + stP + "&d=" + dR);
+    }
+    
+    google.load('visualization', '1', {packages: ['corechart','table','map']});
+    function drawVisualization() {
+            var clrs = ['#4292c6','#6baed6','#9ecae1','#c6dbef','#deebf7','#f7fbff','#fff5f0','#fee0d2','#fcbba1','#fc9272','#fb6a4a','#ef3b2c','#cb181d','#238b45','#41ab5d','#74c476','#a1d99b','#c7e9c0','#e5f5e0','#f7fcf5','#fff5eb','#fee6ce','#fdd0a2','#fdae6b','#fd8d3c','#f16913','#d94801','#6a51a3','#807dba','#9e9ac8','#bcbddc','#dadaeb','#efedf5','#fcfbfd','#f0f0f0','#d9d9d9','#bdbdbd','#969696','#ce1256','#e7298a','#df65b0','#c994c7','#d4b9da','#e7e1ef','#f7f4f9','#fff7f3','#fde0dd','#fcc5c0','#fa9fb5','#f768a1','#dd3497','#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3e2cd','#fdcdac','#cbd5e8','#f4cae4','#e6f5c9','#fff2ae'];
+            var piOpts = {
+                pieHole: 0.4,
+                pieSliceText: 'none',
+                pieStartAngle: 45,
+                backgroundColor: 'transparent',
+                chartArea: {
+                    width: 400,
+                    height: 140,
+                    backgroundColor: 'transparent'
+                },
+                fontSize: 11,
+                pieSliceTextStyle: {
+                    color: 'black'
+                },
+                tooltip: {
+                    textStyle: {
+                        color: 'black'
+                    },
+                    showColorCode: true
+                },
+                legend: {
+                    position: 'labeled',
+                    alignment: 'end',
+                    textStyle: {
+                        color: 'black'
+                    }
+                },
+                width: 650,
+                height: 160
+               // colors: clrs
+            };
+            var colOpts = {
+                backgroundColor: 'transparent',
+                fontSize: 11,
+                tooltip: {
+                    textStyle: {
+                        color: 'black'
+                    },
+                    showColorCode: true
+                },
+                legend: {
+                    position: 'right',
+                    alignment: 'end',
+                    textStyle: {
+                        color: 'black'
+                    }
+                },
+                hAxis: {
+                    slantedTextAngle:70,
+                    slantedText: true
+                },
+                width: 750,
+                height: 350,
+                isStacked: true,
+                // colors: clrs
+            };
+            
+             var colOpts1 = {
+                backgroundColor: 'transparent',
+                fontSize: 11,
+                tooltip: {
+                    textStyle: {
+                        color: 'black'
+                    },
+                    showColorCode: true
+                },
+                legend: {
+                    position: 'right',
+                    alignment: 'end',
+                    textStyle: {
+                        color: 'black'
+                    }
+                },
+                hAxis: {
+                    slantedTextAngle:70,
+                    slantedText: true
+                },
+                width: 550,
+                height: 350,
+                isStacked: true,
+                // colors: clrs
+            };
+            
+            var barOpts = {
+                    backgroundColor: 'transparent',
+                    fontSize: 11,
+                    width: 800,
+                    height: window.innerHeight,
+                    bar: {groupWidth: "95%"},
+                    is3D : true,
+                    legend: { position: "none" },
+                    tooltip: {
+                            textStyle: {
+                                color: 'black'
+                            },
+                            showColorCode: true
+                        },
+                        legend: {
+                            position: 'right',
+                            alignment: 'end',
+                            textStyle: {
+                                color: 'black'
+                            }
+                        },
+                        hAxis: {
+                  
+                  minValue: 0
+                },
+                vAxis: {
+                 
+                },
+                // colors: clrs
+                 
+                        
+             };
+             
+             var checkEmp = {!EActive} + {!EDraft}+{!UnderAct}+{!UnderDeac}+{!UnderAbs}+{!UnderAbW}+{!EAW};
+             var checkNs = {!NActive} + {!NDraft}+{!NUnderAct}+{!NUnderDeac}+{!NUnderAbs}+{!NUnderAbW}+{!NAW};
+             var checkAccess = {!AActive} + {!ADraft}+{!AUnderAct}+{!AUnderDeac}+{!AUnderAbs}+{!AUnderAbW}+{!AAW};
+                
+                 var data = new google.visualization.DataTable();
+             if(checkAccess>1 && checkEmp>1 && checkNs>1){
+              data.addColumn('string','Status');
+              data.addColumn('number', 'Sponsored Employee');
+              data.addColumn('number', 'Non Sponsored');
+              data.addColumn('number', 'Acess Card');
+               data.addRows([
+               ['Active', {!EActive},{!NActive},{!AActive}],
+               ['Draft', {!EDraft},{!NDraft},{!ADraft}],
+               ['Under Activation', {!UnderAct} , {!NUnderAct},{!AUnderAct}],
+               ['Under Deactivation', {!UnderDeac} , {!NUnderDeac},{!AUnderDeac}],
+               ['Under Absconder Declaration', {!UnderAbs}, {!NUnderAbs},{!AUnderAbs}],
+               ['Under Absconder Withdrawal', {!UnderAbW}, {!NUnderAbW},{!AUnderAbW}],
+               ['Absconder Withdrawn', {!EAW},{!NAW},{!AAW}]
+                ]);
+                }
+                if(checkAccess<1 && checkEmp>1 && checkNs>1 ) {
+              data.addColumn('string','Status');
+              data.addColumn('number', 'Sponsored Employee');
+              data.addColumn('number', 'Non Sponsored');
+               data.addRows([
+               ['Active', {!EActive},{!NActive}],
+               ['Draft', {!EDraft},{!NDraft}],
+               ['Under Activation', {!UnderAct} , {!NUnderAct}],
+               ['Under Deactivation', {!UnderDeac} , {!NUnderDeac}],
+               ['Under Absconder Declaration', {!UnderAbs}, {!NUnderAbs}],
+               ['Under Absconder Withdrawal', {!UnderAbW}, {!NUnderAbW}],
+               ['Absconder Withdrawn', {!EAW},{!NAW}]
+                ]);
+                
+                }
+                
+                if(checkEmp>1 && checkAccess<1 && checkNs<1  ){
+                 data.addColumn('string','Status');
+                data.addColumn('number', 'Sponsored Employee');
+               data.addRows([
+               ['Active', {!EActive}],
+               ['Draft', {!EDraft}],
+               ['Under Activation', {!UnderAct} ],
+               ['Under Deactivation', {!UnderDeac} ],
+               ['Under Absconder Declaration', {!UnderAbs}],
+               ['Under Absconder Withdrawal', {!UnderAbW}],
+               ['Absconder Withdrawn', {!EAW}]
+                ]);
+                
+                }
+                
+                
+                var dataNc = new google.visualization.DataTable();
+                 dataNc.addColumn('string','Country');
+                dataNc.addColumn('number', 'Employee Count');
+            
+                 dataNc.addRows([
+                {!gDataApNC}
+                 
+                 ]);
+                 dataNc.sort({column: 1, desc: true});
+                
+                
+                
+        
+                
+                var cssTbClassNames = {
+                 fontName: 'Arial' ,
+                 fontSize: 9
+                }
+                
+            
+            new google.visualization.PieChart(document.getElementById('mEmpRL')).draw(google.visualization.arrayToDataTable([{!gDataEmpRL}]),piOpts);
+            new google.visualization.PieChart(document.getElementById('mApGen')).draw(google.visualization.arrayToDataTable([{!gDataApGen}]),piOpts);
+            
+            new google.visualization.Table(document.getElementById('mTbl')).draw(data,{showRowNumber: false, width: '60%', height: '100%','allowHtml': true, 'cssClassNames': cssTbClassNames});
+            
+            //new google.visualization.BarChart(document.getElementById('mApNC')).draw(google.visualization.arrayToDataTable([{!gDataApNC}]),barOpts);
+            
+            new google.visualization.Table(document.getElementById('mTbl2')).draw(dataNc,{showRowNumber: true, width: '50%', height: '100%','allowHtml': true, 'cssClassNames': cssTbClassNames , });
+            
+            //new google.visualization.BarChart(document.getElementById('mApNC')).draw(google.visualization.arrayToDataTable([{!gDataApNC}]),barOpts);
+            
+            new google.visualization.ColumnChart(document.getElementById('mApAge')).draw(google.visualization.arrayToDataTable([{!gDataApAge}]),colOpts1);
+            
+            new google.visualization.ColumnChart(document.getElementById('mApSal')).draw(google.visualization.arrayToDataTable([{!gDataApSal}]),colOpts1);
+            
+            new google.visualization.ColumnChart(document.getElementById('mRP')).draw(google.visualization.arrayToDataTable([{!gDataRP}]),colOpts);
+            new google.visualization.ColumnChart(document.getElementById('mPS')).draw(google.visualization.arrayToDataTable([{!gDataPS}]),colOpts);
+        }
+        google.setOnLoadCallback(drawVisualization);
+</script>
+<script>
+  $( function() {
+    $( "#tabs" ).tabs();
+  } );
+  </script>
+    
+  
+<c:pgHeader id="sH" ispu="true" tabName="Reports" iconURL="{!URLFOR($Resource.axsRS, '/images/report-logo.png')}" title="Real-Time Visibility" subtitle="Reports" description="" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:form id="f1">
+    <apex:pageMessages id="msg" />
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#F8F8F8;">
+        <tr>
+            <td style="width:210px;vertical-align: top;" >
+                <apex:pageBlock mode="detail" title="Reports" id="pb1">
+                    <table class="detailList" width="100%" border="0" cellspacing="5" cellpadding="10" style="background-color:#F8F8F8;">
+                        <tr><td colspan="2" ><h3 style="color: #4A4A56;">Customer Deposit Statement</h3></td></tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;"><label>Period</label></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <select id="adPrd" onchange="gSt('adPrd','adPrdL','gtrAD','fdateAD','tdateAD');gSt('adPrd','adPrdLxl','gtrADcsv','fdateAD','tdateAD');">
+                                    <option value="THIS_MONTH" selected="selected">This Month</option>
+                                    <option value="LAST_MONTH">Previous Month</option>
+                                    <option value="THIS_QUARTER">This Quarter</option>
+                                    <option value="LAST_N_QUARTERS1">Previous Quarter</option>
+                                    <option value="LAST_N_QUARTERS2">Previous 2 Quarters</option>
+                                    <option value="LAST_N_QUARTERS3">Previous 3 Quarters</option>
+                                    <option value="THIS_YEAR">This Year</option>
+                                    <option value="LAST_N_YEARS1">Previous Year</option>
+                                    <option value="LAST_N_YEARS2">Previous 2 Years</option>
+                                    <option value="CUSTOM">Custom</option>
+                                </select>
+                            </td>                            
+                        </tr>
+                        <tr>                             
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;border: 0px">
+                                <apex:outputLabel id="fdateADlbl" value="From"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;border: 0px">                                
+                                <apex:inputField id="fdateAD" value="{!tF.dt__c}" onchange="gSt('adPrd','adPrdL','gtrAD','fdateAD','tdateAD');gSt('adPrd','adPrdLxl','gtrADcsv','fdateAD','tdateAD');"/>                                
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;border: 0px">
+                                <apex:outputLabel id="tdateADlbl" value="To"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;border: 0px">
+                                <apex:inputField id="tdateAD" value="{!tT.dt__c}" onchange="gSt('adPrd','adPrdL','gtrAD','fdateAD','tdateAD');gSt('adPrd','adPrdLxl','gtrADcsv','fdateAD','tdateAD');"/>
+                            </td>
+                        </tr>                        
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;border: 0px"></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;height:50px;">
+                                <a id="adPrdL" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrAD?id={!A.Id}&p=THIS_MONTH&n=1" >PDF</a>
+                                <a id="adPrdLxl" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrADcsv?id={!A.Id}&p=THIS_MONTH&n=1" >EXCEL</a> 
+                            </td>
+                        </tr>
+                        
+                        <tr><td colspan="2" ><h3 style="color: #4A4A56;">Credit / Debit Card Statement</h3></td></tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;"><label>Period</label></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <select id="ccPrd" onchange="gSt('ccPrd','ccPrdL','gtrCC','fdateCD','tdateCD');gSt('ccPrd','ccPrdLxl','gtrCCcsv','fdateCD','tdateCD');">
+                                    <option value="THIS_MONTH" selected="selected">This Month</option>
+                                    <option value="LAST_MONTH">Previous Month</option>
+                                    <option value="THIS_QUARTER">This Quarter</option>
+                                    <option value="LAST_N_QUARTERS1">Previous Quarter</option>
+                                    <option value="LAST_N_QUARTERS2">Previous 2 Quarters</option>
+                                    <option value="LAST_N_QUARTERS3">Previous 3 Quarters</option>
+                                    <option value="THIS_YEAR">This Year</option>
+                                    <option value="LAST_N_YEARS1">Previous Year</option>
+                                    <option value="LAST_N_YEARS2">Previous 2 Years</option>
+                                    <option value="CUSTOM">Custom</option>                                    
+                                </select>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;">
+                                <apex:outputLabel id="fdateCDlbl" value="From"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <apex:inputField id="fdateCD" value="{!tF.dt__c}" onchange="gSt('ccPrd','ccPrdL','gtrCC','fdateCD','tdateCD');gSt('ccPrd','ccPrdLxl','gtrCCcsv','fdateCD','tdateCD');"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;">
+                                <apex:outputLabel id="tdateCDlbl" value="To"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <apex:inputField id="tdateCD" value="{!tT.dt__c}" onchange="gSt('ccPrd','ccPrdL','gtrCC','fdateCD','tdateCD');gSt('ccPrd','ccPrdLxl','gtrCCcsv','fdateCD','tdateCD');"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;font-size: 11px;color:#4A4A56;"></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;height:50px;">
+                                <a id="ccPrdL" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrCC?id={!A.Id}&p=THIS_MONTH&n=1">PDF</a>
+                                <a id="ccPrdLxl" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrCCcsv?id={!A.Id}&p=THIS_MONTH&n=1">EXCEL</a>
+                            </td>
+                        </tr>                           
+                        
+                        <tr><td colspan="2" ><h3 style="color: #4A4A56;">Bank Guarantee Statement</h3></td></tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;"><label>Period</label></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <select id="bgPrd" onchange="gSt('bgPrd','bgPrdL','gtrBG','fdateBG','tdateBG');gSt('bgPrd','bgPrdLxl','gtrBGcsv','fdateBG','tdateBG');">
+                                    <option value="THIS_MONTH" selected="selected">This Month</option>
+                                    <option value="LAST_MONTH">Previous Month</option>
+                                    <option value="THIS_QUARTER">This Quarter</option>
+                                    <option value="LAST_N_QUARTERS1">Previous Quarter</option>
+                                    <option value="LAST_N_QUARTERS2">Previous 2 Quarters</option>
+                                    <option value="LAST_N_QUARTERS3">Previous 3 Quarters</option>
+                                    <option value="THIS_YEAR">This Year</option>
+                                    <option value="LAST_N_YEARS1">Previous Year</option>
+                                    <option value="LAST_N_YEARS2">Previous 2 Years</option>
+                                    <option value="CUSTOM">Custom</option>                                    
+                                </select>   
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;">
+                                <apex:outputLabel id="fdateBGlbl" value="From"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <apex:inputField id="fdateBG" value="{!tF.dt__c}" onchange="gSt('bgPrd','bgPrdL','gtrBG','fdateBG','tdateBG');gSt('bgPrd','bgPrdLxl','gtrBGcsv','fdateBG','tdateBG');"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;">
+                                <apex:outputLabel id="tdateBGlbl" value="To"/>
+                            </td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <apex:inputField id="tdateBG" value="{!tT.dt__c}" onchange="gSt('bgPrd','bgPrdL','gtrBG','fdateBG','tdateBG');gSt('bgPrd','bgPrdLxl','gtrBGcsv','fdateBG','tdateBG');"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;font-size: 11px;color:#4A4A56;"></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;height:50px;">
+                                <a id="bgPrdL" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrBG?id={!A.Id}&p=THIS_MONTH&n=1">PDF</a>
+                                <a id="bgPrdLxl" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrBGcsv?id={!A.Id}&p=THIS_MONTH&n=1">EXCEL</a>                             
+                            </td>
+                        </tr> 
+                        <tr><td colspan="2" ><h3 style="color: #4A4A56;">People</h3></td></tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;"><label>Views</label></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;">
+                                <select id="ppPrd" onchange="gPpl('ppPrd','Pplxl','gtrPplcsv');">
+                                    <option value="All_Employees" selected="selected">All Employees</option>
+                                    <option value="All_Dependents">All Dependents</option>
+                                    <option value="All_Outsourced">All Outsourced Employees</option>
+                                    <option value="All_Students">All Students</option>
+                                    <option value="Sponsored_Employees">Sponsored Employees</option>
+                                    <option value="Non_Sponsored_Employees">Non Sponsored Employees</option>
+                                    <option value="Everyone">Everyone</option>
+                                    <option value="Expired_Passports">Expired Passports</option>
+                                    <option value="Expired_Residence_Permits">Expired Residence Permits</option>
+                                    <option value="Passports_Expiring_in_next_30_days">Passports Expiring in next 30 days</option>
+                                    <option value="Passports_Expiring_in_next_60_days">Passports Expiring in next 60 days</option>
+                                    <option value="Passports_Expiring_in_next_90_days">Passports Expiring in next 90 days</option>                                    
+                                    <option value="Residence_Expiring_in_next_30_days">Residence Expiring in next 30 days</option>
+                                    <option value="Residence_Expiring_in_next_60_days">Residence Expiring in next 60 days</option>
+                                    <option value="Residence_Expiring_in_next_90_days">Residence Expiring in next 90 days</option>                                                                     
+                                </select>           
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;text-align:right;font-size: 11px;color: #4A4A56;border: 0px"></td>
+                            <td style="text-left: right;font-size: 11px;color: #4A4A56;height:50px;">                                
+                                <a id="Pplxl" target="__balnk" class="btnSave" style="float:left;color:#fff" href="/apex/gtrPplcsv?id={!A.Id}&p=All_Employees&d=0" >EXCEL</a> 
+                            </td>
+                        </tr>                         
+                    </table>                    
+                </apex:pageBlock>
+            </td>
+            <td style="vertical-align: top;">
+                               <div id="tabs">
+                  <ul>
+                    <li><a  style ="color: white;" href="#tabs-1">Employee Demographics</a></li>
+                    <li><a  style ="color: white;" href="#tabs-2">Expiry</a></li>
+                    
+                  </ul>
+                  <div id="tabs-1">
+                  <apex:pageBlock mode="detail" >
+                    <apex:pageBlockSection columns="1" collapsible="true" title=" Employee Types">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre"  >
+                                  <div align="center" id="mEmpRL" style="height:auto;"></div>
+                             </apex:outputpanel>
+
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre"  >
+                                  <div align="center" id="mTbl" style="height:auto;"></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    
+                    <apex:pageBlockSection columns="1" collapsible="true" title="Employee by Gender">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre" >
+                                  <div  align="center" id="mApGen" style="height:auto; "></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" collapsible="true" title="Employee by Age Range">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre">
+                                  <div align="center" id="mApAge" style="height:auto;"></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="1" collapsible="true" title="Employee by Salary Range">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre" >
+                                  <div align="center" id="mApSal" style="height:auto;"></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                        </apex:pageBlockSection>
+                        <apex:pageBlockSection columns="1" collapsible="true" title="Employee by Nationality">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel style="float:centre" >
+                                  <div id="mTbl2" align="center" style="height:400px;"></div>
+                             </apex:outputpanel>
+                        
+                        </apex:pageBlockSectionItem>
+
+                    </apex:pageBlockSection>
+                  </apex:pageBlock>
+                    
+                  </div>
+                  <div id="tabs-2">
+                  
+                   <apex:pageBlock mode="detail" >
+
+                    <apex:pageBlockSection columns="2" collapsible="true" title="Residence Permits Expiry for next 12 months">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel >
+                                <div id="mRP" style="height:auto;"></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                        
+                           <apex:pageBlockSectionItem >
+                             <apex:outputpanel >
+                               <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important;" layout="Block" rendered="{!cRPExp>0}"><a href="/003?fcf=00B20000008DdSa">{!cRPExp} {!IF(cRPExp>1,'People have their','Person has his/her')} residence permit expired</a>.</apex:outputpanel>
+                              <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important;" layout="Block" rendered="{!cRPExp30>0}"><a href="/003?fcf=00B20000008DdSd">{!cRPExp30} {!IF(cRPExp30>1,'People have their residence permits ','Person has his/her residence permit is')} expiring in 30 days</a>.</apex:outputpanel>
+                             <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important;" layout="Block" rendered="{!cRPExp360>0}"><a href="/003?fcf=00B2800000Ae7fV">{!cRPExp360} {!IF(cRPExp360>1,'People have their residence permits ','Person has his/her residence permit is')} expiring in a Year</a>.</apex:outputpanel>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>
+                        
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection columns="2" collapsible="true" title="Passports Expiry for next 12 months">
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel >
+                                 <div id="mPS" style="height:auto;"></div>
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>  
+                        <apex:pageBlockSectionItem >
+                             <apex:outputpanel >
+                               <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important;" layout="Block" rendered="{!cPSExp>0}"><a href="/003?fcf=00B20000008DdSZ">{!cPSExp} {!IF(cPSExp>1,'People have their','Person has his/her')} passport expired</a>.</apex:outputpanel>
+                               <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important; " layout="Block" rendered="{!cPSExp30>0}"><a href="/003?fcf=00B20000008DdSc">{!cPSExp30} {!IF(cPSExp30>1,'People have their passports ','Person has his/her passport is')} expiring in 30 days</a></apex:outputpanel>
+                               <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important; " layout="Block" rendered="{!cPSExp360>0}"><a href="/003?fcf=00B2800000Ae7fV">{!cPSExp360} {!IF(cPSExp360>1,'People have their passports ','Person has his/her passport is')} expiring in a year</a></apex:outputpanel>
+<!--   <apex:outputpanel styleClass="notifications-item" style="text-decoration:underline;padding-bottom: 5px;color: black;font-family: Arial;font-size: 11px !important; " layout="Block" rendered="{!cPSExp360>0}"><a href="/003?fcf=00BN0000001TT14">{!cPSExp360} {!IF(cPSExp360>1,'People have their passports ','Person has his/her passport is')} expiring in a year</a></apex:outputpanel> -->
+                             </apex:outputpanel>
+                        </apex:pageBlockSectionItem>                        
+                    </apex:pageBlockSection>                    
+                </apex:pageBlock>
+                    
+                  </div>
+                 
+                </div>
+                
+               
+                        
+            </td>
+        </tr>
+    </table>
+    
+    
+</apex:form>  
+</apex:page>

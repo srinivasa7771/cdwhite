@@ -1,0 +1,330 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+            showHeader="true" standardStylesheets="false" title="{!req.srvc__r.lbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <!--<apex:outputPanel rendered="{!!ispu}">
+            <c:onlybocss></c:onlybocss>
+        </apex:outputPanel>-->
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+        <script>
+         $(document).ready(function() {
+                let flds = [cs['xcp__c'], cs['xcpic__c'],cs['xcpid__c'],cs['xcped__c'],cs['xcpip__c'],'#spokenLng','#xcbd__c'];
+    flds.forEach(function(i){ 
+        $(i).val()!=null && $(i).val()!='' && $(i).val()!==void 0?$(i).attr('disabled',true):'';
+    });
+          });
+        $('.applMob').on('keyup',function(){
+            if(!$(this).is(':visible'))
+                return;
+            showErrMsg($(this),'rqrd',true);
+            var v = $(this).val();
+            if(v==''||v==null||v==undefined||v.lenght<1){
+                showErrMsg($(this).parent(),'rqrd','invalid');
+                return false;
+            }
+            else{
+                //if(!$(this).parent().find('.frmErrMsg').is(":visible"))
+                showErrMsg($(this),'rqrd',true);
+            }
+        });
+        var cs = {};
+        //Add validation error
+        function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(errElem);
+            }else{
+                elem.parent().append(errElem);
+            }
+        }
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+        }
+        function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                $(elem).parent().find('.frmErrMsg').remove();
+                $(elem).parent().parent().find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+                $(elem).parent().parent().append(errElem);
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                var v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+               scrollToDiv(elem);
+            }
+            
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                //console.log('Expiry Date:::'+cs['xcped__c'].value);
+                //console.log('DOB:::'+cs['xcbd__c'].value);
+                next();
+                //alert("Req Updated::::::::::"); 
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function showDraftAlert1(){
+            var rqNum = '{!JSENCODE(req.Name)}';
+            $('#modal_alert_global').remove(); 
+            var cBlock = '<div class="modal fade modal-base" id="modal_alert_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body text-center pt-5 pb-5"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <div class="mb-3 fs-24" style="text-align:center;">Your Request has been saved!</div><div class="mb-3 fs-24">SR # <b>'+rqNum+'</b></div> <p style="text-align: center;">You can continue with this request from \'Drafts\' tab on your Dashboard<p class="col-xl-12 col-lg-12" style="font-size: 0.8em;text-align: center;"> <div class="col-xl-4"></div> <button class="col-xl-4 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" id="gDash">GO TO DASHBOARD</button> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_alert_global').modal('show');
+            $('#gDash').on('click',function(){
+                window.open('/gpm','_self');
+            });
+        }
+        </script>
+    
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus" reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();hideTempLoader_input();loadData_con();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                    <!-- <div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                                <!-- <a href="#" onclick="saveReqDraft()" class="btn btn-black"> SAVE DRAFT</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+                            </div>
+                        </div>
+                                                
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                     <c:grqupd Dim="V"/>
+                                         
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        
+                                        <div class="steps steps-desktop">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!--  
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                    <div class="step-title">Additional Services</div>
+                                                </div>
+                                            </div>
+                                              -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                    <div class="step-title">Review &amp; Payment</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                        </div>
+                                        <!-- end .steps -->
+                                        
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                       
+
+                                         <b><apex:pageMessages id="msg"  />
+                                           
+                                        
+                                          </b>
+                                        
+                                        <!-- .base-collapse -->
+                                        <div id="conlookuprow" class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <apex:outputPanel rendered="true"><!--{!OR(md.isNew,md.isEdit)}-->
+                                                         <p class="text-000">
+                                                         We have captured below information from your documents, please review, correct and confirm to proceed.
+                                                        </p> 
+                                                           <h4 class="mt-4">Passport details</h4>
+                                                        <c:applicationdetails />   
+                                                       <!--  <c:PassportDetails req="{!req}" id="ppdCmp"/> 
+                                                         <!--   <c:gconlookup id="conlookup" Request="{!req}" role="{!req.srvc__r.ConRol__c}" accId="{!req.Acc__c}" sta="{!req.srvc__r.ConSTA__c}"/> -->
+                                                    </apex:outputPanel>  
+                                                    <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+                                                    <script>
+                                                    var lkpID = '{!$Component.conlookup}';
+                                                     cs["xadh__c"]=document.getElementById("{!$Component.xadh__c}");
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="base-collapse">
+                                           <!-- <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                                <div class="collapse-title">Applicant Details</div>
+                                            </a>-->
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        <apex:outputPanel rendered="{!AND(contains(req.xadh__c,'oua;'))}">  
+                                                   <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp"/> 
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!!AND(contains(req.xadh__c,'oua;'))}">
+                                                         <c:eContactInfo req="{!req}" id="conInfoCmp" cmpTitle="Contact Information"/>
+                                                        </apex:outputPanel>
+                                                            </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        
+                                        <div class="base-main-footer">
+                                            <div class="base-nav">
+                                                
+                                                <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                <a href="#" onClick="validateData()"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-footer -->
+                                        
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+            
+        </apex:form>
+        <script>
+        //var lkpID = '{!$Component.conlookup}';
+            $(document).ready(function(){
+                $('#contactLookup').attr('disabled',true);
+            });
+        </script>
+    </html>    
+</apex:page>

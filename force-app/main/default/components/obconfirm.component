@@ -1,0 +1,152 @@
+<apex:component controller="gctlMembers" allowDML="true">
+    
+     <apex:attribute name="req" description="request" type="g_Req__c" required="false" assignTo="{!rq}" />
+    <apex:actionFunction name="verification" action="{!submitToVerification}" rerender="rerenderDummy1" oncomplete="hideTempLoader_input()" />
+    <apex:actionFunction name="loadData_mem" action="{!init_mem}" rerender="attElem,docSec"/> 
+    <apex:actionFunction name="saveDocs" action="{!saveAttachment1}" rerender="attElem,docSec" oncomplete="hideTempLoader_input();" />
+    <apex:actionFunction name="submitDocstoPrm" action="{!submitDocstoPrm1}" rerender="rerenderDummy1" oncomplete="hideTempLoader_input()" />
+    
+    <apex:inputHidden id="AOADoc" value="{!AOADoc}" />
+    <apex:inputHidden id="docname" value="{!docname}" />
+    <script>
+    var currentDoc;
+    var aoaDocList = '';
+    var cs= {};
+    cs["AOADoc"] = document.getElementById("{!$Component.AOADoc}");
+    cs["docname"] = document.getElementById("{!$Component.docname}");
+    
+    </script>
+    <script>
+    function saveAttachment_doc(elem) {
+        if($(elem).hasClass('disabled')) return;
+        $('[forLoad="Attested Certificate"]').find('.loader_img').show();
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_doc();
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function handleBrowseClick_doc(e){
+        $("#docFiles").click();
+    }
+    function checkFile1(e){
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ 
+            $('#saveText').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    function handleFileSelect_doc(evt) {
+        let f = $('#docFiles')[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                let binaryData = e.target.result;
+                let base64String = window.btoa(binaryData);
+                cs["AOADoc"].value = base64String;
+                let dname = (currentDoc.includes('-')) ? currentDoc.split('-')[1].split('.')[0].trim() : currentDoc;
+                //alert('doc Name:'+dname);
+                cs["docname"].value= (dname.includes('AOA Onboarding'))?'Signed AOA': (dname.includes('Application for')) ? 'Application Form' : dname;
+                //alert('doc Name1:'+cs["docname"].value);
+                $('#modal_upload_Doc').modal('hide');
+                showTempLoader_input($('[btnfor="'+currentDoc+'"]'));
+                currentDoc = "";
+                saveDocs();
+            }
+        }(f);
+        reader.readAsBinaryString(f);
+    }
+    function deleteAOADocs1(id){
+    	axsConfirmation('Please Confirm','Are You Sure to delete this document',true,'deleteAOADocs',id);
+    }
+      function docBtnClick(e){
+        currentDoc = $(e).attr('btnFor');
+        $('#modal_upload_Doc').modal('show');
+    }
+     </script>
+    <div id="pg5" class="pgs">
+        <!--rqAtt  --- {!rq.Attachments}-->
+        <apex:outputText rendered="{!NOT(rq.piFlg__c)}">
+        <h3>
+              You're almost done, {!$User.firstName}&nbsp;{!$User.LastName}! 
+        </h3>
+             <p style="font-size: 1.125rem;">Thank you for choosing to set up your business with {!rq.Acc__r.prk__c}.</p>
+            <apex:outputPanel rendered="{!IF(AND(OR(AND(rq.xvtyp__c!='DED', rq.Acc__r.clt__c != 'Land'), AND(rq.xvtyp__c=='DDA', rq.Acc__r.clt__c == 'Land')), NOT(rq.Acc__r.uwl__c)), '','display:none;')}"> 
+                <p style="font-size: 1.125rem;">Your application is under review, this usually takes 5 working days to complete. Once your application is approved, you will be required  to submit additional documents to complete your application. </p>
+            </apex:outputPanel>
+             <apex:outputPanel rendered="{!IF(AND(rq.xvtyp__c=='DED',rq.Acc__r.uwl__c, rq.Acc__r.clt__c == 'Land'), '','display:none;')}"> 
+                <p style="font-size: 1.125rem;">
+                 Your application is currently on the waiting list for land acquisition. Meanwhile, the committee is reviewing your application and will contact you if any additional documentation is required. For further assistance, please reach out to your relationship manager.
+                 </p>
+            </apex:outputPanel>
+               <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED',rq.Acc__r.clt__c == 'Land')}">
+        
+            <apex:outputPanel rendered="{!IF(AND(rq.xvtyp__c=='DED',rq.Acc__r.clt__c == 'Land', rq.os__c == 'Application Payment'), 'display:none;','')}"> 
+                <p style="font-size: 1.125rem;">{!IF(NOT(rq.Acc__r.uwl__c), 'Your application is currently under committee review, which typically takes 10 working days to complete. Once your application is approved, we will initiate the review process. In the meantime, please contact your relationship manager for further assistance.', '')} </p>
+            </apex:outputPanel>
+                       </apex:outputPanel>
+                 <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land', rq.os__c == 'Application Payment')}"> 
+                <p style="font-size: 1.125rem;">Please proceed with payment of application fee.</p>
+            </apex:outputPanel>
+            <!--<p style="font-size: 1.125rem;">Thank you for submitting onboarding request it has been submitted for Name approval and commitee review.</p>
+        <p style="font-size: 1.125rem;">Once approved you will receive an email notification for the same.</p>
+        <p style="font-size: 1.125rem;">To expidite the process please get in touch with your relationship manager for lease requirements.</p>-->
+         </apex:outputText>
+                <apex:outputText rendered="{!rq.piFlg__c}">
+        <h3>
+             Your application has been approved ! 
+ 
+        </h3>
+                    <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land', rq.piFlg__c,  rq.AP__c==0)}">
+            <p style="font-size: 1.125rem;">We are pleased to inform you that your application for the land lease has been approved by the committee.
+As the next step, kindly proceed with the payment of the application processing fee of AED 5,250 (inclusive of VAT).
+Once the payment is completed, it will take approximately three (3) working days to issue the offer letter for your acceptance.</p>
+        </apex:outputPanel>
+                
+                  
+                
+           <apex:outputPanel rendered="{!AND(rq.xvtyp__c=='DED', rq.Acc__r.clt__c == 'Land', rq.piFlg__c,rq.os__c=='Submit to PRM',  rq.AP__c>0)}">
+            <p style="font-size: 1.125rem;">
+                
+                We are pleased to inform you that your application for the land lease has been approved by the committee.We are in process of generating offer letter
+                it will take approximately three (3) working days to issue the offer letter.
+
+                </p>
+                </apex:outputPanel>
+                    
+                    
+             <p style="font-size: 1.125rem;">Please find below a summary of the documents submitted till this point, in addition to documents required to proceed with your application.</p>
+        
+       
+         </apex:outputText>
+        
+    </div> 
+    
+     <script>
+   
+       $(document).ready(function(){
+         loadData_mem();
+        
+        setTimeout(function(){
+           
+                makeReadOnly('forReadOnly');
+                // $('.pgs,.onboarding-nav-next').hide();
+                //$('.onboarding-nav-subDocs').show();
+               
+                if($('attName')){
+                    $('.attName').each(function(){
+                        let t = $(this).text();
+                        $(this).text(t.split('-')[1].split('.')[0].trim());
+                    });
+                }
+            
+            
+            
+        },0);           
+          });
+     </script>
+    
+</apex:component>

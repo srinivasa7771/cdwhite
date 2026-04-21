@@ -1,0 +1,2385 @@
+<!--**************************************************************************************************
+@Version History
+ * Version      Date            Name                        Description
+ * 1.0         Initial          DHAM                        Initial Draft
+ * 1.1         25-08-2024       Prateek Jangir              Added logic to validate mobile number and email address bu OTP and pass details to DDA.
+ * 1.2         16-01-2025       Upendar Shivanadri          Added birthCountry and visitedUAE fields to send to DDA
+**************************************************************************************************-->
+<apex:component controller="gctlRequ" allowDML="true">
+    <apex:attribute name="cv" description="Component view" type="String"  />
+    <apex:attribute name="accPrk" description="Account park short" type="String"  />
+    <apex:attribute name="srvcCode" description="Service code" type="String"  />
+    <apex:attribute name="req" description="request data" type="g_Req__c"  />
+
+    
+    <apex:actionFunction action="{!validateOtp}" name="validateOtp" reRender="otpPanel" oncomplete="postValidateOtp('{!otpResult}');$('#ppOTPBlock').hide();removeTempLoader();">
+        <apex:param assignTo="{!otpVal}" name="otp" value="" />
+        <apex:param assignTo="{!isMobileOTP}" name="isMobOTP" value="" /> <!-- PJ 1.1 -->
+    </apex:actionFunction>
+    
+    <apex:actionFunction action="{!sendEmailOTP}" name="sendEmailOtpCode" reRender="otpPanel" oncomplete="$('#otpBlock').show();$('#otpButtonBlock').hide();removeTempLoader();">
+        <apex:param assignTo="{!conEmail}" name="contactEmail" value="" /> <!-- PJ 1.1 -->
+    </apex:actionFunction>
+
+    <apex:actionFunction action="{!sendOTP}" name="sendOtpCode" reRender="otpPanel" oncomplete="$('#otpBlock').show();$('#otpButtonBlock').hide();removeTempLoader();">
+        <apex:param assignTo="{!mobNum}" name="mobNumber" value="" /> <!-- PJ 1.1 -->
+    </apex:actionFunction>
+    
+    <style>
+        .insideUAE,.secretaryFlds {
+        display: none;
+        }
+        #otpSuccess,#otpMsg, #otpBlock,#resendBtn,#ppOTPBlock,#eidaOTPBlock{
+            display:none;
+        }
+    </style>
+    <script>
+    try{
+        if(serviceId!=null&&serviceId!=undefined){console.log(serviceId)}else{var serviceId='';}
+    }catch(e){var serviceId='';}
+
+    function getAge(dateString) {  
+        var today = new Date(); 
+        var birthDate = new Date(dateString);   
+        var age = today.getFullYear() - birthDate.getFullYear();    
+        var m = today.getMonth() - birthDate.getMonth();    
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {  
+            age--;  
+        }   
+        return age; 
+    }
+    
+    function checkPPEdit(elem){ // PJ 1.1
+        var passportValue = $(elem).val();
+        if(passportValue==null||passportValue==undefined||passportValue=='')
+        return;
+        const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+        if(psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12){
+            addValError(elem,'Passport Number must be 6-12 characters long and contain only letters and numbers !'); 
+            return false;
+        }else{
+            removeValError(elem); 
+            return true;
+        }
+    }
+
+    function checkDate1(elem, type) {
+        var uid = cs["uid"].value;
+        checkDate(elem, type, uid,$('#genderid').val());
+    }
+    function validAlphaNumeric(e){  /**Ex: <input type="text" onkeyup="validAlphaNumeric(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    function validAlphaOnly(e){ /**Ex: <input type="text" onkeyup="validAlphaOnly(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^a-zA-Z ]*$/, ''));
+    }
+    function onfileUpload() {
+        $('#modal_upload_passport').modal('show');
+    }
+    
+    function ocrHandleBrowseClick() {
+        
+        document.getElementById('files').value = '';
+        $('#image-area div').show();
+        $('#image-area img').hide();
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    
+    function ocrCheckFile(e) {
+        $('#saveAtt').removeClass('disabled');
+        if (e != undefined || $(e).length > 0) showPrview(e);
+    }
+    //, false);
+    function showPrview(elem) {
+        if (elem.files && elem.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image-area div').hide();
+                $('#image-area img').show().attr('src', e.target.result);
+            }
+            reader.readAsDataURL(elem.files[0]);
+        }
+        $('#uploadDel').unbind().on('click', function() {
+            if (document.getElementById('files').value == '') {
+                $('#uploadToolsValidation').modal("show");
+                return;
+            }
+            document.getElementById('files').value = '';
+            $('#image-area div').show();
+            $('#image-area img').hide();
+        });
+    }
+    var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+    var onArrVisa=["Andorra", "Australia", "Austria", "Belgium", "Brunei", "Bulgaria", "Canada", "Croatia", "Cyprus,", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Holland", "Hong Kong", "Hungary", "Iceland", "Ireland", "Italy", "Japan", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Malaysia", "Monaco", "Netherlands", "New Zealand", "Norway", "Paraguay", "Poland", "Portugal", "Romania", "San Marino", "Singapore", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Vatican City","Ukraine"];
+    var newCountrVals = [{'United Kingdom of Great Britain and Northern Ireland':'United Kingdom'},{'Papua New Guinea':'Papua New Guinea'},{'United States of America':'United States'},{'Syrian Arab Republic':'Syria'}];//,{'Iran':'Iran'},{'Iran':'Iran'}
+    function natCheck(e){
+        var country=$(e).find("option:selected").text();
+    }
+    function attachmentSaveEIDA() {
+        createJSON();
+    }
+    
+    function attachmentSave1() {
+        
+        cs["xcfn__c"].value = $('#fnameid').val();
+        cs["xcln__c"].value = $('#lnameid').val();
+        var cVl = $('[fldName="country"]').find("option:selected").text();
+        newCountrVals.forEach(function(v,i){
+            if(cVl==Object.keys(v).toString()){
+                cVl = Object.values(v).toString();
+            }
+        });
+        cs["xcnc__c"].value = cVl;
+        cs["xcpic__c"].value = cVl;
+        cs["xcp__c"].value = $('#passportid').val();
+        cs["pid__c"].value = $('#datepicker2').val();
+        cs["ped__c"].value = $('#datepicker3').val();
+        cs["bd__c"].value = $('#datepicker4').val();
+        cs["xcpip__c"].value = $('#poiid').val();
+        cs["xcbp__c"].value = $('#pobid').val();
+        
+        if ($('#genderid').val() == 'M'){
+            cs["xcslt__c"].value = 'Mr.';
+            cs["Gender__c"].value = 'Male';
+        }
+        else{
+            cs["xcslt__c"].value = 'Ms.';
+            cs["Gender__c"].value = 'Female';
+        }
+        var invalData = false;
+        $('.requiredFld').each(function() {
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if (v == '' || v == null || v == undefined || v.lenght < 1) {
+                if ($(this).is('select')) {
+                    showErrMsg($(this).next().find('.select2-selection'), 'rqrd', 'invalid');
+                } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                    showErrMsg($(this), 'rqrdDate', 'invalid');
+                } else
+                    showErrMsg($(this), 'rqrd', 'invalid');
+                invalData = true;
+                $('.rqrdMsg').html('All fields are mandatory').css('color', 'red').fadeOut().fadeIn();
+            } else
+                showErrMsg($(this), 'rqrd', true);
+        });
+        for(var x=0;x<$('.modal-body .input-datepicker').length;x++){
+            var i = $('.modal-body .input-datepicker')[x]; 
+            var vl = $(i).val();
+            if($(this).is(':visible')){
+                if (vl.length != 10 || vl.match(/\//g) == null) {
+                    showErrMsg($(i), 'dob', 'invalid');
+                    invalData = true;
+                } else if (vl.match(/\//g) != null) {
+                    if (vl.match(/\//g).length != 2) {
+                        showErrMsg($(i), 'dob', 'invalid');
+                        invalData = true;
+                    }
+                }
+            }
+        }
+        var uid = cs["uid"].value;
+        checkAllDates('dateCheck', uid,$('#genderid').val());
+        checkdobPid($('[validationname="dob"]'), $('[validationname="pid"]'));
+        if ($('.frmErrMsg').length > 0 && $('.frmErrMsg').is(':visible')) {
+            invalData = true;
+        }
+        if (invalData) {
+            invalData = false;
+            return;
+        }
+        var isGCCnational = false;
+        var isAllowedOA = true;
+        var country = $('[fldName="country"]').find("option:selected").text();
+        $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+        $('#modal_confirm_information1').modal('hide');
+        
+        saveRequest();
+    }
+    
+    function ocrSaveAttachment(elem) {
+        if ($(elem).hasClass('disabled')) return;
+        $('#image-area div').show();
+        $('#image-area img').hide();
+        $('.attVals').each(function() {
+            var val = $(this).val();
+            if ($('#files').val() == val) alert('File already uploaded!');
+        });
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            ocrHandleFileSelect();
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    
+    function enableAllatt() {
+        $('.attBox').eq(0).find('.loader_img').hide();
+        $('.disabled-box').removeClass('disabled-box');
+        $('*').removeClass('loadingProgress');
+    }
+    
+    //PJ 1.1 start
+
+    let isMobChanged;
+    let isEmailChanged;
+
+    function validateMobile(elem){ //1.1
+            var mob = $(elem).val();
+            console.log('mobiel value prateek:'+mob);
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            if(mob.length > 15 ){
+                addValError(elem,'Please enter a valid mobile number !'); 
+                return false;
+            }else{
+                removeValError(elem); 
+                return true;
+            }
+        }
+
+    function checkOtp(e){ //1.1
+        showTempLoader(e);
+        let val = $('#otpVal').val();
+        //cs['otpValue'].value = val;
+        console.log('isMobChanged :'+isMobChanged);
+        validateOtp(val,isMobChanged);
+    }
+
+    function reSendOtp(e){ //1.1
+        $('#otpSuccess').hide();
+        showTempLoader(e);
+        let mobile =   $('[ddaKey="perMobile"]'); 
+        let email =   $('[ddaKey="perEmail"]'); 
+
+        if(mobile && mobile.val() && mobile.val() != undefined && mobile.val() != '' && isMobChanged){
+            sendOtpCode(mobile.val());
+        }
+        if(email && email.val() && email.val() != undefined && email.val() != '' &&  isEmailChanged){
+            sendEmailOtp(email.val());
+        }
+    }
+
+    function enableOtpBtn(elem){ //1.1
+        let v = $(elem).val();
+        (v&&v.length>=6)?$('#otpBtn').removeClass('disabledApex'):$('#otpBtn').addClass('disabledApex');
+    }
+
+    function postValidateOtp(res){ //1.1
+        $('[for="uMobile1"]').removeClass('disabledApex');
+        $('#otpBlock').show();
+        if(res=='Verified'){
+            $('#otpVal').parent().parent().hide();
+            $('#resendBtn').hide();
+            //$('#otpSuccess').html('<b style="color=\'green\'">OTP Validated successfully</b>').show();
+            $('#otpBtn').parent().hide();
+            $('#otpButtonBlock').show();
+            if(isEmailChanged){
+                cs['isEmailVerified']= true;
+                $('#correctsignimgemail').show();
+                $('#otpValidateEmailBtn').hide();
+                isEmailChanged=false;
+                removeValError($('[ddaKey="perEmail"]')); 
+
+                if($('#perMobileNumber').val() == ''){
+                    $('#otpButtonBlock').hide();
+                }
+            }
+            if(isMobChanged){
+                cs['isMobilePhoneVerified']= true;
+                $('#correctsignimg').show();
+                $('#otpValidateMobileBtn').hide();
+                isMobChanged=false;
+                removeValError($('[ddaKey="perMobile"]')); 
+
+                if($('#perEmailId').val() == ''){
+                    $('#otpButtonBlock').hide();
+                }
+            }
+
+            if((cs['isEmailVerified'] == true || cs['isEmailVerified'] == 'true') && (cs['isMobilePhoneVerified'] == true || cs['isMobilePhoneVerified'] == 'true' )){
+                $('#otpButtonBlock').hide();
+            }
+        }
+        else{
+            $('#otpSuccess').html('<b style="color=\'red\'">Enter the correct OTP</b>').show();
+            $('#otpVal').val('');
+            $('#resendBtn').removeClass('disabledApex').show();
+            if(isEmailChanged){
+                $('#correctsignimgemail').hide();
+            }
+            if(isMobChanged){
+                $('#correctsignimg').hide();
+            }
+        }
+    }
+
+    function changeinMob(elem){ //1.1
+        
+        if(cs['docname'] && cs['docname'].value && cs['docname'].value.includes('Existing Member')){//U_S
+            return;
+        }
+        var mobileValue = $(elem).val();
+        let onLoadMobileValue =  cs['xcmob__ocr'] ? cs['xcmob__ocr'].value : '';
+        removeValError($(elem));
+        if(mobileValue && mobileValue != '' &&  !$('#countryCode1').val()){
+            addValError($(elem),'Please enter select country code !');
+            
+            if(onLoadMobileValue){
+                $(elem).val(onLoadMobileValue);
+            }
+            else{
+                $(elem).val('');
+            }
+        }
+        else if(mobileValue !=  onLoadMobileValue){
+            cs['isMobilePhoneVerified'] = false;
+            cs['isMobileChanged'] = true;
+            $('#correctsignimg').hide();
+            $('#otpButtonBlock').hide();
+            $('#otpSuccess').hide();
+            isMobChanged=true;
+            isEmailChanged = false;
+            showTempLoader(elem);
+            sendOtpCode(mobileValue);
+        }
+            else if(mobileValue == onLoadMobileValue){
+                cs['isMobileChanged'] = false;
+            }
+    }
+
+    function changeInEmail(elem){ //1.1
+        if(cs['docname'] && cs['docname'].value && cs['docname'].value.includes('Existing Member')){//U_S
+            return;
+        }
+        var emailValue = $(elem).val();
+        let onLoadEmailValue =  cs['xceml__ocr'] ? cs['xceml__ocr'].value : '';
+        if(checkEmailFormate(elem) === true){
+            if(emailValue != onLoadEmailValue ){
+                cs['isEmailVerified'] = false;
+                cs['isEmailChanged'] = true;
+                $('#correctsignimgemail').hide();
+                $('#otpButtonBlock').hide();
+                $('#otpSuccess').hide();
+                isMobChanged=false;
+                isEmailChanged = true;
+                showTempLoader(elem);
+                sendEmailOtp(emailValue);
+            }
+            else if(emailValue == onLoadEmailValue){
+                cs['isEmailChanged'] = false;
+            }
+        }
+    }
+
+    function validateMobileManually(e){ //1.1
+        let mobile =   $('[ddaKey="perMobile"]');
+        cs['isMobileChanged'] = true;
+        if(mobile && mobile.val() && mobile.val() != undefined && mobile.val() != ''){
+            isMobChanged =true;
+            isEmailChanged =false;
+            showTempLoader(e);
+            $('#otpBlock').hide();
+            sendOtpCode(mobile.val());
+            $('#correctsignimg').hide();
+        }
+        else{
+            addValError(mobile,'Please enter primary mobile number !');
+        }
+    }
+
+    function validateEmailManually(e){ //1.1
+        let email =   $('[ddaKey="perEmail"]');  
+        cs['isEmailChanged'] = true;
+        if(email && email.val() &&  email.val() != undefined && email.val() != ''){
+            isMobChanged =false;
+            isEmailChanged =true;
+            showTempLoader(e);
+            $('#otpBlock').hide();
+            sendEmailOtp(email.val());
+            $('#correctsignimgemail').hide();
+        }
+        else{
+            addValError(email,'Please enter email address !');
+        }
+    }
+
+    function sendEmailOtp(emailAddress){  //1.1
+        sendEmailOtpCode(emailAddress);
+    }
+
+    function checkEmailFormate(elem){  //1.1
+        
+        var email = $(elem).val();
+        //var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+        var regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        var result = (regex.test(email))?true:'invalid';
+        if(email && result == 'invalid'){
+            addValError(elem,'Please enter a valid Email Address.');
+            return false;
+        }else{
+            removeValError(elem);     
+        }
+        return result;
+    }
+    
+    //PJ 1.1 - End
+    
+    // U_S 1.2 - Start//
+    function memNationalityChange(e) {
+            if (!$(e).val())
+                return;
+            var c = nationalityToCountry($(e).val());
+            if (c == 'United Arab Emirates' ) {
+                $('[name="eid"][for="yes"]').prop('checked',true).trigger('change');
+                $('[name="eid"][for="no"]').prop('disabled',true);
+                //$('#isVisa input').prop('checked', false); $('#isVisa').hide();
+                $('.outsideUAE').find('select,input').val('');
+                $('.outsideUAE').parents('.row').hide();
+                $('.outsideUAE').hide();
+                $('#isVisited').hide();
+                $('.insideUAE').parents('.row').show();
+                $('.insideUAE').css('display', 'flex');
+            }
+            else {
+                 $('#isVisited').find('input').prop('checked', '').trigger('change');
+                 $('#isVisited').hide();
+                $('#isVisa input').prop('checked', false);
+                $('.ifVisa,.outsideUAE').find('select,input').val(''); $('.ifVisa').hide();
+                $('#isVisa,.outsideUAE').show();/* ,.ifVisa*/
+                $('.outsideUAE').parents('.row').show();
+            }
+    }
+    //U_S - End//
+    </script>
+    
+    <div class="modal fade modal-base" id="modal_EIDA_confirm_information" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached EIDA copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label class="d-block">Title</label>
+                                    <div class="from-group reqRadio">
+                                        <apex:outputPanel style="display:inline-block" styleClass="mb-4">
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Mr" value="Mr." onchange="SalOnChange('Mr.')"/>
+                                                <span> Mr. </span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Mrs" value="Mrs." onchange="SalOnChange('Mrs.')"/>
+                                                <span> Mrs. </span>
+                                            </label>
+                                            <label class="custom-radio mr-5">
+                                                <input type="radio" name="sal" id="Ms" value="Ms." onchange="SalOnChange('Ms.')"/>
+                                                <span> Ms. </span>
+                                            </label>
+                                            <div class="option-error frmErrMsg salErr" id="titleErr" style="display:none">Please select an option!</div>
+                                            
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>ID Number</label>
+                                        <input type="text" fldName="ID_Number" id="eidaid" class="requiredFldPop numOnly form-control forEdit" value=""  onkeydown="updateEidaFormat(this,event)" onchange="vEida(this)"/>
+                                        <script type="text/javascript">
+                                        cs['xid__ocr']=document.getElementById('eidaid');
+                                        </script>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>Nationality</label>
+                                        <select class="form-control requiredFldPop input-select2-flat forEdit" onchange="natCheck(this)" extFld='type' id="nat2"  extFld1='Country Code' fldName="country2">
+                                            <script type="text/javascript">
+                                            cs['xcnc__ocr']=getC('nat2'); var nationalityOptions2= '';
+                                            for(var x=0;x<nationality_arr.length;x++){
+                                                var j = nationality_arr[x];  
+                                                var opt1 = '<option value="'+j.countryName+'">'+j.countryName+'</option>'; nationalityOptions2 += opt1;
+                                            }
+                                            $('[fldName="country2"]').append(nationalityOptions2);
+                                            </script>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div>
+                                        <label>Name</label>
+                                        <input type="text" fldname="Name" id="nameid" class=" requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xcfn__ocr']=document.getElementById('nameid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div>
+                                        <label>Email</label>
+                                        <input type="text" onkeyup="checkEmail(this);" fldname="emailid" id="emailid" class="requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xceml__ocr']=document.getElementById('emailid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Mobile number</label>
+                                    <div class="d-flex">
+                                        <div style="flex-basis: 110px;width: 110px;">
+                                            <input type="text" disabled="true" class="form-control" value="+971" />
+                                        </div>
+                                        <input type="text" onchange="isUAEMobNum(this);" onkeyup="validDigits(this);" fldname="mobileid" id="mobileid" class="applMob form-control ml-3 forEdit" value="" />
+                                        <script type="text/javascript">
+                                        cs['xcmob__ocr']=document.getElementById('mobileid');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addEIDABtn" style="color: white !important;" onclick="attachmentSaveEIDA();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                            
+                            <!-- .col -->
+                            
+                        </div>
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Modal for vehicle registration starts -->
+    <div class="modal fade modal-base" id="modal_RC_confirm_information" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">                                
+                                <div class="form-group">
+                                    <div>
+                                        <label>Plate number</label>
+                                        <input type="text" fldName="pltNum_RC" onkeyup="validAlphaNumeric(this);" onchange="setToRQFld1(this);" id="xpveh__c" id1="xsvn__c" class="requiredFldPop form-control forEdit" value=""/>
+                                        <script type="text/javascript">
+                                        //cs['xvnum__c']=document.getElementById('xvnum__c');
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Registration expiry date</label>
+                                    <div class="input-datepicker-group input-group">
+                                        <input type="text" onchange="checkDate(this,'fid');" class="vRegDate dateCheck requiredFldPop form-control input-datepicker forEdit" id="RegDate_RC"
+                                               data-toggle="datetimepicker" fldName="RegDate_RC" validationname="fid" data-target="#RegDate_RC" />
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#RegDate_RC">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div>
+                                        <label>Place of registration</label>
+                                        <!--<input type="text" onchange="setToRQFld1(this)" id="xppor__c" id1="xspor__c" fldname="por_RC" class="requiredFldPop form-control" value="" />-->
+                                        <select id="xppor__c" onchange="setToRQFld1(this)" id1="xspor__c" fldname="por_RC" class="requiredFldPop form-control input-select2-flat">
+                                            <option value=''>--None--</option>
+                                        </select>
+                                    </div>
+                                    <script>
+                                    var porNations='';
+                                    var por = ["Abu Dhabi", "Ajman", "Bahrain", "Dubai", "Fujairah", "Kuwait", "Oman", "Qatar", "Ras Al Khaimah", "KSA", "Sharjah", "Umm Al Quwain"]
+                                    for(var x=0;x<por.length;x++){
+                                        var j = por[x];
+                                        var opt1 = '<option value="'+j+'">'+j+'</option>';
+                                        porNations += opt1;
+                                    }
+                                    $('#xppor__c').append(porNations);
+                                    setTimeout(function(){$('#xppor__c').select2();},2000);
+                                    
+                                    
+                                    </script>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addVRCBtn" style="color: white !important;" onclick="attachmentSaveVRC();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade modal-base" id="modal_RC_confirm_information_back" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Verify and confirm the information</h2>
+                    <p>
+                        We have gathered below information from the uploaded images. 
+                        It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached copy</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                
+                                <div class="form-group">
+                                    <label class="d-block">Vehicle type</label>
+                                    <div class="from-group">
+                                        <input type="text" onchange="setToRQFld('xvn__c',this)" fldName="VehType_RC" id="xvn__c" class="requiredFldPop form-control" value="" />
+                                        <script type="text/javascript">
+                                        </script>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="d-block">Vehicle model</label>
+                                    <div class="from-group reqRadio">
+                                        <input type="text" fldName="VehModel_RC" id="vModel" class="requiredFldPop form-control forEdit" value="" />
+                                        <script type="text/javascript">
+                                        </script>
+                                    </div>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addVRCBtn" style="color: white !important;" onclick="attachmentSaveVRC();return false;" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade modal-base" id="modal_confirm_information1" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Review and confirm information</h2>
+                    <p>
+                        We have captured below information from uploaded documents, please review, correct and confirm to proceed.
+                    </p>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        <span class='rqrdMsg'>All fields are mandatory</span>
+                        <span class='gccNational' style="color:red; display:none">Applicant should not be GCC national, please apply for Non-Sponsored ID card</span>
+                    </p>
+                    
+                    <div class="form-style">
+                        
+                        <div class="row">
+                            <div class="form-group col-md-6 inEditOnly">
+                                <div class="col-md-12 form-group">
+                                    <label>Attached Passport copy</label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6 inEditOnly psprtPrv">
+                                <img src="" id="" style="width:20%;" />
+                                <a class="btn btn-outline-primary btn-outline-primary-2" onclick="deleteItem('dsadsd');" style="padding: 0.3rem;"><i class="icon-delete"></i></a>
+                            </div>
+                            <div class="col-md-6">
+                                <apex:outputPanel styleClass="form-group row" rendered="{!srvcCode='220'}">
+                                    <div class="col-md-3">
+                                        <label>Salutation</label>
+                                        <select fldname="Salutation" class="requiredFld form-control input-select2-flat forEdit">
+                                            <option value="Mr.">Mr.</option>
+                                            <option value="Ms.">Ms.</option>
+                                            <option value="Mrs.">Mrs.</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label>First name</label>
+                                        <input type="text" onkeyup="validAlphaOnly(this)" fldname="Given_Name" id="fnameid" class="requiredFld form-control forEdit" value="" />
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel styleClass="form-group row" rendered="{!srvcCode!='220'}">
+                                    <label>First name</label>
+                                    <input type="text" onkeyup="validAlphaOnly(this)" fldname="Given_Name" id="fnameid" class="requiredFld form-control forEdit" value="" />
+                                </apex:outputPanel>
+                                <div class="form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" onkeyup="validAlphaOnly(this)" fldName="Surname" id="lnameid" class="requiredFld form-control forEdit" value="" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label>Gender</label>
+                                            <div>
+                                                <select class="requiredFld form-control input-select2-flat forEdit" fldName="MR_Gender" id="genderid">
+                                                    <!--<option value="">Select</option>-->
+                                                    <option value="M">Male</option>
+                                                    <option value="F">Female</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label>Date of birth</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input type="text" onchange="checkDate1(this,'dob')" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="dob" fldName="Date_of_Birth" id="datepicker4"
+                                                       data-toggle="datetimepicker" validationname="dob" data-target="#datepicker4" />
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->
+                                </div>
+                                <!-- .row -->
+                                <div class="form-group">
+                                    <label>Passport Place of Issue</label>
+                                    <input type="text" fldname="Place_of_Issue" id="poiid" class="requiredFld form-control forEdit" value="" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Are you currently inside UAE?</label>
+                                    <div class="form-group mt-3 reqRadio">
+                                        <label class="custom-radio mr-5">
+                                            <input type="radio" for="yes" name="eid"/>
+                                            <span>Yes</span>
+                                        </label>
+                                        <label class="custom-radio mr-5">
+                                            <input type="radio" for="no" name="eid"/>
+                                            <span>No</span>
+                                        </label>
+                                        <div class="option-error" style="display:none">Please select an option!</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- .col -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Passport number</label>
+                                    <input type="text" onkeyup="validAlphaNumeric(this);checkPPEdit(this)" fldName="Passport_No" maxlength="12" id="passportid" class="passportNumber requiredFld form-control forEdit" value="" />
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label>Passport Issue Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input onchange="checkDate(this,'pid')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="pid" fldName="Date_of_Issue2" id="datepicker2" 
+                                                       validationname="pid" data-toggle="datetimepicker" data-target="#datepicker2" />
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .col -->
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label>Passport Expiry Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input onchange="checkDate(this,'ped')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="ped" 
+                                                       validationname="ped" fldName="Date_of_Expiry2" id="datepicker3"
+                                                       data-toggle="datetimepicker" data-target="#datepicker3" />
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->
+                                </div>
+                                <!-- .row -->
+                                
+                                <div class="form-group">
+                                    <label>Nationality</label>
+                                    <select onchange="natCheck(this)" class="requiredFld form-control input-select2-flat forEdit" extFld='type'
+                                            id="nat"    extFld1='Country Code' fldName="country">
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Place Of Birth</label>
+                                    <input type="text" fldName="Place_of_Birth" id="pobid" class="requiredFld form-control forEdit" value="" />
+                                </div>
+                                <div class="form-group">
+                                    
+                                    <label>Emirates ID number</label>
+                                    <input type="text" onkeydown="eidCheck(this,event)" onchange="checkEid(this)" fldName="eid" class="forReadOnly form-control forEdit" value="" />
+                                    
+                                    <script>
+                                    function eidCheck(elem,event){
+                                        $(elem).parent().find('.frmErrMsg').remove();
+                                        $(elem).attr('maxlength',18);
+                                        if(event.keyCode == 8)
+                                            return;
+                                        let v = $(elem).val();
+                                        let l = $(elem).val().length;
+                                        if(l==3 || l==8 || l==16 ){
+                                            $(elem).val(v+'-');
+                                        }
+                                    }
+                                    function checkEid(elem){
+                                        if(!$(elem).val())
+                                            return;
+                                        if(!validateEmiratesId($(elem).val())){
+                                            addValError(elem,'Invalid Emirates id!');
+                                        }else{
+                                            removeValError($(elem));
+                                        }
+                                    }
+                                    </script>
+                                </div>
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br />
+                                    <a id="addMemBtn" style="color: white !important;" onclick="attachmentSave1()" class="btn btn-primary">CONFIRM</a>
+                                </div>
+                                
+                            </div>
+                            <!-- .col -->
+                        </div>
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    <apex:outputText rendered="{!NOT(CONTAINS(req.xadh__c,'aau;'))}">
+        <div class="modal fade modal-base" id="modal_confirm_information_LA" data-backdrop="static" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" onclick="resetPopup('LA');" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    
+                    <div class="modal-body">                  
+                        <div class="ubo-all-details" >
+                            <div class="passport-info">
+                                <h2 class="heading">Verify and confirm the information</h2>
+                                <p class="pInfo">
+                                    We have gathered this information from the uploaded passport copy. It may vary or have few errors
+                                    depending on the quality of the image. Kindly review to confirm and proceed to save.
+                                </p>
+                                <p>
+                                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                    <span class='rqrdMsg'>All fields are mandatory</span>
+                                </p>
+                                
+                                <div class="form-style">
+                                    
+                                    <div class="row"> 
+                                        <apex:outputText rendered="{!req.xoca__c}">
+                                            <div class="col-6 secretaryFlds">
+                                                <div class="form-group">
+                                                    <label>Effective date of current secretary</label>
+                                                    <div class="input-datepicker-group input-group">
+                                                        <input type="text"  class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" fldName="registrationDate" ddaKey="registrationDate" id="registrationDateId"
+                                                               data-toggle="datetimepicker" validationName="todayFuture" onchange="checkDate(this,'todayFuture')" data-target="#registrationDateId" />
+                                                        <div class="input-group-append">
+                                                            <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#registrationDateId">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputText> 
+                                        
+                                    </div>
+                                    
+                                    <div class="row"> 
+                                        <div class="col-md-12">
+                                            <label>Title</label>
+                                            <div class="from-group reqRadio">
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="sal" id="Mr" for="Mr." value="Mr." onchange="salOnChange('Mr.')"/>
+                                                    <span> Mr. </span>
+                                                </label>
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="sal" id="Mrs" for="Mrs." value="Mrs." onchange="salOnChange('Mrs.')"/>
+                                                    <span> Mrs. </span>
+                                                </label>
+                                                <label class="custom-radio mr-5">
+                                                    <input type="radio" name="sal" id="Ms" for="Ms." value="Ms." onchange="salOnChange('Ms.')"/>
+                                                    <span> Ms. </span>
+                                                </label>
+                                                <span class="option-error frmErrMsg1 salErr" id="" style="display:none">Please select an option!</span>
+                                                
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>First name</label>
+                                                <input type="text" maxlength="35" fldName="Given_Name" ddaKey="firstName" for="allowSingleQuote" id="fnameid" onchange="titleCase(this)" class="titleCase alphaChar forReadOnly form-control requiredFld forEdit" value="" /><!--onchange="titleCase(this)"-- titleCase in class-->
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Last name</label>
+                                                <input type="text" maxlength="50" fldName="Surname"  ddaKey="lastName" for="allowSingleQuote" id="lnameid" onchange="titleCase(this)" class="titleCase alphaChar forReadOnly form-control requiredFld forEdit" value="" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Passport number</label>
+                                                <input type="text" maxlength='12' fldName="Passport_No" onchange="checkPPEdit(this)" ddaKey="docNo" ddaKeyparent="passports" id="passportid" class="passportNumber forReadOnly alphaNumOnly form-control requiredFld forEdit" onkeyup="removeValError(this)" value="" />
+                                            </div>
+                                            <script>
+                                            $('#modal_confirm_information_LA #passportid').keyup(function() {                  
+                                                this.value = this.value.toLocaleUpperCase();              
+                                            });
+                                            </script>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <div class="form-group">
+                                                        <label>Passport issue date</label>
+                                                        <div class="input-datepicker-group input-group">
+                                                            <input onchange="checkDate(this,'pid')" validationName="pid" type="text" class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" fldName="Date_of_Issue2" ddaKey="issueDate" ddaKeyparent="passports" id="datepicker2_la"
+                                                                   data-toggle="datetimepicker" data-target="#datepicker2_la" />
+                                                            <div class="input-group-append">
+                                                                <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2_la">
+                                                                    <i class="icon-date"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="form-group">
+                                                        <label>Passport expiry date</label>
+                                                        <div class="input-datepicker-group input-group">
+                                                            <input onchange="checkDate(this,'ped')" type="text" class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" validationName="ped"
+                                                                   ddaKey="expiryDate" fldName="Date_of_Expiry2" ddaKeyparent="passports" id="datepicker3_la"
+                                                                   data-toggle="datetimepicker" data-target="#datepicker3_la" placeholder="DD/MM/YYYY"/>
+                                                            <div class="input-group-append">
+                                                                <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3_la">
+                                                                    <i class="icon-date"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="row">
+                                                <div class="collapse-title mt-2 mb-2"> </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label>Passport place of issue</label>
+                                                        <input class="form-control requiredFld forEdit" maxlength="50" type="text" fldName="Place_of_Issue" ddaKey="placeOfIssuance" ddaKeyparent="passports" id="placeissued" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <div class="form-group">
+                                                            <label>Place of birth</label>
+                                                            <input class="form-control requiredFld forEdit" maxlength="50" fldName="Place_of_Birth" type="text" ddaKey="placeborn" id="placeborn" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <div class="form-group">
+                                                            <div class="form-group">
+                                                                <label>Birth Country</label>
+                                                                <select class="form-control input-select2-flat forEdit" extFld='type'
+                                                                        id="bnat" extFld1='Country Code'  fldName="placeBornCountry" ddaKey="birthCountry">
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <div class="form-group">
+                                                        <label>Gender</label>
+                                                        <div>
+                                                            <select class="forReadOnly form-control input-select2-flat requiredFld forEdit" fldName="MR_Gender" ddaKey="gender" id="genderid">
+                                                                <option value="M">Male</option>
+                                                                <option value="F">Female</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- .col  -->
+                                                <div class="col-6">
+                                                    <div class="form-group">
+                                                        <label>Date of birth</label>
+                                                        <div class="input-datepicker-group input-group">
+                                                            <input type="text" onchange="checkDate(this,'dob')" class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" validationName="dob" fldName="Date_of_Birth" ddaKey="birthDate" id="datepicker1_la"
+                                                                   data-toggle="datetimepicker" data-target="#datepicker1_la" />
+                                                            <div class="input-group-append">
+                                                                <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker1_la">
+                                                                    <i class="icon-date"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Nationality</label>
+                                                <select class="form-control input-select2-flat requiredFld forEdit" extFld='type'
+                                                        id="nat1" extFld1='Country Code' fldName="country" ddaKey="nationality" onchange="memNationalityChange(this);">
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Phone number (optional)</label>
+                                                <input type="text" optional="true" maxlength='15' fldName="phoneno" ddaKey="phoneNo" id="phoneno" class="forReadOnly form-control numOnly " value="" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Email address</label>
+                                                 <!-- PJ 1.1 -->
+                                                <img src="{!URLFOR($Resource.assets_NUI1, '/images/correct-sign.png')}" alt="" id="correctsignimgemail" ddaKey="isEmailVerified" class="file-icon isEmailVerified" style="display: none"/> <!-- style="display:{!IF(isEmailVerified==true,'inline','none')};" -->
+                                                <input type="text" onchange="changeInEmail(this);" validationName="email" id="perEmailId" fldName="email" ddaKey="perEmail" class="forReadOnly form-control requiredFld forEdit" value="" />
+                                                <script type="text/javascript">
+                                                cs['xceml__ocr']=document.getElementById('perEmailId1'); //1.1
+                                                console.log('email address :'+cs['xceml__ocr']);
+                                                </script>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">                            
+                                            <div class="form-group">
+                                                <label>Mobile number</label>
+                                                <!-- PJ 1.1 -->
+                                                <img src="{!URLFOR($Resource.assets_NUI1, '/images/correct-sign.png')}" alt="" id="correctsignimg" class="file-icon isMobilePhoneVerified" ddaKey="isMobilePhoneVerified" style="display: none"/> <!--style="display:{!IF(isMobileVerified==true,'inline','none')};" -->
+                                                <!-- PJ 1.1 -->
+                                                <div class="d-flex">
+                                                    <div style="flex-basis: 200px;width: 200px;">
+                                                        <select fldName="phoneCode" ddaKey="phoneCode" id="countryCode1" class="requiredFld forEdit countryCode form-control input-select2-flat">
+                                                            
+                                                        </select>
+                                                    </div>
+                                                    <input class="forReadOnly form-control requiredFld forEdit numOnly ml-3" maxlength="15" id="perMobileNumber" validationName="mobile" fldName="mobileNum" ddaKey="perMobile" type="text" onchange="changeinMob(this);"/><!--to remove otp onchange="updateMob();"-->
+                                                    <script type="text/javascript">
+                                                    cs['xcmob__ocr']=document.getElementById('perMobileNumber1');
+                                                    var countryCodeOptions11='';
+                                                    for(i of countryCodeObj_new){
+                                                        var opt ='';
+                                                        if( i.dial_code && i.name )
+                                                            opt = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                                        countryCodeOptions11 += opt;
+                                                    }
+                                                    $('#countryCode1').html(countryCodeOptions11);
+                                                    setTimeout(function(){
+                                                        $('#countryCode').select2({allowSearch:true});
+                                                    },500);
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                        <apex:outputPanel id="otpPanel" >  <!-- 1.1 -->
+                                            <div class="row" id='otpBlock'>
+                                                <div class="col-lg-12" style="">
+                                                    <div class="form-group names">
+                                                        <label>Please enter OTP send to your Primary {!otpSentMobileOREmail}</label>
+                                                        <input class="form-control numOnly" maxLength="6" onchange='enableOtpBtn(this)' id="otpVal"/>
+                                                    </div>
+                                                </div>
+                                                <div id='otpSuccess' class="m-2"></div>
+                                                <div class="base-nav col-12 m-2">
+                                                    <a class="btn btn-primary base-nav-prev disabledApex" id='resendBtn' href="#" onclick="reSendOtp();" >
+                                                        Resend OTP
+                                                    </a>
+                                                    <a class="btn btn-primary base-nav-next disabledApex fff-Font" id='otpBtn' onclick="checkOtp(this);">
+                                                        Validate OTP
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel> <!-- 1.1 -->
+                                        <apex:outputPanel id="otpButtonPanel" >
+                                        <div class="row form-group" id='otpButtonBlock'>
+                                            <div class="base-nav col-sm-12">
+                                                <label>Please validate your Primary Mobile/Email by clicking on Validate Mobile/Validate Email. OTP will be send to your Primary Mobile/Email address.</label>
+                                            </div>
+                                            <div class="base-nav col-sm-6">
+                                                <a class="btn btn-primary fff-Font" id='otpValidateEmailBtn' onclick="validateEmailManually(this);">
+                                                    Validate Email
+                                                </a>
+                                            </div>
+                                            <div class="base-nav col-sm-6">
+                                                <a class="btn btn-primary fff-Font" id='otpValidateMobileBtn' onclick="validateMobileManually(this);">
+                                                    Validate Mobile
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    </div>
+                                    <br/>
+                                        <div class="col-md-6">
+                                            <div  id="isVisa">
+                                                <label>Are you currently a valid UAE citizen/resident?</label>
+                                                <div class="form-group mt-3 reqRadio">
+                                                    <label class="custom-radio mr-5">
+                                                        <input type="radio" selVal='true' onchange="showEIDfields(this)" for="yes" name="eid"/>
+                                                        <span>Yes</span>
+                                                    </label>
+                                                    <label class="custom-radio mr-5">
+                                                        <input type="radio" selVal='false' onchange="showEIDfields(this)" for="no" name="eid"/>
+                                                        <span>No</span>
+                                                    </label>
+                                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                                </div>
+                                                <apex:inputHidden id="inUAE__c" value="{!req.inUAE__c}" />
+                                                <script>
+                                                cs['inUAE__c'] = document.getElementById('{!$Component.inUAE__c}');
+                                                
+                                                </script>
+                                            </div>
+                                            <!--U_S - Start 1.2 -->
+                                            <div  id="isVisited" style="display:none;">
+                                                <label>Have you ever visited UAE?</label><!--Are you currently holding a valid UAE residency visa?-->
+                                                <div class="form-group mt-3 isvisitedUAE reqRadio">
+                                                    <label class="custom-radio mr-5">
+                                                        <input type="radio"  for="yes" name="vid" onchange="visitedFields(this)"/>
+                                                        <span>Yes</span>
+                                                    </label>
+                                                    <label class="custom-radio mr-5">
+                                                        <input type="radio"  for="no" name="vid" onchange="visitedFields(this)"/>
+                                                        <span>No</span>
+                                                    </label>
+                                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                                </div>
+                                                <apex:inputHidden id="isVisited__c"  />
+                                                <script>
+                                                cs['isVisited__c'] = document.getElementById('{!$Component.isVisited__c}');
+                                                
+                                                </script>
+                                            </div>
+                                            <!--U_S - End-->
+                                        </div>
+                                        <br/><br/>
+                                        <div class="row">
+                                        <div class="col-md-4 ifVisa" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Emirates ID number</label>
+                                                <input type="text" onkeydown="eidCheck(this,event)" onchange="checkEid(this)" fldName="eid" ddaKeyparent="emiratesId" ddaKey="docNo" class="forReadOnly form-control requiredFld forEdit" value="" />
+                                            </div>
+                                            <script>
+                                            function eidCheck(elem,event){
+                                                $(elem).parent().find('.frmErrMsg').remove();
+                                                $(elem).attr('maxlength',18);
+                                                if(event.keyCode == 8)
+                                                    return;
+                                                let v = $(elem).val();
+                                                let l = $(elem).val().length;
+                                                if(l==3 || l==8 || l==16 ){
+                                                    $(elem).val(v+'-');
+                                                }
+                                            }
+                                            function checkEid(elem){
+                                                if(!$(elem).val())
+                                                    return;
+                                                if(!validateEmiratesId($(elem).val())){
+                                                    addValError(elem,'Invalid Emirates id!');
+                                                }else{
+                                                    removeValError($(elem));
+                                                }
+                                            }
+                                            </script>
+                                        </div>
+                                        <div class="col-md-4 ifVisa" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Emirates ID issue date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input onchange="checkDate(this,'pid')" validationName="pid" type="text" class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" fldName="eidIssueDate" ddaKeyparent="emiratesId" ddaKey="issueDate" id="datepickerEid"
+                                                           data-toggle="datetimepicker" data-target="#datepickerEid" />
+                                                    <div class="input-group-append">
+                                                        <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepickerEid">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 ifVisa" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Emirates ID expiry date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input validationName="todayFuture" onchange="" type="text" class="forReadOnly dateCheck form-control input-datepicker requiredFld forEdit" fldName="eidExp" ddaKeyparent="emiratesId" ddaKey="expiryDate" id="datepickerEed"
+                                                           data-toggle="datetimepicker" data-target="#datepickerEed" />
+                                                    <div class="input-group-append">
+                                                        <button class="forReadOnly btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepickerEed">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <div class="collapse-title mt-2 mb-2 outsideUAE">Address outside the UAE </div>
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class="outsideUAE">
+                                                <div class="form-group">
+                                                    <label>Street</label>
+                                                    <input maxlength="100" class="form-control requiredFld forEdit" type="text" fldName="pstreet" ddaKey="pstreet" id="street" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="row outsideUAE">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label>City</label>
+                                                        <input class="form-control requiredFld forEdit" type="text" maxlength="55" fldName="pcity" ddaKey="pcity" id="city" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label>Country</label>
+                                                        <select class="form-control input-select2-flat requiredFld forEdit" extFld='type' id="cntr" extFld1='Country Code' fldName="country_o" ddaKey="pcountry" >
+                                                        </select>
+                                                        <script type="text/javascript">
+                                                        for (var i=0; i< $('#nat').find('option').length; i++){
+                                                            if($('#nat').find('option')[i].value == 'United Arab Emirates')
+                                                                $('#nat').find('option')[i].remove(i);
+                                                        }  
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="collapse-title mt-2 mb-2 insideUAE">UAE address</div>
+                                    <div class="row insideUAE">
+                                        <div class="col-lg-6">
+                                            <div class="insideUAE">
+                                                <div class="form-group">
+                                                    <label>Building name / number</label>
+                                                    <input maxlength="100" class="form-control requiredFld forEdit" type="text" fldName="buildingNo" ddaKey="buildingNo" id="buildingNo" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Street</label>
+                                                <input maxlength="100" class="form-control requiredFld forEdit" type="text" fldName="Street" ddaKey="Street" id="Street" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row insideUAE">
+                                        <div class="row col-md-12">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label>Area</label>
+                                                    <input class="form-control requiredFld forEdit" type="text" maxlength="55" fldName="cityIn" ddaKey="Area" id="Area" />
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label>P.O. Box</label>
+                                                    <input class="form-control requiredFld forEdit numOnly" type="text" maxlength="55" fldName="postalCode" ddaKey="postalCode" id="postalCode" />
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label>Emirate</label>
+                                                    <select class="forReadOnly form-control input-select2-flat requiredFld forEdit" id="emirate" fldName="emirate" ddaKey="emirate" >
+                                                        <option value="">--None--</option>
+                                                        <option>Abu Dhabi</option>
+                                                        <option>Ajman</option>
+                                                        <option>Dubai</option>
+                                                        <option>Fujairah</option>
+                                                        <option>Ras Al Khaimah</option>
+                                                        <option>Sharjah</option>
+                                                        <option>Umm Al Quwain</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="display:none">
+                                        <div class="col-md-6">
+                                            <div class="form-group text-left inEditOnly">
+                                                <label>Shares</label>
+                                                <input class="forReadOnly form-control numOnly requiredFld forEdit" maxlength="11" type="text" fldName="shareNum" ddaKey="proposedNumberOfShares" id="shareid" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .col -->                            
+                                </div> 
+                            </div>
+                        </div>
+                        <!-- ####################################################################################################################################### -->
+                        <div class="form-group text-right" >
+                            <a id="cnfmBtn" style="color: white !important;" onclick="submitReq()" class="saveBtns1 forReadOnly btn btn-primary">Confirm</a>
+                        </div>
+                        <div id="sendOtpBlock" class="form-group text-right" style="display:none;">
+                            <a id="sendOtp" style="color: white !important;" onclick="updateMob();sendOTP()" class="saveBtns1 forReadOnly btn btn-primary saveEditMem1">Send OTP</a>
+                        </div>
+                        <div class="row otpBlock" style="display:none;">
+                            <div class="col-md-6">
+                                <div class="form-group text-left">
+                                    <label>OTP</label>
+                                    <input class="forReadOnly form-control numOnly requiredFld forEdit" maxlength="6" type="text" id="otpVal" />
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group text-right"><!--attachmentSave_LA()-->
+                                    <a style="color: white !important;" onclick="validateOTP()" class="saveBtns1 forReadOnly btn btn-primary ">Validate OTP</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:outputText>
+    
+    <!-- modal for corporate member starts -->
+    
+    <apex:outputText rendered="{!CONTAINS(req.xadh__c,'aau;')}">
+        <div class="modal fade modal-base" id="modal_corp_member_LA" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <h2 class="heading">Auditor information</h2>
+                        <p class="pInfo">
+                            Please provide information and click on <b>SAVE</b>.
+                        </p>
+                        <p>
+                            <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                            <span class='rqrdMsg'>All fields are mandatory</span>
+                        </p>
+                        
+                        <div class="form-style">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Company name</label>
+                                        <input for='allowSingleQuote' type="text" maxLength="50" ddaKey="operatingName" class="requiredFld form-control crpData" value="" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Registration number</label>
+                                        <input type="text" onchange="checkRegNumEdit(this)" ddaKey="registrationNo" class="requiredFld form-control crpData alphaNum" value="" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Country of registration</label>
+                                        <select class="requiredFld form-control input-select2-flat crpData forEdit" ddaKey="countryOfIncorporation" fldName="country" objKey="nationality">
+                                            <!--<option value="">Select</option>-->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Incorporation date</label>
+                                        <div class="input-datepicker-group input-group">
+                                            <input onchange="dformat2(getC('datepicker4').value,'datepicker4');checkDate(this,'pid')" type="text" class="requiredFld form-control input-datepicker crpData" id="incrpDate"
+                                                   data-toggle="datetimepicker" validationName="pid" ddaKey="dateOfIncorporation" data-target="#incrpDate" />
+                                            <div class="input-group-append">
+                                                <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#incrpDate">
+                                                    <i class="icon-date"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="outsideUAE">
+                                        <div class="form-group">
+                                            <label>Building name / number</label>
+                                            <input maxlength="100" class="form-control requiredFld forEdit" type="text" fldName="buildingNo" ddaKey="buildingNo" id="buildingNo" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Street</label>
+                                        <input maxlength="100" class="form-control requiredFld forEdit" type="text" fldName="Street" ddaKey="Street" id="Street" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group text-left">
+                                        <label>Address</label>
+                                        <input class="requiredFld form-control crpData" type="textarea" ddaKey="address" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>PO Box</label>
+                                        <input class="form-control requiredFld forEdit numOnly" type="text" maxlength="55" fldName="postalCode" ddaKey="postalCode" id="postalCode" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Emirate</label>
+                                        <select class="forReadOnly form-control input-select2-flat requiredFld forEdit" id="emirate" fldName="emirate" ddaKey="emirate" >
+                                            <option value="">--None--</option>
+                                            <option>Abu Dhabi</option>
+                                            <option>Ajman</option>
+                                            <option>Dubai</option>
+                                            <option>Fujairah</option>
+                                            <option>Ras Al Khaimah</option>
+                                            <option>Sharjah</option>
+                                            <option>Umm Al Quwain</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Mobile number</label>
+                                        <div class="d-flex">
+                                            <div style="flex-basis: 200px;width: 200px;">
+                                                <select ddaKey="phoneCode" id="countryCode2" class="forEdit crpData countryCode form-control input-select2-flat">
+                                                    
+                                                </select>
+                                            </div>
+                                            <!-- 1.1 -->
+                                            <input class="requiredFld form-control crpData onlyNum ml-3" maxlength="15" validationName="mobile" ddaKey="perMobile" type="text" />
+                                            <script type="text/javascript">
+                                            var countryCodeOptions11='';
+                                            for(i of countryCodeObj_new){
+                                                var opt ='';
+                                                if( i.dial_code && i.name )
+                                                    opt = '<option value="'+i.dial_code+'">'+i.dial_code+'-'+i.name+'</option>'; 
+                                                countryCodeOptions11 += opt;
+                                            }
+                                            $('#countryCode2').html(countryCodeOptions11);
+                                            setTimeout(function(){
+                                                $('#countryCode2').select2({allowSearch:true});
+                                            },500);
+                                            </script>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Email address</label>
+                                        <input class="requiredFld form-control crpData" onchange="convertToLower(this);checkEmail(this);" onkeydown="convertToLower(this)" validationName="email" ddaKey="perEmail" type="text" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row col-12 text-right">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <a id="saveCorpSH" style="color: white !important;" onclick="attachmentSave_LA('corp')" class="saveMember btn btn-primary">SAVE</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:outputText>
+    
+    <!-- modal for corporate member ends -->
+    <div class="modal fade modal-base" id="uploadToolsValidation" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h1>Please upload a document to perform these operations.</h1>
+                    <p>
+                        Use <b>UPLOAD</b> or <b>SCAN</b> to upload an image!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_upload_passport" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    
+                    <div class="row">
+                        <div class="col-md-6 order-md-2">
+                            <div class="d-flex flex-column h-100">
+                                <div class="mb-auto">
+                                    <h2 class="mb-4"><div class="docname"></div></h2>
+                                    <p>
+                                        Note: Please ensure that the images/documents you are uploading are in colour and the orientation is accurate. 
+                                        Blurred, faded or inaccurate images may delay or results in rejection of your application.
+                                    </p>
+                                    <p>
+                                        Once you scan or upload your images/documents, kindly use edit tools to crop or rotate. 
+                                        Once done, click the “Save” button to attach it to the application.  
+                                    </p>
+                                    <input type="file" onchange="ocrCheckFile(this)" id="files" name="files" style="display: none;"/>
+                                    <button type="button" class="btn btn-outline-primary mb-2 btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;" onclick="ocrHandleBrowseClick();">
+                                        UPLOAD
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-block-sm"
+                                            style="min-width: 304px;max-width: 100%;">
+                                        SCAN
+                                    </button><br/>
+                                    
+                                    <p class="mt-4">
+                                        Note: A plugin is needed for in order to scan your image.
+                                    </p>
+                                    
+                                </div>
+                                <div class="text-right d-none d-md-block">
+                                    <a onclick="ocrSaveAttachment(this);" id="saveAtt" style="color: #fff;" 
+                                       class="btn btn-primary disabled">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        <div class="col-md-6 order-md-1">
+                            
+                            <div class="image-area" id="image-area" style="background-color: #D8D8D8;">
+                                <div style="background-color: #D8D8D8;padding-top: 100%;"></div>
+                                <img src="" style="width:80%;display:none;" />
+                            </div>
+                            
+                            <div class="text-center text-md-left mt-3">
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-crop"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-left"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool"><i
+                                                                                                            class="icon-rotate-right"></i></a>
+                                <a class="btn btn-outline-primary btn-outline-primary-2 btn-upload-tool" id="uploadDel"><i
+                                                                                                                           class="icon-delete"></i></a>
+                            </div>
+                            
+                        </div>
+                        <!-- .col -->
+                        
+                    </div>
+                    <!-- .row -->
+                    <div class="text-right d-block d-md-none mt-4">
+                        <button class="btn btn-primary btn-block-sm button-process-upload">SAVE</button>
+                    </div>
+                    
+                </div>
+                <!-- .modal-body -->
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="modal fade modal-base" id="modal_process_upload" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 993px;">
+            <div class="modal-content">
+                <div class="modal-body">
+                    
+                    <div class="process-upload-wrapper">
+                        <h2 class="mb-4">Processing the image</h2>
+                        
+                        <div class="process-upload-image">
+                            <img src="/resource/assets_NUI/images/process-{!accPrk}.png" alt="" />
+                            <i class="icon-process"></i>
+                        </div>
+                        <p>
+                            We are currently extracting information from the uploaded image/document to confirm details.
+                        </p>
+                        <p>
+                            This process may take a minute.
+                        </p>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    <!--  OCR  --->
+    <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-de7e2ef6bfefd24b79a3f68b414b87b8db5b08439cac3f1012092b2290c719cd.js">
+    </script>
+    <script id="rendered-js">
+    
+    // Check for the File API support.
+    /* if (window.File && window.FileReader && window.FileList && window.Blob) {
+            document.getElementById('files').addEventListener('change', ocrHandleFileSelect, false);
+            //document.getElementById('saveAttachment').addEventListener('click', ocrHandleFileSelect, false);
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }*/
+    
+    var processImg = "{!URLFOR($Resource.assets_NUI,'images/process.png')}";
+    var accPrk = "{!accPrk}";
+    var passportData;
+    var currentAddingMemData={};
+    var memData_x = {};
+    var f = {};
+    var datesTobeFromatted = ["Date of Birth2","Date of Birth","Date of Expiry","Date of Issue","Date of Issue2","Date of Expiry2"];
+    var monthObj = {'JAN':'01','FEB':'02','MAR':'03','APR':'04','MAY':'05','JUN':'06','JUL':'07','AUG':'08','SEP':'09','OCT':'10','NOV':'11','DEC':'12'};
+    function formatDate(date){
+        var d ;
+        
+        if(date.includes(' ')){
+            date = date.toLowerCase();
+            d = date.split(' ');
+            
+            if(Object.keys(monthObj).includes((d[1].substring(0,3)).toUpperCase())){    // case-1: date format -- 01 Jan 2020
+                
+                return date.split(d[1].toLowerCase()).join(monthObj[(d[1].substring(0,3)).toUpperCase()]).split(' ').join('/');
+            }
+            else                                                        // case-2: date format -- 01 01 2020
+                return date.split(' ').join('/');
+        }
+        else if(date.includes('-'))                                     // case-3: date format -- 01-01-2020
+            return date.split('-').join('/');
+            else if(date.includes('.'))                                   // case-4: date format -- 01.01.2020
+                return date.split('.').join('/');
+                else                                                            // case-5: date format -- 01/01/2020
+                    return date;
+    }
+    var nationalityOptions= '<option value="">--None--</option>';
+    for(var x=0;x<nationality_arr.length;x++){
+        var j = nationality_arr[x];
+        var vl = j.nationality;
+        newCountrVals.forEach(function(v,i){
+            if(j.countryName==Object.keys(v).toString()){
+                vl = Object.values(v).toString();
+            }
+        });
+        var opt1 = '<option value="'+vl+'" for="'+j.countryName+'">'+j.countryName+'</option>';
+        nationalityOptions += opt1;
+    }
+    $('[fldName="country"],[fldName="country_o"],[fldName="placeBornCountry"]').append(nationalityOptions);
+    function ocrHandleFileSelect(evt) {
+        
+        //var f = evt.target.files[0]; // FileList object
+        
+        f = $('#files')[0].files[0]
+        
+        var reader = new FileReader();
+        
+        // $('#table_content').empty();
+        
+        // Closure to capture the file information.
+        
+        reader.onload = function (theFile) {
+            
+            return function (e) {
+                
+                var binaryData = e.target.result;
+                
+                //Converting Binary Data to base 64
+                
+                base64String = window.btoa(binaryData);
+                
+                //showing file converted to base64
+                
+                cs["imageBase64"].value = base64String;
+                
+                if(cs["parseId"].value == 'true'){
+                    
+                    $.ajax({
+                        
+                        //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                        
+                        url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                        
+                        beforeSend: function(xhr) {
+                            
+                            //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb");
+                            
+                            xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9");
+                            
+                        },
+                        
+                        type: 'POST',
+                        
+                        dataType: 'json',
+                        
+                        crossOrigin: true,
+                        
+                        contentType: 'application/json',             
+                        
+                        processData: false,
+                        
+                        data: '{"image":'+base64String+'}',
+                        
+                        success: function (data) {
+                            
+                            var t=JSON.stringify(data);
+                            
+                            //alert(t);
+                            //custom for passport
+                            t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                            replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                            t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                            t = t.replace("ID Number", "ID_Number").replace('Name', 'Name');
+                            t=t.replace('Given Name','Given_Name').replace('MR Passport NO','Passport_No').replace('MR Gender','MR_Gender');
+                            t=t.replace('Traffic Plate #','pltNum_RC1').replace('Traffic Plate','pltNum_RC').replace('Expiry Date','RegDate_RC');
+                            t = t.replace('Model','VehModel_RC');
+                            var memberObject={};
+                            var dd='['+t+']';
+                            var ddd=JSON.parse(t);
+                            var cl = ddd['confidence_level']*10;
+                            console.log(cl);
+                            if(Math.abs(cl)<0){//isNaN(Math.abs(cl))||Math.abs(cl)<2||ddd.errorMessage!=undefined
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    axsAlert('File is Invalid','Please do Re-Uplad a clear copy ');
+                                });
+                                //of the Passport
+                                /* $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    $('#modal_upload_passport').modal('show');
+                                });*/
+                                return;
+                                //$('#modal_upload_passport').modal('show')
+                            }
+                            
+                            passportData = ddd["data"];
+                            for(i in ddd["data"]){
+                                memberObject[i] = ddd["data"][i];
+                                memData_x[i] = ddd["data"][i];
+                            }
+                            
+                            var k1=[];
+                            var passportNo = '';
+                            var membrStr = '';
+                            var fullname = '';
+                            
+                            memberObject["type"] = 'ind';
+                            fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                            if(memberObject["MR Full Name"]==''||memberObject["MR Full Name"]==undefined)
+                                memberObject["fullname"] = fullname;
+                            else{
+                                var nn = memberObject["MR Full Name"].split(' ');
+                                memberObject["fullname"] = memberObject["MR Full Name"];
+                                memberObject['Surname'] = nn[0];
+                                memberObject['Given_Name'] = nn[nn.length-1];
+                                
+                            }
+                            
+                            //if(memberObject["type"]=='ind') memberObject.passportId = cs["attch_id"].value;
+                            
+                            membrStr = JSON.stringify(memberObject);
+                            
+                            //alert('str::'+membrStr);
+                            
+                            // if(addingOtherMems){
+                            
+                            if(memberObject["type"]=='ind'){
+                                
+                                $('.forEdit').each(function(){
+                                    
+                                    var f = $(this).attr('fldName');
+                                    
+                                    if(memberObject[f]!=undefined){
+                                        
+                                        if(memberObject[f].length>0){
+                                            
+                                            $(this).val(memberObject[f]);
+                                            
+                                        }
+                                        
+                                        if($(this).attr('class').includes('datepicker'))
+                                            
+                                            $(this).val(formatDate(memberObject[f]));
+                                        
+                                    }
+                                    
+                                    else if(memberObject["MR_"+f]!=undefined){
+                                        
+                                        $(this).val(memberObject["MR_"+f]);
+                                        
+                                        if($(this).attr('class').includes('datepicker'))
+                                            
+                                            $(this).val(formatDate(memberObject[f]));
+                                        
+                                    }
+                                    
+                                        else{
+                                            
+                                            $(this).val('');
+                                            
+                                        }
+                                    
+                                    if((f=='country'||f=='country2' ) && memberObject['Nationality']!=undefined){ // only for country--Nationality
+                                        
+                                        var e = $(this);
+                                        
+                                        e.find('option').each(function(){
+                                            
+                                            var t = $(this).text();
+                                            
+                                            var t1 = $(this).val();
+                                            
+                                            if(t.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim()||t1.toLowerCase().trim()==memberObject['Nationality'].toLowerCase().trim())
+                                                
+                                                $(this).prop('selected',true);
+                                            
+                                        });
+                                        
+                                    }
+                                    
+                                    if($(this).attr('extFld')){ // only for country--Nationality
+                                        
+                                        var e = $(this);
+                                        
+                                        var ef = $(this).attr('extFld');
+                                        
+                                        var ef1 = $(this).attr('extFld1');
+                                        
+                                        if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                            
+                                            var vl = ddd[ef].split(' ')[1];
+                                            
+                                            e.find('option').each(function(){
+                                                
+                                                var t = $(this).text();
+                                                
+                                                var t1 = $(this).val();
+                                                
+                                                if(t.toLowerCase().trim()==vl.toLowerCase().trim()||t1.toLowerCase().trim()==vl.toLowerCase().trim())
+                                                    
+                                                    $(this).prop('selected',true);
+                                                
+                                            });
+                                            
+                                        }
+                                        
+                                        else if(ddd.data[ef1]!=undefined)
+                                            
+                                            $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                        
+                                    }
+                                    
+                                    if($(this).is('select')) $(this).trigger('change');
+                                    
+                                });
+                                
+                                
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    var curDoc = cs["docname"].value;
+                                    if(curDoc.includes('Eida Card Front Side')){
+                                        //rerenderImageB();
+                                        //cs['xcnc__ocr'] = $('[fldName="country"]').find("option:selected").text(); 
+                                        $('#modal_EIDA_confirm_information').modal('show');
+                                    }else if(curDoc.includes('registration card - front')){
+                                        $('#xppor__c').val('Dubai').select2();
+                                        // $('#modal_RC_confirm_information').find('input,select').val('').trigger('change');
+                                        $('#modal_RC_confirm_information').find('.frmErrMsg').remove();
+                                        $('#modal_RC_confirm_information').find('.is-invalid').removeClass('is-invalid');
+                                        $('#modal_RC_confirm_information').modal('show');
+                                    }else if(curDoc.includes('registration card - back')){
+                                        //rerenderImageB();
+                                        //cs['xcnc__ocr'] = $('[fldName="country"]').find("option:selected").text(); 
+                                        //$('#modal_RC_confirm_information_back').find('input,select').val('');
+                                        $('#modal_RC_confirm_information_back').modal('show');
+                                    }else
+                                        $('#modal_confirm_information1').modal('show');
+                                });
+                                
+                                $('.saveEditMem').hide();
+                                
+                                $('.inEditOnly').hide(); 
+                                
+                                
+                                
+                                //cs["docname"].value="Copy of Passport"; //+'.'+f.name.split('.')[1]
+                                
+                                //attachmentSave();
+                                
+                                //alert('tst1');
+                                
+                                /*$('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+
+                            $('#modal_confirm_information1').modal('show');
+
+                        });*/
+                                
+                                // $('[fldname="country"],[fldname="contryCode"]').trigger('change')
+                                
+                            }        
+                            
+                            //$('#modal_process_upload').modal('hide');
+                            
+                            
+                            
+                            $('#saveAtt').addClass('disabled');
+                            
+                            
+                            
+                            //document.getElementById('modal_upload_passport').style.display='none';
+                            
+                            $('body').removeClass('modal-open');
+                            
+                            $('.modal-backdrop').remove();
+                            
+                            
+                            
+                            //$("#base64").val(JSON.stringify(data));
+                            
+                        },
+                        
+                        error: function(){
+                            
+                            // alert("Cannot get data");
+                            
+                        }
+                        
+                    });
+                    
+                    $('#modal_upload_passport').modal('hide');
+                    $('#modal_process_upload').modal('show');
+                    
+                }
+                
+                else
+                    
+                {
+                    
+                    $('#modal_process_upload').modal('hide');
+                    
+                    $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+                    
+                    $('body').removeClass('modal-open');
+                    
+                    $('.modal-backdrop').remove();
+                    if((cs["visaTransferId"]!=undefined)&&(cs["visaTransferId"].value == 'int' && cs["docname"].value == 'Passport First Page') || ('{!cv}' == 'VisaCorrection' && cs["docname"].value == 'Passport Copy - First Page') || ('{!cv}' == 'LostPassport' && cs["docname"].value == 'New Passport Copy - first page'))
+                        saveRequest();
+                    else
+                        attachmentSave();
+                    
+                    
+                    
+                }
+                
+                $('#modal_upload_passport').modal('hide');
+                
+            };
+            
+        }(f);
+        
+        // Read in the image file as a data URL.
+        
+        reader.readAsBinaryString(f);
+        
+    }
+    
+    
+    function handleFileSelect2(evt) {
+        //var f = evt.target.files[0]; // FileList object
+        f = $('#files')[0].files[0]
+        var reader = new FileReader();
+        // $('#table_content').empty();
+        // Closure to capture the file information.
+        reader.onload = function (theFile) {
+            return function (e) {
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                //showing file converted to base64
+                
+                cs["imageBase64"].value = base64String;
+                if(cs["parseId"].value == 'true'){
+                    $.ajax({
+                        //url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=aws&raw_text=true",
+                        url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+                        beforeSend: function(xhr) { 
+                            //xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+                            xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                        },
+                        type: 'POST',
+                        dataType: 'json', 
+                        crossOrigin: true,
+                        contentType: 'application/json',              
+                        processData: false,
+                        data: '{"image":'+base64String+'}',
+                        success: function (data) { 
+                            var t=JSON.stringify(data);
+                            console.log(t);
+                            
+                            //custom for passport
+                            t=t.replace("Place of Birth", "Place_of_Birth").replace("MR Date of Expiry","MR_Date_of_Expiry").replace('MR Gender','MR_Gender').replace('Date of Birth','Date_of_Birth').replace('MR Passport NO','MR_Passport_NO').replace('Place of Issue','Place_of_Issue').replace('Passport No','Passport_No').replace('MR Date of Birth','MR_Date_of_Birth').
+                            replace('MR Date of Birth','MR_Date_of_Birth').replace('Date of Expiry2','Date_of_Expiry2').replace('MR Given Name','MR_Given_Name').replace('Date of Birth2','Date_of_Birth2').replace('MR Surname','MR_Surname').replace('Date of Issue2','Date_of_Issue2').replace('Father Name','Father_Name').replace('Mother Name','Mother_Name');
+                            t = t.replace("First Name", "MR_Given_Name").replace('MR Surname', 'MR_Surname').replace('Passport NO', 'Passport_No').replace('Date of Issue', 'Date_of_Issue2').replace('Date of Expiry','Date_of_Expiry2').replace('Date of Birth', 'Date_of_Birth').replace("MR MR_Given_Name", "MR_Given_Name");
+                            t=t.replace('Given Name','Given_Name').replace('MR Passport NO','Passport_No').replace('MR Gender','MR_Gender');
+                            
+                            var memberObject={};
+                            var dd='['+t+']'; 
+                            var ddd=JSON.parse(t);
+                            alert(ddd); alert(t);
+                            console.log(t);
+                            console.log( ddd.data.type);
+                            var cl = ddd['confidence_level']*10;
+                            console.log(cl);
+                            if(Math.abs(cl)<2){
+                                axsAlert('Passport is Invalid','Please do Re-Scan a clear copy of the Passport');
+                                $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                    $('#modal_upload_passport').modal('show');
+                                });
+                                return;
+                                //$('#modal_upload_passport').modal('show')
+                            }
+                            passportData = ddd["data"];
+                            for(i in ddd["data"]){
+                                memberObject[i] = ddd["data"][i];
+                                memData_x[i] = ddd["data"][i];
+                            }
+                            var k1=[];
+                            var passportNo = '';
+                            var membrStr = '';
+                            var fullname = '';
+                            $('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                                $('#modal_confirm_information1').modal('show');
+                            });
+                            memberObject["type"] = 'ind';
+                            fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                            
+                            if(memberObject["MR Full Name"]==''||memberObject["MR Full Name"]==undefined)
+                                memberObject["fullname"] = fullname;
+                            else{
+                                var nn = memberObject["MR Full Name"].split(' ');
+                                memberObject["fullname"] = memberObject["MR Full Name"];
+                                memberObject['Surname'] = nn[0];
+                                memberObject['Given_Name'] = nn[nn.length-1];                           
+                            }
+                            
+                            memberObject["fullname"] = fullname;
+                            //if(memberObject["type"]=='ind') memberObject.passportId = cs["attch_id"].value;
+                            membrStr = JSON.stringify(memberObject);
+                            //alert('str::'+membrStr);
+                            // if(addingOtherMems){
+                            if(memberObject["type"]=='ind'){
+                                $('.forEdit').each(function(){
+                                    var f = $(this).attr('fldName');
+                                    if(memberObject[f]!=undefined){
+                                        if(memberObject[f].length>0)
+                                            $(this).val(memberObject[f]);
+                                        if($(this).attr('class').includes('datepicker'))
+                                            $(this).val(formatDate(memberObject[f]));
+                                    }
+                                    else if(memberObject["MR_"+f]!=undefined){
+                                        $(this).val(memberObject["MR_"+f]);
+                                        if($(this).attr('class').includes('datepicker'))
+                                            $(this).val(formatDate(memberObject[f]));
+                                    }
+                                        else{
+                                            $(this).val('');
+                                        }
+                                    if($(this).attr('extFld')){
+                                        var e = $(this)
+                                        var ef = $(this).attr('extFld');
+                                        var ef1 = $(this).attr('extFld1');
+                                        if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                            var vl = ddd[ef].split(' ')[1];
+                                            e.find('option').each(function(){
+                                                var t = $(this).text();
+                                                if(t.toLowerCase()==vl.toLowerCase())
+                                                    $(this).prop('selected',true);
+                                            });
+                                        }
+                                        else if(ddd.data[ef1]!=undefined)
+                                            $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                    }
+                                    if($(this).is('select')) $(this).trigger('change');
+                                });
+                                $('.saveEditMem').hide();
+                                $('.inEditOnly').hide();
+                                
+                                //cs["docname"].value="Copy of Passport"; //+'.'+f.name.split('.')[1]
+                                //attachmentSave();
+                                //alert('tst1');
+                                /*$('#modal_process_upload').modal('hide').on('hidden.bs.modal',function(){
+                            $('#modal_confirm_information1').modal('show');
+                        });*/
+                                // $('[fldname="country"],[fldname="contryCode"]').trigger('change')
+                            }         
+                            //$('#modal_process_upload').modal('hide');
+                            
+                            $('#saveAtt').addClass('disabled');
+                            
+                            //document.getElementById('modal_upload_passport').style.display='none';
+                            $('body').removeClass('modal-open'); 
+                            $('.modal-backdrop').remove();
+                            
+                            //$("#base64").val(JSON.stringify(data));
+                        },
+                        error: function(){
+                            // alert("Cannot get data");
+                        }
+                    });
+                    $('#modal_upload_passport').modal('hide');
+                    $('#modal_process_upload').modal('show');
+                }
+                else
+                {
+                    $('#modal_process_upload').modal('hide');
+                    $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+                    $('body').removeClass('modal-open'); 
+                    $('.modal-backdrop').remove();
+                    if('{!cv}' == 'VisaCorrection')
+                        saveRequest();
+                    else
+                        attachmentSave();
+                    
+                }
+                $('#modal_upload_passport').modal('hide');
+            };
+        }(f);
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(f);
+    }
+    $(document).ready(function() { //alert(1);
+        // start of custom readAsBinaryString for IE
+        if (!FileReader.prototype.readAsBinaryString) {
+            FileReader.prototype.readAsBinaryString = function (fileData) {
+                var binary = "";
+                var pt = this;
+                var reader = new FileReader();      
+                reader.onload = function (e) {
+                    var bytes = new Uint8Array(reader.result);
+                    var length = bytes.byteLength;
+                    for (var i = 0; i < length; i++) {
+                        binary += String.fromCharCode(bytes[i]);
+                    }
+                    //pt.result  - readonly so assign binary
+                    pt.content = binary;
+                    $(pt).trigger('onload');
+                }
+                reader.readAsArrayBuffer(fileData);
+            }
+        }
+        // end of custom readAsBinaryString for IE
+        
+        $('#members').removeClass('incomplete-section').addClass('active-section');
+        
+        
+        //  $('#table_content').empty();                   
+        var base64Str ='';
+        // alert(base64Str);
+        $.ajax({
+            // url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=all",
+            url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=false",
+            beforeSend: function(xhr) { 
+                xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                //  xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+            },
+            type: 'POST',
+            crossOrigin: true,    
+            dataType: 'json',
+            contentType: 'application/json',              
+            processData: false,
+            data: '{"image":'+base64Str+'}',
+            success: function (data) { 
+                var t=JSON.stringify(data);
+                alert(t);
+                var dd='['+t+']'; 
+                var ddd=JSON.parse(dd); alert(ddd);
+                var k1=[];
+                for (var k = 0; k < Object.keys(ddd[0].data).length; k++) {
+                    k1.push(Object.keys(ddd[0].data)[k])
+                    var kk= Object.keys(ddd[0].data)[k];
+                    if(Object.keys(ddd[0].data)[k] == 'Passport No')
+                        alert(ddd[0].data[kk]);
+                    //$('#table_content').append('<tr><td>' + Object.keys(ddd[0].data)[k] + '</td><td>'+ddd[0].data[kk] +'</td></tr>');
+                }
+                $("#base64").val(JSON.stringify(data));
+                // document.getElementById('base64').value = base64String;
+            },
+            error: function(){
+                // alert("Cannot get data");
+            }
+        });
+    });
+    
+    //# sourceURL=pen.js
+    
+    // update in axs2customjs
+    function checkAllDates(c,uid){
+        $('.'+c).each(function(){
+            if($(this).is(':visible')){
+                let v = $(this).attr('validationname');
+                checkDate($(this),v,uid);
+                //console.log($(this).val());
+            }
+        });
+    }
+    
+    function validAlphaNumeric(e){  /**Ex: <input type="text" onkeyup="validAlphaNumeric(this)" />**/
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    $('[fldname="Salutation"]').unbind('change').on('change',function(){
+        if($(this).val()=='Mr.')
+            $('#genderid').val('M').trigger('change');
+        else
+            $('#genderid').val('F').trigger('change');
+    });
+    
+    
+    /* for modal_confirm_information_LA popup starts U_S*/
+    function showEIDfields(e){ 
+        $(e).parent().parent().find('.option-error').hide();
+        let m = '#modal_confirm_information_LA';
+        $('.isvisitedUAE.reqRadio:visible').each(function () {
+            $(this).find(':radio').each(function () {
+                this.checked = false; 
+            });
+        });
+        
+        if($(e).prop('checked')==true && $(e).attr('for')=='yes'){
+            $('.ifVisa').show();
+            cs['inUAE__c'].value = true;
+            $('.insideUAE').css('display','flex');
+            $('#isVisited').hide();
+            $('.outsideUAE').hide();
+            removeValError($(m).find('[name="eid"]'));
+        }
+        else if( $(e).prop('checked') == true && $(e).attr('for') == 'no')
+            {
+                $('#isVisited').show();
+                $('.ifVisa').hide();
+                $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+                $('.insideUAE').css('display', 'none');
+                //$('.ifVisa').find('select,input').val(''); 
+                $('.ifVisa').hide();
+                $('#isVisa,.outsideUAE').show();
+                $('.outsideUAE').parents('.row').show();
+                removeValError($(m).find('[name="eid"]'));
+            }
+        else{
+            cs['inUAE__c'].value = false;
+            $('.insideUAE,.ifVisa').find('input,select').val('');
+            $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+            $('.ifVisa').hide();
+            $('.insideUAE').css('display','none');
+        }
+    }
+    function visitedFields(e){
+        $(e).parent().parent().find('.option-error').hide();
+        if($(e).prop('checked')==true){
+            let m = '#modal_confirm_information_LA';
+            removeValError($(m).find('[name="vid"]')); 
+        }
+    }
+    /*U_S */
+    function revertDateFormat(v){
+        if(!v)
+            return;
+        var dateArr = v.split('/');
+        return dateArr[2]+'-'+dateArr[1]+'-'+dateArr[0];
+    }
+    /*U_S */
+    /*******for modal_confirm_information_LA popup ends ********/
+    </script>
+</apex:component>

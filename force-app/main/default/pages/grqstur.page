@@ -1,0 +1,641 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" >
+        <html>        
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+    
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <script type="text/javascript">
+            var GCC_Nations = ['Bahrain', 'Kuwait', 'Oman', 'Qatar', 'Saudi Arabia', 'United Arab Emirates'];
+            var cs = {};
+            $(document).ready(function() {
+                console.log('document ready::::');
+                var  changecodes = {'cr':'xcrlg__c','dbc':'xcbd__c','nc':'xcfn__c,xcmn__c,xcln__c','ntc':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c,xcnc__c','np':'xcp__c,xcpic__c,xcpid__c,xcped__c,xcpip__c'};//,'msc':'xcms__c'
+                
+                let flds = [cs['xcbc__c'],cs['xeidav__c'],cs['xcnp__c'],cs['xcbp__c']]; //*** '#spokenLng', cs['xcfn__c'],cs['xcmn__c'],cs['xcln__c'],cs['xcbd__c'],cs['xcfan__c'],cs['xcfanar__c'],cs['xcmonar__c'],cs['xcmon__c'],cs['xcnc__c'],cs['xcrlg__c'],
+                flds.forEach(function(i){ 
+                    $(i).val()!=null && $(i).val()!='' && $(i).val()!==void 0?$(i).attr('disabled',true):'';
+                });
+                
+                //$(cs['xcmn__c']).attr('disabled',true);
+                let flds1 = [cs['xeidav__c']];  
+                flds1.forEach(function(i){   
+                    $(i).parent().parent().hide();   
+                }); 
+                hr();
+                mr();
+                
+                // $('[value="Married"]').prop('checked',true);
+                // $('[value="Mrs."]').prop('checked',true);
+                // cs['xcms__c'].value = 'Married';//cs['xcslt__c'].value = 'Mrs.';
+                //$("input[name='martialStatus']").attr('disabled',true);
+                $("input[name='salutation']").attr('disabled',true);
+                $(cs['xcp__c']).attr('onchange','checkPassportnumber(this)');
+                $('.alphaChar').bind('keyup', function(e) {
+                    $(this).val($(this).val().replace(/[^a-zA-Z ]/g, ''));
+                    if (e.which >= 97 && e.which <= 122) {
+                        var newKey = e.which - 32;
+                        e.keyCode = newKey;
+                        e.charCode = newKey;
+                    }
+                    $(this).val(($(this).val()));
+                });
+                $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+       
+                 var val = cs['xadh__c'].value;
+                 var codes = val.split(";");
+                 console.log('codes::::'+codes);
+                //$('.rorenwl').attr('disabled',true);
+                
+                $('.rorenwl').each(function(i){ 
+                    ($(this).val())?$(this).attr('disabled',true):$(this).removeAttr('disabled');
+                });
+                 
+                 // $('#passport_details').find('input,select').attr('disabled',true);
+                 //$('#personalDetail').find('input,select').attr('disabled',true);
+                 //$('#collDeliveryInfo').find('input,select,textarea').attr('disabled',true);
+                 
+            // $('#passport_details').removeClass('show');
+            $('#collDeliveryInfo').addClass('show');
+            $(cs['rmob__c']).removeAttr("disabled");
+            
+            setTimeout(function(){
+                    console.log('i----->'+85);
+                for(i of codes){
+                    //console.log('i----->'+i);
+                    if(Object.keys(changecodes).includes(i)){
+                        for(j of changecodes[i].split(',')){
+                            console.log('j----->'+j);
+                            $(cs[j]).addClass('focusStyle').removeAttr("disabled");
+                            if($(cs[j]).is('select'))
+                                $(cs[j]).next().addClass('focusStyle');
+                            //if($(cs[j]).is('input:radio'))
+                            //   $(cs[j]).next().addClass('focusStyle').removeAttr("disabled");
+                        } 
+                    }
+                }          
+            },8000);
+                 
+        
+               if(codes.includes('msc')){
+                console.log('Marriage status::::::::::::');
+                $('#ContactInfo').addClass('show');
+                $('#personalDetail').addClass('show');
+                
+                $("input[name='martialStatus']").parent().parent().parent().addClass('focusStyle');
+                
+                $("input[name='martialStatus']").removeAttr("disabled");
+            }
+            setTimeout(function(){
+            $('.ddValidation').on('change',function(){
+                $('select').on('change',function(){
+                    var v = $(this).val();
+                    if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                        removeValError($(this));
+                });
+            });
+            $('select').on('change',function(){
+                var v = $(this).val();
+                if(v!=''&&v!='--None--'&&v!='select'&&v!=undefined)    
+                    removeValError($(this));
+            });
+            },3000);
+        });
+            
+        function dformat(dt,id){
+            var d = new Date(dt);//alert(d);
+            var m=d.getMonth()+1;
+            var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+            var mm=m>9?m:'0'+m;
+            var yy=d.getFullYear();
+            document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+            //elem.parent().find('.warningMsg').remove();
+        }
+        //Add validation error
+     
+        //validation  for uploading passport when passport ischanged
+        function checkPassportnumber(thiselem){
+            console.log('checkPassportnumber:::');
+            removeWarningMsg(thiselem);
+            removeValError(thiselem);   
+            addWarningMsg(thiselem,'Please make sure you re-upload your passport');
+        }
+        //Validation for current Nationality if it is syria
+        function validateCurrenNationality(thisElement){
+            var curNat = $(thisElement).val();
+            /*if(curNat == 'Syria'){
+                addValError(thisElement,'Visa issuance subject to Immigration discretion');
+                return false;
+            }else{
+                removeValError(thisElement);     
+            }*/
+        }
+        //Validation  for UAE Mobile Number
+         function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                $(elem).parent().find('.frmErrMsg').remove();
+                $(elem).parent().parent().find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+                $(elem).parent().parent().append(errElem);
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        //check whether date is valid or not
+        function checkValidDate(thisElement){
+            console.log('validDate:::');
+            var date = $(thisElement).val();
+            console.log('date:::'+date);
+            var date_regex =/^([0-2][0-9]|(3)[0-1])(\/)(((0)[0-9])|((1)[0-2]))(\/)\d{4}$/;
+            var r = (date_regex.test(date))?true:'invalid';
+            console.log('r::::'+r);
+             if(r == 'invalid'){
+                removeWarningMsg(thisElement);
+                removeValError(thisElement);   
+                addValError(thisElement,'Invalid date format');
+                return false;    
+            }else{
+                removeValError(thisElement);   
+                return r;
+            }
+        }
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+       
+        //Validate Data on click of next button
+            function validateData(){
+                if($('.frmErrMsg').is(':visible')){
+                    scrollToDiv($('.frmErrMsg').eq(0).parent());
+                    validated = false;
+                    return;
+                }
+                console.log('validateData:::');
+                var elem = '';
+                var validated  = true;
+                
+                if($("#optionallnm").is(':checked')){
+                    cs["xcln__c"].value = cs["xcfan__c"].value; 
+                }
+                
+                var val = cs['xadh__c'].value;
+                var codes = val.split(";");
+                  var cc = { "cr": [ { "xcrlg__c": [ "religion", "Old and new Religion should not be same." ] } ], "dbc": [ { "xcbd__c": [ "dob", "Corrected Date of Birth should not be same as old value." ] } ], "msc": [ { "xcms__c": [ "marSta", "Corrected Martial status should not be same." ] } ], "nc": [ { "compareAll": true, "fields": [ { "xcfn__c": "fName" }, { "xcmn__c": "mName" }, { "xcln__c": "lName" } ], "errMsg": "Correction of Name should not be same as old value.", "errMsgFld": "xcfn__c" } ], "ntc": [ { "xcnc__c": [ "Nationality", "Old and new Nationality should not be same." ], "xcp__c": [ "ppNo", "Old and new passport numbers should not be same." ] } ], "np": [ { "xcp__c": [ "ppNo", "Old and new passport numbers should not be same." ] } ] };
+                $('.requiredFld').each(function(){
+                    if(!$(this).is(':visible'))
+                    return;
+                    var v = $(this).val();
+                    if(v==''||v==null||v==undefined||v.lenght<1){
+                        addValError(this,'**This field is required!');
+                        validated=false;
+                        if(elem=='') elem = $(this);
+                    }else{
+                        removeValError(this);  
+                    }
+                });
+                
+                
+                
+                var salutation = $("input[name='salutation']:checked").val();
+                var martialStatus = $("input[name='martialStatus']:checked").val();
+                if(salutation == undefined){
+                    //alert('Please select salutation');
+                    $("input[name='salutation']").parent().parent().parent().find('.option-error').show();
+                    validated =false;
+                }
+                //alert('salutation v:'+validated);
+                if(martialStatus == undefined){
+                    $("input[name='martialStatus']").parent().parent().parent().find('.option-error').show();
+                    //alert('Please select martial status');
+                    validated =false;
+                }//alert('martialStatus v:'+validated);
+                if(validateCurrenNationality(cs['xcnc__c']) == false){
+                    validated =false;
+                }//alert('current Nationality v'+validated);
+                
+                if(!validateEmiratesId(cs['xceidid__c'].value)){
+                    validated =false;
+                    addValError(cs["xceidid__c"],'Invalid Emirates id!');
+                    scrollToDiv($(cs["xcnc__c"]));
+                }
+                if(GCC_Nations.includes(cs["xcnc__c"].value)){
+                    validated =false;
+                    addValError(cs["xcnc__c"],'GCC nationals are not allowed !!');
+                    scrollToDiv($(cs["xcnc__c"]));
+                }
+                if($('.frmErrMsg').is(':visible')){
+                    scrollToDiv($('.frmErrMsg').eq(0).parent());
+                    validated = false;
+                }
+                if($('.frmErrMsg1').is(':visible')){
+                    scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                    validated = false;
+                }
+                console.log('validated::::'+validated);
+                console.log('Martial status:::'+cs['xcms__c'].value);
+                console.log('Student Graduate:::'+cs['xcstg__c'].value);
+                 
+               for(i in cc){
+    if(codes.includes(i)){
+        if(cc[i][0].compareAll!=undefined&&cc[i][0].compareAll!=''){
+            var eq = true;
+            for(j of cc[i][0].fields){
+                if(cs[Object.keys(j)[0]].value != cs[Object.values(j)[0]].value)
+                    eq = false;
+            }
+            if(eq){
+                addValError($(cs[cc[i][0].errMsgFld]),cc[i][0].errMsg);
+                console.log(cc[i][0].errMsgFld+' -- '+cc[i][0].errMsg);
+            }
+        }
+        else{
+            for(j in cc[i][0]){
+                    if(dateFieldTypes.includes(cc[i][0][j][0])){
+                        if(cs[j].value==getFormattedDate(cs[cc[i][0][j][0]].value))
+                            addValError($(cs[j]),cc[i][0][j][1]);
+                    }
+                    else
+                        if(cs[j].value==cs[cc[i][0][j][0]].value){
+                        console.log(j+' -- '+cc[i][0][j][1]);
+                        addValError($(cs[j]),cc[i][0][j][1]);
+                    }
+            }
+        }
+    }
+}
+                 
+                /*  if(codes.includes('ntc')){ // no
+                    if(cs['Nationality'].value == cs['xcnc__c'].value){
+                        validated = false;
+                        addValError(cs["xcnc__c"],'Old and new Nationality should not be same.');
+                        if(elem=='') elem = $(cs["xcnc__c"]);
+                        //    addValError($('#xcnc__c').parent(),'Old and new Nationality should not be same.');
+                    }
+                    if(cs['ppNo'].value == cs['xcp__c'].value){
+                        validated = false;
+                        addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                        if(elem=='') elem = $(cs["xcp__c"]);
+                    }
+                }
+                if(codes.includes('np')){
+                    if(cs['ppNo'].value == cs['xcp__c'].value){
+                        validated = false;
+                        addValError(cs["xcp__c"],'Old and new passport numbers should not be same.');
+                        if(elem=='') elem = $(cs["xcp__c"]);
+                    }
+                }
+                console.log('validateData2:::::'+validated);
+                if(codes.includes('cr')){
+                    if(cs['religion'].value == cs['xcrlg__c'].value){
+                        validated = false;
+                        addValError(cs["xcrlg__c"],'Old and new Religion should not be same.');
+                    }       
+                }
+                if(codes.includes('dbc')){
+                    if(getFormattedDate(cs['dob'].value) == cs['xcbd__c'].value){
+                        validated = false;
+                        addValError($("#xcbd__c"),'Corrected Date of Birth should not be same as old value.');
+                    }       
+                }
+                console.log('validateData3:::::'+validated);
+               
+                console.log('validateData4:::::'+validated);
+                if(codes.includes('nc')){ // no
+                    if((cs['fName'].value == cs['xcfn__c'].value) && (cs['mName'].value == cs['xcmn__c'].value) && (cs['lName'].value == cs['xcln__c'].value)){
+                        validated = false;
+                        addValError(cs["xcfn__c"],'Correction of Name should not be same as old value');
+                    }       
+                } */
+                 if(codes.includes('msc')){
+                            if(cs['marSta'].value == cs['xcms__c'].value){
+                        validated = false;
+                        $("input[name='martialStatus']").parent().parent().parent().find('.option-error').html('Corrected Martial status should not be same').show();
+                    }       
+                }
+              
+                if(elem!=''){
+                    scrollToDiv(elem);
+                }
+                  console.log('submit validated:::'+validated);
+                if(validated == true){
+                    showTempLoader(event.target);
+                    toggleGLoader();
+                    next();
+                }
+            }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+            
+            function svRDrft(){
+                if($("#optionallnm").is(':checked')){
+                    cs["xcln__c"].value = cs["xcfan__c"].value; 
+                }
+                svRDrft2();
+            }
+        </script>
+        <style>
+            .errField{
+                border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+                color: #ff0000;
+                font-style: italic;
+                padding-left: 0.8rem;
+                position: absolute;
+            }
+            .warningMsg{
+                color:#004eff;
+                font-style: italic;
+                padding-left: 0.8rem;
+                position: absolute;
+                background-color: #d5ded9;
+            }
+        </style>
+               <apex:form id="mainForm" styleClass="form-style">
+            <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/>
+            <apex:inputHidden id="xadtx1__c" value="{!req.xadtx1__c}"/>
+            
+            <input type="hidden" id="Nationality" value="{!req.con__r.nc__c}"/>
+            <input type="hidden" id="ppNo" value="{!req.con__r.p__c}"/>
+            <input type="hidden" id="religion" value="{!req.con__r.rlg__c}"/>
+            <!--<apex:inputHidden id="dob" value="{!req.xcbd__c}"/> -->
+            <input type="hidden" id="dob" value="{!req.con__r.Birthdate}"/> 
+            <input type="hidden" id="marSta" value="{!req.con__r.ms__c}"/>
+            <input type="hidden" id="fName" value="{!req.con__r.firstName}"/>
+            <input type="hidden" id="mName" value="{!req.con__r.middleName}"/>
+            <input type="hidden" id="lName" value="{!req.con__r.lastName}"/>
+            <input type="hidden" id="JbId" value="{!req.con__r.jb__c}"/>
+            <input type="hidden" id="xcjb__c" value="{!req.xcjb__c}"/>
+            <script>
+            cs['xcjb__c']=document.getElementById('xcjb__c');
+            cs['xadh__c']=document.getElementById('{!$Component.xadh__c}');
+            cs['xadtx1__c']=document.getElementById('{!$Component.xadtx1__c}');
+            
+            cs['Nationality']=document.getElementById('Nationality');
+            cs['ppNo']=document.getElementById('ppNo');
+            cs['religion']=document.getElementById('religion');
+            //cs['dob']=document.getElementById('{!$Component.dob}');
+            cs['dob']=document.getElementById('dob');
+            
+            
+            cs['marSta']=document.getElementById('marSta');
+            cs['fName']=document.getElementById('fName');
+            cs['mName']=document.getElementById('mName');
+            cs['lName']=document.getElementById('lName');
+            cs['JbId']=document.getElementById('JbId');
+            
+            </script>
+            
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="saveReqDraft3" action="{!saveDraft}"  reRender="comp" oncomplete="$('.loader_rerender').hide();hideTempLoader_input();" />
+                
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft2" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+                 
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                </span>
+                                <!-- <a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            
+                                            <c:grqupd PageControllerBaseCalling="{!this}" keyAssigned="componentOne" Dim="V" id="comp"/>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        <c:grqbrdcrumbs req="{!req}" applicant="active" addon="" payment=""/> 
+                                        <!--<div class="steps steps-desktop">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                    <div class="step-title">Additional Services</div>
+                                                </div>
+                                            </div>
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                    <div class="step-title">Review &amp; Payment</div>
+                                                </div>
+                                            </div>
+                                        </div>-->
+                                        <!-- end .steps -->
+                                        
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        
+                                        
+                                        <b><apex:pageMessages id="msg"  />
+                                            
+                                            
+                                        </b>
+                                        
+                                        <c:passportdetails req="{!req}" id="ppdCmp"/>
+                                        <c:emiratesidinfo req="{!req}" id="EinfoCmp"/>
+                                        <!-- .base-collapse -->
+                                        <div class="base-collapse">
+                                            <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                                <div class="collapse-title">Applicant details </div>
+                                            </a>
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                           <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Student Grade</label>
+                                                                    <apex:inputField value="{!req.xcstg__c}" styleClass="form-control input-select2-flat requiredFld"
+                                                                                     id="xcstg__c"/>
+                                                                    <script type="text/javascript">
+                                                                    cs['xcstg__c']=document.getElementById('{!$Component.xcstg__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <!-- .col --> 
+                                                        </div>
+                                                        <!--  <c:personaldetail req="{!req}" id="perDetail"/>  -->
+                                                        <!-- for BO users -->
+                                                        <c:personaldetailsBO rendered="{!!ispu}" req="{!req}"     
+                                                                          Salutations="{!salutations}"  
+                                                                          MartialStatus="{!MartialStatus}" 
+                                                                          SpokenLanguages="{!spokenLanguages}" id="perDetailBO" shwspousenm="true"/>
+                                                        <!-- for portal users -->
+                                                        <c:personaldetail rendered="{!ispu}" req="{!req}"   
+                                                                          Salutations="{!salutations}"  
+                                                                          MartialStatus="{!MartialStatus}" 
+                                                                          SpokenLanguages="{!spokenLanguages}" id="perDetail" shwspousenm="true"/>
+                                                        <c:contactinformation req="{!req}" id="conInfoCmp"/>
+                                                        <c:educationqualification req="{!req}" id="qualificationCmp"/>
+                                                      <!--  <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp"/> -->
+                                                           <div class="base-collapse">
+                                            <a href="#" class="collapse-header collapsed" data-toggle="collapse"
+                                               data-target="#collDeliveryInfo">
+                                             <!--   <div class="collapse-title">Collection and Delivery Information</div> -->
+                                            </a>
+                                            <div id="collDeliveryInfo">
+                                                <div class="collapse-content">
+                                                    <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp" cmpTitle="Collection and Delivery Information"/> 
+                                                    <div class="pb-4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .base-main-content -->
+                                        
+                                        <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                        
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+
+<c:fileuploadpopupnew13 R="{!req}" /> 
+
+</apex:form>
+    </html>    
+</apex:page>

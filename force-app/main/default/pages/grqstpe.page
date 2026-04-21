@@ -1,0 +1,258 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!srv.sdg__r.slbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+        
+        <script type="text/javascript">
+        var cs = {};
+        $(document).ready(function() {
+            $(cs['xceml__c']).parent().find('#emailId').text('Email address');
+            $(cs['xcmob__c']).parent().parent().find('#MobId').text('Mobile');
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+        });
+        
+        //Validate Data on click of next button
+        function validateData(){
+            console.log('validateData:::');
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            //Validate working hours
+            if(validateHours(cs['xawh__c']) == false){
+                console.log('Invalid working hours:::::');
+            	validated = false;	
+            }
+            //Validation for contact Lookup
+            if($('#conSerachVal').val() == ''){
+                addValError($('#conSerachVal').parent(),'**This field is required!');
+                validated = false;
+            }else{
+                removeValError($('#conSerachVal').parent());
+            }
+            
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            console.log('validated1::::'+validated);
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            console.log('validated2::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            console.log('validated3::::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                next();
+            }
+        }
+        //Save draft Request
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function validateHours(thiselem){
+            console.log('validateHours::::::');
+            var hours =$(thiselem).val();
+            console.log('hours:::'+hours);
+            if(hours>40){
+                addValError($(thiselem),'Student is not allowed to work for more than 40 hours per week.');	
+                $(thiselem).addClass("is-invalid");
+                return false;
+            }else{
+                removeValError($(thiselem));
+                $(thiselem).removeClass("is-invalid");
+                return true;
+            }
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #ff0000;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: -0.2rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();"    onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert();" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <body class="base">
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    <apex:outputPanel rendered="{!NOt(ISBLANK(req.Name))}">
+                                        SR # <span class="text-000">{!req.Name} </span>    
+                                    </apex:outputPanel>
+                                </span>
+                                <!--<a href="#" onclick="saveReqDraft()" class="btn btn-black">SAVE DRAFT</a>-->
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:grqupd Dim="V"/>
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    <div class="base-main-content">
+                                        <!--<h3>{!srv.sdg__r.slbl__c}</h3>-->
+                                        <div class="steps steps-mobile">
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        <b><apex:pageMessages id="msg"  />
+                                        </b>
+                                        <!-- .base-collapse -->
+                                        <div class="base-collapse">
+                                            <!--<a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">-->
+                                            <h4 class="mt-4">Applicant Details</h4>
+                                            <!--</a>-->
+                                            <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        <!--<c:gconlookup role="Student" accId="{!req.Acc__c}" sta="Active" Request="{!req}" saveRq="false"/>-->
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-12">
+                                                                <div class="form-group">
+                                                                    <label>Name</label>
+                                                                    <input  class="form-control" value="{!req.Con__r.name}" disabled="true"/>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row row-lg">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Maximum allowed working hours</label>
+                                                                    <apex:inputField styleClass="requiredFld form-control numOnly" value="{!req.xawh__c	}" id="xawh__c" onchange="validateHours(this)" />
+                                                                    <script type="text/javascript">
+                                                                    cs['xawh__c']=document.getElementById('{!$Component.xawh__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Course enrolled in</label>
+                                                                    <apex:inputField styleClass="requiredFld form-control" value="{!req.xcenr__c}" id="xcenr__c" />
+                                                                    <script type="text/javascript">
+                                                                    cs['xcenr__c']=document.getElementById('{!$Component.xcenr__c}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <c:eContactInfo req="{!req}" cmpTitle="Contact Information"/>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--<div class="base-main-footer">
+                                            <div class="base-nav">
+                                                <c:qrbtnBk R="{!req}"></c:qrbtnBk>
+                                                <a href="#" onClick="validateData()"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>-->
+                                        <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" req="{!req}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+            </apex:pageBlock>
+        </apex:form>
+        <apex:form id="uploadFrm">
+            <c:fileuploadpopupnew13 R="{!req}" /> 
+        </apex:form>
+    </html>    
+</apex:page>

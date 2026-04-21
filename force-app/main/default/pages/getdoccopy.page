@@ -1,0 +1,76 @@
+<apex:page controller="gctlHm" cache="true"  action="{!getDocument}"  showHeader="false">
+<apex:pageBlock rendered="{!AND(NOT(licCopy==null),dc!='AOADOC')}" >
+<iframe src="data:application/pdf;base64,{!licCopy}" height="100%" width="100%" id="frame" frameborder="0"></iframe>
+</apex:pageBlock>
+<apex:pageBlock rendered="{!AND(NOT(licCopy==null),dc=='AOADOC')}">
+    <script>
+    function formatBase64()
+    {
+        let base64Input =  '{!JSENCODE(licCopy)}';
+        if (base64Input.startsWith('data:')) {
+            base64Input = base64Input.split(",")[1];
+        }
+        const nonDecodedData = cleanBase64(base64Input).length;
+        const decodedData = atob(base64Input);
+        const byteArray = new Uint8Array(decodedData.length);
+        for (let i = 0; i < decodedData.length; i++) {
+            byteArray[i] = decodedData.charCodeAt(i);
+        }
+        
+        const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.target='_self';
+        a.download = "Article of Association" + '.docx';
+        document.body.appendChild(a);
+        a.click();
+        
+        URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+         window.parent.close();
+    }
+    
+    function cleanBase64(base64String) {
+        base64String = base64String.replace(/data:[^;]*;base64,/g, '');
+        base64String = base64String.replace(/\n/g, '');
+        base64String = base64String.trim();
+        return base64String;
+    }
+    
+    function formatBytes(bytes) {
+        if (typeof bytes !== "number") {
+            return "Invalid input";
+        }
+        if (bytes < 0) {
+            return "Bytes cannot be negative";
+        }
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        var sizesI = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB'];
+        if (bytes === 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
+        var j = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        if (sizes[i] === 'Bytes') {
+            return bytes + ' ' + sizes[i];
+        } else {
+            return (bytes / Math.pow(1000, i)).toFixed(2) + ' ' + sizes[i] + ' / ' + (bytes / Math.pow(1024, j)).toFixed(2) + ' ' + sizesI[j];
+        }
+    }
+    console.log('licCopy===','{!JSENCODE(licCopy)}');
+    formatBase64();
+    </script> 
+<iframe src="data:application/docx;base64,{!licCopy}" height="100%" width="100%" id="frame" frameborder="0" ></iframe>
+</apex:pageBlock>
+    
+    <apex:pageBlock rendered="{!licCopy==null}" >
+        Document generation is under process. 
+    </apex:pageBlock>
+    
+	<script>
+    document.getElementById('frame').height = window.innerHeight;
+    console.log(window.innerHeight);
+    
+    </script> 
+</apex:page>

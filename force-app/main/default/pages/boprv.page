@@ -1,0 +1,378 @@
+<apex:page cache="false" controller="boprv" docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" title="axs back office" >
+
+
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+        
+        html { 
+        zoom : 80% !important;
+        #-moz-transform: scale(0.8) !important;
+        }
+    </style>
+    
+    
+    <script type="text/javascript">
+    var cs={}; 
+    
+    $(document).ready(function () {    
+        $('.requiredFld').on("keypress change", function(event){removeValError(this);}); 
+    });
+    
+    
+    function setReq(eid){
+        var tRqNum = $("#"+eid).val().trim();
+        if(tRqNum!=undefined && tRqNum!=null && tRqNum!=''){
+            cs["reqnum"].value = tRqNum;
+            //toggleGLoader();
+            //searchReq();
+        }
+    }
+    
+    
+    function setOp(eid){
+        cs["op"].value = $("#"+eid).val();
+        console.log('cs["op"].value==',  cs["op"].value );
+        if(cs["op"].value=='ai'){
+            $("#divad").show();
+        }else{
+            $("#divad").hide();
+        }
+        
+        if(cs["op"].value == 'sd' || cs["op"].value == 'epc' || cs["op"].value == 'ef')
+        {
+            //  getRefunditm( cs["op"].value,  cs["reqnum"].value);
+            $('#refbtn').show();
+            $('#uprqbtn').hide();
+        }
+        else
+        {
+            $('#refbtn').hide();
+            $('#uprqbtn').show();
+        }
+        
+        
+        
+    }
+
+    function setArrivalDate(eid){
+        cs["arrivalDate"].value = $("#"+eid).val();
+    }
+        
+    function showReqdata(){
+        var selOp = $("input[name='oprtn']:checked").val();
+        $("#trndata").hide(); $("#reqdata").hide();
+
+        if(selOp=='request'){
+            $("#reqdata").show();
+        }else if(selOp=='transaction'){
+            $("#trndata").show();
+        }
+
+    }
+    
+    /*function showopt(){
+        var selOp = $("input[name='req-oprtn']:checked").val();
+        $("#status").hide();$("#item").hide();$("#doc").hide();
+        
+        $(".forreqOpts").val("").trigger('change');
+        $("#"+selOp).show(); $("#reqdata").show(); 
+    }*/
+    
+    function vflds(){
+        var brk = false;var elem = '';
+        
+        $(".requiredFld").each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        
+        return brk;
+    }
+    
+    
+    function proceed(tp){
+        var brk = vflds();
+        if(!brk){
+            toggleGLoader();
+            if(tp=='rq'){
+                setReq('rqnumber');
+                saveRq();
+            }else if(tp=='trn'){
+                setReq('trnnumber');
+                showDets();
+            }
+        }
+    }
+    
+    function refund()
+    {
+        /*  var itemTocancel = '';$('[name="itemchk"]:checked').each(function(){
+            itemTocancel+= $(this).attr('itm') + ',';
+           
+        });console.log('itemTocancel===',itemTocancel);
+       if(itemTocancel != '')
+		{
+            
+            itemTocancel = itemTocancel.slice(0, -1); 
+             console.log('itemTocancel==',itemTocancel);
+            refundItm(itemTocancel);
+		}
+        else{
+            alert('Please select the item to refund')
+        };*/
+        if(!cs["reqnum"].value) 
+        {
+            addValError('#rqnumber','Please enter valid request number.'); 
+		
+            //   alert('Please enter valid request number');
+        }
+        else
+            {
+                 toggleGLoader();
+                removeValError('#rqnumber');
+        refundItm();
+                }
+        
+    }
+
+    function assignfldVal(val,fldId){cs[fldId].value=val;}
+    </script>
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main" >
+                <c:guheader heading="Update Request"/> 
+                <apex:actionFunction name="searchReq" action="{!searchReq}" status="theStatus" rerender="rqdetails"  oncomplete="toggleGLoader();"/>
+                <apex:actionFunction name="saveRq" action="{!saveRq}" status="theStatus" rerender="msg,msg2"  oncomplete="toggleGLoader();"/>
+                <apex:actionFunction name="showDets" action="{!searchTran}" status="theStatus" rerender="msg,msg2,trndetails"  oncomplete="toggleGLoader();"/>
+                <apex:actionFunction name="getRefunditm" action="{!getRefundItm}" status="theStatus" rerender="msg,msg2, itemDetails"  >
+                     <apex:param name="options" value="" /> 
+                     <apex:param name="rq" value="" /> 
+                </apex:actionFunction>
+                 <apex:actionFunction name="refundItm" action="{!refundItm}" status="theStatus" rerender="msg,msg2, itemDetails" oncomplete="toggleGLoader();" >
+                     <apex:param name="rfitems" value="" /> 
+                </apex:actionFunction>
+                
+                <apex:inputHidden id="reqnum" value="{!reqnum}"/>
+                <apex:inputHidden id="op" value="{!op}"/>
+                <!--<apex:inputHidden id="arrivalDate" value="{!arrivalDate}"/>-->
+                <script>
+                cs["reqnum"] = document.getElementById("{!$Component.reqnum}");
+                cs["op"] = document.getElementById("{!$Component.op}");
+                </script>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <p>Search and update a request or check transaction status</p>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                
+                                <apex:outputPanel id="msg">
+                                    <apex:pageMessages id="msg2" escape="false"/>
+                                </apex:outputPanel>
+                                
+                                <div class="form-group mb-3 mt-4 pt-3">
+                                    <p class="fs-18">Please Select to proceed</p>
+                                    <div class="row">
+                                        <div class="col-lg-3 col-sm-6">
+                                            <label class="box-check">
+                                                <input type="radio" name="oprtn" value="request" class="radio-oprtn" onchange="showReqdata();"/>
+                                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                                    <span class="box-title font-weight-medium">Request</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-lg-3 col-sm-6">
+                                            <label class="box-check">
+                                                <input type="radio" name="oprtn" value="transaction" class="radio-oprtn"  onchange="showReqdata();"/>
+                                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                                    <span class="box-title font-weight-medium">Transaction</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                                                
+                                
+                                <div id="reqdata" style="display:none;">
+                                    <div class="row form-style" >
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Request number</label>
+                                                <input placeholder="enter a valid request number" class="requiredFld form-control" id="rqnumber" onchange="setReq('rqnumber');" />
+                                            </div>
+                                        </div>    
+                                        
+                                        <div id="status" class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Select an operation</label>
+                                                <select id="operation" class="requiredFld form-control input-select2-flat" onchange="setOp('operation');"> 
+                                                    <option value="">--None--</option>
+                                                    <option value="Rejected">Reject request</option>
+                                                    <option value="Cancelled">Cancel request</option>
+                                                    <option value="Completed">Complete request</option>
+                                                    <option value="resetOTP">Reset OTP</option>
+                                                    <option value="ai">Enable arrival intimation</option>
+                                                    <option value="la">Enable local amendment</option>
+                                                    <option value="cx">Enable exit process</option>
+                                                    <option value="exn">Enable entry permit cancellation</option>
+                                                    <option value="et">Entry Permit Retyping (Abroad Applicant)</option>
+                                                    <option value="eti">Entry Permit Retyping (In Country)</option>
+                                                    <option value="eci">Enable entry permit Renewal/Correction (In-country Applicant)</option>
+                                                    <option value="eca">Enable entry permit Renewal/Correction (Abroad Applicant)</option>
+                                                    <!-- <option value="apr">Enable TEST ITEM</option>  -->
+                                                    <option value="insurance">Enable health insurance document or card</option>
+                                                    <!--<option value="Cancellation document">Enable cancellation document </option>-->
+                                                    <option value="id">ID Generation</option>
+                                                    <option value="letter">Letter Generation</option>
+                                                    <option value="sd">Refund Security Deposit</option>
+                                                    <option value="epc">Refund Emirates ID Amendment</option>
+                                                    <option value="ef">Refund Express Service Fees</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div id="divad" class="col-lg-6" style="display:none;">
+                                            <div class="form-group">
+                                                <label>Arrival date</label>
+                                                <!--<input placeholder="enter a valid request number" class="requiredFld form-control" id="adate" onchange="setArrivalDate('adate');" />-->
+                                                <div class="input-datepicker-group input-group">
+                                                    <apex:inputHidden id="arrivalDate" value="{!arrivalDate}" />
+                                                    <input type="text" class="requiredFld form-control input-datepicker" id="xcped__c"
+                                                        data-toggle="datetimepicker" data-target="#xcped__c" value="{!arrivalDate}"
+                                                        onchange = "assignfldVal(this.value,'arrivalDate');checkDate(this,'arr')" />
+                                                        <!--onchange="checkIssueAndExpiryDate(this,document.getElementById('xcped__c'))"/>-->
+                                                    <div class="input-group-append">
+                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped__c">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <script type="text/javascript">
+                                                cs['xcped__c']=document.getElementById('xcped__c');
+                                                dformat('{!JSENCODE(arrivalDate)}','xcped__c');
+                                                cs['arrivalDate']=getC('{!$Component.arrivalDate}');
+                                                </script>
+                                            
+                                            </div>
+                                        </div>    
+                                        
+
+                                        <!-- arrival intimation, local amendemnet, ep correction, exit process(cx), ep cancelletion, eca, eci, entry permit cancellation, -->
+                                        <apex:outputPanel id="rqdetails"> <!-- rendered="{AND(rq.sta__c!='',rq.sta__c!=null)}" -->
+                                            <apex:outputPanel id="rqdetails2" rendered="{!AND(rq.id!='',rq.id!=null)}">
+                                                <!-- rerender data after saving request -->
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                    </div>
+                                    <!--<apex:outputPanel id="itemDetails">
+                                        <apex:outputPanel rendered="{!AND(op == 'sd',lstitmWrapper!= null , lstitmWrapper.size>0)}">
+                                            
+                                            <apex:dataTable value="{!lstitmWrapper}" var="c" styleClass="table">
+                                                <apex:column style="width:25px;" >
+                                                    <apex:inputCheckbox html-name="itemchk" html-itm="{!c.obj.id}" value="{!c.selected}" styleClass="findMe" />
+                                                    <apex:facet name="header">
+                                                        <apex:inputCheckbox onchange="selectAll(this);" />
+                                                    </apex:facet>
+                                                </apex:column>
+                                                <apex:column styleClass="column">
+                                                    {!c.obj.name}
+                                                    <apex:facet name="header">
+                                                        <apex:commandLink reRender="listView">
+                                                            
+                                                            Name&nbsp;
+                                                        </apex:commandLink>
+                                                    </apex:facet>
+                                                </apex:column>
+                                                
+                                                <apex:column styleClass="column" >
+                                                    {!c.obj.AP__c}
+                                                    <apex:facet name="header">
+                                                        <apex:commandLink reRender="listView">
+                                                            
+                                                            Amount paid&nbsp;
+                                                        </apex:commandLink>
+                                                    </apex:facet>
+                                                </apex:column>
+                                            </apex:dataTable> 
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>-->
+                                    
+                                    
+                                    <div class="base-main-footer">
+                                        <apex:outputPanel styleClass="base-nav "  >
+                                             <a href="#" onClick="refund();" id="refbtn"  class="btn btn-primary refbtn base-nav-next" style="display:none!important">
+                                               Refund
+                                            </a>
+                                            <a href="#" onClick="proceed('rq');" id="uprqbtn"  class="btn btn-primary uprqbtn base-nav-next" style="display:none!important">
+                                                Update request
+                                            </a>
+                                           
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                                
+                                
+                                <div id="trndata" style="display:none;">
+                                    <div class="row form-style">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Transaction number</label>
+                                                <input placeholder="enter a valid transaction number" class="requiredFld form-control" id="trnnumber" onchange="setReq('trnnumber');" />
+                                            </div>
+                                        </div>  
+                                    </div>
+                                    
+                                    <div class="base-main-footer">
+                                        <apex:outputPanel styleClass="base-nav">
+                                            <a href="#" onClick="proceed('trn');" class="btn btn-primary base-nav-next">
+                                                Show details
+                                            </a>
+                                        </apex:outputPanel>
+                                    </div>
+                                    
+                                    <apex:outputPanel id="trndetails"> <!-- rendered="{AND(rq.sta__c!='',rq.sta__c!=null)}" -->
+                                        <apex:outputPanel id="trndetails2" rendered="{!AND(tran.id!='',tran.id!=null)}">
+                                            <apex:pageBlock title="Transaction details">
+                                                <apex:pageBlockSection >
+                                                    <apex:outputField value="{!tran.name}"/>
+                                                    <apex:outputField value="{!tran.STA__c}"/>
+                                                    <apex:outputField value="{!tran.RQ__c}"/>
+                                                    <apex:outputField value="{!tran.md__c}"/>
+                                                    <apex:outputField value="{!tran.gwrf__c}"/>
+                                                    <apex:outputField label="Age of Transaction (in mins)" value="{!tran.Last_Modified_Since__c}"/>
+                                                    
+                                                     
+                                                </apex:pageBlockSection>
+                                            </apex:pageBlock> 
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </apex:form>
+</apex:page>

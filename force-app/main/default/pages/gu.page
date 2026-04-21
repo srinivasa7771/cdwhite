@@ -1,0 +1,77 @@
+<apex:page standardStylesheets="true" sidebar="false" showHeader="true" deferLastCommandUntilReady="true"  label="Users: Manage Accounts"  title="Users: Manage Accounts" controller="gctlUsers">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <script>function doSave(){if(typeof AF_Save == 'function'){toggle_inputs();AF_Save();}}</script>   
+    <c:pgHeader id="sH" ispu="{!ispu}" tabName="Profile" iconURL="{!URLFOR($Resource.axsRS, '/images/profile-logo.png')}" title="Manage Accounts" subtitle="Users" description="Perform user management tasks such as activating and deactivating users. 
+You can also grant or revoke Super User permissions. 
+The Super User is a special user account that is granted full access to manage all requests and other users’ accounts.
+" />
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>     
+    <apex:form >       
+        <apex:actionFunction name="AF_Save" action="{!save}" status="theStatus" rerender="sH,pbMain,msg" onbeforedomupdate="javascript: toggle_inputs(); "/>      
+         <apex:pageBlock mode="edit" id="pbMain" title="Your are currently logged in as {!$User.FirstName} {!$User.LastName}.">                        
+            <apex:pageBlockButtons rendered="{!NOT(ReadOnly)}" >                
+                <div class="mgtBtn">
+                    <a href="/_ui/core/userprofile/UserProfilePage?tab=sfdc.ProfilePlatformOverview" class="btnSave" style="color:#fff"> My Profile </a>
+                    <apex:outputpanel layout="none" rendered="{!NOT(ReadOnly)}" >
+                        <a href="" onClick="javascript: doSave();" class="btnSave">Save Changes</a>
+                        <apex:outputpanel layout="none" rendered="{!canCrtUsr}" ><a href="/apex/gun" class="btnSave">New User</a></apex:outputpanel>
+                    </apex:outputpanel>
+                </div>
+            </apex:pageBlockButtons>
+            <apex:pageMessages id="msg" />
+            <apex:pageBlockSection collapsible="false" columns="1" rendered="{!usrs.size>0}" title="Users Accounts">
+                <apex:pageBlockSectionItem >
+                    <apex:outputpanel >
+                        <table class="list" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr class="headerRow">
+                                    <th class="actionColumn" scope="col"></th>
+                                    
+                                    <th scope="col" nowrap="nowrap">{!$ObjectType.User.label}</th>
+                                    <th scope="col" nowrap="nowrap">Super User account?</th>                                 
+                                    <th scope="col" colspan="2" nowrap="nowrap" class="zen-deemphasize">What access has been granted?</th>
+                                </tr>
+                                <apex:repeat value="{!usrs}" var="u">
+                                    <tr class="dataRow">
+                                        <td class="actionColumn">
+                                            <table border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td style="border:none;padding:0px;">
+                                                        <apex:commandLink styleClass="btnSave" style="color:#fff" action="{!dsbUser}" value="Deactivate" rendered="{!AND(u.u.isActive,NOT(ReadOnly))}" status="theStatus" rerender="sH,pbMain,msg" >
+                                                            <apex:param name="uid" value="{!u.u.Id}"/>
+                                                        </apex:commandLink> 
+                                                        <apex:commandLink styleClass="btnSave" style="color:#fff" action="{!enUser}" value="Activate" rendered="{!AND(NOT(u.u.isActive),NOT(ReadOnly))}" status="theStatus" rerender="sH,pbMain,msg" >
+                                                            <apex:param name="uid" value="{!u.u.Id}"/>
+                                                        </apex:commandLink> 
+                                                    </td>
+                                                    <td style="border:none;padding:0px;"><apex:outputpanel layout="none" rendered="{!AND(u.u.isActive,NOT(u.IsSuperUser),NOT(ReadOnly))}" ><a href="/apex/gua?uid={!u.u.Id}" class="btnNrm" style="color:#fff">Manage Access</a></apex:outputpanel></td>
+                                                </tr>
+                                            </table>
+                                        </td>               
+                                        <td class="dataCell"><apex:outputField value="{!u.u.Name}"/></td>
+                                        <td class="dataCell"><apex:inputCheckbox value="{!u.IsSuperUser}" disabled="{!OR(NOT(u.u.isActive),ReadOnly)}"/></td>
+                                        <apex:outputPanel layout="none" rendered="{!AND(u.u.isActive,NOT(u.IsSuperUser))}">
+                                            <td class="dataCell">
+                                               <b><apex:outputText value="{0, number,###,###,##0}"><apex:param value="{!u.srvcDE}" /></apex:outputText></b> services as data entry
+                                            </td>
+                                            <td class="dataCell">
+                                                <b><apex:outputText value="{0, number,###,###,##0}"><apex:param value="{!u.srvcAP}" /></apex:outputText></b> services as payment approver
+                                            </td>
+                                        </apex:outputpanel>
+                                        <apex:outputPanel layout="none" rendered="{!AND(u.u.isActive,u.IsSuperUser)}">
+                                            <td class="dataCell" colspan="2">Full Access (Super User)</td>
+                                        </apex:outputpanel>
+                                        <apex:outputPanel layout="none" rendered="{!NOT(u.u.isActive)}">
+                                            <td class="dataCell" colspan="2">No Access (User is inactive)</td>
+                                        </apex:outputpanel>
+                                    </tr>
+                                </apex:repeat>
+                            </tbody>
+                        </table>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+     </apex:form>
+</apex:page>

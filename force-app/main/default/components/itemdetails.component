@@ -1,0 +1,237 @@
+<apex:component >
+    <apex:attribute name="ritm"   description="Request Item"  type="g_reqitem__c" required="true"/>
+    <apex:attribute name="r"   description="Request "  type="g_Req__c" required="true"/>
+    <style>
+        .lookupInput {
+        display: inline;
+        white-space: nowrap;
+        vertical-align: middle
+        }
+        
+        .lookupInput img {
+        vertical-align: middle;
+        margin-right: .25em;
+        background-repeat: no-repeat
+        }
+        
+        .lookupIcon {
+        background-image: url(/img/func_icons/util/lookup20.gif);
+        background-position: 0 0;
+        width: 20px;
+        height: 20px;
+        background-position: top left
+        }
+        
+        .lookupIconOn {
+        background-image: url(/img/func_icons/util/lookup20.gif);
+        background-position: 0 0;
+        width: 20px;
+        height: 20px;
+        background-position: top right
+        }
+        
+    </style>
+    
+    <apex:attribute name="entityId" description="Record ID" type="Id" />  
+    
+    <div class="modal fade modal-base" id="modal_item_information" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 1050px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Provide Details</h2>
+                    <p>
+                        <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                        All fields are mandatory
+                    </p>
+                    
+                    <div class="form-style">
+                        <div class="row">
+                            
+                            
+                            
+                            
+                            <!-- .col -->
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Salutation</label>
+                                    <apex:inputField styleClass="requiredFld form-control input-select2-flat" value="{!ritm.xcslt__c}" id="xcslt__c"/>
+                                    <script type="text/javascript">
+                                    cs['xcslt__c']=document.getElementById('{!$Component.xcslt__c}');
+                                    cs['xcslt__c'].value='{!IF(ritm.xcslt__c!='',ritm.xcslt__c,IF(r.Con__r.salutation != '',r.Con__r.salutation,r.xcslt__c))}';
+                                    </script>
+                                </div>
+                            </div> <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <apex:inputField styleClass="requiredFld form-control" value="{!ritm.xcfn__c}" id="xcfn__c"/>
+                                <script type="text/javascript">
+                                cs['xcfn__c']=document.getElementById('{!$Component.xcfn__c}');
+                                cs['xcfn__c'].value="{!IF(ritm.xcfn__c!='',ritm.xcfn__c,IF(r.Con__r.FirstName != '',r.Con__r.FirstName,r.xcfn__c))}";
+                                </script>
+                            </div></div> <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Middle Name</label>
+                                <apex:inputField styleClass="form-control" value="{!ritm.xcmn__c}" id="xcmn__c"/>
+                                <script type="text/javascript">
+                                cs['xcmn__c']=document.getElementById('{!$Component.xcmn__c}');
+                                cs['xcmn__c']="{!IF(ritm.xcmn__c!='',ritm.xcmn__c,IF(r.Con__r.MiddleName != '',r.Con__r.MiddleName,r.xcmn__c))}";
+                                </script>
+                            </div> </div> <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <apex:inputField styleClass="requiredFld form-control" value="{!ritm.xcln__c}" id="xcln__c"/>
+                                <script type="text/javascript">
+                                cs['xcln__c']=document.getElementById('{!$Component.xcln__c}');
+                                cs['xcln__c'].value="{!IF(ritm.xcln__c!='',ritm.xcln__c,IF(r.Con__r.LastName != '',r.Con__r.LastName,r.xcln__c))}";
+                                </script>
+                            </div></div> <div class="col-lg-6">
+                            <!-- 
+hrllo-->
+                            
+                            <div class="form-group">
+                                <label>Birthdate</label>
+                                <!--<apex:inputField value="{!req.xcbd__c}" onchange="checkDate(this,'dob')" styleClass="requiredFld form-control " id="xcbd__c" showDatePicker="true"/>-->
+                                <div class="input-datepicker-group input-group">
+                                    <input type="text" class="requiredFld form-control input-datepicker" id="xcbd1__c"
+                                           data-toggle="datetimepicker" data-target="#xcbd1__c" value="{!ritm.xcbd__c}"
+                                           onchange = "checkDate(this,'dob','{!r.srvc__r.uid__c}')" />
+                                    <div class="input-group-append">
+                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcbd1__c">
+                                            <i class="icon-date"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <script type="text/javascript">
+                                cs['xcbd1__c']=document.getElementById('{!$Component.xcbd1__c}');
+                                dformat('{!IF(ritm.xcbd__c!=null,ritm.xcbd__c,IF(r.Con__r.Birthdate != null,r.Con__r.Birthdate,r.xcbd__c))}','xcbd1__c');
+                                </script>
+                            </div>
+                            </div> 
+                            <!-- need to  updated in queries impact on other services -->
+                           
+                            <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Place Of Birth</label>
+                                <apex:inputField styleClass="requiredFld form-control" value="{!ritm.xcbp__c}" id="xcbp__c"/>
+                                <script type="text/javascript">
+                                cs['xcbp__c']=document.getElementById('{!$Component.xcbp__c}');
+                                cs['xcbp__c'].value="{!IF(ritm.xcbp__c!='',ritm.xcbp__c,IF(r.Con__r.bp__c != '',r.Con__r.bp__c,r.xcbp__c))}";
+                                </script>
+                            </div>
+                            </div>
+							
+                            
+                            <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Nationality</label>
+                                <apex:inputField styleClass="requiredFld form-control input-select2-flat" value="{!ritm.xcnc__c}" id="xcnc__c"/>
+                                <script type="text/javascript">
+                                cs['xcnc__c']=document.getElementById('{!$Component.xcnc__c}');
+                                cs['xcnc__c'].value="{!IF(ritm.xcnc__c!='',ritm.xcnc__c,IF(r.Con__r.nc__c != '',r.Con__r.nc__c,r.xcnc__c))}";
+                                </script>
+                            </div>
+                            </div>
+                            
+                            <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Passport#</label>
+                                <apex:inputField styleClass="requiredFld form-control" value="{!ritm.xcp__c}" id="xcp__c"/>
+                                <script type="text/javascript">
+                                cs['xcp__c']=document.getElementById('{!$Component.xcp__c}');
+                                cs['xcp__c'].value="{!IF(ritm.xcp__c!='',ritm.xcp__c,IF(r.Con__r.p__c != '',r.Con__r.p__c,r.xcp__c))}";
+                                </script>
+                            </div>
+                            </div>
+                            
+                            
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Photo Correction</label>
+                                    <apex:inputField styleClass="requiredFld form-control input-select2-flat" value="{!ritm.xcphc__c}" id="xcphc__c"/>
+                                    <script type="text/javascript">
+                                    cs['xcphc__c']=document.getElementById('{!$Component.xcphc__c}');
+                                    </script>
+                                </div></div> 
+                            <apex:outputText rendered="{!OR(r.srvc__r.uid__c =='001',r.srvc__r.uid__c =='002',r.srvc__r.uid__c =='020',r.srvc__r.uid__c =='021',r.srvc__r.uid__c =='040',r.srvc__r.uid__c =='078')}">
+                                <div class="col-lg-6">
+                                    <c:gjtlookup req="{!r}" jobId="{!IF(ritm.xcjb__c!=null,ritm.xcjb__c,r.xcjb__c)}" attFlag="false" type="ritem"/>
+                                </div>
+                            </apex:outputText>    
+                            <div class="col-lg-6">
+                                
+                                <div class="form-group text-right">
+                                    <label>&nbsp;</label><br/>
+                                    
+                                    <a onclick="validateData();" class="fff-Font btn btn-primary">
+                                        SAVE
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            
+                            <!-- .col -->
+                        </div>
+                        <!-- .row -->
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-base" id="modal_Cancel" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Provide Details</h2>
+                    
+                    
+                    
+                    <div class="form-style">
+                        <div class="bg-white border-radius-6 p-3 form-style text-left">
+                            <label>Update Exit Date</label>
+                            <div class="d-flex">
+                                <div class="flex-fill">
+                                    <div class="input-datepicker-group input-group">
+                                        <input type="text" class="form-control input-datepicker" id="datepicker2"
+                                               data-toggle="datetimepicker" data-target="#datepicker2" value="{!ritm.xaed__c}" />
+                                        <script type="text/javascript">
+                                        cs['datepicker2']=document.getElementById('{!$Component.datepicker2}');
+                                        dformat('{!ritm.xaed__c}','datepicker2');
+                                        </script>
+                                        
+                                        <div class="input-group-append">
+                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker"
+                                                    data-target="#datepicker2">
+                                                <i class="icon-date"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a onclick="createItem();" href="#" class="btn btn-primary ml-2">
+                                    Save
+                                </a>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .form-style -->
+                    
+                </div>
+                <!-- .modal-body -->
+                
+                
+            </div>
+        </div>
+    </div>
+    
+</apex:component>

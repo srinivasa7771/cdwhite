@@ -1,0 +1,621 @@
+<apex:page sidebar="false" standardController="g_Req__c" extensions="gctlRequ" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="{!IF(isgu=true,false,true)}" standardStylesheets="false" action="{!authenticateUser}" title="{!sd.slbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        
+        <script type="text/javascript">
+        
+        var cs = {};var flg1=false; var flg2=false; 
+        var srv_cd = '{!JSENCODE(rq.srvc__r.uid__c)}'; 
+        
+        $(document).ready(function() {
+            //for DDA NOC
+            if('{!isgu}'=='true'&&srv_cd=='dnc'&&'{!ispu}'=='false'&&localStorage.getItem('rqNo')=='{!JSENCODE(rq.name)}'){
+                //if('{!isgu}'=='true'&&'{!ispu}'=='false'&&&&srv_cd=='dnc'){/*    !localStorage.getItem('srvName')*/
+                $('#main').remove();
+                axsAlert('ERROR','You have clicked on back button in payment page.<p>Please create a new request.</p>');
+                $('#modal_alert_global').modal('hide').on('hidden.bs.modal',function(){
+                    document.location.href = '/grqded_2?sid=a0L2y000000Xe28EAC';
+                    //window.open('/grqded_2?sid=a0L2y000000Xe28EAC','_blank');
+                });
+            }
+            if(srv_cd=='ltp' || srv_cd=='apt') {
+                $("#btnnxt").text('SUBMIT'); 
+            }
+            
+            var  docs='{!JSENCODE(rq.xcddocs__c)}';
+            docs = docs.substring(0, docs.length - 1); 
+            var doclist = docs.split(';');
+            var doclen=doclist.length;
+            
+            for(var i=0; i < doclist.length; i++) {
+                var docname = doclist[i];
+                if((docname.includes("Good Standing") || docname.includes("UAE license issued by Economic Department") || docname.includes("UAE trade license issued by Economic Department") || docname.includes("DED Commercial License") || docname.includes("KHDA") || docname.includes("NOC from Knowledge Human Department Authority")))
+                    flg1 = true;
+                else if(!(docname.includes("Good Standing") || docname.includes("UAE license issued by Economic Department") || docname.includes("UAE trade license issued by Economic Department") || docname.includes("DED Commercial License") || docname.includes("KHDA") || docname.includes("NOC from Knowledge Human Department Authority"))) 
+                    flg2 = true;  
+            }
+            if('{!JSENCODE(rq.xdrv__c)}' == 'true' && !flg2){
+                cs['dsgu__c'].value = true;
+                $('#dsgu').hide();
+            } 
+            if(!flg1){
+                $('#xdrv').hide();
+            }
+            if('{!JSENCODE(rq.xdrv__c)}' == 'true'){
+                
+                $('[value="xdrv"]').prop('checked',true);
+            }
+            if('{!JSENCODE(rq.dsgu__c)}' == 'true')
+                $('[value="dsgu"]').prop('checked',true);
+            
+        });
+        
+        
+        
+        
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+       var farCfm = 'Uploaded FAR summary is signed & stamped by the auditor?'; 
+        var tAndC = '';//'<ul class="ul-style">';
+        tAndC +='I have reviewed the information and the uploaded document(s) against this service request.<br/>';
+        tAndC +='By Submission, I take full responsibility for the contents of the form plus the document(s) uploaded and attest that the information on this form and uploaded document(s) are free of errors. In case of errors, I agree to bear all the costs required to rectify such errors.';
+        // tAndC +='</ul>';
+    // function moved to axs2custom.js    
+   function axsConfirmation(ch,cb,loader,onYes,onYesArgs,onNo,onNoArgs){
+    $('#modal_confirm_global').remove();
+    if(cb==undefined) cb='';
+    var cBlock = '<div class="modal fade modal-base" data-backdrop="static" id="modal_confirm_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <h2 class="mb-4">'+ch+'</h2> <p>'+cb+'<p class="col-xl-12 col-lg-12" style="text-align: right;"> <button class="col-xl-4 col-lg-12 btn btn-primary mr-2 btn-block-sm cBtns" id="cYes" val1="yes"> YES </button> <button class="col-xl-4 col-lg-12 btn btn-outline-primary btn-block-sm cBtns" val1="no"> NO </button><br class=""> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+    $('body').append(cBlock);
+    $('#modal_confirm_global').modal('show');
+    $('.cBtns').on('click',function(){
+        $('#modal_confirm_global').modal('hide');
+        if($(this).attr('val1').includes('yes')){
+            if(loader)
+                showGLoader();
+            if(onYes!=undefined&&onYes!=null&&onYes!=''){
+                if(onYesArgs!=undefined&&onYesArgs!=null&&onYesArgs!=''){
+                    $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                        window[''+onYes](onYesArgs);
+                    });
+                }
+                
+                else{
+                    $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                        window[''+onYes]();
+                    });
+                }
+            }
+        }
+        else if($(this).attr('val1').includes('no')){
+            if(onNo!=undefined&&onNo!=null&&onNo!=''){
+                if(onNoArgs!=undefined&&onNoArgs!=null&&onNoArgs!='')
+                    $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                        window[''+onNo](onNoArgs);
+                    });
+                else
+                    $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                        window[''+onNo]();
+                    });
+            }
+        }
+    });
+}
+        function auditSigned(){
+            cs['dsgu__c'].value = true;
+            cs['xadtx4__c'].value = '';
+            //$('#preloader').fadeIn();
+           axsConfirmation('Terms & Conditions',tAndC,true,'nxtPg');
+                $('#modal_confirm_global .cBtns').text('Decline');
+                $('#modal_confirm_global #cYes').text('Accept');
+            hideGLoader();
+         }
+        function auditNotVerified(){
+           $('#modal_AuditJustification').modal('show');
+         }
+        function proceedAuditForm(){
+            var validated  = true;
+            $('.auditFld').each(function(){
+                var v = $(this).val();
+                console.log('v2:::'+v);
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    
+                }else{
+                    removeValError(this);  
+                    
+                }
+            });
+            console.log('validated::'+validated);
+            if(validated){
+                cs['xadtx4__c'].value = cs['auditJustificationId'].value;
+                cs['dsgu__c'].value = false;
+                $('#modal_AuditJustification').modal('hide');
+                //$('#preloader').fadeIn();
+                //nxtPg();
+                axsConfirmation('Terms & Conditions',tAndC,true,'nxtPg');
+                $('#modal_confirm_global .cBtns').text('Decline');
+                $('#modal_confirm_global #cYes').text('Accept');
+            }
+            
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            
+            if('{!JSENCODE(rq.srvc__r.uid__c)}' == '220' && '{!JSENCODE(rq.x30gr__c)}' == 'true' && cs['dsgu__c'].value!='true'){
+                   axsAlert('Alert','Please accept the document(s) undertaking');
+                
+                }
+            else if('{!JSENCODE(rq.srvc__r.uid__c)}' == 'aml'){
+                axsConfirmation('Declaration',farCfm,false,'auditSigned',true,'auditNotVerified');
+            }
+            else{
+            
+            
+            var elem = '';
+            var validated  = true;
+            $('#preloader').fadeIn();
+            nxtPg();
+                    }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        
+        </script>
+        <style>
+            .onboarding-side-main {
+            padding: 0px !important;
+            }
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:actionFunction name="nxtPg" action="{!nextPage}" status="theStatus" rerender="msg,btnid" oncomplete="$('#preloader').fadeOut();"/>
+            <apex:actionFunction name="docValidity" action="{!updateDocValidity}" status="theStatus" rerender="p,sH,twinPp,msg" oncomplete="$('#preloader').fadeOut();" />
+            
+          <apex:actionFunction name="updateReq" action="{!saveRequest}" status="theStatus" rerender="dummy" oncomplete="console.log(cs['xadtx4__c'].value);" /><!--getAttchedID('{!JSENCODE(attchedDocID)}');-->
+            <apex:actionFunction name="saveAtt" action="{!saveAttachment}"  rerender="opDocV,opDocH,opDocS,opDocLR,opDocL" oncomplete="getAttchedID('{!JSENCODE(attchedDocID)}');reloadDocDiv();" />
+            <apex:outputPanel id="dummy"></apex:outputPanel>
+            <!--<apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.docq__c}" rendered="false" /> -->
+            <apex:outputText rendered="{!NOT(isgu)}">
+                <apex:inputHidden id="dsgu__c" value="{!rq.dsgu__c}"  />
+                <apex:inputHidden id="xdrv__c" value="{!rq.xdrv__c}"  />
+                <apex:inputHidden id="parseId"  />
+                <apex:inputHidden id="xadtx4__c" value="{!rq.xadtx4__c}" />
+                <apex:inputHidden id="docname" value="{!docName}" />
+                <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+                <apex:InputHidden id="fileSrc"/>
+                <script type="text/javascript">
+                cs['dsgu__c']=getC('{!$Component.dsgu__c}');
+                cs['xdrv__c']=getC('{!$Component.xdrv__c}');
+                cs['parseId']=getC('{!$Component.parseId}');
+                cs["docname"] = getC("{!$Component.docname}");
+                cs["xadtx4__c"] = getC("{!$Component.xadtx4__c}");
+                cs["imageBase64"] = getC("{!$Component.imageBase64}");
+                //cs['dsgu__c'].value= true; 
+                
+                </script>
+            </apex:outputText>    
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!isgu}">
+                    <apex:outputPanel rendered="{!rq.srvc__r.uid__c !='dnc'}">
+                        <c:HeaderInternal heading="{!rq.srvc__r.lbl__c}" con="{!emp}" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!rq.srvc__r.uid__c ='dnc'}">
+                        <c:guheader heading="{!rq.srvc__r.lbl__c}" />
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                     <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!rq.Name} </span>
+                                    <!-- <div class="user-title">{!req.STA__c}</div> -->
+                                </span>
+                                
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <!--left-side pannel start-->  
+                                <!--<apex:outputText rendered="{!AND(rq.srvc__r.uid__c != '220',rq.srvc__r.uid__c != 'dnc')}">-->
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:srvdefcmp srv="{!srv}" req="{!rq}"/>
+                                            
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='122'}">
+                                                <div class="pb-4">
+                                                    <h3 class="text-primary d-md-block d-none">Download forms</h3>
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <a href="/servlet/servlet.FileDownload?file=0152y000000RKnG" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                                <u>Miscellaneous services form</u>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='213'}">
+                                                <div class="pb-4">
+                                                    <h3 class="text-primary d-md-block d-none">Download forms</h3>
+                                                    <div class="upload-list">
+                                                       <div class="upload-list-item box box-white box-padding">
+                                                            <a href="/servlet/servlet.FileDownload?file=0152y000000RKnG" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                                <u>Miscellaneous services form</u>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                            
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='apt'}">
+                                                <h3 class="text-primary d-md-block d-none">Download Sample</h3>
+                                                <div class="upload-list">
+                                                    <div class="upload-list-item box box-white box-padding">
+                                                        <a href="/servlet/servlet.FileDownload?file=0150I000009fFiL" class="upload-item-title text-li" onclick="window.open(this.href, '_blank');return false;">
+                                                            <u>Method Statement and Risk Assessment</u> <!-- a0V2y0000014kjZEAQ-->
+                                                        </a>
+                                                    </div>
+                                                </div> 
+                                            </apex:outputPanel>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                    
+                                </div>
+                                <!--</apex:outputText>-->
+                                <!-- .base-side -->
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        <c:grqbrdcrumbs req="{!rq}" applicant="completed" addon="active" payment="" rendered="{!AND(NOT(rq.srvc__r.uid__c == 'apt'), NOT(rq.srvc__r.uid__c == 'ltc'),NOT(rq.srvc__r.uid__c == 'ltp'))}"/> 
+                                        
+                                        <apex:outputPanel rendered="{!OR(rq.srvc__r.uid__c == 'apt',rq.srvc__r.uid__c == 'aml', rq.srvc__r.uid__c == 'ltc',rq.srvc__r.uid__c == 'ltp')}">
+                                            <h4 class="step-title">Please upload required documents below</h4>
+                                        </apex:outputPanel>
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <!--  -->
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        
+                                        
+                                        <b><apex:pageMessages id="msg"  />
+                                            
+                                            
+                                        </b>
+                                        
+                                        <!-- document upload comp -->
+                                        <c:grqupd2 Dim="LR" PayDone="false" /> 
+                                        
+                                        <!-- .base-collapse -->
+                                        
+                                        
+                                        <!-- .base-main-content -->
+                                        <apex:outputPanel id="btnid">
+                                            <div class="base-main-footer">
+                                                <div class="base-nav">
+                                                    <c:qrbtnbk R="{!rq}"></c:qrbtnbk>
+                                                    <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                                    <a href="#" onClick="validateData()" id="btnnxt" class="btn btn-primary base-nav-next">
+                                                        <apex:outputText rendered="{!OR(AND(rq.srvc__r.uid__c=='208',rq.xtpa__c > 0,NOT(rq.xpmsle__c),NOT(rq.xmloc__c)),rq.srvc__r.uid__c=='ltc',rq.srvc__r.uid__c=='116',rq.srvc__r.uid__c=='213',rq.srvc__r.uid__c=='122',rq.srvc__r.uid__c=='133')}">
+                                                            PROCEED TO PAY
+                                                        </apex:outputText>  
+                                                        <apex:outputText rendered="{!AND(rq.srvc__r.uid__c=='aml')}">
+                                                            SUBMIT
+                                                        </apex:outputText>  
+                                                        <apex:outputText rendered="{!OR(AND(rq.srvc__r.uid__c!='aml',rq.srvc__r.uid__c!='208',rq.srvc__r.uid__c!='ltc',rq.srvc__r.uid__c!='116',rq.srvc__r.uid__c!='213',rq.srvc__r.uid__c!='122',rq.srvc__r.uid__c!='133'),AND(rq.srvc__r.uid__c == '208',NOT(rq.xcawp__c),OR(rq.xmloc__c,rq.xpmsle__c)))}">
+                                                            NEXT
+                                                        </apex:outputText>  
+                                                        
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <!-- .base-main-footer -->
+                                        </apex:outputPanel> 
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        <div class="modal fade modal-base" id="modal_AuditJustification" role="dialog" aria-hidden="true" data-backdrop="static">
+                            <div class="modal-dialog" role="document" style="width: 690px;">
+                                <div class="modal-content">
+                                    <div class="modal-body">
+                                        <label class="text-light-2">Please provide justification to submit unsigned FAR summary by the auditor</label>
+                                        <!--<h3 class="base-main-title my-4" style="text-align: left;">Please provide justification to submit unsigned FAR summary by the auditor</h3> -->
+                                        <div class="form-group">
+                                            <textarea class="requiredFld auditFld form-control" cols="10" rows="2" id="auditJustificationId" value=""/>
+                                            <script type="text/javascript">
+                                            cs['auditJustificationId']=document.getElementById('auditJustificationId');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="base-main-footer">
+                                        <div class="base-nav">
+                                            <a href="" onClick="proceedAuditForm();" class="btn btn-primary base-nav-next" style="color:#fff">SUBMIT</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+            
+        </apex:form>
+         <apex:form id="uploadFrm">
+   <c:fileuploadpopupnew13 R="{!rq}" /> 
+<c:ocramdcmp srvcCode="{!rq.srvc__r.uid__c}" cv="{!sd.cv__c}" accPrk="{!rq.Acc__r.park__c}" rendered="{!(rq.srvc__r.uid__c!='dnc')}" />
+
+
+   
+        </apex:form> 
+     
+    </html>   
+    <script>
+    
+    
+    var peopleToupdate = (cs['xadtx4__c'].value)?JSON.parse(cs['xadtx4__c'].value):[];
+    var currenTmemToUpdate = {};
+    var ppNum = '';
+    function attachmentSave1() {
+        /*if ($('#genderid').val() == 'M'){
+            cs["xcslt__c"].value = 'Mr.';
+            cs["Gender__c"].value = 'Male';
+        }
+        else{
+            cs["xcslt__c"].value = 'Ms.';
+            cs["Gender__c"].value = 'Female';
+        }*/
+        var invalData = false;
+        $('.requiredFld').each(function() {
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if (v == '' || v == null || v == undefined || v.lenght < 1) {
+                if ($(this).is('select')) {
+                    showErrMsg($(this).next().find('.select2-selection'), 'rqrd', 'invalid');
+                } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                    showErrMsg($(this), 'rqrdDate', 'invalid');
+                } else
+                    showErrMsg($(this), 'rqrd', 'invalid');
+                invalData = true;
+                $('.rqrdMsg').html('All fields are mandatory').css('color', 'red').fadeOut().fadeIn();
+            } else
+                showErrMsg($(this), 'rqrd', true);
+        });
+        for(var x=0;x<$('.modal-body .input-datepicker').length;x++){
+            var i = $('.modal-body .input-datepicker')[x]; 
+            var vl = $(i).val();
+            if($(this).is(':visible')){
+                if (vl.length != 10 || vl.match(/\//g) == null) {
+                    showErrMsg($(i), 'dob', 'invalid');
+                    invalData = true;
+                } else if (vl.match(/\//g) != null) {
+                    if (vl.match(/\//g).length != 2) {
+                        showErrMsg($(i), 'dob', 'invalid');
+                        invalData = true;
+                    }
+                }
+            }
+        }
+        //var uid = cs["uid"].value;
+        //checkAllDates('dateCheck', uid,$('#genderid').val());
+        checkdobPid($('[validationname="dob"]'), $('[validationname="pid"]'));
+        if ($('.frmErrMsg').length > 0 && $('.frmErrMsg').is(':visible')) {
+            invalData = true;
+        }
+        if (invalData) {
+            invalData = false;
+            return;
+        }
+        var isGCCnational = false;
+        var isAllowedOA = true;
+        var country = $('[fldName="country"]').find("option:selected").text();
+        if (GCC_Nations.includes(country))
+            isGCCnational = true;
+        if (!onArrVisa.includes(country))
+            isAllowedOA = false;
+        if((serviceId=='058'||serviceId=='074')&&onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants can get the on arrival visa').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        if (isGCCnational && '{!JSENCODE(rq.srvc__r.uid__c)}' != '220'&& serviceId != '068' && serviceId != '123' && serviceId != '149'  && serviceId != '087' && serviceId != '088') {
+            if(serviceId=='040')
+                $('.rqrdMsg').html('Applicant is a GCC national, please apply for Non-Sponsored ID card').css('color', 'red').fadeOut().fadeIn();
+            else 
+                $('.rqrdMsg').html('GCC nationals are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        if(serviceId=='181'&&!onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        if ($('#genderid').val() == 'M' && (serviceId == '018' || serviceId == '117')) {
+            $('.rqrdMsg').html('Applicant should be Female to apply for Spouse Visa Transfer').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+        $('#modal_confirm_information1').modal('hide');
+        if('{!JSENCODE(rq.srvc__r.uid__c)}'=='220')
+         cs["docname"].value = cs["docname"].value +'.pdf';
+        saveRequest();
+    }
+    function saveRequest(){
+        saveAtt();
+    }
+   </script>
+    <apex:outputText rendered="{!NOT(isgu)}">
+        <script>
+        function getAttchedID(aId){
+            let currenTmemToUpdate = {};
+            console.log('aId-- '+aId);
+            var member = {};
+            ppNum = $('#passportid').val();
+            $('#modal_confirm_information1').find('input,select').each(function(i,v){
+                if(!$(v).val())
+                    return;
+                var f = $(v).attr('fldname');
+                var val = (f=='country')?$(v).find("option:selected").text():$(v).val();
+                currenTmemToUpdate[f] = '';
+                currenTmemToUpdate[f] = val;
+            });
+            currenTmemToUpdate['InOrOut'] = $('[name="eid"]:checked').attr('for');
+            currenTmemToUpdate['AttachmentId'] = aId;
+            //peopleToupdate[ppNum] = currenTmemToUpdate;
+            peopleToupdate.push(currenTmemToUpdate);
+            cs['xadtx4__c'].value = JSON.stringify(peopleToupdate);
+            console.log('docname::'+cs['docname'].value);
+            console.log('imageBase64::'+cs['imageBase64'].value);
+            cs["docname"].value = docName.value;
+            console.log('docname::'+cs['docname'].value);
+            updateReq();
+        }
+        
+        /*VMKR -- 19th Sep 2021 -- 
+                var currentDelDoc='';
+                function deleteAttachment(aName,aId){
+                    currentDelDoc = aName;
+                    var delMsg = 'Are you sure you want to remove this document? All uploaded documents are reviewed and verified by the axs team and removal of any document may result in a delay in the service request process.';
+                    axsConfirmation('',delMsg,false,'dltAtt',aId);
+                    removeDataXadt4(aId);
+                }*/
+        function dltAtt(a){
+            startLoader(currentDelDoc);
+            //reqDocId2=document.getElementById("{!$Component.reqDocId2}");
+            //reqDocId2.value=a;
+            cs['reqDocId2'].value=a;
+            afdltAtt();
+            removeDataXadt4(a);
+        };
+        function removeDataXadt4(id){
+            peopleToupdate.forEach(function(v,i){
+                if(v.AttachmentId ==id){
+                    peopleToupdate.splice(i, 1);
+                }
+            });
+            cs['xadtx4__c'].value = JSON.stringify(peopleToupdate);
+            updateReq();
+        }
+        function popupDocModel(lbl,typ,seq){ // to override from grqupd
+            //startLoader(typ);
+            currentDoc = lbl;
+            console.log('In popupDocModel() DocLabel >> '+'lbl');  
+            document.getElementById("udDocType").value = typ;//dname;
+            document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
+            document.getElementById("udDocLabel").innerHTML = lbl;
+            cs["docname"].value = lbl;
+            if(lbl.includes("Passport Copy")&&'{!JSENCODE(rq.srvc__r.uid__c)}'=='220'){
+                cs['parseId'].value = true;
+            }
+            else{
+                cs['parseId'].value = false;
+            }
+            $('#modal_fileuploadPopUp').modal('show');
+        }
+        </script>
+    </apex:outputText>
+</apex:page>

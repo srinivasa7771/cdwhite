@@ -1,0 +1,96 @@
+<apex:page id="page" standardStylesheets="true" sidebar="false" showHeader="true" deferLastCommandUntilReady="true"  label="{!pt}" title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+     
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>  
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+          margin-left: 0.5em;
+          margin-bottom: 0.6em;
+        }
+    </style>
+    
+    <script> 
+    	/*
+    	**ToDo : Use staticResource for JS/jQuery
+        */
+    
+        $(document).ready(function() {loadData();});
+        function loadData(){callWS(); /*var table = $('[id$=testTable]').DataTable();table.column(3).visible(false);*/}
+        function jumpToPage(){var table = $('[id$=testTable]').DataTable();table.page.jumpToData("true",3); table.column(3).visible(false);}
+    </script>
+   
+   
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <c:pgHeader id="sH" ispu="{!ispu}" tabName="Profile" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="Manage Parking" subtitle="Cards" description="Perform parking card management tasks such as activation, vehicle updation, applying for Lost card." />
+   
+    <apex:form id="form" >  
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="jumpToPage();" status="theStatus" rerender="pbsec,pbMain" />
+        
+        <apex:pageBlock mode="{!IF(md.isView,'detail','edit')}" id="pbMain" tabStyle="g_Req__c" title="{!pt}" >
+        <apex:pageMessages id="msg" escape="false"/>       
+            <apex:pageBlockSection collapsible="false" columns="1" id="pbsec" rendered="{!if((((rq.STA__c=='Draft' || rq.STA__c == 'Open') && (md.isNew)) || md.isEdit) && !isBlank(lst_pd) ,true,false)}" title="Select a card/vehicle" > 
+                <script type="text/javascript" charset="utf8">
+                    var oTable;var currentNumberDisplayed = 25;
+                    $(document).ready(function() {
+                        $('#load').click( function () {
+                            var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                            oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 25}); 
+                            var table = $('[id$=testTable]').DataTable();table.column(2).visible(false);
+                        if(document.getElementById('page:form:pbMain:pbsec:testTable_filter') != null)
+                        {document.getElementById('page:form:pbMain:pbsec:testTable_filter').style.float='left';}
+                        var recs = {!lst_pd.size};
+                    	if(recs<=25){document.getElementById('page:form:pbMain:pbsec:testTable_paginate').style.display='none';}
+                        });
+                </script>
+                <apex:dataTable rendered="{!st}" captionClass="testTable" value="{!lst_pd}" var="p" id="testTable" bgcolor="EEEEEE" border="below" cellspacing="5%" >
+                    <apex:column >
+                        <apex:facet name="header" ><apex:outputLabel value="Select" /></apex:facet>
+                        <apex:outputLabel rendered="{!if(p.actStat=='Active',true,false)}">
+                        <a href="/apex/grqn?c=150&cn={!p.cardId}" title="Request for lost card">Lost </a> / <a  href="/apex/grqn?c=152&cn={!p.cardId}" title="Request for card modification"> Update</a> 
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="{!if(p.actStat=='Inactive',true,false)}">
+                        <a href="/apex/grqn?c=150&cn={!p.cardId}" title="Request for lost card">Lost </a> / <a  href="/apex/grqn?c=149&cn={!p.cardId}" title="Request for card activation"> Activate</a> 
+                        </apex:outputLabel>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Card Number" /></apex:facet>
+                        <apex:outputText value="{!p.cardNum}"/>
+                    </apex:column>
+                   <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Sector Name" /></apex:facet>
+                        <apex:outputText value="{!p.sector}"/>
+                    </apex:column>
+                    <apex:column id="flag">
+                        <apex:facet name="header"><apex:outputLabel value="Checked" /></apex:facet>
+                        <apex:outputText value="{!p.sel}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Card Type" /></apex:facet>
+                        <apex:outputText value="{!p.cardType}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Primary Vehicle Number" /></apex:facet>
+                        <apex:outputText value="{!p.vehicleNumber}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Secondary Vehicle Number" /></apex:facet>
+                        <apex:outputText value="{!p.secVclNum}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"><apex:outputLabel value="Status" /></apex:facet>
+                        <apex:outputText value="{!p.actStat}"/>
+                    </apex:column>
+                </apex:dataTable>
+                <apex:outputLabel value="Parking slots have been allocated, security is in progress of issuing cards." rendered="{!NOt(st)}"/>
+            </apex:pageBlockSection>
+            </apex:pageBlock> 
+    </apex:form>
+</apex:page>

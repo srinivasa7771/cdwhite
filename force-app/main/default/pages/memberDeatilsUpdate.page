@@ -1,0 +1,1846 @@
+<!--**************************************************************************************************
+@Version History
+ * Version      Date            Name                        Description
+ * 1.0         Initial          DHAM                        Initial Draft
+ * 1.1         25-06-2024       Prateek Jangir              Updated code to fix date validation on confirm and updated onchange method for Date of Birth.
+ * 1.2         07-04-2024       Prateek Jangir              Updated code to format mobile in correct format.
+ * 1.3         23-08-2024       Prateek Jangir              Added logic to validate mobile number and email with OTP and pass validated paratmeters to DDA.
+ * 1.4         27-02-2025       Prateek Jangir              Added Place of Birth,Birth Country,Passport Issued Place and Passport Issue Date under passport details. Added isvisited to UAE option under EIDA Details.
+**************************************************************************************************-->
+<apex:page sidebar="false" controller="grCtrlCustProfUp" action="{!getMember}" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true"  standardStylesheets="false" title="{!req.srvc__r.lbl__c}">
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:includeScript value="{!$Resource.assets_NUI1}"/>
+        <!-- << For Back office only >> starts  -->
+        
+        <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Assets, '/icomoon/style.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Assets, '/css/style.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Assets, '/css/brand-axs.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/font-awesome/css/font-awesome.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/aos/dist/aos.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/swiper/css/swiper.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/daterangepicker/daterangepicker.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/select2/dist/css/select2.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/easy-autocomplete/dist/easy-autocomplete.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/chart.js/dist/Chart.min.css') }" />
+            <apex:stylesheet value="{!URLFOR($Resource.AXS2Vendors, '/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css') }" />
+            <!-- JS -->
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"  />
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/aos/dist/aos.js')}"  />
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/swiper/js/swiper.min.js')}"  />
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/select2/dist/js/select2.min.js')}"  />
+            <!-- main js -->
+            <apex:includeScript value="{!URLFOR($Resource.AXS2Assets, '/js/script.js')}"  />
+            <style>
+                body{
+                zoom: 75% !important;
+                }
+                .bodyDiv{background-color:#F5F5F5 !important}
+                
+                .btn {
+                display: inline-block !important;
+                font-weight: 500 !important;
+                color: #241F28 !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+                cursor: pointer !important;
+                user-select: none !important;
+                background-color: transparent !important;
+                border: 1px solid transparent !important;
+                padding: 0.5rem 1rem !important;
+                font-size: 0.875rem !important;
+                line-height: 1.5 !important;
+                border-radius: 1.5rem !important;
+                transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+                background-image: none !important;
+                }
+                
+                .btn-outline-primary,.btn-primary {
+                color: #fff !important;
+                border-color: #3e528a !important;
+                background-color: #3e528a !important;
+                }
+                
+                
+                
+                .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary.focus, .btn-outline-primary:active, .btn-outline-primary:active:focus, .btn-outline-primary:not(:disabled):not(.disabled):active {
+                color: #FFF !important;
+                background-color: #3e528a !important;
+                font-weight: bolder !important;
+                }
+                
+                .upload-field .d-flex{
+                }
+
+                .left-margin{
+                    margin-left: 5%;
+                }
+
+                .hidden {
+                    display: none;
+                }
+            </style>
+            
+        </apex:outputPanel>
+        <style>
+            #otpSuccess, #otpMsg, #otpBlock,#resendBtn,#eidaOTPBlock,#otpButtonSuccess{
+            display:none;
+            }
+            #ppMissing,#eidMissing,#ppcfrid,#eidacfrid,#riccfrid{
+            color: #e62d38;
+            font-weight: bold;
+            }
+            .box-border-dashed {
+            min-height: 121px !important;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            
+            <apex:actionFunction action="{!callSMService}" name="callOTP" reRender="otpPanel" oncomplete="$('#otpBlock').show();$('#otpButtonBlock').hide();" >
+            </apex:actionFunction>
+            <apex:actionFunction action="{!sendOTP}" name="sendOtp1" reRender="otpPanel" oncomplete="$('#otpBlock').show();$('#otpButtonBlock').hide();callOTP();removeTempLoader();" >
+                <apex:param assignTo="{!mobNum}" name="mobileNum" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction action="{!saveEmail}" name="svEm" reRender="otpPanel" oncomplete="$('#otpBlock').show();$('#otpButtonBlock').hide();removeTempLoader();" >
+                <apex:param assignTo="{!conEmail}" name="contactEmail" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction action="{!validateOtp}" name="validateOtp" reRender="otpPanel,updateBtnPanel" oncomplete="postValidateOtp('{!JSENCODE(otpResult)}');$('#eidaOTPBlock').hide();removeTempLoader();" >
+                <apex:param assignTo="{!otpfrmPg}" name="otp" value="" />
+                <apex:param assignTo="{!isMobileOTP}" name="isMobOTP" value="" /> <!-- 1.3 -->
+            </apex:actionFunction>
+            <apex:actionFunction action="{!saveAttachment}" name="saveAtt" reRender="eidMissingInfo,ppMissingInfo,ppCFR,eidaCFR,ricCFR,ppPanel,ricPanel,eidaPanel,submitPanel,updateBtnPanel,tncPanel" oncomplete="removeTempLoader();hideShowVisitedPanal();" /><!--eidMissingInfo-->
+            <apex:actionFunction name="removeAttch"  action="{!deleteAttach}" rerender="ppPanel,eidaPanel,ricPanel,submitPanel,updateBtnPanel,tncPanel,ppMissingInfo,eidMissingInfo" oncomplete="enableAllatt();removeEmptyLables();$('#eidaOTPBlock').hide();hideShowVisitedPanal();"><!--eidMissingInfo-->
+                <apex:param name="attId" value=""/> 
+            </apex:actionFunction>
+            <apex:actionFunction name="svRDrft1" action="{!saveDraftR}" status="theStatus" rerender="msg,ricPanel" oncomplete="draftComplete('{!JSENCODE(draftMsg)}')">
+                <apex:param assignTo="{!draftIns}" name="dreafIns" value="" />
+            </apex:actionFunction>
+            <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+            <!-- 1.2 -->
+            <apex:actionFunction name="submitReq" action="{!submitRequest}" reRender="errmsg,msg" oncomplete="hideGLoader();">
+                <apex:param name="mobileNumberJson" value="" assignTo="{!mobileNumberJson}"/>
+            </apex:actionFunction>
+            
+            <apex:outputPanel id="rerenderImage">
+                <apex:inputHidden id="xadtx3__c" value="{!req.xadtx3__c}" />
+                <apex:inputHidden id="xadtx4__c" value="{!req.xadtx4__c}" />
+                <apex:inputHidden id="xoca__c" value="{!req.xoca__c}" />
+                <apex:inputHidden id="imageBase64" value="{!imageBase64}" />
+                <apex:inputHidden id="docname" value="{!docname}" />
+                <apex:inputHidden id="parseId" />
+                <script>
+                var cs = {};
+                cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                cs["docname"] = document.getElementById("{!$Component.docname}");
+                cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                cs["xadtx3__c"] = document.getElementById("{!$Component.xadtx3__c}");
+                cs["xadtx4__c"] = document.getElementById("{!$Component.xadtx4__c}");
+                cs["xoca__c"] = document.getElementById("{!$Component.xoca__c}");
+                </script>
+            </apex:outputPanel>
+            <body class="base"> 
+                <div id="main">
+                    
+                    <div class="container pt-2 pb-2">
+                        <div class="text-right">
+                            <apex:outputPanel >
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!req.Name} </span>
+                                </span>
+                            </apex:outputPanel>
+                            <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(AND(OR(req.STA__c=='Draft',req.STA__c=='Open'),!req.xoca__c),true,false)}"/>
+                        </div>
+                    </div>
+                    <div class="container">
+                        
+                        <div class="base-layout">
+                            <!--left-side pannel start-->   
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <div>
+                                        <c:srvdefcmp srv="{!srv}"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="base-main">
+                                <div class="base-main-content" id='memBody'>
+                                    <b><apex:pageMessages id="msg"  /></b>
+                                    <!-- Passport details -->
+                                    <div class="base-collapse">
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#application_details">
+                                            <div class="collapse-title">Personal Details </div>
+                                        </a>
+                                        <div id="application_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <div class="data-info">
+                                                            <div class="data-label">First name</div>
+                                                            <div class="data-value readOnlyVal" id="" style="pointer-events:none;">
+                                                                {!info.contactDetail.firstName}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="data-info">
+                                                            <div class="data-label">Middle name</div>
+                                                            <div class="data-value readOnlyVal" id="" style="pointer-events:none;">
+                                                                {!info.contactDetail.middleName}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="data-info">
+                                                            <div class="data-label">Last name</div>
+                                                            <div class="data-value readOnlyVal" id="" style="pointer-events:none;">
+                                                                {!info.contactDetail.lastName}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <div class="data-info">
+                                                            <div class="data-label">Gender</div>
+                                                            <div class="data-value readOnlyVal" id="" style="pointer-events:none;">
+                                                                {!info.contactDetail.gender}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="data-info">
+                                                            <div class="data-label">Nationality</div>
+                                                            <div class="data-value readOnlyVal" id="" style="pointer-events:none;">
+                                                                {!info.contactDetail.Nationality}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="base-collapse">
+                                        
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#passport_details">
+                                            <div class="collapse-title">Passport Details </div>
+                                        </a> 
+                                        <div id="passport_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                <apex:outputPanel id="ppMissingInfo">
+                                                    <apex:outputPanel rendered="{!AND(info.passportInfo.isExpired,ppAttId=='')}">
+                                                        <p id='ppMissing'>
+                                                            Passport details are missing/invalid please upload your passport copy
+                                                        </p>
+                                                    </apex:outputPanel>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel id="ppCFR">
+                                                    <apex:outputPanel rendered="{!AND(CONTAINS(bckOfcCmts,'Missing/Incorrect Passport'),req.STA__c=='Open')}">
+                                                        <p id='ppcfrid'>
+                                                            Please remove existing document, reupload correct passport.  
+                                                        </p>
+                                                    </apex:outputPanel>
+                                                </apex:outputPanel>
+                                                <div class="row">
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Passport Number</label>
+                                                            <!-- 1.2 -->
+                                                            <input parent="passportInfo" class="requiredFld disabledApex form-control input-passportNumber ppDetails" for="passportNumber" value="{!info.passportInfo.passportNumber}" id="ppNum"/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Place of Birth</label>
+                                                            <input parent="contactDetail" class="requiredFld form-control input-passportNumber ppDetails" for="placeOfBirth" value="{!info.contactDetail.placeOfBirth}" id="pob"/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <div class="form-group">
+                                                                <div class="form-group">
+                                                                    <label>Birth Country</label>
+                                                                    <select class="requiredFld form-control  input-select2-flat forEdit ppDetails" extFld='type'
+                                                                            id="bnat" extFld1='Country Code'  fldName="placeBornCountry" ddaKey="birthCountry" parent="contactDetail" for="birthCountry" value="{!info.contactDetail.birthCountry}" >
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Passport Issued Place</label>
+                                                            <input parent="passportInfo" class="requiredFld disabledApex form-control input-passportNumber ppDetails" for="passportIssuePlace" value="{!info.passportInfo.passportIssuePlace}" id="pip"/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group">
+                                                            <label>Passport Issue Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input for="passportIssueDate" type="text" class="disabledApex requiredFld form-control input-datepicker ppDetails" id="pid"
+                                                                       data-toggle="datetimepicker" parent="passportInfo" data-target="#pid" onchange = "checkDate(this,'pid');" validationname="pid" />
+                                                                <script type="text/javascript">
+                                                                dformat('{!JSENCODE(info.passportInfo.passportIssueDate)}','pid');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="disabledApex btn text-primary" type="button" data-toggle="datetimepicker" data-target="#pid">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group">
+                                                            <label>Passport Expiry Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input for="passportExpiryDate" type="text" class="disabledApex requiredFld form-control input-datepicker ppDetails" id="ped"
+                                                                       data-toggle="datetimepicker" parent="passportInfo" data-target="#ped" onchange = "checkDate(this,'ped');" validationname="ped" />
+                                                                <script type="text/javascript">
+                                                                dformat('{!JSENCODE(info.passportInfo.passportExpiryDate)}','ped');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="disabledApex btn text-primary" type="button" data-toggle="datetimepicker" data-target="#ped">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group">
+                                                            <label>Date of birth</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input for="dateOfBirth" type="text" class="requiredFld form-control input-datepicker" id="dob"
+                                                                       data-toggle="datetimepicker" parent="contactDetail" data-target="#dob" onchange = "checkDate(this,'dob');" validationname="dob" />
+                                                                <script type="text/javascript">
+                                                                dformat('{!JSENCODE(info.contactDetail.dateOfBirth)}','dob');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="disabledApex btn text-primary" type="button" data-toggle="datetimepicker" data-target="#dob">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <apex:outputPanel id="ppPanel" styleClass="col-lg-6">
+                                                        <div forLoad="Passport Copy" id="ppDoc" class="box box-block mb-lg-4 box-border-dashed">
+                                                            <label class="fs-18">Passport Copy</label>
+                                                            <span class="loader_img" style="float:right;display:none">
+                                                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                            </span>
+                                                            <apex:outputPanel rendered="{!ppAttId != ''}">
+                                                                <div class="upload-list">
+                                                                    <div class="upload-list-item box box-white box-padding">
+                                                                        <i class="fa fa-check-circle text-success"></i>
+                                                                        <a href="#" class="upload-item-title text-li" onclick="filePreview('Passport Copy','/servlet/servlet.FileDownload?file={!ppattId}');" ><u>Passport Copy</u></a>
+                                                                        <a style="{!IF(OR(req.STA__c=='Draft',AND(bckOfcCmts!='',req.STA__c=='In Process')),'display:none;','')}" onclick="removeAttch1('{!JSENCODE(ppAttId)}','Passport Copy');"  class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                                                                    </div>
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!ppAttId==''}" >
+                                                                <div class="upload-field d-flex">
+                                                                    <div
+                                                                         class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                        <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a onclick="mobileNumValidate('Passport Copy','true')" class="btn btn-outline-primary btn-outline-primary-3 fff-Font-hover">BROWSE</a>
+                                                                    </div>
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                        </div>
+                                                        <script>
+                                                        var ppAttId = '{!JSENCODE(ppAttId)}';
+                                                        </script>
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="base-collapse">
+                                        
+                                        <apex:outputPanel id="eidMissingInfo" >
+                                            <apex:outputPanel rendered="{!AND(info.emiratesIdInfo.isExpired,EIDAttId=='')}">
+                                                <p id='eidMissing'>
+                                                    Emirates ID details are missing/invalid please upload your Emirates id copy
+                                                </p>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#eida_details">
+                                            <div class="collapse-title">EIDA Details </div>
+                                        </a> 
+                                        <apex:outputPanel id="eidaCFR">
+                                            <apex:outputPanel rendered="{!AND(CONTAINS(bckOfcCmts,'Missing/Incorrect EIDA'),req.STA__c=='Open')}">
+                                                <p id='eidacfrid'>
+                                                    Please remove existing document, reupload correct Emirates ID.   
+                                                </p>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel id="panelEID" styleClass="row">
+                                            <p class="chk1" style="vertical-align: middle;font-size: 1em;">
+                                                <label class="custom-checkbox mr-4">
+                                                    <input type="checkbox" id="eidC" onchange="eidValidations();" />
+                                                    <span class="">
+                                                        Do you have a valid residence visa?
+                                                    </span>
+                                                </label>  
+                                            </p>
+                                        </apex:outputPanel>
+                                        <div id="eida_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                <div class="row">
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>EIDA Number</label>
+                                                            <input parent="emiratesIdInfo" for="emiratesIdNumber" class="disabledApex form-control" value="{!info.emiratesIdInfo.emiratesIdNumber}" id="eidNum"/>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group">
+                                                            <label>EIDA Issue Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input for="emiratesIdIssueDate" parent="emiratesIdInfo" type="text" class="disabledApex form-control input-datepicker" id="eid"
+                                                                       data-toggle="datetimepicker" data-target="#eid" onchange = "checkDate(this)" validationname="eid" />
+                                                                <script type="text/javascript">
+                                                                dformat('{!JSENCODE(info.emiratesIdInfo.emiratesIdIssueDate)}','eid');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="disabledApex btn text-primary" type="button" data-toggle="datetimepicker" data-target="#eid">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group">
+                                                            <label>EIDA Expiry Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input for="emiratesIdExpiryDate" parent="emiratesIdInfo" type="text" class="disabledApex form-control input-datepicker" id="eed"
+                                                                       data-toggle="datetimepicker" data-target="#eed" onchange = "checkDate(this)" validationname="eed" />
+                                                                <script type="text/javascript">
+                                                                dformat('{!JSENCODE(info.emiratesIdInfo.emiratesIdExpiryDate)}','eed');
+                                                                </script>
+                                                                <div class="input-group-append">
+                                                                    <button class="disabledApex btn text-primary" type="button" data-toggle="datetimepicker" data-target="#eed">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row row-lg">
+                                                    <apex:outputPanel id="eidaPanel" styleClass="col-lg-6">
+                                                        <div forLoad="Emirates Id Copy" id="eidDoc" class="box box-block mb-lg-4 box-border-dashed">
+                                                            <label class="fs-18">Emirates Id</label>
+                                                            <span class="loader_img" style="float:right;display:none">
+                                                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                            </span>
+                                                            <apex:outputPanel rendered="{!EIDAttId != ''}">
+                                                                <div class="upload-list">
+                                                                    <div class="upload-list-item box box-white box-padding">
+                                                                        <i class="fa fa-check-circle text-success"></i>
+                                                                        <a href="#" class="upload-item-title text-li" onclick="filePreview('Emirates Id','/servlet/servlet.FileDownload?file={!EIDAttId}');" ><u>Emirates Id</u></a>
+                                                                        <a style="{!IF(OR(req.STA__c=='Draft',AND(bckOfcCmts!='',req.STA__c=='In Process')),'display:none;','')}" onclick="removeAttch1('{!JSENCODE(EIDAttId)}','Emirates Id');"  class="aBtn upload-item-remove"><i class="fa fa-close"></i></a>
+                                                                    </div>
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!EIDAttId==''}">
+                                                                <div class="upload-field d-flex">
+                                                                    <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                                        <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a onclick="mobileNumValidate('Emirates Id Copy','true')" class="btn btn-outline-primary btn-outline-primary-3 fff-Font-hover">BROWSE</a>
+                                                                    </div>
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                        </div>
+                                                        <script>
+                                                        var EIDAttId = '{!JSENCODE(EIDAttId)}';
+                                                        </script>
+                                                    </apex:outputPanel>
+                                                <!-- 1.4 PJ Visited UAE-->
+                                                    <apex:outputPanel styleClass="col-lg-6">
+                                                        <div id="visiteduaepanel">
+                                                        <apex:outputPanel rendered="{!EIDAttId == ''}">
+                                                                <label>Have you ever visited UAE?</label>
+                                                                <div class="form-group mt-3 isvisitedUAE reqRadio">
+                                                                    <label class="custom-radio mr-5">
+                                                                        <input type="radio" class="form-control"  name="yes" id="visitedYes" for="visitedUAE" parent="contactDetail" onchange="visitedFields(this)" value="{!info.contactDetail.visitedUAE}"/>
+                                                                        <span>Yes</span>
+                                                                    </label>
+                                                                    <label class="custom-radio mr-5">
+                                                                        <input type="radio" class="form-control"  name="no" id="visitedNo"  for="no" onchange="visitedFields(this)" />
+                                                                        <span>No</span>
+                                                                    </label>
+                                                                    <div class="option-error" style="display:none">Please select an option!</div>
+                                                </div>
+                                                                <script>   
+                                                                 //if($('#uaeNumber').val())                                                             
+                                                                </script>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="base-collapse">
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#addressin_details">
+                                            <div class="collapse-title">UAE Address Details </div>
+                                        </a> 
+                                        <div id="addressin_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                <div class="row">
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>PO BOX Number</label>
+                                                            <input parent="addressDetailsInUAE" for="POBoxNo" class="requiredFld form-control" value="{!info.addressDetailsInUAE.POBoxNo}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Emirate</label>
+                                                            <input parent="addressDetailsInUAE" for="city" class="requiredFld form-control" value="{!info.addressDetailsInUAE.city}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Address</label>
+                                                            <input parent="addressDetailsInUAE" for="address" class="requiredFld form-control" value="{!info.addressDetailsInUAE.address}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="base-collapse">
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#addressout_details">
+                                            <div class="collapse-title"> Home Country Address Details</div>
+                                        </a> 
+                                        <div id="addressout_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                
+                                                <div class="row">                                               
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>PO BOX Number</label>
+                                                            <input for="POBoxNo" parent="addressDetailsInHomeCountryPermanent" class="form-control" value="{!info.addressDetailsInHomeCountryPermanent.POBoxNo}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Country</label>
+                                                            <input for="country" parent="addressDetailsInHomeCountryPermanent" class="form-control" value="{!info.addressDetailsInHomeCountryPermanent.country}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>City</label>
+                                                            <input for="city" parent="addressDetailsInHomeCountryPermanent" class="form-control" value="{!info.addressDetailsInHomeCountryPermanent.city}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4" style="">
+                                                        <div class="form-group names">
+                                                            <label>Address</label>
+                                                            <input for="address" parent="addressDetailsInHomeCountryPermanent" class="form-control" value="{!info.addressDetailsInHomeCountryPermanent.address}" id=""/>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="base-collapse">
+                                        <a href="#" class="collapse-toggle" data-toggle="collapse" data-target="#Contact_details">
+                                            <div class="collapse-title">Contact Details </div>
+                                        </a> 
+                                        <div id="Contact_details" class="collapse show">
+                                            <div class="collapse-content">
+                                                <div class="my-2">
+                                                    <i class="icon-info text-primary"></i>
+                                                    Please add the email ID and mobile number of the actual members as per the latest board resolution. Please validate the mobile number first, and if it's not already validated, then proceed to validate the email address.
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Reference mobile</label>
+                                                            <!-- 1.3 -->
+                                                            <img src="{!URLFOR($Resource.assets_NUI1, '/images/correct-sign.png')}" alt="" id="correctsignimg" class="file-icon"  style="display:{!IF(info.contactDetail.isMobilePhoneVerified==true,'inline','none')};"/>
+                                                            <!-- 1.2 -->
+                                                            <div class="d-flex">
+                                                                <div style="flex-basis: 150px;width: 150px;">
+                                                                    <div style="flex-basis: 150px;width: 90px;">
+                                                                        <select class="form-control countrycodes" id="countrycode_rmob__c">
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <input type="text" onchange="changeinMob(this)" for="mobileNumber" parent="contactDetail" maxlength="15" class="requiredFld numOnly form-control" value="{!req.rmob__c}" id="uaeNumber"/>
+                                                            </div>
+                                                            
+                                                            <script>
+                                                            if($('#uaeNumber').val())
+                                                                $('#uaeNumber').val($('#uaeNumber').val().replace('+',''));
+                                                                cs['isMobilePhoneVerified']='{!JSENCODE(info.contactDetail.isMobilePhoneVerified)}'; //1.3
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6" style="">
+                                                        <div class="form-group names">
+                                                            <label>Email Address</label>
+                                                            <!-- 1.3 -->
+                                                            <img src="{!URLFOR($Resource.assets_NUI1, '/images/correct-sign.png')}" alt="" id="correctsignimgemail" class="file-icon"  style="display:{!IF(info.contactDetail.isEmailVerified==true,'inline','none')};"/>
+                                                            <input  onchange="changeinEmail(this);" parent="contactDetail" for="emailAddress" class="requiredFld form-control" value="{!req.xceml__c}" id="emailAdd"/>
+                                                            <script>
+                                                                    cs['isEmailVerified']='{!JSENCODE(info.contactDetail.isEmailVerified)}'; //1.3
+                                                                </script>
+                                                        </div>
+                                                    </div> 
+                                                    <span id='otpMsg'>
+                                                        <i class="icon-info-circle text-primary"></i>
+                                                        <elem>An otp has been sent to your mobile number!</elem>
+                                                    </span>
+                                                </div>
+                                                <apex:outputPanel id="otpPanel" >
+                                                    <div class="row" id='otpBlock'>
+                                                        <div class="col-lg-12" style="">
+                                                            <div class="form-group names">
+                                                                <label>Please enter OTP send to your Primary {!otpSentMobileOREmail}</label>
+                                                                <input class="form-control numOnly" maxLength="6" onchange='enableOtpBtn(this)' id="otpVal"/>
+                                                            </div>
+                                                        </div>
+                                                        <div id='otpSuccess' class="m-2"></div>
+                                                        <div class="base-nav col-12 m-2">
+                                                            <a class="btn btn-primary base-nav-prev disabledApex" id='resendBtn' href="#" onclick="reSendOtp();" >
+                                                                Resend OTP
+                                                            </a>
+                                                            <a class="btn btn-primary base-nav-next disabledApex fff-Font" id='otpBtn' onclick="checkOtp(this);">
+                                                                Validate OTP
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel id="otpButtonPanel" >
+                                                    <div class="row form-group" id='otpButtonBlock'>
+                                                        <div class="base-nav col-sm-12">
+                                                            <label>Please validate your Primary Mobile/Email by clicking on Validate Mobile/Validate Email. OTP will be send to your Primary Mobile/Email address.</label>
+                                                        </div>
+                                                        <div class="base-nav col-sm-6">
+                                                            <a class="btn btn-primary fff-Font" id='otpValidateMobileBtn' onclick="validateMobileManually(this);">
+                                                                Validate Mobile
+                                                            </a>
+                                                        </div>
+                                                        <div class="base-nav col-sm-6">
+                                                            <a class="btn btn-primary fff-Font" id='otpValidateEmailBtn' onclick="validateEmailManually(this);">
+                                                                Validate Email
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <div class="row">
+                                                    <div class="col-lg-6" style="">
+                                                        <div class="form-group names">
+                                                            <label>Home Country Mobile Number</label>
+                                                            <div class="d-flex">
+                                                                <div style="flex-basis: 150px;width: 150px;">
+                                                                    <div style="flex-basis: 150px;width: 90px;">
+                                                                        <select class="form-control countrycodes" id="countrycode_homecountry__c">
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <input type="text" for="mobileNo" maxlength="15" parent="addressDetailsInHomeCountryPermanent" class="form-control mr-3  numOnly" value="{!info.addressDetailsInHomeCountryPermanent.mobileNo}" id="homeMN" onchange="changeinHomeMob(this)" /><!--onchange="changeinHomeMob(this)" -->
+                                                            </div>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <apex:outputPanel id="tncPanel" styleClass="row" >
+                                                    <apex:outputPanel >
+                                                        <p class="chk" style="vertical-align: middle;font-size: 1em;">
+                                                            <label class="custom-checkbox mr-4">
+                                                                <input type="checkbox" id="tANDc" class="exceptionElem" onchange="rmErronTC()" />
+                                                                <span class="">
+                                                                    Accept the general declaration: The provided information is true and up to the knowledge. 
+                                                                </span>
+                                                            </label>  
+                                                        </p>
+                                                    </apex:outputPanel>
+                                                </apex:outputPanel>
+                                                <div class="row row-lg">
+                                                    <apex:outputPanel id="updateBtnPanel" styleClass="col-12" ><!--RICAttId == ''-->
+                                                        <apex:outputPanel rendered="{!OR(req.STA__c=='Draft',req.STA__c=='',req.STA__c=='Open')}">
+                                                            <div class="base-nav">
+                                                                <a class="btn btn-primary base-nav-next" id='updateBtn' href="#" onclick="updateMem();">
+                                                                    UPDATE
+                                                                </a>
+                                                            </div>       
+                                                        </apex:outputPanel> 
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <script>
+                                    var RICAttId = '{!JSENCODE(RICAttId)}';
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal fade modal-base" id="modal_confirm_information_mem" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="width: 990px;">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <h2>Review and confirm information</h2>
+                                <p>
+                                    We have captured below information from uploaded documents, please review, correct and confirm to proceed.
+                                </p>
+                                <p>
+                                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                    <span class='rqrdMsg'>All fields are mandatory</span>
+                                    <span class='gccNational' style="color:red; display:none">Applicant should not be GCC national, please apply for Non-Sponsored ID card</span>
+                                </p>
+                                <div class="form-style row row-lg">
+                                    <!-- .col -->
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label>Date of birth</label>
+                                            <div class="input-datepicker-group input-group"> <!--1.1 -->
+                                                <input attr="dateOfBirth" type="text" onchange="checkDate(this,'dob')" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="dob" fldName="Date_of_Birth" id="datepicker4"
+                                                       data-toggle="datetimepicker" validationname="dob" data-target="#datepicker4" placeholder="DD/MM/YYYY" />
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker4">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label>Passport number</label>
+                                            <!-- 1.2 -->
+                                            <input type="text" attr="passportNumber" minlength="6" maxlength="12" onkeyup="validAlphaNumeric(this)" fldName="Passport_No" id="passportid" class="requiredFld form-control forEdit" value="" />
+                                        </div>
+                                    </div>
+                                <!--1.4 PJ Start-->
+                                    <div class="col-lg-4" style="">
+                                        <div class="form-group names">
+                                            <label>Place of Birth</label>
+                                            <input parent="contactDetail" attr="placeOfBirth" class="requiredFld form-control input-passportNumber ppDetails" for="placeOfBirth" value="" id="pob"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <div class="form-group">
+                                                <div class="form-group">
+                                                    <label>Birth Country</label>
+                                                    <select class="requiredFld form-control  input-select2-flat forEdit ppDetails" extFld='type' attr="birthCountry"
+                                                            id="bnat" extFld1='Country Code'  fldName="placeBornCountry" ddaKey="birthCountry" parent="contactDetail" for="birthCountry" value="" >
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4" style="">
+                                        <div class="form-group names">
+                                            <label>Passport Issued Place</label>
+                                            <input parent="passportInfo" attr="passportIssuePlace" class="requiredFld form-control input-passportNumber ppDetails" for="passportIssuePlace" value="" id="pip"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label>Passport Issue Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input attr="passportIssueDate" onchange="checkDate(this,'pid')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="pid" fldName="Date_of_Issue2" id="datepicker2" 
+                                                       validationname="pid" data-toggle="datetimepicker" data-target="#datepicker2" placeholder="DD/MM/YYYY" />
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker2">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!--1.4 PJ End-->
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label>Passport Expiry Date</label>
+                                            <div class="input-datepicker-group input-group">
+                                                <input onchange="checkDate(this,'ped')" type="text" class="dateCheck requiredFld form-control input-datepicker forEdit" validationName="ped" 
+                                                       attr="passportExpiryDate" validationname="ped" fldName="Date_of_Expiry2" id="datepicker3"
+                                                       data-toggle="datetimepicker" data-target="#datepicker3" placeholder = "DD/MM/YYYY"/>
+                                                <div class="input-group-append">
+                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker3">
+                                                        <i class="icon-date"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                                <div class="row row-lg">
+                                    <div class="col-lg-6"></div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group text-right">
+                                            <label>&nbsp;</label><br />
+                                            <a id="addMemBtn" style="color: white !important;" onclick="attachmentSave1('#modal_confirm_information_mem')" class="btn btn-primary">CONFIRM</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- for EIDA -->
+                <div class="modal fade modal-base" id="modal_EIDA_confirm_information_mem" role="dialog" aria-hidden="true" data-backdrop="static">
+                    <div class="modal-dialog" role="document" style="width: 990px;">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <h2>Verify and confirm the information</h2>
+                                <p>
+                                    We have gathered below information from the uploaded images. 
+                                    It may have few errors depending on the quality of the image/scan. Kindly review all the fields to confirm and save.
+                                </p>
+                                <p>
+                                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                                    <span class='rqrdMsg'>All fields are mandatory</span>
+                                    
+                                </p>
+                                
+                                <div class="form-style">
+                                    
+                                    <div class="row">
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <div>
+                                                    <label>ID Number</label>
+                                                    <input type="text" attr="emiratesIdNumber" fldName="ID_Number" id="eidaid" class="requiredFld numOnly form-control forEdit" value=""  onkeydown="updateEidaFormat(this,event)" onchange="vEida(this)"/>
+                                                    <script type="text/javascript">
+                                                    cs['xid__ocr']=document.getElementById('eidaid');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>EIDA Issue Date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input attr="emiratesIdIssueDate" type="text" class="requiredFld form-control input-datepicker" id="eid1"
+                                                           data-toggle="datetimepicker" data-target="#eid1" onchange ="checkDate(this)" validationname="eid" />
+                                                    <div class="input-group-append">
+                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#eid1">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6" style="">
+                                            <div class="form-group">
+                                                <label>EIDA Expiry Date</label>
+                                                <div class="input-datepicker-group input-group">
+                                                    <input attr="emiratesIdExpiryDate" type="text" class="requiredFld form-control input-datepicker" id="eed1"
+                                                           data-toggle="datetimepicker" data-target="#eed1" onchange = "checkDate(this)" validationname="eed" />
+                                                    <div class="input-group-append">
+                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#eed1">
+                                                            <i class="icon-date"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 form-group text-right">
+                                            <label>&nbsp;</label><br />
+                                            <a id="addEIDABtn" style="color: white !important;" onclick="attachmentSave1('#modal_EIDA_confirm_information_mem');return false;" class="btn btn-primary">CONFIRM</a>
+                                        </div>
+                                        <!-- .col -->
+                                    </div>
+                                    <!-- .row -->
+                                </div>
+                                <!-- .form-style -->
+                            </div>
+                            <!-- .modal-body -->
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="modal fade modal-base" id="modal_mobile_help"  tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="width: 993px;">
+                        <div class="modal-content">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="icon-close"></i>
+                            </button>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-12 order-md-2">
+                                    </div>
+                                </div>
+                                <div class="text-right d-block d-md-none mt-4">
+                                    <a onclick="copyMobileNumber(this);" style="color: #fff;" 
+                                       class="saveAtt btn btn-primary">
+                                        Copy To Reference Mobile number
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <c:ocrcmp accPrk="{!req.acc__r.park__c}" />
+                <c:fileuploadpopupnew13 R="{!req}" rerender="ricPanel"/> 
+                <script>
+                var isMobChanged=false;
+                var isEmailChanged=false;
+                var isMobileNumberUpdated = false; // used for JSON update.
+                var isEmailAddressUpdated = false; // used for JSON update.
+
+                var originalData = {};
+                var updatedData = {};
+                var correctionsSections = '{!JSENCODE(bckOfcCmts)}';
+                var dateFields = ['dateOfBirth','emiratesIdIssueDate','emiratesIdExpiryDate','passportIssueDate','passportExpiryDate'];
+                var mobileNumberJson = { //1.2
+                    "countrycode_rmob__c": "",
+                    "countrycode_homecountry__c":""
+                };
+                
+                $(document).ready(function(){
+                    $('#bnat').find('option[value="{!info.contactDetail.birthCountry}"]').prop('selected',true);
+                    $('#bnat').trigger('change');
+                    originalData = JSON.parse(cs['xadtx4__c'].value);
+                    if(cs["xadtx3__c"]){
+                        if(cs["xadtx3__c"].value)
+                            updatedData = JSON.parse(cs["xadtx3__c"].value);
+                        else
+                            updatedData = JSON.parse(cs['xadtx4__c'].value);                        
+                    }
+
+                    $('#nat').find('option[value="{!info.contactDetail.Nationality}"]').prop('selected',true);
+                    $('input').blur();
+                    if(cs["xoca__c"].value == 'true'){
+                        $('#memBody select,#memBody input').addClass('disabledApex').attr('disabled','true');
+                        $('#memBody .exceptionElem').removeClass('disabledApex').removeAttr('disabled');
+                         $('#countrycode_rmob__c').removeClass('disabledApex').removeAttr('disabled');
+$('#uaeNumber').removeClass('disabledApex').removeAttr('disabled');
+$('#emailAdd').removeClass('disabledApex').removeAttr('disabled');
+$('#countrycode_homecountry__c').removeClass('disabledApex').removeAttr('disabled');
+$('#homeMN').removeClass('disabledApex').removeAttr('disabled');
+                    }
+                    if(correctionsSections.includes("Missing/Incorrect EIDA") ){
+                        $('#eidC').prop('checked',true).trigger('change');
+                    }
+
+
+                    let isMobilePhoneVerified = '{!JSENCODE(info.contactDetail.isMobilePhoneVerified)}'; 
+                    let isEmailVerified = '{!JSENCODE(info.contactDetail.isEmailVerified)}'; 
+                    console.log('isMobilePhoneVerified load value :'+isMobilePhoneVerified);
+                    console.log('isEmailVerified load value :'+isEmailVerified);
+
+                    if(isMobilePhoneVerified == 'true'){ //1.3
+                        $('#otpValidateMobileBtn').hide();
+                    }
+                    if(isEmailVerified == 'true'){  //1.3
+                        $('#otpValidateEmailBtn').hide();
+                    }
+
+                    if(isMobilePhoneVerified == 'true' && isEmailVerified == 'true'){ //1.3
+                        $('#otpButtonBlock').hide();
+                    }
+                    
+                    let mobileNumber = '{!JSENCODE(info.contactDetail.mobileNumber)}'; //1.2
+                    if(mobileNumber){
+                        updateMobileFields(mobileNumber,'countrycode_rmob__c','uaeNumber');
+                    }
+                    
+                    let homeCountryMobile = '{!JSENCODE(info.addressDetailsInHomeCountryPermanent.mobileNo)}';
+                    if(homeCountryMobile){
+                        updateMobileFields(homeCountryMobile,'countrycode_homecountry__c','homeMN');
+                    }
+
+                    
+                    if(checkisVisitedVisibility()){ //1.4 PJ
+                        $('#visiteduaepanel').hide();
+                        cs['isVisitedUAE'] = true;
+                    } 
+
+                     let isvisitedUAE = '{!JSENCODE(info.contactDetail.visitedUAE)}'; // 1.4 PJ
+                     console.log('isvisitedUAE :'+isvisitedUAE);
+                     if (isvisitedUAE === 'true') {
+                        updateIsVisitedChecks(true);
+                     } else if (isvisitedUAE === 'false') {
+                        updateIsVisitedChecks(false);
+                     }
+
+
+                     let dateOfBirth = '{!JSENCODE(info.contactDetail.dateOfBirth)}'; 
+                     let birthCountry = '{!JSENCODE(info.contactDetail.birthCountry)}'; 
+                     let placeOfBirth = '{!JSENCODE(info.contactDetail.placeOfBirth)}'; 
+
+                     console.log('dateOfBirth :'+dateOfBirth);
+                     console.log('birthCountry :'+birthCountry);
+                     console.log('placeOfBirth :'+placeOfBirth);
+                     
+                     if(placeOfBirth && placeOfBirth != ''){
+                        $('#pob').addClass('disabledApex');
+                     }
+                     if(birthCountry && birthCountry != ''){
+                        $('#bnat').addClass('disabledApex');
+                     }
+                     if(dateOfBirth && dateOfBirth != ''){
+                        $('#dob').addClass('disabledApex');
+                     }
+                
+                    
+                });
+
+                function eidValidations(e){
+                    let c = $(e).prop('checked');
+                    $('[parent="addressDetailsInUAE"]').removeClass('requiredFld');
+                    if(c){
+                        $('[parent="addressDetailsInUAE"]').addClass('requiredFld');
+                    }
+                }
+                function checkisVisitedVisibility(){ //1.4 PJ
+                    let nationality = '{!JSENCODE(info.contactDetail.Nationality)}';
+                    let emiratesIdNumber = $('#eidNum').val();
+                    let emiratesIdIssueDate = $('#eid').val();
+                    let emiratesIdExpiryDate = $('#eed').val();
+
+                    if(nationality == 'United Arab Emirates' || (emiratesIdNumber != '' && emiratesIdIssueDate != '' && emiratesIdExpiryDate!='' )){
+                        return true;
+                    } 
+                    return false;
+                }
+                
+                function updateIsVisitedChecks(isTrue){ //1.4 PJ
+                    let visitedYes = document.getElementById("visitedYes");
+                    let visitedNo =document.getElementById("visitedNo");
+                    if(isTrue){
+                        
+                        if(visitedYes){
+                            visitedYes.checked = true;
+                        }
+                        if(visitedNo){
+                            visitedNo.checked = false;
+                        }
+                        cs['isVisitedUAE'] = true;
+                    }
+                    else{
+                        if(visitedYes){
+                            visitedYes.checked = false;
+                        }
+                        if(visitedNo){
+                            visitedNo.checked = true;
+                        }
+                        cs['isVisitedUAE'] = false;
+                    }
+                }
+                
+                function updateMobileFields(mobileNumber, countryCodeId, mobilePhoneId) { //1.2
+                    if (!mobileNumber) return;
+
+                    let mobileText = mobileNumber.toString().trim();
+
+                    //Normalize - remove spaces, collapse multiple plus/dash
+                    mobileText = mobileText.replace(/\s+/g, '');
+                    mobileText = mobileText.replace(/-+/g, '-');
+                    mobileText = mobileText.replace(/\++/g, '+');
+
+                    //Replace all leading 00 with +
+                    mobileText = mobileText.replace(/^0+/, ''); 
+
+                    let countryCode = '';
+                    let number = '';
+
+                    //Detect explicit country code at start
+                    let match = mobileText.match(/^\+(\d{1,4})/); // country code = + followed by up to 4 digits
+                    if (match) {
+                        countryCode = `+${match[1]}`;
+                        number = mobileText.slice(countryCode.length);
+                    } else {
+                        number = mobileText;
+                    }
+
+                    if (countryCode) {
+                        let plainCode = countryCode.replace('+', '');
+                        number = number.replace(new RegExp(`\\+?${plainCode}`, 'g'), '');
+                    }
+                    
+                    // Clean number
+                    number = number.replace(/[^0-9]/g, ''); // keep only digits
+                    number = number.replace(/^0+/, '');     // remove leading zeros
+
+                    let formatted = countryCode ? `${countryCode}-${number}` : number;
+
+                    const phoneInput = document.getElementById(mobilePhoneId);
+                    const countryCodeInput = document.getElementById(countryCodeId);
+                    const countryCodeSpan = document.getElementById(`select2-${countryCodeId}-container`);
+
+                    if (phoneInput) phoneInput.value = number;
+                    if (countryCodeInput && countryCode) countryCodeInput.value = countryCode;
+                    if (countryCodeSpan && countryCode) countryCodeSpan.innerHTML = countryCode;
+
+                    return formatted;
+                }
+                var countryOptions= '<option value="">--None--</option>';
+                console.log('nationality_arr :'+nationality_arr);
+    for(var x=0;x<nationality_arr.length;x++){
+        var j = nationality_arr[x];
+        var vl = j.nationality;
+        newCountrVals.forEach(function(v,i){
+            if(j.countryName==Object.keys(v).toString()){
+                vl = Object.values(v).toString();
+            }
+        });
+          var opt1 = '<option value="'+j.countryName+'">'+j.countryName+'</option>';
+        countryOptions += opt1;
+    }
+                
+    $('[fldName="placeBornCountry"]').append(countryOptions);
+                
+                function openMobileHelp(){
+                    $('#modal_mobile_help').modal('show');
+                }
+                function returnOldVals(detType){
+                    if(detType=='passport'){
+                        $('.ppDetails').each(function(){
+                            var f = $(this).attr('for');
+                            if(f=='Nationality'){
+                                $('#nat').find('option[value="'+existPPDetails[f]+'"]').prop('selected',true);
+                            }
+                            else
+                                $(this).val(existPPDetails[f]);
+                        });
+                    }
+                }
+                function checkMob(thisElem){
+                    var mobNo = $(thisElem).val();
+                    if(mobNo.length < 10){
+                        addValError(thisElem,'Please enter valid mobile Number!!');
+                    }else{
+                        removeValError(thisElem);    
+                    }
+                }
+                function uploadDoc(docname){
+                    currentDoc = docname;
+                    cs["docname"].value = docname ;
+                    $(".docname").text(docname);
+                    cs["parseId"].value = false; 
+                    document.getElementById("udDocType").value = docname;
+                    console.log( cs["docname"].value);
+                    if(docname!='RIC Form'){
+                        cs["parseId"].value = true; 
+                        isFromMemUpdate = true;
+                    }
+                    else{
+                        //$('#modal_fileuploadPopUp #saveAtt').attr('onclick','saveAtt();');
+                    }
+                    $('#modal_fileuploadPopUp').modal('show');
+                }
+                function rmErronTC(){
+                    if($('#tANDc').is(':checked')==true)
+                        $('.chk').find('.frmErrMsg').remove();
+                    else{
+                        var errElem = '<div class="frmErrMsg">Please accept the general declaration .</div>';
+                        $('.chk').append(errElem);
+                    }
+                }
+                function validateTandC(){
+                    if($('#tANDc').prop('checked')){
+                        removeValError('#tANDc');
+                        return true;
+                    }
+                    $('.chk').find('.frmErrMsg').remove();
+                    var errElem = '<div class="frmErrMsg">Please accept the general declaration.</div>';
+                    $('.chk').append(errElem);
+                    scrollToDiv($('.chk'));
+                    return false;
+                    
+                }
+                /*** to override attachmentSave1 from ocrcmp ***/
+                function afs(){
+                    saveAtt();
+                }
+                function attachmentSave1(modal) {
+                    var invalData = false;
+                    $(modal+' .requiredFld').each(function() {
+                        if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                            return;
+                        if(!$(this).is(':visible'))
+                            return;
+                        var l = $(this).attr('attr');
+                        var v = $(this).val();
+                        if (!v ||v == '--None' ) {//|| v.lenght < 1
+                            if ($(this).is('select')) {
+                                showErrMsg($(this).next().find('.select2-selection'), 'rqrd', 'invalid');
+                            } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                                showErrMsg($(this), 'rqrdDate', 'invalid');
+                            } else
+                                showErrMsg($(this), 'rqrd', 'invalid');
+                            invalData = true;
+                            $(modal+' .rqrdMsg').html('All fields are mandatory').css('color', 'red').fadeOut().fadeIn();
+                        } else{
+                            showErrMsg($(this), 'rqrd', true);
+                            //updatedData[l] = v;
+                            $('[for="'+l+'"]').val(v).addClass('disabledApex').attr('disabled',true);
+                        }
+                    });
+                    for(var x=0;x<$(modal+' .modal-body .input-datepicker').length;x++){
+                        var i = $('.modal-body .input-datepicker')[x]; 
+                        var vl = $(i).val();
+                        if($(i).is(':visible')){  //1.1
+                            if (vl.length != 10 || vl.match(/\//g) == null) {
+                                showErrMsg($(i), 'dob', 'invalid');
+                                invalData = true;
+                            } else if (vl.match(/\//g) != null) {
+                                if (vl.match(/\//g).length != 2) {
+                                    showErrMsg($(i), 'dob', 'invalid');
+                                    invalData = true;
+                                }
+                            }
+                        }
+                    }
+                    let passportElement = document.getElementById('passportid'); //1.2
+                    let passportValue = passportElement.value;
+                    const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+                    if(passportValue && (psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12)){
+                        addValError(passportElement,'Passport Number must be 6-12 characters long and contain only letters and numbers !');
+                        invalData = true;
+                    }
+                    checkdobPid($('[validationname="dob"]'), $('[validationname="pid"]'));
+                    if ($(modal+' .frmErrMsg').length > 0 && $(modal+' .frmErrMsg').is(':visible')) {
+                        invalData = true;
+                    }
+                    if (invalData) {
+                        invalData = false;
+                        return;
+                    }
+                    /* 1.4 PJ Start- removing error message on passport upload */
+
+                    removeValError($('#ppNum')); 
+                    removeValError($('#pob')); 
+                    removeValError($('#bnat')); 
+                    removeValError($('#pip')); 
+                    removeValError($('#pid')); 
+                    removeValError($('#ped')); 
+                    removeValError($('#dob')); 
+
+                    /* 1.4 PJ End */
+                    var isGCCnational = false;
+                    var isAllowedOA = true;
+                    var country = $(modal+' [fldName="country"]').find("option:selected").text();
+                    $('#nat option:contains('+country+')').prop('selected', true);
+                    
+                    $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+                    $(modal).modal('hide');
+                    isFromMemUpdate = false;
+                    if(modal === '#modal_EIDA_confirm_information_mem'){
+                        cs['isVisitedUAE'] = true;
+                    }
+                    createAdhoc3();
+                    saveAtt();
+                    $('#ppInfo').show();
+                }
+                function svRDrft(){
+                    createAdhoc3();
+                    svRDrft1();
+                }
+                function filePreview(fName,src){
+                    window.open(src, '_blank');
+                }
+                function removeAttch1(attchid,docName){
+                    $('[forLoad="'+docName+'"]').find('.loader_img').show();
+                    $('*').addClass('loadingProgress');
+                    removeAttch(attchid);
+                    if(docName=='Passport Copy'){
+                        //returnOldVals('passport');
+                    }
+                }
+
+                function hideShowVisitedPanal(){ //1.4 PJ
+                    if(EIDAttId != '' || checkisVisitedVisibility()){
+                        updateIsVisitedChecks(true);
+                        $('#visiteduaepanel').hide();
+                    }
+                    else{
+                        updateIsVisitedChecks(false);
+                        $('#visiteduaepanel').show();
+                    }
+                    console.log('isVisitedUAE  :'+cs['isVisitedUAE'] );
+                }
+                function dformat1(dt){
+                    var d = new Date(new Date(dt).toLocaleString('en-us',{ timeZone: 'Asia/Dubai' }));
+                    var m=d.getMonth()+1;
+                    var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+                    var mm=m>9?m:'0'+m;
+                    var yy=d.getFullYear();
+                    return dd+'/'+mm+'/'+yy;
+                }
+                function revertDateFormat(v){
+                    if(!v)
+                        return;
+                    var dateArr = v.split('/');
+                    return dateArr[2]+'-'+dateArr[1]+'-'+dateArr[0];
+                }
+                function changeinHomeMob(e){
+                    var v = $(e).val();
+                    var p = $(e).attr('parent');
+                    var l = $(e).attr('for');
+                    removeValError(e);
+                    if(v && v != undefined && v != '' && document.getElementById("countrycode_homecountry__c").value==''){
+                        addValError(e,'Please enter select country code !');
+                    }
+                    else if(v && isInvalidMobileNumber(v)){
+                        addValError(e,'Please enter valid Mobile Number.');
+                    }
+                }
+                function changeinMob(e){
+                    var v = $(e).val();
+                    var p = $(e).attr('parent');
+                    var l = $(e).attr('for');
+                    removeValError(e);
+                    if(v && v != undefined && v != '' && document.getElementById("countrycode_rmob__c").value==''){
+                        addValError(e,'Please enter select country code !');
+                        if(originalData[p][l]){
+                            $(e).val(originalData[p][l]);
+                        }
+                        else{
+                            $(e).val('');
+                        }
+                    }
+                    else if(v && isInvalidMobileNumber(v)){
+                        addValError(e,'Please enter valid Mobile Number.');
+                    }
+                    else if(v && v!=originalData[p][l] ){
+                        cs['isMobilePhoneVerified'] = false;
+                        isMobileNumberUpdated =true;
+                        $('#correctsignimg').hide();
+                        $('#otpButtonBlock').hide();
+                        showTempLoader(e);
+                        isMobChanged=true;
+                        isEmailChanged = false;
+                        $('[id="emailAdd"]').attr("disabled",true); 
+                        axsConfirmation('Alert','Change in mobile number needs validation.<br/>Do you want to proceed? ',false,'sendOtp',v,'returnOldMob',l);
+                    }
+                    else if(v == originalData[p][l] ){
+                        isMobileNumberUpdated = false;
+                    }
+                }
+                function changeinEmail(e){
+                    var v = $(e).val();
+                    var p = $(e).attr('parent');
+                    var l = $(e).attr('for');
+                    if(v && v!=originalData[p][l]){  //1.3
+                        cs['isEmailVerified'] = false;
+                        isEmailAddressUpdated =true;
+                        $('#correctsignimgemail').hide();
+                        $('#otpButtonBlock').hide();
+                        showTempLoader(e);
+                        isEmailChanged =true;
+                        isMobChanged =false;
+                        $('[id="uaeNumber"]').attr("disabled",true);
+                        axsConfirmation('Alert','Change in email needs validation.<br/>Do you want to proceed? ',false,'sendOtp',v,'returnOldEmail',l);
+                    }
+                    else if(v == originalData[p][l]){
+                        isEmailAddressUpdated =false;
+                    }
+                }
+
+                function validateMobileManually(e){
+                    isMobileNumberUpdated = true;
+                    let mobile =   $('#uaeNumber');
+                    removeValError(mobile);
+                    if(mobile && mobile.val() && mobile.val() != undefined && mobile.val() != '' && document.getElementById("countrycode_rmob__c").value==''){
+                        addValError($('#uaeNumber'),'Please select country code !');
+                    }
+                    else if(mobile && mobile.val() && mobile.val() != undefined && mobile.val() != ''){
+                        isMobChanged =true;
+                        isEmailChanged =false;
+                        showTempLoader(e);
+                        $('#otpBlock').hide();
+                        $('[id="emailAdd"]').attr("disabled",true); 
+                        sendOtp(null);
+                        $('#otpButtonSuccess').show();
+                    }
+                    else{
+                        addValError(mobile,'Please enter primary mobile number !');
+                    }
+                }
+
+                function validateEmailManually(e){
+                    isEmailAddressUpdated = true;
+                    let email =   $('#emailAdd');
+                    if(email && email.val() &&  email.val() != undefined && email.val() != ''){
+                        isMobChanged =false;
+                        isEmailChanged =true;
+                        showTempLoader(e);
+                        $('#otpBlock').hide();
+                        $('[id="uaeNumber"]').attr("disabled",true);
+                        sendOtp(null);
+                        $('#otpButtonSuccess').show();
+                    }
+                    else{
+                        addValError(email,'Please enter email address !');
+                    }
+
+                }
+
+                function returnOldMob(label){
+                    var elem = $('[for="'+label+'"]');
+                    var l = elem.attr('parent')
+                    
+                    let mobileNumber = originalData[l][label]; //1.2
+                    if(mobileNumber.includes('-')){
+                        elem.val(mobileNumber.split('-')[1]);
+                    }else{
+                        elem.val(mobileNumber);
+                    }
+                    $('#otpBlock').hide();
+                    $('#otpButtonBlock').show();
+                    removeTempLoader();
+                }
+                function returnOldEmail(label){
+                    var elem = $('[for="'+label+'"]');
+                    var l = elem.attr('parent')
+                    elem.val(originalData[l][label]);
+                    $('#otpBlock').hide();
+                    $('#otpButtonBlock').show();
+                    removeTempLoader();
+                }
+                function sendOtp(val){
+                    $('[for="mobileNumber"]').addClass('disabledApex');
+                    if(isEmailChanged){  //1.3
+                        svEm($('#emailAdd').val());
+                    } 
+                    if(isMobChanged){  //1.3
+                        sendOtp1($('#uaeNumber').val());
+                    }   
+                }
+                function reSendOtp(){
+                    $('#otpSuccess').hide();
+                    sendOtp($('#uaeNumber').val());
+                }
+                function sentOtp(){
+                    $('#otpMsg').show();
+                }
+                function enableOtpBtn(elem){
+                    let v = $(elem).val();
+                    (v&&v.length>=6)?$('#otpBtn').removeClass('disabledApex'):$('#otpBtn').addClass('disabledApex');
+                    
+                }
+                function checkOtp(e){
+                    showTempLoader(e);
+                    let val = $('#otpVal').val();
+                    validateOtp(val,isMobChanged);
+                }
+
+                function postValidateOtp(res){
+                    $('[for="mobileNumber"]').removeClass('disabledApex');
+                    $('#otpBlock').show();
+                    if(res=='Verified'){
+                        $('#otpVal').parent().parent().hide();
+                        $('#resendBtn').hide();
+                        //$('#otpSuccess').html('<b style="color=\'green\'">OTP Validated successfully</b>').show();
+                        $('#otpBtn').parent().hide();
+                        $('#otpButtonBlock').show();
+                        if(isEmailChanged){
+                            cs['isEmailVerified']= true;
+                            $('#correctsignimgemail').show();
+                            $('#otpValidateEmailBtn').hide();
+                            isEmailChanged=false;
+                            if($('#uaeNumber').val() == ''){
+                                $('#otpButtonBlock').hide();
+                            }
+                            $('[id="uaeNumber"]').attr("disabled",false);
+                        }
+                        if(isMobChanged){
+                            cs['isMobilePhoneVerified']= true;
+                            $('#correctsignimg').show();
+                            $('#otpValidateMobileBtn').hide();
+                            isMobChanged=false;
+                            if($('#emailAdd').val() == ''){
+                                $('#otpButtonBlock').hide();
+                            }
+                            $('[id="emailAdd"]').attr("disabled",false); 
+                        }
+                        if((cs['isEmailVerified'] == true || cs['isEmailVerified'] == 'true') && (cs['isMobilePhoneVerified'] == true || cs['isMobilePhoneVerified'] == 'true' )){
+                            $('#otpButtonBlock').hide();
+                        }
+                        
+                        createAdhoc3();
+                    }
+                    else{
+                        $('#otpSuccess').html('<b style="color=\'red\'">Enter the correct OTP</b>').show();
+                        $('#otpVal').val('');
+                        $('#resendBtn').removeClass('disabledApex').show();
+                        if(isEmailChanged){
+                            $('#correctsignimgemail').hide();
+                        }
+                        if(isMobChanged){
+                            $('#correctsignimg').hide();
+                        }
+                    }
+                }
+                
+                function updateMem(){
+                    let v = validateTandC();
+                    if(v){
+                        axsConfirmation('Thank You for filling out the form!','Please make sure the data is correct before submitting.',false,'validateData');
+                    }
+                }
+                
+                function validateData(){
+                    var invalData = false;
+                    removeValError($('#uaeNumber')); 
+                    removeValError($('#countrycode_rmob__c')); 
+                    removeValError($('#countrycode_homecountry__c')); 
+                    removeValError($('#emailAdd')); 
+                    $('.requiredFld:visible').each(function() {
+                        if(!$(this).is(':visible'))
+                            return;
+                        var l = $(this).attr('attr');
+                        var v = $(this).val();
+                        if (!v ||v == '--None' ) {
+                            if($(this).hasClass('disabledApex')){
+                                console.log('for data :'+$(this).attr('for'));
+                                if($(this).attr('for')== 'passportIssuePlace' || $(this).attr('for')== 'passportIssueDate' || $(this).attr('for')== 'passportExpiryDate' || $(this).attr('for')== 'passportNumber' ){
+                                    showErrMsg($(this), 'rqrd', 'uploadPassport');
+                                }
+                                else if($(this).attr('for')== 'emiratesIdNumber' || $(this).attr('for')== 'emiratesIdIssueDate' || $(this).attr('for')== 'emiratesIdExpiryDate' ){
+                                    showErrMsg($(this), 'rqrd', 'uploadEmiratesId');
+                                }
+                                else{
+                                    showErrMsg($(this), 'rqrd', 'invalid');
+                                }
+                            }
+                            else if ($(this).is('select')) {
+                                showErrMsg($(this), 'rqrd', 'invalid');
+                            } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                                showErrMsg($(this), 'rqrdDate', 'invalid');
+                            } else
+                                showErrMsg($(this), 'rqrd', 'invalid');
+                            invalData = true;
+                            if(!$(this).hasClass('disabledApex')){
+                                $(this).focus();
+                            }
+                            
+                        } else{
+                            showErrMsg($(this), 'rqrd', true);
+                        }
+                    });
+
+                    if('{!JSENCODE(info.passportInfo.isExpired)}'=='true'&&ppAttId=='' && invalData ==false){
+                        invalData = true;
+                        axsAlert('Error','Please upload passport copy');
+                        $('#ppDoc').addClass('box-danger');
+                        $('#ppDocC').addClass('box-danger');
+                        return;
+                    }
+                    if($('#eidC').is(':checked')==true && invalData ==false){
+                        if(EIDAttId==''){
+                            invalData = true;
+                            axsAlert('Error','Please upload EID copy');
+                            $('#eidDoc').addClass('box-danger');
+                        }
+                        
+                    }
+                    if(EIDAttId!='' && document.getElementById("uaeNumber").value=='' && invalData ==false){
+                        invalData=true;
+                        showErrMsg($('#uaeNumber'), 'rqrd', 'invalid');
+                    }
+                    
+                    if($('#uaeNumber').val() != '' && $('#countrycode_rmob__c').val()=='' && invalData ==false){ //1.2
+                        invalData=true;
+                        if($('#uaeNumber').val() !='')
+                        showErrMsg($('#countrycode_rmob__c'), 'rqrd', 'invalid');
+                    }
+
+                    if($('#uaeNumber').val() != '' && isInvalidMobileNumber($('#uaeNumber').val()) && invalData ==false ){
+                        invalData=true;
+                        addValError($('#uaeNumber'),'Please enter valid mobile number !');
+                    }
+                    if((cs['isMobilePhoneVerified'] == undefined ||  cs['isMobilePhoneVerified'] == 'false' || cs['isMobilePhoneVerified'] == false) && invalData ==false ){
+                        invalData=true;
+                        addValError($('#uaeNumber'),'Please validate your mobile number !');
+                    }
+
+                    if($('#homeMN').val() !='' && $('#countrycode_homecountry__c').val()=='' && invalData ==false){ //1.2
+                        invalData=true;
+                        showErrMsg($('#countrycode_homecountry__c'), 'rqrd', 'invalid');
+                    }
+
+                    if($('#homeMN').val() =='' && $('#countrycode_homecountry__c').val() !='' && invalData ==false){ //1.2
+                        invalData=true;
+                        showErrMsg($('#countrycode_homecountry__c'), 'rqrd', 'invalid');
+                    }
+                    if($('#homeMN').val() != '' && isInvalidMobileNumber($('#homeMN').val()) && invalData ==false ){
+                        invalData=true;
+                        addValError($('#homeMN'),'Please enter valid mobile number !');
+                    }
+                    if((cs['isEmailVerified'] == undefined ||  cs['isEmailVerified'] == 'false' || cs['isEmailVerified'] == false) && invalData ==false){
+                        invalData=true;
+                        addValError($('#emailAdd'),'Please validate your email address !');
+                    }
+
+                    let passportValue = $('#passportid').val(); //1.2
+                    const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+                    if(passportValue && (psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12) && invalData ==false){
+                        invalData = true;
+                        addValError($('#passportid'),'Passport Number must be 6-12 characters long and contain only letters and numbers !');
+                    }
+                    console.log('---invalData---'+invalData);
+                    if(!invalData){
+                        createAdhoc3();
+                        cs["xoca__c"].value = true;
+                        showGLoader();
+                        //1.2 Start
+                        mobileNumberJson.countrycode_rmob__c = document.getElementById('countrycode_rmob__c').value; 
+                        mobileNumberJson.countrycode_homecountry__c = document.getElementById('countrycode_homecountry__c').value; 
+                        console.log('prateek mobileNumberJson.countrycode_rmob__c :'+JSON.stringify(mobileNumberJson));
+                        submitReq(JSON.stringify(mobileNumberJson));
+                        //1.2 End
+                    }
+                }
+                function isInvalidMobileNumber(mobileNumber) {
+                    if (!mobileNumber) return true;
+
+                    // Trim spaces
+                    let value = mobileNumber.toString().trim();
+
+                    // Reject if contains country-code style formatting
+                    if (value.includes('-')) {
+                        return true; // should not include "-"
+                    }
+
+                    // Reject if starts with 0
+                    if (value.startsWith('0')) {
+                        return true;
+                    }
+
+                    // Keep only digits for validation
+                    let digitsOnly = value.replace(/\D/g, '');
+
+                    // Check length (E.164 max 15 digits, min 5 for sanity)
+                    if (digitsOnly.length < 5 || digitsOnly.length > 15) {
+                        return true;
+                    }
+
+                    return false;
+                }
+                function createAdhoc3(){
+                    $('select:visible,input:visible').each(function(){
+                        var l = $(this).attr('for');
+                        if(!l)
+                            return;
+                        var v = $(this).val();
+                        if(typeof(this)=='select'){
+                            v = $(this).find('option:selected').text()
+                        }
+                        if($(this).hasClass('input-datepicker')){
+                            v = revertDateFormat(v)
+                        }
+                        var p = $(this).attr('parent');
+                        if(!p){
+                            if(v!=originalData[l])
+                                updatedData[l] = v;
+                        }
+                        else{
+                            if(!updatedData[p]){
+                                updatedData[p]={};
+                            }
+                            if(v!=originalData[p][l])
+                                updatedData[p][l] = v;
+                            if(p=='contactDetail' && l=='mobileNumber'){ //1.2
+                                let countryCode = document.getElementById('countrycode_rmob__c')?.value || '';
+                                let referenceNum = document.getElementById("uaeNumber")?.value || '';
+
+                                if (countryCode && referenceNum) {
+                                    // --- Normalize country code ---
+                                    if (!countryCode.startsWith('+')) {
+                                        countryCode = '+' + countryCode.replace(/\D/g, '');
+                                    } else {
+                                        countryCode = '+' + countryCode.substring(1).replace(/\D/g, '');
+                                    }
+
+                                    // --- Normalize number ---
+                                    referenceNum = referenceNum.toString().trim();
+                                    referenceNum = referenceNum.replace(/\s+/g, '');  // remove spaces
+                                    referenceNum = referenceNum.replace(/-+/g, '');   // remove dashes
+                                    referenceNum = referenceNum.replace(/\++/g, '');  // remove stray pluses
+
+                                    // Remove leading country code if user entered it again
+                                    if (referenceNum.startsWith(countryCode.replace('+',''))) {
+                                        referenceNum = referenceNum.slice(countryCode.length - 1);
+                                    }
+
+                                    // Remove leading zeros & keep digits only
+                                    referenceNum = referenceNum.replace(/^0+/, '');
+                                    referenceNum = referenceNum.replace(/\D/g, '');
+
+                                    // --- Final formatted value ---
+                                    updatedData[p][l] = `${countryCode}-${referenceNum}`;
+                                }
+
+                                if(cs['isMobilePhoneVerified'] == true || cs['isMobilePhoneVerified'] == 'true'){ //1.3
+                                    updatedData[p]['isMobilePhoneVerified']  = true;
+                                    if(isMobileNumberUpdated){
+                                        updatedData[p]['mobilePhoneVerificationDatetime']  = new Date().toISOString();
+                                    }
+                                }
+                                else{
+                                    updatedData[p]['isMobilePhoneVerified']  = false;
+                                    updatedData[p]['mobilePhoneVerificationDatetime']  = null;
+                                }
+                            }
+
+                            if(p=='contactDetail' && l=='emailAddress'){ //1.3
+                                if(cs['isEmailVerified'] == true || cs['isEmailVerified'] == 'true'){ //1.3
+                                    updatedData[p]['isEmailVerified']  = true;
+                                    if(isEmailAddressUpdated){
+                                        updatedData[p]['emailVerificationDatetime']  = new Date().toISOString();
+                                    }
+                                    
+                                }
+                                else{
+                                    updatedData[p]['isEmailVerified']  = false;
+                                    updatedData[p]['emailVerificationDatetime']  = null;
+                                }
+                            }
+                            if (p === 'addressDetailsInHomeCountryPermanent' && l === 'mobileNo' && updatedData[p][l]) { //1.2
+                                let mobileNo = updatedData[p][l].toString().trim();
+                                let countryCode = document.getElementById('countrycode_homecountry__c')?.value || '';
+
+                                if (countryCode && mobileNo) {
+                                    // Normalize: remove spaces, multiple dashes, pluses
+                                    mobileNo = mobileNo.replace(/\s+/g, '');
+                                    mobileNo = mobileNo.replace(/-+/g, '-');
+                                    mobileNo = mobileNo.replace(/\++/g, '+');
+
+                                    // Strip country code if already present
+                                    if (mobileNo.startsWith(countryCode)) {
+                                        mobileNo = mobileNo.slice(countryCode.length);
+                                    } else if (mobileNo.startsWith(countryCode.substring(1))) {
+                                        mobileNo = mobileNo.slice(countryCode.length - 1);
+                                    }
+
+                                    // Remove leading 0s & non-digits
+                                    mobileNo = mobileNo.replace(/^0+/, '');
+                                    mobileNo = mobileNo.replace(/\D/g, '');
+                                }
+
+                                // Final formatted value
+                                updatedData[p][l] = countryCode ? `${countryCode}-${mobileNo}` : mobileNo;
+                            }
+                            
+                        }
+                    });
+                    updatedData['contactDetail']['visitedUAE'] = cs['isVisitedUAE'];
+                    updatedData['contactDetail']['firstNameArabic'] =  '{!JSENCODE(firstNameArabic)}';
+                    updatedData['contactDetail']['lastNameArabic'] =  '{!JSENCODE(lastNameArabic)}';
+                    cs['xadtx3__c'].value = JSON.stringify(updatedData);
+                }
+                function draftComplete(msg,rName){
+                    hideGLoader();
+                    if(msg=='msg1')
+                        showDraftAlert1(rName);
+                    else if(!msg)
+                        showDraftAlert(rName);
+                }
+                function replaceAllSpChars(){// need to remove here and update community header
+                    $('input[type="text"]:visible,textarea:visible').each(function(){
+                        if($(this).hasClass('input-datepicker'))
+                            spChrs = ['{','}','<','>',"'",'=','$'];
+                        else
+                            spChrs = ['{','}','<','>',"'",'=','$','/'];
+                        let v = $(this).val();
+                        for(s of spChrs){
+                            if(v.includes(s)){
+                                v = v.replaceAll(s,'');
+                                $(this).val(v);
+                            }
+                        }
+                    });
+                }
+                function checkDate(elem){   /** Override from Axs2Customjs**/
+                    var e = $(elem);
+                    var type = e.attr('validationname');
+                    var date;
+                    var date1 = e.val();
+                    date =  date1.split('/')[1]+'/'+date1.split('/')[0]+'/'+date1.split('/')[2];
+                    var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+                    var msg = '';
+                    if(date.length!=10||date.match(/\//g).length!=2|| isNaN(days)){
+                        msg = 'Please enter a valid date!'
+                    }
+                    else if(type=='eed'){
+                        if(days>0){
+                            msg = 'EIDA Expiry shoud be a future date';
+                        }
+                    }
+                    if(msg)
+                        addValError(e,msg);
+                    else
+                        removeValError(e);
+                }
+                function mobileNumValidate(docname,parseVal){
+                    uploadDoc(docname,parseVal);
+                }
+                function visitedFields(e){ 
+                    if($(e).prop('checked')==true && $(e).attr('name')=='yes'){
+                        cs['isVisitedUAE'] = true;
+                        document.getElementById("visitedNo").checked = false;
+                    }
+                    else if( $(e).prop('checked') == true && $(e).attr('name') == 'no')
+                    {
+                        cs['isVisitedUAE'] = false;
+                        document.getElementById("visitedYes").checked = false;
+                    }
+                    else{
+                        cs['isVisitedUAE'] = null;
+                    }
+                }
+
+                var countryCodeOptions1= '<option value=""></option>'; //1.2
+                for(x=0;x<countryCodeObj_new.length;x++){
+                    var i = countryCodeObj_new[x];
+                    var opt = '<option value="'+i.dial_code+'">'+i.dial_code+'</option>';
+                    countryCodeOptions1 += opt;
+                }
+                $('.countrycodes').html(countryCodeOptions1);
+                setTimeout(function(){
+                    $('.countrycodes').select2({allowSearch:true});
+                },500);
+                </script>
+            </body>             
+        </apex:form>
+    </html>
+</apex:page>

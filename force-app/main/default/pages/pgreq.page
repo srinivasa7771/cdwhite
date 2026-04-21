@@ -1,0 +1,169 @@
+<apex:page cache="false" controller="pendingActions" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="Requests" >
+    <style>
+        .pagination .page-item:first-child .page-link, .pagination .page-item:last-child .page-link {
+        background-color: #e7e8ef !important;
+        }
+        .nav-pagination li{
+        cursor: pointer;
+        }
+        #reqTable_length,#reqTable_filter{display:none !important;}
+        #reqTable{width:100% !important;}
+        .recommended-services-slider-wrapper .swiper-button-next {
+        right: -10px;
+        }
+        .bodyDiv.brdPalette.brandPrimaryBrd {
+        width: 100%;
+        }
+        
+        table#bodyTable {
+        table-layout: fixed;
+        width: inherit;
+        }
+        #reqTable th, #reqTable td {
+        width: 185px !important;
+        }
+
+    </style>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/searchpanes/1.2.0/js/dataTables.searchPanes.js">
+    </script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js">
+    </script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.ico" />
+    <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    
+    <apex:form id="form" >
+        <apex:actionfunction name="dateFilter1" action="{!dateFilter}" rerender="panelBlock" oncomplete="formTable(document.getElementById('rStr').value,'#reqTable');">
+            <apex:param name="days" value=""/>
+        </apex:actionfunction>
+        <div id="main" data-aos="zoom-in">
+            <div id="page_content">
+                <div class="container">
+                    <div class="page-header">
+                        <ul class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/gpm">Dashboard</a></li> 
+                            <li class="breadcrumb-item">Requests</li>
+                        </ul>
+                        <div class="d-lg-flex flex-wrap align-items-center">
+                            <h1 class="page-title mr-auto">REQUESTS</h1>
+                            
+                            <div class="table-form-wrapper">
+                                <!-- search field  -->
+                                <div class="table-form-col col-6">
+                                    <div class="search-field mb-0">
+                                        <div class="input-group">
+                                            <input type="text" onkeyup="srch4prsn()" class="form-control" placeholder="Search" id="p"  />
+                                            <div class="input-group-append">
+                                                <button class="btn" type="button">
+                                                    <div class="icon-search" onclick='srch4prsn()'></div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!--dropdown days filter--> 
+                                <div class="table-form-col col-6">
+                                    <div class="">
+                                        <select class="dropdown-filter form-control input-select2-flat" id="dayFilter" onchange='dateFilter(this)'>
+                                            <option search="no" value="no">All</option>
+                                            <option val1="1" value=",one,">Today</option>
+                                            <option val1="7" value=",seven,">Last 7 days</option>
+                                            <option selected="true" val1="30" value=",thirty,">Last 30 days</option>
+                                            <option val1="90" value=",ninety,">Last 90 days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!--end of dropdown days filter-->
+                                
+                                <!-- dropdown status filter -->
+                                <div class="table-form-col col-12">
+                                    <div class="mb-0">
+                                        <select class="dropdown-filter form-control input-select2-flat" id="staFilter" placeholder="Select Status Type" onchange='stFilter(this)'>
+                                            <!--<option search="all" value="all">Select Status Type</option>-->
+                                            <option value="all">All</option>
+                                            <option value="Open">Open Requests</option>
+                                            <option value="Draft">Draft Requests</option>
+                                            <option value="In Process">In process Requests</option>
+                                            <option value="Completed">Completed Requests</option>
+                                            <option value="Cancelled">Cancelled Requests</option>
+                                            <option value="Rejected">Rejected Requests</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- end .dropdown status filter -->
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .page-header -->
+                    <apex:outputPanel id="panelBlock">
+                        <input type="hidden" value="{!RequestString}" id="rStr" />
+                        <apex:outputPanel id="tableBlock" >
+                            <div class="panel">
+                                <div class="panel-body pb-1">
+                                    <div class="table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0" style="overflow-x: hidden !important;">
+                                        <table class="table table-hover table-responsive-sticky table-list m-0" id="reqTable">
+                                            <thead>
+                                                <tr>
+                                                    <th field="Name" class="sticky-col">SR NUMBER</th>
+                                                    <th tdClass="text-center" field="prio__c" class="text-center" style="min-width: 100px;">PRIORITY</th>
+                                                    <th field="sName">SERVICE</th>
+                                                    <th field="Applicant_Name__c">NAME</th>
+                                                    <th field="xcnc__c">NATIONALITY / PASSPORT</th>
+                                                    <!--<th field="xcp__c">PASSPORT</th>-->
+                                                    <!--<th field="damsgs__c" class="actionReq">ACTION REQUIRED</th>-->
+                                                    <th tdClass="text-center" field="STA__c" class="text-center">STATUS</th>
+                                                    <th field="Last_MDays__c" style="display:none !important;">DAYS</th><!---->
+                                                </tr>
+                                            </thead>
+                                            <!-- end thead -->
+                                            <tbody>
+                                                
+                                            </tbody>
+                                            <!-- end tbody -->
+                                        </table>
+                                    </div>
+                                    <!-- .table-responsive -->
+                                </div>
+                                <!-- .panel-body -->
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel >
+                            No results for the search criteria!
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    
+                    
+                </div>
+                <!-- .container -->
+            </div>
+            <div class="container mt-lg-5 mt-3" data-aos="fade-up" data-aos-once="true">
+                <apex:image value="{!URLFOR($Resource.assets_NUI,'images/banner.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                <div class="text-center">
+                    <apex:image value="{!URLFOR($Resource.assets_NUI,'images/banner-mobile.png')}" styleClass="image-banner d-sm-none" />
+                </div>
+            </div>
+            
+            <!--<c:addons ></c:addons>-->
+        </div>
+    </apex:form>
+    <script>
+    
+    </script>
+    <!-- Vendor js -->
+    
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    
+</apex:page>

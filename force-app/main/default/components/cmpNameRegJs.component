@@ -1,0 +1,1108 @@
+<apex:component >
+    <apex:attribute name="rq" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="attCoiId" description="Attachment" type="String"/>
+    <apex:attribute name="attMOAId" description="Attachment" type="String"/>
+    <apex:attribute name="attAOAId" description="Attachment" type="String"/>
+    <apex:attribute name="attGCId" description="Attachment" type="String"/>
+    <apex:attribute name="attNmId" description="Attachment" type="String"/> 
+    <apex:attribute name="attMOAAmdId" description="Attachment" type="Attachment[]"/><!-- MS 1.1 -->
+    <apex:attribute name="attBPId" description="Attachment" type="String"/> <!-- MS 1.1 -->
+    <apex:attribute name="attCPId" description="Attachment" type="String"/><!-- MS 1.1 -->
+    <apex:attribute name="tb" description="tab" type="String"/>
+    <script>
+    
+    var allNames = {};
+    var attBPId = '';
+    var attCPId = '';
+    if('{!tb}' == 'businessName' )
+    {
+        
+    }
+    
+    
+    function showParentCompDetails(){
+        
+        var   xuvdet = cs['xuvdet__c'].value;
+        console.log('xuvdet==44===', xuvdet);
+        if(xuvdet!=null && xuvdet!=undefined && xuvdet!=""){
+            parCompdetails= JSON.parse(xuvdet);  
+            console.log('parCompdetails==',parCompdetails); 
+            for (var key in parCompdetails) {
+                console.log('xuvdet=345=',xuvdet);
+                $("#"+key).val(parCompdetails[key]);
+                console.log('xuvdet=5345=');
+                if(key=='cntry1'){
+                    console.log('cntry1=345=');
+                    $('#cntry1').trigger('change'); 
+                }
+            }
+            if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )
+            {
+                if(!parCompdetails['prmccode'] || parCompdetails['prmccode'] != null)
+                {
+                    parCompdetails['prmccode'] = '+971';
+                }
+                if(!parCompdetails['seccode'] || parCompdetails['seccode'] != null)
+                {
+                    parCompdetails['seccode'] = '+971';
+                }
+            }
+        }
+        // if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )
+        {
+            showCmpInfo();
+        }
+    }
+    var currentId ;
+    function updateParentCompDetails(e){
+        var   xuvdet = cs['xuvdet__c'].value;
+        currentId = e.id;
+        
+        assignParam1();
+        console.log('xuvdetits===',xuvdet);
+        console.log('auth23===',$('#'+e.id).val());
+        console.log('selct===',e.id);
+        console.log('selcdfst===',$('#'+e.id).val());
+        parCompdetails[e.id] = $('#'+e.id).val();
+        
+        
+        console.log('parCompdetails===',JSON.stringify(parCompdetails));
+        cs['xuvdet__c'].value = JSON.stringify(parCompdetails);
+        console.log('xuvdetits===',cs['xuvdet__c'].value );
+    }
+    
+    function showCmpInfo(){
+        lfb = cs['xfb__c'].value; 
+        // alert('showCmpInfo:'+lfb); 
+        if(getC('xcfn'))
+        {
+            getC('xcfn').value = cs['xcfn__c'].value;
+        }
+        if(getC('xcmn'))
+        {
+            getC('xcmn').value = cs['xcmn__c'].value;
+        }
+        if(getC('xcln'))
+        {
+            getC('xcln').value = cs['xcln__c'].value;
+        }
+        if(getC('xcpn'))//US APD2635
+        {
+            getC('xcpn').value = cs['xcpn__c'].value;
+        }
+        //getC('fzllc').style.display='';
+        
+        if(lfb!='FZ-LLC' || ('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )){
+            getC('xccn').value = cs['xccn__c'].value;
+            getC('rtacn').value = cs['rtacn__c'].value;
+            getC('xcna').value = cs['xcna__c'].value; /*MS 1.1*/
+            
+            if(cs['xbtnm__c'].value!=null && cs['xbtnm__c'].value!="" &&  getC('xbtnm') != null){
+                getC('xbtnm').value = cs['xbtnm__c'].value;
+                //getC('xaed').value = new Date(cs['xaed1__c'].value).toLocaleDateString("en-US"); //cs['xcbd__c'].value;
+                //getC('boforcomp').style.display='';
+            }
+            console.log('cs[trdStDate].value===',cs['trdStDate'].value);
+            if(cs['trdStDate'].value!=null && cs['trdStDate'].value!="" &&  getC('trdStDate') != null ){
+                console.log('cs[trdStDate].value===='+cs['trdStDate'].value);
+                getC('trdStDate').value = cs['trdStDate'].value; 
+            }
+            if(cs['trdEdDate'].value!=null && cs['trdEdDate'].value!="" &&  getC('trdEdDate') != null){
+                getC('trdEdDate').value = cs['trdEdDate'].value;
+            }
+            
+            if(cs['taxRdNum'].value!=null && cs['taxRdNum'].value!="" &&  getC('taxRdNum') != null)
+            {
+                getC('taxRdNum').value = cs['taxRdNum'].value;
+            }
+            
+            if(isMOAAmd == 'true')
+            {
+                $('[name="amd1"][for="amdYes"]').prop('checked', true).trigger('change');
+            }
+            else if(isMOAAmd == 'false')
+            {
+                $('[name="amd1"][for="amdNo"]').prop('checked', true).trigger('change');
+            }
+            
+            
+            console.log('in show');
+            getC('boforcomp').style.display='';
+            //updated by meenu
+            $('#hiddenbtn').css("display", "");
+            if(('{!rq.xvtyp__c}' != 'DED' && '{!rq.Acc__r.clt__c}' != 'Land') || ('{!rq.xvtyp__c}' == 'DDA'))
+            {
+                $('#hiddenbtn').css("display", "");
+            }
+            
+        }
+    }
+    
+    
+    
+    function assignFields(e){
+        console.log('type==='+e.type);
+        
+        if(e.id == 'taxRdNum')
+        {
+            checkTrn1(e);
+        }
+        else
+        {
+            validateField(e);
+        }
+        
+        var fid = e.id +'__c';
+        if(e.id == 'trdStDate' || e.id == 'trdEdDate' || e.id == 'taxRdNum')
+        {
+            fid = e.id;
+        }
+        if(cs[fid] != null || typeof cs[fid] !== 'undefined')
+        {
+            cs[fid].value = document.getElementById(e.id).value;
+        }
+        
+    }
+    
+    function checkTrn1(e){
+        validateField(e);
+        
+        /*  var r = new RegExp('^((?!(0))[0-9]{15})$');
+        var v = $(e).val();
+        if(!v)
+            return true;
+        removeValError(e);
+        if(!r.test(v) ){
+            addValError(e,'Only numbers allowed!');
+            $(e).addClass('is-invalid');
+            return false;
+        }
+        else if(v=='100487319400003' || v=='100072771700003'){
+            addValError(e,'Invalid TRN Number!');
+            $(e).addClass('is-invalid');
+            return false;
+        }
+        return true;*/
+    }
+    
+    var validity = true;
+    function validateField(e){
+        var errorDiv = $('#'+e.id+'Error');
+        validity = e.validity.valid;
+        console.log('validity===',e.validity.valid );
+        if (e.validity.valid) {
+            
+            $(errorDiv).hide();
+            $(errorDiv).html('');
+            removeValError(e);
+        }
+        else
+        {
+            $(errorDiv).show();
+            if(e.id!=='xcfn' && e.id!=='xcmn' && e.id!=='xcln' && e.id!=='xcpn'){// US APD2635
+            addValError(e,'Please enter valid value');
+            }
+            $(e).addClass('is-invalid');
+            //$(errorDiv).html('Please enter valid value');
+        }
+    }
+    
+    function validateName(e){
+        var proceed = false;
+        console.log('taxRdNum', cs['taxRdNum'].value);
+        console.log('taxRdNum length', cs['taxRdNum'].value.length == 15);
+        if(cs['xfb__c'].value=='FZ-LLC'){
+            if(cs['xcfn__c'].value!="" && cs['xcmn__c'].value!="" && cs['xcln__c'].value!="" && allNames['xcfn'] && allNames['xcmn'] && allNames['xcln'] ){ // US APD2635 && cs['xcpn__c'] && cs['xcpn__c'].value!="" &&  allNames['xcpn']
+                proceed=true;
+            }
+            if($('input[name=frn]:checked').val() == 'yes'){
+                if('{!attNmId}'){
+                    //if('{!attCoiId}'!=null && '{!attCoiId}'!='' && '{!attCoiId}'!=undefined){
+                    hideError($("#frnchDocError"));
+                }else{
+                    $("#frnchDocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                    proceed =false;
+                }
+            }
+        }else{ //if(cs['xfb__c'].value=='Branch of Foreign Company'){//
+            if(cs['xcfn__c'].value!="" && cs['xccn__c'].value!=""  && cs['rtacn__c'].value!="" &&  allNames['xcfn'] && allNames['xcmn'] && allNames['xcln']){ 
+                console.log('in 1');
+                if( (('{!rq.Acc__r.clt__c}' != 'Land' && '{!rq.xvtyp__c}' != 'DED') || ('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DDA') 
+                     || ('{!rq.Acc__r.clt__c}' != 'Land' &&  ('{!rq.xvtyp__c}' == 'DDA' ||  '{!rq.xvtyp__c}' == 'DED'))) &&  cs['xbtnm__c'].value !="")
+                {
+                    console.log('in 2');
+                    proceed=true;
+                }else if ('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' &&  cs['trdStDate'].value !="" && cs['trdEdDate'].value !="")
+                {
+                    console.log('in 3');
+                    proceed=true;
+                } 
+                    else if (cs['xbtnm__c'].value !="")
+                    {
+                        console.log('in 4');
+                        proceed=true;
+                    }
+                console.log('in 5');
+                $('.no-blank').each(function(){
+                    let v = $(this).val();  let l = $(this).parent().find('label').text();
+                    if($(this).is(':visible')){   
+                        if(v==""||v.length<1){ 
+                            $(this).parent().find('.invalid-feedback').html('* This field is required!').show();
+                            proceed=false;
+                        }
+                    }
+                });
+                
+                
+            }
+        }
+        
+        if(cs['xfb__c'].value=='FZ-LLC' && $('input[name=frn]:checked').val()==undefined && $('input[name=frn]').is(':visible')){
+            $('.frncls').parent().parent().find('.invalid-feedback').html('* This field is required!').show();
+            proceed = false;
+        }else{
+            $('.frncls').parent().parent().find('.invalid-feedback').html('* This field is required!').hide();
+        }
+        
+        // alert(proceed);
+        if(proceed){
+            if(e=='activities'){
+                showTempLoader_input();
+                nextpg('segments');
+            }else if(e=='Submit to PRM'){
+                nextpg('Submit to PRM');
+            }else{
+                saveDetails();
+            } //if(e=='save'){ $('#modal_saved').modal('show'); return false;}
+            $('#businessName').removeClass('active-section').addClass('completed-section');
+            $('#businessActivities').removeClass('incomplete-section').addClass('active-section');
+        }else{
+            $('.no-blank').each(function(){
+                let v = $(this).val();  let l = $(this).parent().find('label').text();
+                if($(this).is(':visible')){   
+                    if(v==""||v.length<1){ $(this).parent().find('.invalid-feedback').html('* This field is required!').show();}
+                }
+            });
+            
+            if(cs['xfb__c'].value=='FZ-LLC'){
+                $('.no-blank-fz').each(function(){
+                    let v = $(this).val(); 
+                    if($(this).is(':visible')){   
+                        if(v==""||v.length<1){ $(this).parent().find('.invalid-feedback').html('* This field is required!').show();}
+                    }
+                });
+            }
+        }
+        
+        
+        return proceed;
+    }
+    
+    
+    function checkdate2years(e){
+        console.log('eid=====',e.id);
+        hideError(e);
+        var icdate = document.getElementById(e.id).value.trim();
+        var dateReg =   new RegExp(/^\d{2}[./-]\d{2}[./-]\d{4}$/);
+        
+        
+        if(!dateReg.test(icdate)){
+            
+            $(e).parent().find('.invalid-feedback').html('Invalid date format!').show();
+            var fid = e.id +'__c';
+            if(e.id == 'trdStDate' || e.id == 'trdEdDate' || e.id == 'taxRdNum')
+            {
+                fid = e.id;
+            }
+            cs[fid].value = '';                        
+            return;
+        }
+        var ed1 = dtParse(icdate,lcl); 
+        console.log('ed1==345=='+ed1);
+        //ed1=ed1.setMonth(ed1.getMonth()+24); 
+        var ed = new Date(); 
+        
+        var fid = e.id +'__c';
+        if(e.id == 'trdStDate' || e.id == 'trdEdDate' || e.id == 'taxRdNum')
+        {
+            fid = e.id;
+        }
+        /*if(cs[fid] != null || typeof cs[fid] !== 'undefined')
+        {
+            console.log('in fid==', fid);
+            cs[fid].value = '';
+        }*/
+        
+        if(ed1<ed && e.id == 'trdEdDate'){/*ed1>ed*/
+            console.log('ed==345=='+ed);
+            //document.getElementById(e.id+'Error').innerHTML= 'Date of Incorporation should not be older than 2 Years.';
+            //$(e).parent().find('.invalid-feedback').html('Minimum age of Incorporation should be 2 Years.').show();
+            //$(e).parent().find('.invalid-feedback').html('Date should not be future date!').show();
+            
+            console.log('in enddate==');
+            if(e.id == 'trdEdDate')
+                $(e).parent().find('.invalid-feedback').html('Please select valid end date.').show();
+            
+            return;
+        }
+        
+        if(ed1>ed && e.id == 'trdStDate') 
+        {
+            console.log('in strdate=='+ $(e).parent().find('.invalid-feedback')); 
+            $(e).parent().find('.invalid-feedback').html('Please select valid start date.').show();
+            return;
+        }
+        
+        assignFields(e);
+    }
+    
+    
+    function hideError(e){
+        $(e).parent().find('.invalid-feedback').hide();
+        $(e).parent().find('.valid-feedback').hide();
+    }
+    
+    
+    function validText(e){
+        let n = $(e);
+        n.val(n.val().replace(/[^a-zA-Z ]+/g, ''));
+    }
+    
+    function checkDupEmail()
+    {
+        console.log('sdfsdf===',$('#profceml').val()  == $('#secofceml').val());
+        if($('#profceml').val()  == $('#secofceml').val())
+        {
+            $('#secofcemlerr').show();$('#secofcemlerr').html('Secondary email should be different from Primary email');
+        }
+        else
+        {
+            $('#secofcemlerr').hide();$('#secofcemlerr').html('');
+        }
+    }
+    
+    function checkDupPhone()
+    {
+        if($('#prmccode').val()+$('#prmMobile').val() == $('#seccode').val()+$('#secMobile').val())
+        {
+            $('#secMobileerr').show();$('#secMobileerr').html('Secondary mobile should be different from Primary mobile');
+        }
+        else
+        {
+            $('#secMobileerr').hide();$('#secMobileerr').html('');
+        }
+    }
+    
+    function shwBusinessNames(isonload){
+        proceed = true;
+        console.log('isonload==1=='+isonload);
+        console.log('attBPId==4243={!attBPId}');
+        console.log('attCPId=34=={!attCPId}');
+         attMOAAmd = '{!attMOAAmdId}';
+        isMOAAmd = '{!rq.isMOAAmd__c}';
+        console.log('attMOAAmd==r5===',attMOAAmd);
+        attCPId = '{!attCPId}';
+        attBPId = '{!attBPId}';
+        console.log('attBPId==={!attBPId}');
+        console.log('attCPId==={!attCPId}');
+        if(!isonload){
+            
+            $('.no-blank').each(function(){
+                let v = $(this).val();  let l = $(this).parent().find('label').text();
+                if($(this).is(':visible')){   
+                    if(v==""||v.length<1){ 
+                        $(this).parent().find('.invalid-feedback').html('* This field is required!').show();
+                        proceed=false;
+                        console.log('proceed==1=='+proceed);
+                    }
+                }
+            });
+            
+            if($('#profceml').is(':visible') && $('#secofceml').is(':visible') && $('#profceml').val()  == $('#secofceml').val())
+            {
+                $('#secofcemlerr').show();$('#secofcemlerr').html('Secondary email should be different from Primary email');
+                proceed =false;
+                 console.log('proceed==2=='+proceed);
+            }
+            else if($('#profceml').is(':visible') && $('#secofceml').is(':visible'))
+            {
+                $('#secofcemlerr').hide();$('#secofcemlerr').html('');
+            }
+            if($('#prmccode').is(':visible') && $('#prmMobile').is(':visible') && $('#prmccode').val()+$('#prmMobile').val() == $('#seccode').val()+$('#secMobile').val())
+            {
+                $('#secMobileerr').show();$('#secMobileerr').html('Secondary mobile should be different from Primary mobile');
+                proceed =false;
+                  console.log('proceed==3=='+proceed);
+            }
+            else if($('#prmccode').is(':visible') && $('#prmMobile').is(':visible')) 
+            {
+                $('#secMobileerr').hide();$('#secMobileerr').html('');
+            }
+            if($('#prmccode').is(':visible') && $('#prmMobile').is(':visible') &&  $('#prmMobile').val() == '') 
+            {
+                $('#prmMobileerr').show();$('#prmMobileerr').html('Enter valid mobile number');
+                proceed =false;
+                  console.log('proceed==4=='+proceed);
+            }
+            else if($('#prmccode').is(':visible') && $('#prmMobile').is(':visible') &&  $('#prmMobile').val().length > 0) 
+            {
+                $('#prmMobileerr').hide();$('#prmMobileerr').html('');
+            }
+            
+            
+            var dateReg =   new RegExp(/^\d{2}[./-]\d{2}[./-]\d{4}$/);
+            
+            console.log('proceed==2=='+proceed);
+            $('.input-datepicker').each(function(){
+                let v = $(this).val();  let l = $(this).parent().find('label').text();
+                if($(this).is(':visible')){   
+                    if(v.length>1){
+                        if(!dateReg.test(v.trim())){
+                            $(this).parent().find('.invalid-feedback').html('* Invalid date format!').show();
+                            console.log('proceed==3=='+proceed);
+                            proceed=false;
+                        }
+                    }
+                }
+            });
+            
+            
+            console.log('attco}===',attco);
+            
+            if('{!rq.xfb__c}' != 'FZ-LLC'){
+                if(attco !=null && attco !='' && attco !=undefined){
+                    hideError($("#incorpDocError"));
+                }else{
+                    $("#incorpDocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                    console.log('proceed==4=='+proceed);
+                    proceed =false;
+                }
+                
+                if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED')
+                {
+                    if(attMOA !=null && attMOA !='' && attMOA !=undefined){
+                        hideError($("#inMoaAOADocError"));
+                    }else
+                    {
+                        $("#inMoaAOADocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                        console.log('proceed==5=='+proceed);
+                        proceed =false;
+                    }
+                 
+                    if(attBPId !=null && attBPId !='' && attBPId !=undefined)
+                    {
+                        hideError($("#inBpDocError"));
+                    }
+                    else
+                    {
+                        $("#inBpDocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                        console.log('proceed==5=1='+proceed);
+                        proceed =false;
+                    }
+                    
+                    if(attCPId !=null && attCPId !='' && attCPId !=undefined)
+                    {
+                        hideError($("#inCpDocError"));
+                    }
+                    else
+                    {
+                        $("#inCpDocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                        proceed =false;
+                        console.log('proceed==5=2='+proceed);
+                    }
+                    
+                }
+                
+            } 
+            
+                console.log( 'attMOAAmdId===','{!rq.isMOAAmd__c}' == 'true'); 
+            console.log( 'isMOAAmd===',isMOAAmd == 'true'); 
+            console.log('attMOAAmd==344==',attMOAAmd);
+            console.log( 'attMOAAmd.length > 0=232==',attMOAAmd.length > 3 ); 
+            console.log('attCoiId}===','{!attCoiId}');
+            console.log('attBPId}===',attBPId);
+            console.log('attCPId}===',attCPId);
+            
+            
+            if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}'== 'DED' && (isMOAAmd == 'true' || cs['isMOAAmd'].checked) )  {
+                if(attMOAAmd.length > 3){ 
+                    console.log('dfdf');
+                    hideError($("#incorpLandDocError")); 
+                }else{
+                    console.log('dfdf232');
+                    $("#incorpLandDocError").parent().find('.invalid-feedback').html('* Please upload document').show();
+                    console.log('proceed==5=3='+proceed);
+                    proceed =false;
+                }
+            } 
+            
+            
+            
+        } 
+        //updated by Meenu 
+        console.log('{!rq.Acc__r.clt__c}==4=='+'{!rq.Acc__r.clt__c}');
+        console.log('{!rq.xvtyp__c}==4=='+'{!rq.xvtyp__c}');
+        console.log('isonload==4=='+isonload);
+        console.log('proceed==45=='+proceed);
+        if(proceed && ( ( '{!rq.xvtyp__c}' == 'DDA') || ('{!rq.Acc__r.clt__c}' != 'Land' && '{!rq.xvtyp__c}' != 'DED'))){
+            console.log('proceed==451=='+proceed);
+            $(".fzllcblock").show(); 
+            $(".branchblock").hide();
+             validateCmpNames(); 
+            /*if(cs['xfb__c'].value != 'FZ-LLC'){
+                  $('#nmdocId').show();
+             }*/
+        }
+        else if(proceed && '{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' && !isonload )
+        {
+            console.log('in===isonload==', isonload);
+            console.log('proceed==4514=='+proceed);
+            proceedtoNext();
+        }
+            else if(proceed && '{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' && isonload )
+            {
+                console.log('in===isonload=342=', isonload); 
+                showCmpInfo();  
+                $(".branchblock").show(); 
+            }
+        
+        
+    }
+    
+    function hdBusinessNames(){
+        console.log('hdBusinessNames=====',lfb,'====yuut==',cs['xfb__c'].value );
+        lfb = cs['xfb__c'].value;
+        if(lfb=='FZ-LLC'){
+            nextpg('confpage');
+        }else{
+            
+            
+            
+            $(".fzllcblock").hide();  
+            $(".branchblock").show();
+        }
+        
+    }
+    
+    function compNavigate(){
+        if(lfb=='FZ-LLC'){
+            drftPg('draftPage');
+        }else{
+            hdBusinessNames();
+            removeTempLoader();
+        }
+    }
+    
+    
+    function updatecnt(fldId){
+        $("."+fldId+"cnt").text($("#"+fldId).val().length + ' / 150')
+    }
+    
+    //Added By Meenu
+    function proceedtoNext()
+    {
+        console.log('1');
+        showTempLoader_input();
+        console.log('2');
+        if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED')
+        {
+            nextpg('Lease Info');
+        }
+        else{
+            nextpg('segments');
+        }
+        
+    }
+    
+    function showUploadAmend(e)
+    {
+        
+        console.log('amendChk==='+$(e).prop('checked'));
+        if($(e).prop('checked')==true && $(e).attr('for')=='amdYes'){
+            cs['isMOAAmd'].value=true; 
+            $('.amdUpload').show();
+        } 
+        else{
+            cs['isMOAAmd'].value=false;
+            $('.amdUpload').hide(); 
+        }
+        
+        
+        
+    }
+    
+    
+    function assignParam1()
+    {
+        /*Starts Added By Meenu*/
+        
+        var   xuvdet = cs['xuvdet__c'].value;
+        console.log('currentId=345=',currentId);
+        console.log('xuvdet343====',xuvdet);
+        if((xuvdet!=null || xuvdet!=undefined) && xuvdet!=""){
+            parCompdetails= JSON.parse(xuvdet);  
+            console.log('parCompdetails==',parCompdetails); 
+            for (var key in parCompdetails) {
+                console.log('xuvdet=345=',xuvdet);
+                console.log('key=345=',key);
+                if(key != currentId)
+                {
+                    $("#"+key).val(parCompdetails[key]);
+                }
+                
+                console.log('xuvdet=5345=');
+            }
+        }
+        /*Ends Added By Meenu*/
+    }
+    (function ($) {
+        $(function () {
+            if('{!rq.Acc__r.clt__c}' != 'Land' && '{!rq.xvtyp__c}' != 'DED' && (cs['xfb__c'].value == 'Branch of UAE Company' || cs['xfb__c'].value == 'Branch of a UAE Company')){
+                if( cs['xcpic__c'])
+                {
+                    cs['xcpic__c'].value='United Arab Emirates'; $(cs['xcpic__c']).trigger("change");
+                    $(cs['xcpic__c']).addClass('readOnlyElem').parent().addClass('disabledCursor');
+                    $(cs['xcpic__c']).attr('disabled','true');   
+                }
+            }else if( cs['xcpic__c'] && cs['xcpic__c'].value=='United Arab Emirates' && (lfb=='Branch of Foreign Company' || lfb=='Branch of a Foreign Company') && '{!rq.Acc__r.clt__c}' != 'Land' && '{!rq.xvtyp__c}' != 'DED'){
+                $(cs['xcpic__c']).val('');  $(cs['xcpic__c']).trigger("change");
+            }
+                else if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED')
+                {
+                    if( cs['xcpic__c'])
+                    {
+                        cs['xcpic__c'].value='United Arab Emirates'; 
+                        $(cs['xcpic__c']).trigger("change");
+                        $(cs['xcpic__c']).addClass('readOnlyElem').parent().addClass('disabledCursor');
+                        $(cs['xcpic__c']).attr('disabled','true');  
+                    }
+                    $('#cntry1').value='United Arab Emirates'; 
+                    $('#cntry1').trigger("change");
+                    $('#cntry1').addClass('readOnlyElem').parent().addClass('disabledCursor');
+                    $('#cntry1').attr('disabled','true'); 
+                }
+            if(cs['is_sponsered_fl__c'].value == 'true'){
+                $('#nmdocId').show();
+                $('input[name=frn][value="yes"]').prop('checked',true);
+            }
+            
+            $('input[name=frn]').change(function () {
+                $('.frncls').parent().parent().find('.invalid-feedback').html('* This field is required!').hide();
+                if ($(this).val() === 'yes') {
+                    cs['is_sponsered_fl__c'].value = true;
+                    $('#nmdocId').show();
+                } else {
+                    $('#nmdocId').hide();
+                    cs['is_sponsered_fl__c'].value = false;
+                    //copyCancelApplicantInfo();
+                }
+            });
+            
+        });
+    }(jQuery));
+    
+    function handleBrowseClick1(){
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    
+    function uploadNameRegDocs(docName){
+        console.log('validity343===='+validity);
+        if(validity)
+        {
+            console.log('docname==43===',docName); 
+            cs["docname"].value = docName;
+            console.log('docname===',cs["docname"]);
+            var dname=docName.replace("- dr", " ").replace("- sh1", " ").replace("- sh2", " ").replace("- sh3", " ").replace("- sh4", " ").replace("- sh5", " ").replace("- sh6"," ").replace("- sh7"," ").replace("- gm"," ");
+            cs["docname"].value = dname;
+            $('#modal_upload_passport .upHead').html(dname);
+            $('#modal_upload_passport').modal('show');
+        }
+    } 
+    
+    function saveAttachment1(elem) {
+        if($(elem).hasClass('disabled')) return;
+        //showTempLoader($(elem));
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect1();
+        } else {
+            axsAlert('Alert','The File APIs are not fully supported in this browser.');
+        }
+    }
+    
+    /* function checkFile1(e){
+        $('#saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0) showPrview1(e);
+    }*/
+    
+    function checkFile1(e){
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ 
+            $('#saveText').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    /*MS 1.1*/
+    function getFileExtension(fileName) {
+        // let fileName = 'example.30.txt';
+        let extension = fileName.split('.').pop();
+        return extension;
+        console.log('File extension:', extension);
+    }
+    
+    function showPrview1(elem) {
+        if (elem.files && elem.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image-area div').hide();
+                $('#image-area img').show().attr('src', e.target.result);
+            }
+            reader.readAsDataURL(elem.files[0]);
+        }
+        $('#uploadDel').unbind().on('click',function(){
+            if($('.image-area div').is(":visible")) $('#uploadToolsValidation').modal("show");
+            document.getElementById('files').value = '';
+            $('#image-area div').show();
+            $('#image-area img').hide();
+            $('#saveAtt').addClass('disabled');
+        });
+    }
+    
+    function handleFileSelect1(evt) {
+        
+        var f = $('#files')[0].files[0]
+        var filename = f.name;
+        var extf = getFileExtension(filename);
+        console.log('extf===',extf);
+        
+        var reader = new FileReader();
+        console.log('inside handleFileSelect1');
+        reader.onload = function(theFile) {
+            return function(e) { 
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                cs["imageBase64"].value = base64String; //.pdf
+                console.log('cs["imageBase64"].value===',cs["imageBase64"].value);
+                //cs["docname"].value = 'Franchise Agreement/Incorporation Letter';
+                
+                console.log('docNmae:'+cs["docname"].value);
+                //alert(cs["imageBase64"].value);
+                $('#modal_upload_passport').modal('hide');
+                console.log('docname====',cs["docname"].value, '===trim====', cs["docname"].value.trim().includes('MoA or AoA of Parent Company'));
+                if(cs["docname"].value == 'MoA or AoA of Parent Company - dr' || cs["docname"].value.trim().includes('MoA or AoA of Parent Company'))
+                {
+                    console.log('test8');
+                    if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land')
+                    {
+                        cs["docname"].value = 'MoA or AoA of Parent Company';
+                        console.log('docname===1=',cs["docname"].value);
+                    }
+                    else
+                    {
+                        cs["docname"].value = 'MoA and AoA of Parent Company';
+                        console.log('docname===2=',cs["docname"].value); 
+                    }
+                    
+                    showTempLoader($('#moabtn'));
+                }
+                else if(cs["docname"].value == 'MoA or AoA Amendment of Company - dr' || cs["docname"].value.includes('MoA or AoA Amendment of Company'))
+                {
+                    console.log('test9');
+                    cs["docname"].value = 'MoA or AoA Amendment of Company';
+                    showTempLoader($('#moaamdbtn'));
+                }
+                    else if(cs["docname"].value == 'Valid copy of trade license - dr' ||  cs["docname"].value.includes('Valid copy of trade license'))
+                    {
+                        cs["docname"].value = 'Valid copy of trade license';
+                        showTempLoader($('#coibtn'));
+                    }
+                        else if(cs["docname"].value.includes('Business Plan'))
+                        {
+                            showTempLoader($('#bpabtn'));
+                        }
+                            else if(cs["docname"].value.includes('Company Profile'))
+                            {
+                                showTempLoader($('#cpabtn'));
+                            }
+                                else if(cs["docname"].value == 'Article of association of parent company')
+                                    showTempLoader($('#aoabtn'));
+                                    else if(cs["docname"].value == 'Certificate of Continuity or Existence or Good Standing - dr')
+                                        showTempLoader($('#gcbtn'));
+                                        else 
+                                        {
+                                            console.log('in coibtn21123');
+                                            showTempLoader($('#coibtn'));
+                                        } 
+                
+                if(extf != 'undefined' && extf != '' && extf != null)
+                    cs["extf"].value  = extf;
+                console.log('cs["extf"]===', cs["extf"]);
+                //attachmentSave();
+                attachmentSave_q();
+            };
+        }(f);
+        
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(f); 
+    }
+    
+    
+    //VMKR
+    function validateCmpNames(){
+        console.log('in cmp names===');
+        allNames['xcfn']=true;
+        allNames['xcmn']=true;
+        allNames['xcln']=true;
+        allNames['xcpn']=true;//US APD2635
+        $('#xcfn').trigger('change');$('#xcmn').trigger('change');$('#xcln').trigger('change');$('#xcpn').trigger('change');//US APD2635
+    }
+    
+    function tobeCalledOnload()
+    {
+        console.log('dfdfhghghg==in ready==1');
+        // this.attCPId = '';
+        //  this.attBPId = '';
+        console.log('rendereddfgf==');
+        
+        this.lfb=''; 
+        this.allNames = {};this.parCompdetails= {};
+        console.log('dfdfhghghg==in=232=');
+        //cs['xuvdet__c'].value = "{"issuingauth":"adasdsad","ofcphone":"21312321321","ofceml":"21312321321","addcity":"sadsad adsadas adsad"}";
+        this.attMOAAmd =[] ;
+        
+        //$('#modal_welcome_back').modal('show');
+        // cs['xuvdet__c']=getC('{!$Component.xuvdet__c}');
+        //  console.log('cs456xuvdet__c===',  cs['xuvdet__c']);
+        showCmpInfo();
+        $('.input-select2-flat').select2();
+        /*if(sta!='Open' && sta != 'Draft')
+                                                    $('.forReadOnly').addClass('readOnlyElem').parent().addClass('disabledCursor');
+                                                else
+                                                    $('.readOnlyElem').removeClass('readOnlyElem').parent().removeClass('disabledCursor');*/
+        var sta = "{!rq.STA__c}";
+        var obSta = "{!rq.os__c}";
+        var editMode = (sta == 'Draft' || sta == 'Open' || obSta == "Name Approval Re-Review") ? true : false;
+        console.log('editMode=23==',editMode);
+        //var editMode = (sta == 'Under Review' ||  obSta == "Name Approval Re-Review") ? false : true;
+        if(editMode == false){
+            makeReadOnly('forReadOnly');
+        }
+        
+        lfb = cs['xfb__c'].value;  
+        updatecnt('xcfn');updatecnt('xcmn');updatecnt('xcln');updatecnt('xcln');//US APD2635
+        if(lfb=='FZ-LLC'){
+            shwBusinessNames(true);
+            if( cs["xcfn__c"].value && cs["xcln__c"].value && cs['is_sponsered_fl__c'].value=='false'){
+                $('input[name=frn][value="no"]').prop('checked',true).trigger('change');
+            }
+        }else{
+            //set and disable "Country of incorporation" only for UAE branch
+            if('{!rq.Acc__r.clt__c}' != 'Land' && lfb=='Branch of a UAE Company'){
+                $(cs['xcpic__c']).val('United Arab Emirates');  $(cs['xcpic__c']).trigger("change");
+                $(cs['xcpic__c']).addClass('readOnlyElem').parent().addClass('disabledCursor');
+                $(cs['xcpic__c']).attr('disabled','true');
+            }else if(cs['xcpic__c'].value=='United Arab Emirates' && (lfb=='Branch of Foreign Company' || lfb=='Branch of a Foreign Company') && '{!rq.Acc__r.clt__c}' != 'Land'  ){
+                $(cs['xcpic__c']).val('');  $(cs['xcpic__c']).trigger("change");
+            }
+            hdBusinessNames(); showParentCompDetails();
+        }
+        if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' ){
+            $(cs['xcpic__c']).val('United Arab Emirates'); 
+            $(cs['xcpic__c']).trigger("change");
+            $(cs['xcpic__c']).addClass('readOnlyElem').parent().addClass('disabledCursor');
+            $(cs['xcpic__c']).attr('disabled','true');
+            $('#cntry1').val('United Arab Emirates'); 
+            $('#cntry1').trigger("change");
+            $('#cntry1').addClass('readOnlyElem').parent().addClass('disabledCursor');
+            $('#cntry1').attr('disabled','true'); 
+        }
+        
+        validateCmpNames(); 
+    }
+    
+    function showUploadAmend(e)
+    {
+        
+        console.log('amendChk==='+$(e).prop('checked'));
+        if($(e).prop('checked')==true && $(e).attr('for')=='amdYes'){
+            cs['isMOAAmd'].value=true; 
+            $('.amdUpload').show();
+        } 
+        else{
+            cs['isMOAAmd'].value=false;
+            $('.amdUpload').hide(); 
+        }
+        
+        
+        
+    }
+    
+    
+    function checkBusinessName(e){
+        
+        setTimeout(function(){
+            var isNameExist=false;
+            var nameVal = document.getElementById(e.id).value.trim();
+            nameVal = nameVal.replace(/\s+/g, " ");
+            
+            var fNamet = cs["xcfn__c"].value;var mNamet = cs["xcmn__c"].value;var lNamet = cs["xcln__c"].value;
+            var pNamet = cs["xcpn__c"]?cs["xcpn__c"].value:'';//US APD2635
+            var duplicateValue = false;  
+            
+            if(e.id!='xcfn' && (nameVal==null || nameVal=="")){
+                allNames[e.id] = true;
+            }
+            
+            if(nameVal && nameVal!=""){
+                if(e.id=='xcfn' && (nameVal==mNamet || nameVal==lNamet)){
+                    duplicateValue = true;
+                }else if(e.id=='xcmn' && (nameVal==fNamet || nameVal==lNamet)){
+                    duplicateValue = true;
+                }else if(e.id=='xcln' && (nameVal==fNamet || nameVal==mNamet)){
+                    duplicateValue = true;
+                }
+                else if(e.id=='xcpn' && (nameVal==fNamet || nameVal==mNamet || nameVal==lNamet)){//US APD2635
+                    duplicateValue = true;
+                }
+            }
+            
+            
+            
+            if(duplicateValue){
+                $(e).parent().find('.invalid-feedback').html("* Proposed Name of Business must have different values.").show();
+                cs[e.id +'__c'].value ="";
+                allNames[e.id] = false;
+            }else{
+                
+                if(nameVal && nameVal!="" && nameVal.length>4){
+                    var restrictedList=["2020", "ADNOC", "AETTIHAD", "ALEITIHAD", "ALEITTIHAD", "ABU DHABI", "ABUDHABI", "AL JABER", "ALITTIHAD", "ALLAH", "ALTTIHAD", "ARABS", "CITY", "DXB", "DAR", "DUBAI", "ETIHAD", "ETTIHAD", "FIB", "FAST", "FIRST CAPITAL GROUP", "FIRST FINANCIAL INVESTMENT", "GOD", "HALO", "ITTIHAD", "JUMEIRAH", "MAIL", "MARINA", "METRO", "MOSES", "NAKHEEL", "PALM", "RABDAN", "RBDAN", "RISCO GROUP", "ROMANCE", "SALK", "SUN", "TOUCHES", "V.I.B", "V.I.P", "VIB", "VIP", "VILLAGE", "YAS", "ZABEEL", "EXPO 2020","TECOM"];
+                    $('#' + e.id + 'Error').html('');//US APD2635
+                    var fid = e.id +'__c'; 
+                    if(e.id == 'trdStDate' || e.id == 'trdEdDate' || e.id == 'taxRdNum')
+                    {
+                        fid = e.id;
+                    }
+                    
+                    if(fid && cs[fid] != null ) cs[fid].value=''; 
+                    if(nameVal!=null && nameVal!=''){
+                        var allNameVals = nameVal.split(' ');
+                        if(allNameVals && allNameVals.length>0){
+                            for(var i=0; i<allNameVals.length; i++){
+                                if(restrictedList.includes(allNameVals[i].toUpperCase())){
+                                    $(e).parent().find('.invalid-feedback').html('*Using ' + allNameVals[i].toUpperCase() +' in name is restricted!').show();
+                                    hideTempLoader_input(e.target);
+                                    isNameExist = true;
+                                    allNames[e.id] = false;
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        if(!isNameExist){
+                            sforce.connection.sessionId='{!$Api.Session_ID}';
+                            var curAccID = '{!rq.Acc__c}';
+                            var WSResponse = sforce.apex.execute("BusinessNameValidate","validateBusiness",{name:nameVal,accID:curAccID});
+                            var respObj = JSON.parse(WSResponse); 
+                            if(respObj!= null && respObj.nameExists==true){
+                                $(e).parent().find('.invalid-feedback').html(respObj.errorMsg).show();
+                                hideTempLoader_input(e.target);
+                                isNameExist = true;  
+                                allNames[e.id] = false;
+                                return;
+                            }
+                        }
+                    }
+                    if(!isNameExist){
+                        $(e).parent().find('.valid-feedback').html("* <b>" +nameVal+ "</b> name is available, subject to DDA approval.").show();
+                        allNames[e.id] = true;
+                    }
+                }else{
+                     if(nameVal!="" && nameVal!=null && nameVal.length<5){// US APD2635
+                        $(e).parent().find('.invalid-feedback').html('* name should have atleast 5 characters!').show();
+                        cs[e.id +'__c'].value ="";
+                        allNames[e.id] = false;
+                    }
+                }       
+                assignFields(e);
+            }
+            hideTempLoader_input(e.target);
+            
+            
+        },1000);
+    }
+    
+    
+    function showCmpInfo(){
+        lfb = cs['xfb__c'].value; 
+        // alert('showCmpInfo:'+lfb); 
+        getC('xcfn').value = cs['xcfn__c']?.value;
+        getC('xcmn').value = cs['xcmn__c']?.value;
+        getC('xcln').value = cs['xcln__c']?.value;
+        getC('xcpn').value = cs['xcpn__c']?.value;//US APD2635
+        //getC('fzllc').style.display='';
+        
+        if(lfb!='FZ-LLC' || ('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )){
+            getC('xccn').value = cs['xccn__c'].value;
+            getC('rtacn').value = cs['rtacn__c'].value;
+            getC('xcna').value = cs['xcna__c'].value; /*MS 1.1*/
+            
+            if(cs['xbtnm__c'].value!=null && cs['xbtnm__c'].value!="" &&  getC('xbtnm') != null){
+                getC('xbtnm').value = cs['xbtnm__c'].value;
+                //getC('xaed').value = new Date(cs['xaed1__c'].value).toLocaleDateString("en-US"); //cs['xcbd__c'].value;
+                //getC('boforcomp').style.display='';
+            }
+            console.log('cs[trdStDate].value===',cs['trdStDate'].value);
+            if(cs['trdStDate'].value!=null && cs['trdStDate'].value!="" &&  getC('trdStDate') != null ){
+                console.log('cs[trdStDate].value===='+cs['trdStDate'].value);
+                getC('trdStDate').value = cs['trdStDate'].value; 
+            }
+            if(cs['trdEdDate'].value!=null && cs['trdEdDate'].value!="" &&  getC('trdEdDate') != null){
+                getC('trdEdDate').value = cs['trdEdDate'].value;
+            }
+            
+            if(cs['taxRdNum'].value!=null && cs['taxRdNum'].value!="" &&  getC('taxRdNum') != null)
+            {
+                getC('taxRdNum').value = cs['taxRdNum'].value;
+            }
+            
+            if(isMOAAmd == 'true')
+            {
+                $('[name="amd1"][for="amdYes"]').prop('checked', true).trigger('change');
+            }
+            else if(isMOAAmd == 'false')
+            {
+                $('[name="amd1"][for="amdNo"]').prop('checked', true).trigger('change');
+            }
+            
+            
+            console.log('in show');
+            getC('boforcomp').style.display='';
+            //updated by meenu
+            if('{!rq.xvtyp__c}' == 'DDA' || ( '{!rq.xvtyp__c}' != 'DED' && '{!rq.Acc__r.clt__c}' != 'Land'))
+            {
+                $('#hiddenbtn').css("display", "");
+            }
+            
+        }
+        if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DDA' ){
+            if(cs['taxRdNum'].value!=null && cs['taxRdNum'].value!="" &&  getC('taxRdNum') != null)
+            {
+                getC('taxRdNum').value = cs['taxRdNum'].value;
+            }
+        }
+    }
+    
+    $(document).ready(function () {
+        console.log('dfdfhghghg==in ready==','{!tb}');
+        if('{!tb}' == 'businessName' || '{!tb}' == '')
+        {
+            tobeCalledOnload();
+        }
+    });
+    
+    </script>
+</apex:component>

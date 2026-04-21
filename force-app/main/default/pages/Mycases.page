@@ -1,0 +1,290 @@
+<apex:page controller="MyCasesController"  docType="html-5.0" standardStylesheets="false"  showHeader="true" sidebar="false" title="e-Government Services Portal" cache="false">  
+    <html>
+        <head>
+            <title>AXS</title>
+        </head>
+        <style>
+            .text-light {
+            color: #9B9B9B !important;
+            }
+            .dropdown-filter-wrapper::after{
+            content:'' !important;
+            }
+            .table tbody td:nth-child(3) {
+            text-transform: capitalize !important;
+            }
+        </style>
+            <apex:stylesheet value="{!URLFOR($Resource.axs2MandateCss)}" />
+        
+        <apex:form id="form">
+            <div id = "main">	    
+                <div id="page_content">
+                    <div class="container">
+                        <div class="page-header">
+                            <ul class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                                <li class="breadcrumb-item">My Tickets</li>
+                            </ul>
+                            <!-- .breadcrumb -->
+                            
+                            <div class="d-lg-flex flex-wrap align-items-center" id="mainDiv">
+                                <h1 class="page-title mr-auto">MY TICKETS</h1>
+                                
+                                <div class="table-form-wrapper">
+                                    <!-- search field  -->
+                                    <div class="table-form-col col-6">
+                                        <div class="search-field">
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" placeholder="Search ticket number" id="caseId" onkeyup ="filterCases()" onchange ="filterCases()"/>
+                                                <div class="input-group-append">
+                                                    <button class="btn" type="button" onclick="filterCases()">
+                                                        <div class="icon-search"></div>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- dropdown filter -->
+                                    <div class="table-form-col col-6">
+                                        <div class="dropdown-filter-wrapper">
+                                            <select class="form-control input-select2-flat" onchange="filterCases(this.value)">
+                                                <option value="All Cases">All Tickets</option>
+                                                <option value="My Open Cases">My Open Tickets</option>
+                                                <option value="My In-Process Cases">My In-Process Tickets</option>
+                                                <option value="My Completed Cases">My Completed Tickets</option>
+                                            </select>
+                                            <apex:actionFunction name="filterCaseAction"  action="{!searchCases}" reRender="pageBlock,btnid">
+                                                <apex:param name="caseParam" assignTo="{!criteria}" value=""/>
+                                            </apex:actionFunction>
+                                        </div>
+                                    </div>
+                                    <!-- end .dropdown filter -->
+                                    <div class="table-form-col col-12">
+                                        <a href="/apex/newTicket" class="btn btn-black btn-block initialism">
+                                            Create New Ticket &nbsp;<i class="icon-add"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- .page-header -->
+                        <apex:pageBlock id="pageBlock">
+                            <div class="panel">
+                                <div class="panel-body pb-1">
+                                    <div class="table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0">
+                                        <table class="table table-hover table-responsive-sticky table-list m-0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="sticky-col">TICKET NUMBER</th>
+                                                    <th>SR NUMBER</th>
+                                                    <th>SERVICE</th>
+                                                    <th>NAME</th>
+                                                    <th>DATE / TIME OPENED</th>
+                                                    <th class="text-center">STATUS</th>
+                                                </tr>
+                                            </thead>
+                                            
+                                            <apex:repeat value="{!caseList}" var="c">
+                                                <tr>
+                                                    <td class="table-list-only">
+                                                        <span class="table-list-separator"></span>
+                                                        <apex:outputPanel rendered="{!if(c.status == 'Open',true,false)}">
+                                                            <div class="badge-status">OPEN</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(c.status == 'Reopened',true,false)}">
+                                                            <div class="badge-status">REOPENED</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(OR(c.status == 'In Progress',c.status == 'AXS Back Office - In Progress',c.status == 'Call Center - In Progress'), true,false)}">
+                                                            <div class="badge-status badge-status-process">IN PROCESS</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(OR(c.status == 'Closed',c.status == 'Resolved'), true,false)}">
+                                                            <div class="badge-status badge-status-completed">COMPLETED</div>
+                                                        </apex:outputPanel>
+                                                    </td>
+                                                    <td class="text-light sticky-col">
+                                                        <a href="/apex/CaseDetail?id={!c.id}" target="_blank" class="row-link"></a>
+                                                        {!c.CaseNumber}
+                                                    </td>
+                                                    <td>
+                                                        <a  target="_blank" class="row-link"></a>
+                                                        {!c.Request__r.Name}
+                                                    </td>
+                                                    <td>
+                                                        <a target="_blank" class="row-link"></a>
+                                                        {!c.Service_Type__c}
+                                                    </td>
+                                                    <td>
+                                                        <a target="_blank" class="row-link"></a>
+                                                        {!c.Request__r.Applicant_Name__c}
+                                                    </td>
+                                                    <td class="table-list-hide">
+                                                        <a target="_blank" class="row-link"></a>
+                                                        <apex:outputText value="{0, date, dd/MM/yyyy hh:mm}">
+                                                            <apex:param value="{!c.CreatedDate}" /> 
+                                                        </apex:outputText>
+                                                    </td>
+                                                    <td class="text-center table-list-hide">
+                                                        <a target="_blank" class="row-link"></a>
+                                                        <apex:outputPanel rendered="{!if(c.status == 'Open',true,false)}">
+                                                            <div class="badge-status">OPEN</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(c.status == 'Reopened',true,false)}">
+                                                            <div class="badge-status">REOPENED</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(OR(c.status == 'In Progress',c.status == 'AXS Back Office - In Progress',c.status == 'Call Center - In Progress'), true,false)}">
+                                                            <div class="badge-status badge-status-process">IN PROCESS</div>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!IF(OR(c.status == 'Closed',c.status == 'Resolved'), true,false)}">
+                                                            <div class="badge-status badge-status-completed">COMPLETED</div>
+                                                        </apex:outputPanel>
+                                                    </td>
+                                                    <td class="table-list-only">
+                                                        <span class="table-list-separator"></span>
+                                                    </td>
+                                                </tr>	   
+                                            </apex:repeat>
+                                        </table>
+                                    </div>
+                                    <!-- .table-responsive -->
+                                </div>
+                                <!-- .panel-body -->
+                            </div>
+                        </apex:pageBlock>
+                        <!-- .panel -->
+                        
+                        <!-- pagination -->
+                        <apex:outputPanel id="btnid">
+                            <nav class="text-center mt-4 mb-4">
+                                <ul class="pagination d-inline-flex">
+                                    <apex:outputPanel rendered="{!stdSetController.HasPrevious}">
+                                        <li class="page-item page-item-arrow">
+                                            <div class="page-link"  onclick="prv();">
+                                                <i class="fa fa-long-arrow-left"></i><span> PREV</span>
+                                            </div>
+                                        </li>
+                                    </apex:outputPanel>
+                                    <apex:outputtext rendered="{!TotalPages > 1}">
+                                        <li class="page-item"><a class="page-link"  onclick="frst();">1</a></li>
+                                        <li class="page-item"><a class="page-link"  onclick="selectedpage('2');">2</a></li>
+                                        <apex:outputtext rendered="{!TotalPages > 2}">
+                                            <li class="page-item"><a class="page-link"  onclick="selectedpage('3');">3</a></li>    
+                                            <li class="page-item"><span class="page-link">...</span></li>
+                                            <li class="page-item"><a class="page-link"  onclick="lst();">{!TotalPages}</a></li>
+                                        </apex:outputtext>
+                                    </apex:outputtext>
+                                    <apex:outputPanel rendered="{!stdSetController.HasNext}">
+                                        <li class="page-item page-item-arrow">
+                                            <div class="page-link"  onclick="nxt();">
+                                                <span>NEXT </span><i class="fa fa-long-arrow-right"></i>
+                                            </div>
+                                        </li>
+                                    </apex:outputPanel>
+                                </ul>
+                                <span style="float:right">
+                                    <apex:outputLabel value="Page ">
+                                    </apex:outputLabel>
+                                    <apex:outputLabel value="{!PageNumber}" />
+                                    <!-- To navigate to the page-->           
+                                    <apex:outputLabel value=" of {!TotalPages}">
+                                    </apex:outputLabel>
+                                </span>
+                            </nav>
+                            
+                        </apex:outputPanel>
+                        <apex:actionFunction name="prv" action="{!stdSetController.previous}"  reRender="pageBlock,btnid"/>
+                        <apex:actionFunction name="lst" action="{!stdSetController.last}"  reRender="pageBlock,btnid"/>
+                        <apex:actionFunction name="nxt" action="{!stdSetController.next}"  reRender="pageBlock,btnid"/>
+                        <apex:actionFunction name="frst" action="{!stdSetController.first}"  reRender="pageBlock,btnid"/>
+                        <apex:actionFunction name="selectedpage"  action="{!getSelectedPageList}" reRender="pageBlock,btnid">
+                            <apex:param name="pgno" assignTo="{!pageNo}" value=""/>
+                        </apex:actionFunction>
+                        <!-- end pagination -->
+                        
+                    </div>
+                    <!-- .container -->
+                </div>
+                
+                <!--<c:addons /> -->
+              <!--  <div class="site-footer-wrapper">
+                    <div class="container">
+                        <div class="site-footer">
+                            <div class="footer-links">
+                                <a href="#">ABOUT AXS</a> |
+                                <a href="#">TERMS OF USAGE</a> |
+                                <a href="#">PRIVACY POLICY</a>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+                <div class="container" id = "newCaseDiv" style="display:none">
+                    <div class="panel">
+                        <div class="panel-body pb-1">
+                            <div class="table-responsive table-responsive-lg table-list-wrapper mt-n2 mt-md-0">
+                                <table class="table table-hover table-responsive-sticky table-list m-0">
+                                    <thead>
+                                        <tr>
+                                            NEW CASE
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <apex:pageBlock >
+                                            <apex:pageBlockSection columns="1">
+                                                <apex:inputField id="Type" value="{!newcase.Type}"/>
+                                                <apex:inputField id="SecEmail" value="{!newcase.Secondary_Email_Id__c	}"/>
+                                                <apex:inputField id="SecPhoneNo" value="{!newcase.Secondary_Phone_Number__c}"/>
+                                                <apex:inputField id="Subject" value="{!newcase.Subject}"/>
+                                                <apex:inputField id="Description" value="{!newcase.Description}"/>
+                                            </apex:pageBlockSection>
+                                            <apex:pageBlockButtons location="bottom">
+                                                <apex:commandButton action="{!createCase}" value="Save"/>
+                                                <apex:commandButton action="{!cancel}" value="Cancel"/>
+                                            </apex:pageBlockButtons>
+                                        </apex:pageBlock>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>   
+                </div>
+            </div>
+        </apex:form>
+        <script>
+        function filterCases(caseType){
+            
+            console.log('filterCases::::::::::::');
+            console.log('caseType:::::::::'+caseType);
+            if(caseType !== undefined){
+                filterCaseAction(caseType);
+            }else{
+                var caseId = document.getElementById('caseId').value;
+                if(caseId.length>4){
+                    filterCaseAction(caseId);
+                }
+                else if(caseId.length==0){
+                	filterCaseAction('');
+                }
+            }    
+        }
+        
+        function newCase(){
+            
+            console.log('newCase::::::::');
+            var mainDiv = document.getElementById("page_content");
+            var newCaseDiv = document.getElementById("newCaseDiv");
+            if (newCaseDiv.style.display === "none") {
+                newCaseDiv.style.display = "block";
+                mainDiv.style.display = "none";
+            }
+        }
+        </script>
+        <!-- Vendor js 
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />-->
+        
+        <!-- main js -->
+        <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />    
+    </html>
+</apex:page>

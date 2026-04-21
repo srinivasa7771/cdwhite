@@ -1,0 +1,315 @@
+<apex:page cache="false" controller="crctnob" docType="html-5.0" standardStylesheets="false"  showHeader="false" sidebar="false" id="ctrnPg">
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <link rel="icon" href="./favicon.ico" />
+    <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.css')}" />
+    
+    <!-- icons -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+    <!-- main css -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+    
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Media City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Internet City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dic.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai International Academic City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dia.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Knowledge Park'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dkp.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Outsource City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-doc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Studio City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Design District'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-ddd.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Production City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dpc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!rq.acc__r.Prk__c == 'Dubai Science Park'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsp.css') }" />
+    </apex:outputPanel>
+    
+    <style>
+        .DVS_WebViewer, .dwtcontrolContainer, #image-area {
+        width: 350px !important;
+        }
+        .multiline {<!--US APD2635-->
+        white-space: pre-line;
+        }
+    </style>
+    <script type="text/javascript">
+    var cs={}; var ri;
+    $(document).ready(function () {
+        
+    });
+    function closeCrtnModal(){
+        window.parent.closeCrtnFromParent();
+    }
+    function addValError(thiselem,message){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+        var errElem = '<div class="frmErrMsg">'+message+'</div>';
+        elem.parent().append(errElem);
+        
+    }
+    function removeValError(thiselem){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+    }
+    function proceedCrctns(){
+        var validated  = true;
+        /*var amdCategory = '{!JSENCODE(rq.xcamc__c)}';//US APD 2635
+        if (amdCategory === 'Company Name Change - FZ-LLC') {
+            if (!$('#chkConfirm').is(':checked')) {
+                addValError('#chkConfirm', '**This confirmation is required!');
+                validated = false;
+            } else {
+                removeValError('#chkConfirm');
+            }
+        }
+        //US APD 2635*/
+        var elem = '';
+        $('.requiredFld').each(function(){
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            
+            var v = $(this).val();
+            
+            if(v==''||v==null || v==undefined){
+                addValError(this,'**This field is required!');
+                validated=false;
+                if(elem=='') elem = $(this);
+            }else{
+                removeValError(this);  
+            }
+        });
+        
+        if( validated){
+            //axsConfirmation('Please Confirm','Please make sure the provided information was correct.',false,'proceedCrctns1');
+            //$('#modal_Correction_submission').hide();
+            showTempLoader('.base-nav-next');
+            proceed();
+            //$('#modal_Correction_submission').hide();
+            setTimeout(function() {
+                window.parent.location.reload();/*US APD2635*/
+            }, 5000);
+        }
+    }
+    function crtnSubmitted(){
+        $('#modal_alert_global').on('hidden.bs.modal',function(){
+            window.parent.location.reload();
+        });
+    }
+    function proceedCrctns1(){
+        showTempLoader('.base-nav-next');
+        proceed();
+    }    function testAlert(){
+        alert(1);
+        
+    }
+    function dltAtt(id){
+        axsConfirmation('Please Confirm','Are You Sure to delete this document',true,'afdltAtt',id);
+        window.parent.location.reload();
+    }
+    </script>
+    
+    
+    <apex:stylesheet value="{!$Resource.gCss}"/>
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:form id="formId">
+        
+        <apex:actionFunction name="proceed" action="{!saveReq}" rerender="dummy" oncomplete="window.parent.location.reload();" />
+        <apex:actionFunction name="afdltAtt" action="{!deleteAttachment2}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocL,opDocLR"  oncomplete="javascript:stopLoader();" >
+            <apex:param name="ID" assignTo="{!reqDocId2}" value="" />
+        </apex:actionFunction> 
+        <apex:InputHidden value="{!reqDocId2}" id="reqDocId2"/>
+        <apex:outputPanel id="dummy"></apex:outputPanel>
+        <div class="container">
+            <div class="base-layout">
+                <div class="base-main my-4">
+                    <div class="base-main-content">
+                        <h2 class="base-main-title my-4" style="text-align: center;">Your application has been returned for correction for the following reasons.</h2>
+                        <ul class="ul-style">
+                                <apex:repeat value="{!ritm}" var="r"><!--US APD2635-->
+                                    <li class="multiline">{!r.xcnotes__c}</li>
+                                </apex:repeat>
+                            </ul>
+                        <br/>
+                        <p>
+                            Please provide the required information and click on Submit to proceed.
+                        </p>
+                        
+                        <style>
+                            .blink {
+                            animation: blink 5s;
+                            animation-iteration-count: 3;
+                            }
+                            
+                            @keyframes blink {
+                            0% {
+                            opacity: 1;
+                            }
+                            50% {
+                            opacity: 0;
+                            transform: scale(2);
+                            }
+                            51% {
+                            opacity: 0;
+                            transform: scale(0);
+                            }
+                            100% {
+                            transform: scale(1);
+                            opacity: 1;
+                            }
+                            }
+                            
+                        </style>
+                        <br/>
+                        <div class="form-group">
+                            Comments :&nbsp;&nbsp; <apex:inputTextarea styleClass="requiredFld form-control" cols="80" rows="3" value="{!usrComments}"/>
+                        </div>
+                        <br/>
+                        <apex:outputText rendered="{!docFlg}">
+                            <br/>  
+                            <apex:outputLabel rendered="{!nD}">
+                                <b><font  style="color:red;font-size: 15px;">
+                                    <p>
+                                        <span class="blink">*Please upload all mandatory documents.</span>
+                                    </p>
+                                    </font>
+                                </b>
+                            </apex:outputLabel>
+                            <apex:outputPanel id="opDocLR">               
+                                <div class="row row-lg">
+                                    <apex:repeat id="hr04" value="{!dasLst}" var="das" >
+                                        <apex:outputtext rendered="{!das.upload}">    
+                                            <div class="col-lg-6" style="max-width:50%">
+                                                <div class="box {!if(das.d.doUp,'','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}
+                                                            <i style="{!IF(ISBLANK(das.d.Doc.Doc_Description__c),'display:none;','')}" class="fa fa-question-circle text-primary" aria-hidden="true" 
+                                                               data-toggle="tooltip" data-placement="top" title="" data-original-title="{!das.d.Doc.Doc_Description__c}"></i>
+                                                        </label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="upload-field d-flex">
+                                                        
+                                                        <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                            <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                            <span>Choose File to Upload</span>
+                                                        </div>
+                                                        <div>
+                                                            <a onclick="popupDocModel('{!JSENCODE(das.d.Doc.Name)}','{!JSENCODE(das.d.Doc.Name)}','{!das.d.Doc.id}LR');" style="color:#fff" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    
+                                                </div>
+                                            </div>
+                                        </apex:outputtext>
+                                        <apex:outputtext rendered="{!NOT(das.upload)}">    
+                                            <div class="col-lg-6" style="max-width:50%">
+                                                <div class="box box-block">
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <i class="fa fa-check-circle text-success"></i>
+                                                            <apex:outputPanel rendered="true">
+                                                                <a href="/servlet/servlet.FileDownload?file={!das.A.Id}" target="_blank" class="upload-item-title text-li"  >
+                                                                    <u>{!das.A.Name}</u>
+                                                                </a>
+                                                            </apex:outputPanel>
+                                                            <a class="upload-item-remove" onclick="dltAtt('{!JSENCODE(das.A.Id)}');"  >
+                                                                <i class="fa fa-close"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt__c))}"></apex:outputtext>
+                                                    <apex:outputtext rendered="{!LOWER(das.d.doc.Name) != 'employment contract'}">
+<a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold" target="_blank">Download Template</a>
+</apex:outputtext>
+
+<apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt2__c))}">
+<apex:outputtext rendered="{!LOWER(das.d.doc.Name) != 'employment contract'}">
+<a href="{!das.d.doc.tplt2__c}" class="text-000 fs-16 text-underline font-weight-bold" target="_blank">Download Template</a>
+</apex:outputtext>
+</apex:outputtext>
+                                                </div>
+                                            </div>
+                                        </apex:outputtext>
+                                    </apex:repeat>   
+                                    <!--<apex:outputPanel id="chkConfirmPanel" rendered="{!rq.xcamc__c == 'Company Name Change - FZ-LLC'}">
+                                            <label>
+                                                <input type="checkbox" id="chkConfirm" class="requiredChk" />
+                                                I/We hereby confirm that the 14-calendar days period from the advertisement date has been completed.
+                                            </label>
+                                        </apex:outputPanel> US APD2635-->
+                                </div>
+                                
+                            </apex:outputPanel>
+                            <c:fileuploadpopupnew13 R="{!rq}"   PageControllerBaseCalling="{!this}" keyAssigned="componentOne" rerender="{!$Component.opDocLR}" /> 
+                        </apex:outputText>
+                        <div class="mt-4 base-main-footer">
+                            <div class="base-nav">
+                                <a href="" onClick="proceedCrctns();" class="btn btn-primary base-nav-next" style="color:#fff">SUBMIT</a>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </apex:form>  
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/moment/min/moment.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/js/select2.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/jquery.easy-autocomplete.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tablesorter/dist/js/jquery.tablesorter.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery.scrollto/jquery.scrollTo.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/kinetic.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.min.js')}"  />
+    <!-- main js -->
+    <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.AdnicPopup, '/js/jquery.cookie.js')}" />
+    
+</apex:page>

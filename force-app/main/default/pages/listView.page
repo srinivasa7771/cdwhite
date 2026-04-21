@@ -1,0 +1,281 @@
+<apex:page sidebar="false" controller="listViewCntrl" lightningStylesheets="true" readOnly="true" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+    function openNewTab(id){
+        window.open('/'+id, '_blank');
+        }
+    
+    function removeItem(){
+        // if(typeof(cs['CatOpt'] )!='undefined'  ){alert(cs['CatOpt'].value) }
+        
+        //alert(ctg);
+        
+      var selectobject= itmLst;
+          //'{!JSENCODE(ItmOpt)}'
+        // alert(selectobject);
+        //alert(selectobject.length);
+      if(ctg == 'Student New'){ //alert(1);
+         for (var i = 0; i < selectobject.length; i++) { 
+               if (selectobject.options[i].value == 'rt' ) { 
+                   selectobject.remove(i);
+              }
+             }
+                               }
+
+    }
+    
+    function valdt() {
+        alert('{!JSENCODE(selCatg)}');
+        if('{!JSENCODE(selCatg)}' == ''  ){
+            alert('Please select the category');
+            return false;
+        }else  if('{!JSENCODE(selItm)}' == ''  ){
+            alert('Please select the Item');
+            return false;
+        } else if('{!JSENCODE(selStat)}' == ''  ){
+            alert('Please select the Status');
+            return false;
+        }
+        
+            else return true;
+        
+    }
+    
+    function test1(a,b,c){
+  
+   if(a!='' && b!='' && c!='' )
+        mthd();
+    }
+    
+   
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            
+            <div class="slds-media slds-no-space slds-grow">
+                <div class="slds-media__figure">
+                    <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                        <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                    </svg>
+                </div>
+                <div class="slds-media__body">
+                    <p class="slds-text-title--caps slds-line-height--reset">Request</p>
+                    <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                </div>
+            </div>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+             <apex:pagemessages />
+        </head>
+        <body>
+     
+            <div class="slds-scope">  
+                <apex:form id="listForm">
+                    <apex:pageBlock id="out">
+                        <apex:pageBlockSection title="" collapsible="false">
+                            <div class="slds-grid slds-wrap">  
+        
+                                           
+                                <table >
+                                    <tr>
+                                        <td> <div styleClass="slds-form-element__label">Category:</div>
+                                           <div styleClass="slds-form-element__control slds-input">  
+                                           <apex:selectList value="{!selCatg}" multiselect="false" size="1" onchange="test1('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}','{!JSENCODE(selStat)}');">
+                                              <!--  <apex:selectOptions value="{!CatOpt}" id="CatOpt" />-->
+                                               <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                               <apex:selectOption itemLabel="Employee New"  itemvalue="001,002,003,004,021,078,040,020" id="empNw" />
+                                               <apex:selectOption itemLabel="Student New"  itemvalue="022,011"  />
+                                               <apex:selectOption itemLabel="Dependent New"  itemvalue="138,139,005,012,140,141,006,013"      />
+                                               <apex:selectOption itemLabel="Employee Renewal"  itemvalue="105,106,055,016"  />
+                                               <apex:selectOption itemLabel="Student Renewal"  itemvalue="044,082"  />
+                                               <apex:selectOption itemLabel="Dependent Renewal"  itemvalue="19,045,056,120,046,057"    />
+                                               <apex:selectOption itemLabel="Employee Transfer"  itemvalue="028,026,015,081,025,027,010,080"  />
+                                               <apex:selectOption itemLabel="Employee Internal Transfer"  itemvalue="188,189,190,191,103"  />
+                                               <apex:selectOption itemLabel="Student Transfer"  itemvalue="029,019"  />
+                                               <apex:selectOption itemLabel="Dependent Transfer"  itemvalue="117,023,018,118,017,024"   />
+                                               <apex:selectOption itemLabel="Employee RP Correction"  itemvalue="050,053"   />
+                                               <apex:selectOption itemLabel="Student RP Correction"  itemvalue="052,085"   />
+                                               <apex:selectOption itemLabel="Dependent RP Correction"  itemvalue="054,051" 	  />
+                                               <apex:selectOption itemLabel="Employee Visa Cancellation"  itemvalue="076,093"   />
+                                               <apex:selectOption itemLabel="Student Visa Cancellation"  itemvalue="092"   />
+                                               <apex:selectOption itemLabel="Dependent Visa Cancellation"  itemvalue="090,091"   />
+                                               <apex:selectOption itemLabel="Establishment Card"  itemvalue="086,137,144,145"   />
+                                               <apex:selectOption itemLabel="Establishment Card Renewal"  itemvalue="073,146"   />
+                                               <apex:selectOption itemLabel="Visit Visa"  itemvalue="097,074,058,096"   />
+
+                                            <apex:actionFunction name="mthd" action="{!queryReq}" rerender="listForm"  status="sts"/>
+                                               
+                                            </apex:selectList>  
+                                               <script type="text/javascript">cs['CatOpt']=getC('{!$Component.CatOpt}');
+                                             	ctg = '{!JSENCODE(selCatg)}';
+                                               </script>
+                                               </div> 
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><div styleClass="slds-form-element__label">Item:</div>
+                                             <div styleClass="slds-form-element__control slds-input">
+                                            <apex:selectList value="{!selItm}" multiselect="false"  size="1" onchange="test1('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}','{!JSENCODE(selStat)}');" >
+                                              <!--  <apex:selectOptions value="{!ItmOpt}" id="itm" />-->
+                                                
+                                                <apex:selectOption itemvalue=""  itemLabel="-None-"/>
+                                                <apex:selectOption itemvalue="ep"  itemLabel="Entry Permit"  />
+                                                <apex:selectOption itemvalue="rp"  itemLabel="Residence Permit"  />
+                                                <apex:selectOption itemvalue="rt"  itemLabel="Residence Permit Transfer"/>
+                                                <apex:selectOption itemvalue="exn"  itemLabel="Entry Permit Unused Cancellation"  />
+                                                <apex:selectOption itemvalue="exu"  itemLabel="Entry Permit Used Cancellation" />
+                                                <apex:selectOption itemvalue="ai"  itemLabel="Arrival Intimation"  />
+                                                <apex:selectOption itemvalue="la"  itemLabel="Local Amendment" />
+                                                <apex:selectOption itemvalue="md"  itemLabel="Medical"  />
+                                                <apex:selectOption itemvalue="moh"  itemLabel="MOH Medical"  />
+                                                <apex:selectOption itemvalue="ia"  itemLabel="Emirates ID (EIDA)"   />
+                                                <apex:selectOption itemvalue="eca"  itemLabel="Entry Permit Renewal/Correction (Abroad Applicant)"  />
+                                                <apex:selectOption itemvalue="eci"  itemLabel="Entry Permit Renewal/Correction (In-country Applicant)"  />
+                                                <apex:selectOption itemvalue="ins"  itemLabel="RP cancellation Inside UAE"  />
+                                                <apex:selectOption itemvalue="oua"  itemLabel="RP cancellation outside UAE with passport"  />
+                                                <apex:selectOption itemvalue="oup"  itemLabel="RP cancellation outside UAE without passport"  />
+                                                <apex:selectOption itemvalue="ip"  itemLabel="Immigration Printout"  />
+                                                <apex:selectOption itemvalue="ec"  itemLabel="Establishment Card" />
+                                                <apex:selectOption itemvalue="er"  itemLabel="Establishment Card Renewal"  />
+                                                <apex:selectOption itemvalue="el"  itemLabel="Establishment Card Lost"  />
+                                                <apex:selectOption itemvalue="ep"  itemLabel="Entry Permit" />
+                                                <apex:selectOption itemvalue="mep"  itemLabel="Multi Entry Permit" />
+                                                <apex:selectOption itemvalue="rt"  itemLabel="Residence Permit Retyping"  />
+                                                <apex:selectOption itemvalue="eti"  itemLabel="Entry Permit Retyping (In Country)"   />
+                                                <apex:selectOption itemvalue="et"  itemLabel="Entry Permit Retyping (Abroad Applicant)"   />
+                                                <apex:selectOption itemvalue="iat"  itemLabel="EIDA Retyping"  />
+                                                <apex:selectOption itemvalue="ofl"  itemLabel="Offer Letter"   />
+                                          
+											           
+                                             <!--   <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm"  status="sts"/>-->
+                                            </apex:selectList>  
+                                             <script type="text/javascript">cs['itm']=getC('{!$Component.itm}');
+                                             	itmLst = '{!JSENCODE(ItmOpt)}';
+                                               </script>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><div styleClass="slds-form-element__label">Status:</div>
+                                             <div styleClass="slds-form-element__control slds-input">
+                                            <apex:selectList value="{!selStat}" multiselect="false" size="1" >
+                                               <!-- <apex:selectOptions value="{!StsOpt}"  />-->
+                                                <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                                <apex:selectOption itemLabel="All"  itemvalue="rv,n,cc,ccc,v,vcc"  />
+                                               <apex:selectOption itemLabel="Under Review"  itemvalue="rv,n"  />
+                                               <apex:selectOption itemLabel="Corrected By Customer"  itemvalue="cc,ccc,v,vcc"  />
+                                                <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm" status="sts" />
+                                            </apex:selectList>  </div>
+                                        </td>
+                                    </tr>
+                                </table> 
+                            </div>                            
+                        </apex:pageBlockSection>
+
+                        
+                        
+                        
+                        <apex:pageBlockSection collapsible="false" id="out1">
+                            <div class="slds-panel__section">  
+                          <!--<legend class="slds-form-element__label slds-text-title--caps"><b>{!nameList}</b></legend> -->
+                            </div>
+                            <script type="text/javascript" charset="utf8">
+                            var oTable;var currentNumberDisplayed = 200;
+                            $(document).ready(function() {
+                                $('#load').click( function () {
+                                    var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                                oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 25}); 
+                                
+                            });
+                            </script>
+                            
+                        <apex:actionstatus id="sts">
+                                <apex:facet name="start">
+                                    <div class="slds-spinner_container">
+                                        <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                            <span class="slds-assistive-text">Loading</span>
+                                            <div class="slds-spinner__dot-a"></div>
+                                            <div class="slds-spinner__dot-b"></div>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionstatus> 
+                            
+                            <apex:dataTable value="{!finalListRqItm}" var="record" rendered="{! IF(ISBLANK(finalListRqItm), false, true) }" captionClass="testTable" styleClass="slds-table slds-table--bordered slds-table--striped" id="testTable" cellspacing="5%" columnsWidth="13%" style="width:100%;float:left;">                 
+                                <apex:column >
+                                    <apex:inputCheckbox onclick="openNewTab('{!JSENCODE(record.RQ__r.id)}');" /> 
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Request" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__c}"/>
+                                </apex:column>
+                               <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value=" Manage Request" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.xmgr__c}"/>
+                                </apex:column>
+                                 <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Request Priority " /></apex:facet>
+                                    
+                                    <apex:outputField value="{!record.RQ__r.prio__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Account Name" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.Account_Name__c}"/>
+                                </apex:column>
+                               <!--  <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Applicant" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.Con__c}"/>
+                                </apex:column>-->
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Service" /></apex:facet>
+                                     <apex:image url="{!$Resource.expressImage}" width="20" height="20" rendered="{! IF(record.RQ__r.prio__c == 'Express', true, false) }" />
+                                    <apex:outputField value="{!record.itm__r.srvc__r.Name}"/> [
+                                    <apex:outputField value="{!record.RQ__r.Con__c}"/> ]
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item" /></apex:facet>
+                                    <apex:outputField value="{!record.Name}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item Status" /></apex:facet>
+                                    <apex:outputField value="{!record.STA__r.Name}"/> 
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Nationaility and Passport" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.NationalityPassport__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Request Status" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.STA__c }"/>
+                                </apex:column>
+                                
+                            </apex:dataTable>
+                        </apex:pageBlockSection>   
+                    </apex:pageBlock>
+                    
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

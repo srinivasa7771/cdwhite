@@ -1,0 +1,1382 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="gctlReq_L"  docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false" title="{!pt}" action="{!loadCompanies}">
+    
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+   <!-- <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>-->
+    
+    <style>
+        .info-msg {color:green !important;}
+        .left-radius{border-top-left-radius: 0.5rem !important; border-bottom-left-radius: 0.5rem !important;}
+    </style>
+    
+    <script type="text/javascript">
+    //createDepDds -call function onchange of controlling field and assign class 'depDD' to dependent picklist 
+    
+    var tod;   
+    var ispu={!ispu}, isgu={!isgu}, lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={},sBoat,sV,sEng,sTrnsfr,blAllEng;
+    var lf='',af='',adf='',aO='',lif,aif,adif,cif,cnf,fnxPg; var la2='';
+    var ctp={!IF(srv.uid__c=='ltp',true,false)}
+    var isEditBO = true;
+    
+    //function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):nRefd()?(alrt("Terms & Conditions","Please read and agree to Ramadan Permit Guidelines in order to process with your application."),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):!0} //nCatPermt()?(alrt("Terms & Conditions","Please read and agree to Permit for Catering Service Guidelines in order to process with your application."),!1):nCatPermt()?(alrt("Terms & Conditions","Please read and agree to Permit for Catering Service Guidelines in order to process with your application."),!1)
+    function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","hRq"),!0):nRefd()?(alrt("Terms & Conditions","nRefd"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","hErr"),!1):valDates()?('',!1):chkAttestation()?(alrt("Document Attestation","Please select an option - yes/no."),!1):!0}
+    function hsSnc(nSTA){return false;}
+    
+    // set the vehicle letter type on change
+    function setDrvLic(vehicle){
+        cs['xvcol__c'].value = vehicle;
+        if(vehicle=="Light vehicle" && lf=='Driving license new / renewal'){$("#ltpl").show();}else{ $("#ltpl").hide();}
+    }
+    
+    // set the vehicle type on load
+    function setDrvLicOnLoad(){
+        if(lf.includes("Driving license new / renewal") || lf=="Vehicle sale" || lf=='Vehicle registration new / renewal' || lf=='Vehicle transfer'){
+            $("#vehicle").val(cs['xvcol__c'].value).trigger("change"); 
+            $("#vhltype").show();
+        }
+    }
+    
+    
+    function nRefd() {
+        var okay = false;
+        if(typeof(cs['locAdd'] )!='undefined' && cs['xltr__c'].value == 'Ramadan Permit' ){
+            var cbx = document.getElementsByClassName("tnc");
+            if (cbx[0].checked) {okay = true;}
+            return !okay;
+        }
+    }  
+        
+    function chkAccount(accID){
+        if(!ispu && !isgu){
+            
+            var urlParam = getAxsURLParam('m');
+            if(urlParam!='edit'){
+                isEditBO = false;
+                $(".base-nav-next").text('PROCEED TO PAY');
+            }
+            
+            $(cs['acc_lkwgt']).addClass("lookupcc");
+            
+            if(accID==null || accID==undefined ||accID==""){
+                $("#ltrdetsection").hide();
+            }else{
+                $("#ltrdetsection").show();
+            }
+        }
+    }
+    
+    
+    $(document).ready(function(){
+        // to stop service on emergency - vmkr
+            //window.open('/serviceDown','_self');
+        if(!Array.prototype.includes){
+            Array.prototype.includes = function(a){return-1!=this.indexOf(a)}
+        }
+        $('.alphaChar').bind('keyup', function(e) {
+            $(this).val($(this).val().replace(/[^a-zA-Z]/g, ''));
+            if (e.which >= 97 && e.which <= 122) {
+                var newKey = e.which - 32;
+                e.keyCode = newKey;
+                e.charCode = newKey;
+            }
+            $(this).val(($(this).val()));
+        });
+        $('.numOnly').keypress(function (event) {
+            var charCode = (event.which) ? event.which : event.keyCode;
+            if (charCode != 46 && charCode > 31 
+                && (charCode < 48 || charCode > 57))
+                return false;
+            return true;
+        });
+        
+        setDrvLicOnLoad(); dispMOF(); 
+        displayXla2d(getC(cs['xltr__c'].id).value);
+        
+        if('{!JSENCODE(srv.uid__c)}'=='ltc'){getC("conlookuprow").style.display='none';}
+        
+        if(typeof(cs['termId'] )!='undefined' && '{!JSENCODE(rq.xltr__c)}' != 'Ramadan Permit' ){cs['termId'].style.display='none';} 
+        if(typeof(cs['locAdd'] )!='undefined' && cs['xltr__c'].value != 'Ramadan Permit' ){ cs['locAdd'].style.display='none';}
+        if(typeof(cs['loclabel'])!='undefined' && cs['xltr__c'].value != 'Ramadan Permit') {cs['loclabel'].style.display='none';}
+        if(typeof(cs['locAdd'] )!='undefined' && cs['xltr__c'].value == 'Ramadan Permit' ) cs['locAdd'].value = cs['locHide'].value; 
+        document.getElementsByClassName("tnc")[0].checked = true;
+        
+        if(typeof(cs['xcpid__c'])!='undefined' && typeof(getC('cpps'))!='undefined' ){  cs['xcpid__c'].style.display='none'; getC('cpps').style.display='none'; }
+        if(typeof(cs['xcped__c'])!='undefined' && typeof(getC('cppe'))!='undefined' ){  cs['xcped__c'].style.display='none'; getC('cppe').style.display='none';}
+        if(typeof(cs['xaloc__c'])!='undefined'){cs['locDetails'].style.display='none';      }                           
+        if(typeof(getC('emrts'))!='undefined'){ getC('emrts').style.display='none';}
+        if(typeof(getC('nold'))!='undefined')getC('nold').style.display='none';  
+        if(typeof(cs['locAdd2'])!='undefined' && getC(cs['xltr__c'].id).value != 'Permit for catering service' ){  cs['locAdd2'].style.display='none';}
+        if(typeof(getC('loclabel2'))!='undefined' && getC(cs['xltr__c'].id).value != 'Permit for catering service') {getC('loclabel2').style.display='none'; getC('cateringdetails').style.display='none';}
+        if(typeof(cs['locAdd'] )!='undefined' && getC(cs['xltr__c'].id).value == 'Permit for catering service' )  cs['locAdd2'].value = cs['locHide'].value; 
+                 
+        if('{!JSENCODE(rq.xltr__c)}' == 'Letter to Dubai Police')getC('nold').style.display='block';
+        if('{!JSENCODE(rq.xltr__c)}' != 'NOC to DED (Partake as Shareholder)'){getC('emrts').style.display='none';}
+        
+        if(getC(cs['xltr__c'].id).value != 'Permit for catering service'){
+            getC('cdoc').style.display='none'; cs['xccn__c'].style.display='none'; 
+            getC('cpps').style.display='none'; getC('cppe').style.display='none';cs['locDetails'].style.display='none';
+            cs['locAdd2'].style.display='none'; getC('cateringdetails').style.display='none';
+            getC('loclabel2').style.display='none';
+        }
+        
+        if(getC(cs['xltr__c'].id).value == 'Permit for catering service'){
+            getC('cpps').style.display='';getC('cppe').style.display='';
+        }
+        
+        setTimeout(function(){
+            removeVal(); createDepDds();
+            $(".vhcl-placeholder").select2({
+                placeholder: "Select a type",
+                enableSearch: true
+            });
+            
+            $(".loc-placeholder").select2({
+                placeholder: "Select a location",
+                enableSearch: true
+            });
+        },500);
+        showLoc(getC(cs['xltr__c'].id).value);
+        hideXla2d(cs['xla2__c2'].value);
+        
+    })
+    
+    function dispMOF(){
+        
+        var paidAmount = '{!rq.AP__c}';  paidAmount = parseFloat(paidAmount);  
+        if (isNaN(paidAmount)){paidAmount=0;}
+        if (!paidAmount>0) {
+            dispMOF1();
+            var ltrType = getC(cs['xltr__c'].id).value;
+            if(ltrType=="Certificate of incumbency (Branch)" || ltrType=="Certificate of incumbency(FZ LLC)"){
+                cs['panelmof1'].style.display='';  getC("label_lat").innerHTML = "Select the language for the letter";
+            }else{
+                cs['panelmof1'].style.display='none';  cs['xoca__c'].checked = false;
+                if(ltrType=="Permit for catering service"){
+                    getC("label_lat").innerHTML = "Permit type";
+                }else{
+                    //if(ltrType!="Dubai Custom "){
+                        getC("label_lat").innerHTML = "Letter addressed to";
+                    // }
+                }
+            }
+        }else{  
+            if('{!JSENCODE(rq.xoca__c)}'=='true'){
+                cs['panelmof1'].style.display=''; getC("insyes").checked = true;
+            }else{
+                cs['panelmof1'].style.display='none'; getC("insno").checked = true;
+            }
+        }
+        
+        // if payment is done, dont allow users to update the type
+        if(paidAmount>0){getC("insyes").disabled = true; getC("insno").disabled = true;}
+    }
+    
+    function dispMOF1(){ 
+        var ltrType = cs['xoca__c'].checked;  getC("insyes").checked = cs['xoca__c'].checked;
+        if(ltrType==true){ 
+            getC("panelmof").style.display=''; cs['collDelcmp'].style.display='';
+            cs['embC'].value = cs['xadh__c'].value.replace(';','');
+        }else{ 
+            getC("panelmof").style.display='none'; cs['collDelcmp'].style.display='none';
+            cs['xcnc__c'].value=''; cs['xadh__c'].value='';
+        } 
+    }
+    
+    function findSelection(type) { 
+        if (type == 'insyes') {
+            if (getC("insyes").checked) {
+                getC("insno").checked = false;cs['xoca__c'].checked = true;cs['xoca__c'].onclick();
+            } else {cs['xoca__c'].checked = false; cs['xoca__c'].onclick();}
+        } else if (type == 'insno') {
+            if (getC("insno").checked) {getC("insyes").checked = false;cs['xoca__c'].checked = false;cs['xoca__c'].onclick();}
+        }
+        getC("insyes").checked = cs['xoca__c'].checked;
+    }
+    
+    function chkAttestation() { return false;}
+    
+    function chkcmof(e){
+        if(cs['embC'].value =='xsa'){ cs['xla2__c'].value = 'Arabic';}
+        if (cs['embC'].value!='' && cs['embC'].value!=null){ 
+            cs['xcnc__c'].value =  cs['embC'].options[cs['embC'].selectedIndex].text;
+            cs['xadh__c'].value=cs['embC'].value+';';    
+        }else{ cs['xadh__c'].value='';   cs['xcnc__c'].value='';}
+    }
+    
+    function dformat(dt,id){
+        var d = new Date(dt);//alert(d);
+        var m=d.getMonth()+1;
+        var dd=d.getDate()>9?d.getDate(): '0'+d.getDate();
+        var mm=m>9?m:'0'+m;
+        var yy=d.getFullYear();
+        document.getElementById(id).value=dd+'/'+mm+'/'+yy;
+    }
+    
+    //toDo : update the logic for removing piclist vals
+    function removeMulti(x){
+        var selobj=document.getElementById('availableDocs');
+        var flg = 'false';
+        if('{!brnchincubflag}' == 'false' && '{!fzllcflag}' == 'true'  ){   
+            for (var i = 0; i < selobj.length; i++) { 
+                if (selobj.options[i].value == '0' ) {selobj.remove(i);}
+                if (selobj.options[i].value == '1' ) {selobj.remove(i);}
+                if (selobj.options[i].value == '4' ) {selobj.remove(i);}
+            }
+        }
+        if('{!brnchincubflag}' == 'true' && '{!fzllcflag}' == 'false'){
+            for (var i = 0; i < selobj.length; i++) { 
+                if (selobj.options[i].value == '0' ) {selobj.remove(i);}
+                if (selobj.options[i].value == '1' ) {selobj.remove(i);flg ='true';}
+                if (selobj.options[i].value == '2' ) {selobj.remove(i);flg ='true';}
+                if (selobj.options[i].value == '3' ) {selobj.remove(i);flg ='true';}
+                if (selobj.options[i].value == '5' ) {selobj.remove(i);flg ='true';}
+            }
+        }
+    }
+    
+    function removepdoc(ltr){
+        var selectobject= getC(nld);
+        var ind = null;
+        var ind2=[] ;
+        
+        if('{!brnchincubflag}' == 'false' && '{!fzllcflag}' == 'true'  ){
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'Certificate of Branch Registration') { ind = i; break;}
+            }
+            if(typeof(selectobject.options[ind])!='undefined' && selectobject.options[ind].value == 'Certificate of Branch Registration'  ){
+                selectobject.remove(ind);
+            }
+        }
+        
+        if('{!brnchincubflag}' == 'true' && '{!fzllcflag}' == 'false' &&  selectobject.length!=2 ){
+            var option1 = document.createElement('option');option1.text = option1.value ='Commercial License';selectobject.add(option1,0);
+            var option2 = document.createElement('option');option2.text = option2.value ='Certificate of Branch Registration';selectobject.add(option2,1);
+            
+            if(selectobject.length>2){ for(var i=2; i<selectobject.length; i++){selectobject.remove(i);i--;}}
+        }
+    }
+    
+    
+    function removeletterto(ltr){
+        var selectobject= getC(aif); var ind = null; var ind1 = null;   
+        if('{!incubflag}' == 'true'){
+            for (var i = 0; i < selectobject.length; i++) { 
+                if('{!brnchincubflag}' == 'true'){
+                    if (selectobject.options[i].value == 'Corporate Person FZ-LLC' ) { ind = i;break;}
+                }else {
+                    if (selectobject.options[i].value == 'Branch' ) { ind = i; break;}
+                }
+            }
+        }
+        if(typeof(selectobject.options[ind])!='undefined' && selectobject.options[ind].value == 'Corporate Person FZ-LLC' && '{!brnchincubflag}' == 'true' ){selectobject.remove(ind);}
+        if(typeof(selectobject.options[ind])!='undefined' && selectobject.options[ind].value == 'Branch' && '{!brnchincubflag}' == 'false' ){selectobject.remove(ind);}
+        
+    }
+    
+    function removeVal(ltr){   
+        var breakflag = 'true';var selectobject= getC(lif); var ind = null; var ind1 = null; var locsize ;  
+        var fzllcflag = '{!fzllcflag}'; var brnchincubflag = '{!brnchincubflag}';
+        console.log('fzllcflag: '+fzllcflag+'  brnchincubflag:'+brnchincubflag);
+        if('{!fzllcflag}' == 'true' && '{!brnchincubflag}' == 'false'){ 
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'Certificate of incumbency (Branch)' ) {
+                    selectobject.remove(i);
+                }
+            }
+        }
+        
+        if('{!fzllcflag}' == 'false' && '{!brnchincubflag}' == 'false'){
+            for (var i = 1; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'Certificate of incumbency (Branch)' ) { selectobject.remove(i);}
+                if (selectobject.options[i].value == 'Certificate of incumbency(FZ LLC)' ) { selectobject.remove(i);}
+            }
+        }
+        
+        if('{!fzllcflag}' == 'false' && '{!brnchincubflag}' == 'true'){
+            for (var i = 1; i < selectobject.length; i++) { 
+                console.log('selectobject.options[i].value: '+ selectobject.options[i].value);
+                if (selectobject.options[i].value == 'NOC to DED (Partake as Shareholder)' ) { selectobject.remove(i);}
+                if (selectobject.options[i].value == 'Certificate of incumbency(FZ LLC)' ) { selectobject.remove(i);}
+            }
+        }      
+        
+        if('{!JSENCODE(locList)}'!=null){
+            locsize ='{!JSENCODE(locList.size)}';
+            if(ltr =='Ramadan Permit' && locsize == 1 ) {alrt('Alert','Letter for all location have been generated, Please check your log book.',!1);}
+        }
+        
+        var logflag = '{!JSENCODE(locflag)}'; 
+        if(ltr =='Ramadan Permit' && logflag == 'true' ) {
+            alrt('Alert','Locations are not present for the Account , Please contact AXS Support.',!1);
+            cs['locAdd'].style.display='none'; cs['loclabel'].style.display='none';  getC(cs['xltr__c'].id).value = "";
+        }
+        
+        for (var i = 0; i < selectobject.length; i++) {  if (selectobject.options[i].value == 'Ramadan Permit' ) {  ind = i; break;}}
+        var segf = '{!JSENCODE(segflag)}';
+        if (segf == 'false' && ltr !='Ramadan Permit'  && typeof(selectobject.options[ind])!='undefined' && selectobject.options[ind].value == 'Ramadan Permit' ) { 
+            selectobject.remove(ind); breakflag= false;
+        } 
+        
+        if('{!incubflag}' == 'false'){
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'Certificate of Incumbency') { ind = i; break;}
+            }
+        }
+        if(typeof(selectobject.options[ind])!='undefined' && selectobject.options[ind].value == 'Certificate of Incumbency'){
+            selectobject.remove(ind);
+        }
+    }
+    
+    
+    function showLoc(ltr){
+        console.log(ltr);
+        if(typeof(getC('emrts'))!='undefined'){
+            if(ltr=="NOC to DED (Partake as Shareholder)"){  getC('emrts').style.display='block';}
+            if(ltr!="NOC to DED (Partake as Shareholder)"){ getC('emrts').style.display='none';}
+        }
+        
+        if(typeof(cs['xnld__c'])!='undefined'){
+            if(ltr=="Letter to Dubai Police"){ getC('nold').style.display='block';}
+            if(ltr!="Letter to Dubai Police"){getC('nold').style.display='none';}
+        }
+        
+        if(typeof(cs['locAdd2'])!='undefined'){
+            if( ltr=="Permit for catering service"){ 
+                getC('cateringdetails').style.display='block';
+                cs['locAdd2'].style.display='block';getC('loclabel2').style.display='block';getC('cdoc').style.display='block';cs['xccn__c'].style.display='block';
+                cs['xcpid__c'].style.display='block';getC('cpps').style.display='block'; cs['xcped__c'].style.display='block'; getC('cppe').style.display='block';   
+            }else{
+                getC('cateringdetails').style.display='none';
+                cs['locAdd2'].style.display='none';getC('loclabel2').style.display='none';getC('cdoc').style.display='none';cs['xccn__c'].style.display='none';
+                cs['xcpid__c'].style.display='none';getC('cpps').style.display='none';cs['xcped__c'].style.display='none';getC('cppe').style.display='none';
+            }
+        }
+        
+        if(typeof(cs['locAdd'])!='undefined'){
+            if(ltr=="Ramadan Permit") { cs['locAdd'].style.display='block';cs['loclabel'].style.display='block';cs['termId'].style.display='block'; 
+            }else{cs['locAdd'].style.display='none';cs['loclabel'].style.display='none';cs['termId'].style.display='none';   }
+        }    
+    }
+    
+    function assignloc(ltrloc){cs['locHide'].value=ltrloc;}
+    
+    function shlvp(ltr){
+        if(ltr.includes("Driving license new / renewal") || ltr=="Vehicle sale" || lf=='Vehicle registration new / renewal' || lf=='Vehicle transfer'){
+            $("#vhltype").show();
+            if(ltr!="Vehicle sale"  && (cs['xvcol__c']!=null && cs['xvcol__c'].value=='Light Vehicle')) {$("#ltpl").show();} 
+        }else{
+            $("#ltpl").hide(); $("#vhltype").hide();
+        }
+    } 
+    
+    function ltrToHide(ltr) {
+            if(ltr == "Others"){getC("xltr_Others__cRI").style.display = ''; getC("Ltr2").style.display = '';
+            }else{ getC("xltr_Others__cRI").style.display = 'none'; getC("Ltr2").style.display = 'none';}
+    } 
+    
+    function hRq(nSTA){
+        
+        if(ctp){fldErr('Con__c',null,!0);}       
+        ltrToHide(af);
+        
+        cs['xltr__c']=getC(lif);cs['xla2__c']=getC(aif);cs['xla2d__c']=getC(adif);
+        var brq=!1;
+        
+        if(cs['embC'].value =='xsa'){cs['xla2__c'].value = 'Arabic';}
+        
+        if(!brq){
+            if(getC(sBoat).style.display=='none'){cs['xbtnm__c'].value='';cs['xbdt__c'].value='';cs['xcst__c'].value='';cs['xln__c'].value='';cs['xwdt__c'].value='';}  
+            if(getC(sV).style.display=='none'){/*cs['xvn__c'].value='';*/cs['xvtyp__c'].value='';cs['xvbr__c'].value='';cs['xvch__c'].value='';}    
+            if(getC(sEng).style.display=='none'){/*cs['xeng__c'].value='';*/cs['xengt__c'].value='';cs['xneng__c'].value='';cs['xengp__c'].value='';} 
+            else{if(!blAllEng){cs['xengt__c'].value='';cs['xneng__c'].value='';cs['xengp__c'].value='';}}  
+            if(getC(sTrnsfr).style.display=='none'){cs['xvown__c'].value='';cs['xtr2__c'].value='';}    
+        }
+        return brq;
+    }
+    
+    function ifrm(){
+        displayFields();if({!pgHide}){return;}
+        if('{!JSENCODE(srv.uid__c)}'=='ltp'){
+            cs['xlt__c'].value="Personal";
+        }else if('{!JSENCODE(srv.uid__c)}'=='lts'){
+            cs['xlt__c'].value="Sponsored Student";
+        }else if('{!JSENCODE(srv.uid__c)}'=='ltn'){
+            cs['xlt__c'].value="Non Sponsored Student";
+        }else {
+            cs['xlt__c'].value="Corporate";
+        }
+    }
+    
+    function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+    function uac(){var a=document.getElementById(cif),b=document.getElementById(cnf);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&void 0!=b&&""!=b.value&&""!=b.value&&(window.location.href="{!$Label.urlUA}&cid="+a.value+"&cnm="+b.value)}
+    function pvc2(){window.open("/apex/gcp?id={!rq.Con__c}","gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",false);}
+    function uac2(){window.location.href= "{!$Label.urlUA}&cid={!rq.Con__c}&cnm={!rq.Con__r.Name}";}
+    function hErr(nSTA){return false;}
+    function nCatPermt(){return false;}   
+    
+    function ckLtr(a) {
+        fldWarn("xltr__c", null, {!md.isView} ? !1 : !0);
+        return "Letter to Economic Dept (employee)" == a ? (fldWarn("xltr__c",'Employee needs be cancelled within 4 months of letter issuance, in case of violation sanction will be levied on the company.', {!md.isView} ? !1 : !0), !1) : !0;
+    }
+    
+    function shwEng(blAll){
+        blAllEng=blAll;
+        getC(sEng).style.display='';
+        var dispStyle = blAll?'block':'none';
+        getC('xneng_l').style.display = dispStyle; getC('xengp_l').style.display = dispStyle; getC('xengt_l').style.display = dispStyle;   
+    }
+    
+    function displayFields(){
+        $('#xnt__1').hide();
+        // $('#utc').hide();
+        if(!{!pgHide}){
+            //fldErr('xvn__c',null,!0);
+            fldErr('xvtyp__c',null,!0);fldErr('xvbr__c',null,!0);fldErr('xvch__c',null,!0);
+            fldErr('xbtnm__c',null,!0);fldErr('xbdt__c',null,!0);fldErr('xcst__c',null,!0);fldErr('xln__c',null,!0);fldErr('xwdt__c',null,!0);
+            fldErr('xengt__c',null,!0);fldErr('xneng__c',null,!0);fldErr('xengp__c',null,!0);
+            fldErr('xvown__c',null,!0);fldErr('xtr2__c',null,!0);
+        }
+        blAllEng=false;getC(sBoat).style.display='none';getC(sV).style.display='none';getC(sEng).style.display='none';getC(sTrnsfr).style.display='none';
+        if(lf=='Boat Registration'||lf=='Boat registration personal' || lf=='Selling or Purchasing Boat'){
+            getC(sBoat).style.display='';
+            shwEng(true);       
+        }else if(lf=='RTA Vehicle Sale Boat'){
+            getC(sBoat).style.display='';
+            shwEng(true);
+            getC(sTrnsfr).style.display='';
+        }else if(lf=='Vehicle registration new / renewal' || lf=='RTA Commercial Vehicle New'||lf=='RTA Commercial Vehicle Renewal'||lf=='RTA Heavy Vehicle New / Renewal'|| lf=='RTA Heavy Vehicle New'||lf=='RTA Heavy Vehicle Renewal' || lf=='RTA Light Vehicle New / Renewal' ||lf=='RTA Vehicle Export'){
+            getC(sV).style.display='';shwEng(false);
+        }else if(lf=='Vehicle transfer'|| lf=='Vehicle sale'){
+            getC(sV).style.display='';shwEng(false);getC(sTrnsfr).style.display='';
+        }   
+        else if(lf=='Dubai Custom NOC'){
+            $('#xla2_l').hide();
+            $('#xnt__1').show();
+            // $('#utc').show();
+        }
+        if(lf=="Temporary work permit NOC"){
+            $("#prdbtn").text("PROCEED");
+        }else if(lf=="Permit for catering service"){
+            $("#prdbtn").text("PROCEED TO UPLOAD DOCUMENTS");
+        }else if(lf=='Dubai Custom NOC'){
+        $("#prdbtn").text("NEXT").show();
+        }else{
+            $("#prdbtn").text("PROCEED TO PAY").show();
+        }
+        
+        shlvp(lf); ltrToHide(la2); 
+    }
+    
+    // varibles for letterAddressedTo_2 field
+    var label2 = {"Authorities":"an authority","Banks":"a bank","Consulates":"a consulate","Government Departments":"the Government Department","Ministries":"a ministry","Others":"a language","Telecom":"a telecom","Embassies":"an embassy","Airports and Security Offices":"an airport/security office","Free Zone":"a free zone","Port":"a port","Emirate":"an emirate","RTA":"an emirate","Emirates Group":"the Emirates Group","Ministry of Labour":"the Emirate"};
+    var showXla2d = ['Employment letter', 'Entry pass new / renewal', 'Letter to Economic Dept (employee)', 'Letter to Economic Dept (licensee/shareholder)', 'Temporary work permit NOC', 'No Objection Temporary Work Permit Letter', 'Salary certificate', 'Visa multi entry', 'Visa single entry','Bonafide student certificate'];
+    
+    function displayXla2d(ltr){
+        if(showXla2d.includes(ltr) && af!=""){ 
+            getC("xla2d_l").style.display='block'; $('#label_ad2').text("Select " + label2[af]); 
+        }else{
+            getC("xla2d_l").style.display='none';
+        }
+        
+        var xla2  = ["Active employee list","Letter to Dubai Police","Tax exemption letter","NOC to DED (Partake as Shareholder)","Letter to Dubai Customs","Dubai Custom NOC"];
+        if(xla2.includes(ltr) || ltr==""){ getC("xla2_l").style.display='none';}else{getC("xla2_l").style.display='block';}
+        assignVals(ltr);
+    }
+    
+    function hideXla2d(ltr){       
+        if(getC(cs['xltr__c'].id).value=="Bonafide student certificate"){
+            var hideXla2d = ['General Directorate of Residence and Foreigners Affairs'];
+            if(hideXla2d.includes(ltr)){ 
+                getC("xla2d_l").style.display='none';
+            }else if(ltr!=""){
+                getC("xla2d_l").style.display='block';
+            }
+        }
+    }
+    
+    function dftA2(){cs['xla2__c']=getC(aif);if(2==cs['xla2__c'].options.length){cs['xla2__c'].value=cs['xla2__c'].options[1].value;af=cs['xla2__c'].value;}}
+    function dftA2d(){cs['xla2d__c']=getC(adif);if(2==cs['xla2d__c'].options.length){cs['xla2d__c'].value=cs['xla2d__c'].options[1].value;adf=cs['xla2d__c'].value;}}
+    
+    function letterclick(){
+        var rqId = '{!JSENCODE(rq.id)}';
+        window.open("/apex/displayLetter?id="+rqId, "_blank", "directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=950, height=600,top=50, left=200");
+    }  
+    
+    function valDates(){ 
+        if('{!JSENCODE(srv.uid__c)}'=='ltc'){
+            cs['xcpid__c'].value = getC('xcpid').value.replace(/ /g, "");; 
+            cs['xcped__c'].value = getC('xcped').value.replace(/ /g, "");;        
+            removeValError(getC('xcpid')); removeValError(getC('xcped'));
+            
+            var stDate = cs['xcpid__c'].value;var splitDt = stDate.split("/"); if(splitDt!="" && splitDt.length==3){ stDate = splitDt[2].trim()+'-'+splitDt[1].trim()+'-'+splitDt[0].trim(); console.log(stDate);}
+            var date = new Date();var today1 = date.getTime(); stDate = new Date(stDate).getTime(); 
+            
+            if(stDate < today1){ addValError(getC('xcpid'),'Start date should be future date!'); return true;}
+            
+            var expDate = cs['xcped__c'].value;var splitDt2 = expDate.split("/"); if(splitDt2!="" && splitDt2.length==3){ expDate = splitDt2[2].trim()+'-'+splitDt2[1].trim()+'-'+splitDt2[0].trim(); console.log(expDate);}
+            expDate = new Date(expDate).getTime(); 
+            
+            if(expDate < stDate){addValError(getC('xcped'),'End date should be greater than start date!'); return true;}
+            if(expDate == stDate){ addValError(getC('xcped'),'End date cannot be same as the start date!'); return true;}
+            
+            var stDate1 = cs['xcpid__c'].value;var splitDt = stDate1.split("/"); if(splitDt!="" && splitDt.length==3){ stDate1 = splitDt[2].trim()+'-'+splitDt[1].trim()+'-'+splitDt[0].trim(); }
+            stDate1 =  new Date(stDate1); stDate1.setFullYear(stDate1.getFullYear() + 1); 
+            if(expDate > stDate1){ addValError(getC('xcped'),"End date should to be less than one year from start date!"); return true;} 
+        }
+        return false;
+    }
+    
+    function checkFields(){
+        var brk = vflds();        
+        if(lf=='Dubai Custom NOC'){
+            cs['ias__c'].value='dcn;';
+            if(cs['xnt__c']&&(!cs['xnt__c'].value || cs['xnt__c'].value=='--None--')){
+                return;
+            }
+            else{
+                $('#dcNOC').modal("show");
+                return;
+            }
+        }
+        //if(!brk){brk = !vfrm();}
+        
+        if(!brk){showTempLoader(event.target);toggleGLoader(); afso(); }
+    }
+    function dnRules(elem){
+        if(lf=='Dubai Custom NOC'){
+            dnVal();
+            showTempLoader_input(elem);
+        }
+    }
+    function dnValComp(hidePage){
+        if(hidePage){
+            $('#prdbtn').hide();
+        }
+    }
+   function closeModal(){
+       $('#dcNOC').modal("hide");
+   }
+    //form and set the aggregated value of "letter addressed to" to rtacn__c, to display on the detailform 
+    function assignVals(ltr){
+        if(af!=undefined && af!='' && (showXla2d.includes(ltr) || af=="Ministry of Labour") && af!="Others" ){
+            var ltraddto = (af=="Consulates")?"Consulate of " : (af=="Embassies") ? "Embassy of " : (af=="Emirates Group") ? "Emirates Group- " : (af=="Ministry of Labour") ? "Ministry of Human Resources and Emiratisation (MOHRE)- ":"";
+            if(adf!=undefined && adf!=""){ltraddto += adf;}
+            cs['rtacn__c'].value = ltraddto;
+        }else if(af!=undefined && af!='' && af!="Others"){ 
+            cs['rtacn__c'].value = af;
+        }else if(af=="Others"){
+            cs['rtacn__c'].value = aO +'-'+adf;
+        }
+        
+        if(cs['rtacn__c'].value ==""){cs['rtacn__c'].value =af;}
+    }
+    
+    function removeLtr2Val(){
+        adf=''; cs['xvcol__c'].value=""; $("#vehicle").val("").trigger('change'); 
+        if(cs['xla2d__c']!=undefined && cs['xla2d__c']!=null){cs['xla2d__c'].value ="" ; $(cs['xla2d__c']).trigger("change");}
+    }
+    
+    function setLAT_2(ltr){
+        if(ltr!="" && af!=undefined && af!=""){cs['xla2__c'].onchange();}
+    }
+    
+    function changeColor(){
+        if($("#cat_tnc").prop("checked")){
+            $('#lab_tnc').css('color','#000000')
+        }else{
+            $('#lab_tnc').css('color','#E62D38').fadeOut().fadeIn().fadeOut().fadeIn();
+        }
+    }
+    
+    //validateData
+    function vflds(){
+        var brk = false;var elem = '';
+        $('.requiredFld').each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){         
+                if(v==''||v==null||v==undefined||v.length<1){
+                    brk=true; addValError(this,'This field is required!'); 
+                    //test12 += $(this).parent().parent().find('label').text() + ' ; ';
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);  }
+                
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        
+        if('{!JSENCODE(srv.uid__c)}'=='lts' || '{!JSENCODE(srv.uid__c)}'=='ltp'){
+            $('.lookup').each(function(){
+                let v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    brk=true; addValError($(this).parent(),'This field is required!');
+                    if(elem=='') elem = $(this).parent();
+                }else{
+                    removeValError($(this).parent());
+                }
+            });
+        }
+        
+        if(lf=="Permit for catering service" && !$("#cat_tnc").prop("checked")){
+            $('#lab_tnc').css('color','#E62D38').fadeOut().fadeIn().fadeOut().fadeIn();
+            brk=true;
+        }
+        return brk;
+    }
+    
+    function removeValError(thiselem){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+    }
+    
+    function addValError(thiselem,message){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+        var errElem = '<div class="frmErrMsg">'+message+'</div>';
+        if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+            elem.parent().parent().append(errElem);
+        }else{
+            elem.parent().append(errElem);
+        }
+    }
+    
+    function showTempLoader(e){
+        var loader = '<span class="loader_temp">';
+        loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+        loader += '</span>';
+        $(e).find('.loader_temp').remove();
+        $(e).append(loader);
+        $('*').addClass('loadingProgress');
+    }
+    
+    function removeTempLoader(){
+        $('*').removeClass('loadingProgress');
+        $('.loader_temp').remove();
+    }    
+    
+    function updateEngNum(n){
+        if(n<1){
+            getC('xneng').value = 1;
+            return false;
+        }
+        removeValError(getC('xneng'));
+        cs['xneng__c'].value = n;
+    }
+    
+    function isUAEMobNum(elem){
+        var mob = $(elem).val();
+        if(mob==null||mob==undefined||mob=='')
+            return;
+        var regex = /^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+        var r = (regex.test(mob))?true:'invalid';
+        if(r == 'invalid'){
+            $(elem).parent().find('.frmErrMsg').remove();
+            $(elem).parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+            $(elem).parent().parent().append(errElem);
+            return false;
+        }else{
+            removeValError(elem);     
+        }
+    }
+    
+    function docsOnchange(){
+        var docs = $('#availableDocs').val().join(';');
+        cs['xnld__c'].value=docs;
+        console.log('docs >>'+ cs['xnld__c'].value);
+    }
+    
+    function boSave(){
+        if(isEditBO){
+            boSave1();
+        }else{
+            checkFields();
+        }
+    }
+    </script>
+    
+   
+    <apex:form id="frm1" styleClass="pbform">
+        <body class="base">
+            <div id="main">
+                <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+                
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript:toggle_inputs();" oncomplete="toggleGLoader();removeTempLoader(); javascript:lf=cs['xltr__c'].value;ifrm();"/>
+                <apex:actionFunction name="dnVal" action="{!dnValidations}" status="theStatus" rerender="msg" oncomplete="removeTempLoader();dnValComp({!pgHide});"/>
+
+                <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="msg" oncomplete="toggleGLoader();removeTempLoader(); javascript:lf=cs['xltr__c'].value;ifrm();$('#prdbtn').hide();">
+                    <apex:param name="nextPage"  value="grqpy"/>
+                </apex:actionFunction>
+                <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:lf=cs['xltr__c'].value;ifrm();"/>
+                <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/><apex:actionFunction name="afcrbo" action="{!CancelRBO}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+                
+                <apex:actionFunction name="boSave1" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(rq.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" isBo="{!AND(NOT(ispu),NOT(isgu))}"/>
+                </apex:outputPanel>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(rq.Name)}')"/>
+
+                <apex:actionFunction name="assignAccount" action="{!assignAccount}" status="theStatus" rerender="deppanel" oncomplete="toggleGLoader();chkAccount('{!JSENCODE(rq.Acc__c)}');" />
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(rq.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!rq.Name} </span>
+                                <!--<div class="user-title">{!rq.STA__c}</div>-->
+                            </span>
+                        </apex:outputPanel>
+                        <c:drftCnclBtns req="{!rq}" shwCncl="true" shwDraft="false"/>
+                    </div>
+                </div>
+                
+                <div id="p">      
+                    <div class="container">
+                        <div class="base-layout">
+                            <div class="base-side">
+                                <div class="base-side-content">
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                </div>
+                            </div>
+                            <div class="base-main">
+                                <div class="base-main-content form-style"> <!--  -->
+                                    <!-- <c:grqbrdcrumbs req="{!rq}" applicant="active" addon="" payment="" rendered="({!IF(srv.uid__c=='ltp', true, false)}" /> -->
+                                    
+                                    <apex:outputPanel id="pbMain">
+                                        <apex:variable var="fnxPg" value="{!IF(OR(rq.xltr__c='Letter to Economic Dept (employee)',rq.xltr__c='Letter to Economic Dept (licensee/shareholder)',
+                                                                          rq.xltr__c='Immigration Computer Card (Hotel) Renewal',rq.xltr__c='Immigration PRO Card New',
+                                                                          rq.xltr__c='Immigration PRO Card Renewal',rq.xltr__c='Boat Registration',
+                                                                          rq.xltr__c='Boat registration personal', rq.xltr__c='RTA Heavy Vehicle New',
+                                                                          rq.xltr__c='RTA Heavy Vehicle Renewal',rq.xltr__c='Employment certificate',
+                                                                          rq.xltr__c='Immigration PRO Card New',rq.xltr__c='Immigration PRO Card Renewal',
+                                                                          rq.xltr__c='PRO Card for Personnel Services New',rq.xltr__c='PRO Card for Personnel Services Renewal',
+                                                                          rq.xltr__c='RTA Heavy Vehicle New / Renewal',
+                                                                          rq.xltr__c='No Objection Temporary Work Permit Letter', 
+                                                                          rq.xltr__c='Temporary work permit NOC',
+                                                                          rq.xltr__c='Employment letter',
+                                                                          rq.xla2__c=='Others'),'grqei','grqpy')}" />
+                                        
+                                        <apex:pageMessages id="msg"  escape="false"/>
+                                        <script> 
+                                            cs['msg']=getC('{!$Component.msg}')
+                                        </script>
+                                        <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}" id="opanel">  
+                                            
+                                            <h3 class="base-main-title">Request for {!IF(srv.uid__c='ltp','Employee',IF(srv.uid__c='lts','Student','Corporate'))} Letter</h3>
+                                            <!--<div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <apex:outputPanel rendered="{!AND(NOT(ispu),ISNULL(rq.Acc__c))}">
+                                                        <label>Account </label>
+                                                        <apex:inputField styleClass="form-control" id="acc__c" value="{!rq.Acc__c}" required="true"/>
+                                                        <script type="text/javascript">cs['acc__c']=getC('{!$Component.acc__c}');
+                                                        </script>                    
+                                                    </apex:outputPanel> 
+                                                </div>
+                                            </div>-->
+                                            
+                                            <c:accountcmp req="{!rq}" rendered="{!AND(NOT(ispu),NOT(isgu))}" />
+                                            
+                                            <div id="ltrdetsection">
+                                                <div class="form-group mb-3 mt-4 pt-3" id="conlookuprow">
+                                                    <div class="row">
+                                                        <div class="col-lg-12">
+                                                            <div class="form-group">
+                                                                <apex:outputPanel rendered="{!IF(OR(srv.uid__c=='ltp',srv.uid__c=='lts'),true,false)}">
+                                                                    <c:gconlookup id="conlookup" Request="{!rq}" role="{!IF(srv.uid__c='ltp','Employee','Student')}" accId="{!acc.id}" sta="Active" heading="{!IF(srv.uid__c='ltp','Select the employee you want to request the letter for','Select the student to apply for the letter')}" /> 
+                                                                </apex:outputPanel>  
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                
+                                                <div>
+                                                    <div class="row row-lg">
+                                                        <div class="col-lg-12">
+                                                            <div class="form-group">
+                                                                <label>Select the type of letter you want to request</label>
+                                                                <apex:inputField id="xlt__c" value="{!rq.xlt__c}"  styleClass="mainDD" onchange="createDepDds();" style="display:none"/>
+                                                                <apex:inputField styleClass="requiredFld depDD form-control input-select2-flat" value="{!rq.xltr__c}" onchange="lf=this.value;af='';removeLtr2Val();displayFields();dnRules(this);ckLtr(this.value);shlvp(this.value); showLoc(this.value);dispMOF();displayXla2d(this.value);setLAT_2(this.value); removeVal(this.value);removeMulti('{!$Component.xnld__c}');createDepDds();" id="xltr__c" />
+                                                                <script type="text/javascript">
+                                                                lf='{!JSENCODE(rq.xltr__c)}';lif='{!$Component.xltr__c}';cs['xltr__c']=getC('{!$Component.xltr__c}');cs['xlt__c']=getC('{!$Component.xlt__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div  class="row">
+                                                    <div id="xla2_l" class="col-lg-6" >
+                                                        <div class="form-group">
+                                                            <label id="label_lat">Letter addressed to</label>
+                                                            <apex:inputField id="xla2__c" styleClass="form-control depDD input-select2-flat requiredFld" value="{!rq.xla2__c}" onclick="removeletterto(this.value);" onchange="af=this.value;removeLtr2Val();dftA2();ltrToHide(this.value);displayXla2d(getC(cs['xltr__c'].id).value);hideXla2d(this.value);createDepDds();"/><br/>
+                                                        </div>
+                                                    </div>
+                                                    <div id="xnt__1" class="col-lg-6" >
+                                                        <div class="form-group">
+                                                            <label id="label_lat">NOC Type</label>
+                                                            <apex:inputField id="xnt__c"  styleClass="form-control depDD input-select2-flat requiredFld" value="{!rq.xnt__c}"  /><br/>
+                                                            <script>
+                                                                cs['xnt__c']=getC('{!$Component.xnt__c}');
+                                                            if("{!rq.xnt__c}"){
+                                                                cs['xnt__c'].disabled=true;
+                                                            }
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <div id="xla2d_l" class="col-lg-6" style="display:none;" >
+                                                        <div class="form-group">
+                                                            <label id="label_ad2"> Letter addressed to </label>
+                                                            <apex:inputField id="xla2d__c" styleClass="requiredFld depDD form-control input-select2-flat" style="margin-top: 6px !important;" value="{!rq.xla2d__c}" onchange="adf=this.value;dftA2d();assignVals(getC(cs['xltr__c'].id).value);"/>
+                                                            <script type="text/javascript">
+                                                            af='{!JSENCODE(rq.xla2__c)}';adf='{!JSENCODE(rq.xla2d__c)}';aif='{!$Component.xla2__c}';adif='{!$Component.xla2d__c}'; cs['xlt1']=getC('{!$Component.xlt1}');
+                                                            cs['xla2__c2']=getC('{!$Component.xla2__c}'); 
+                                                            cs['xla2__c']=getC('{!$Component.xla2__c}'); 
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- xvcol__c -->
+                                                    <div id="vhltype"  class="col-lg-6"  style="display:none;">
+                                                        <div class="form-group">
+                                                            <label>Select vehicle type</label>
+                                                            <select id="vehicle" class="requiredFld vhcl-placeholder form-control input-select2-flat" onchange="setDrvLic(this.value);"> 
+                                                                <option></option>
+                                                                <option id="Bike" value="Bike" data-value="">Bike</option>
+                                                                <option id="Bus" value="Bus" data-value="">Bus</option>
+                                                                <option id="Light" value="Light vehicle" data-value=""> Light vehicle</option>
+                                                                <option id="Truck" value="Truck" data-value="">Truck</option>
+                                                            </select> 
+                                                            
+                                                        </div>  
+                                                    </div>
+                                                    
+                                                    <div id="ltpl"  class="col-lg-6"  style="display:none;">
+                                                        <div class="form-group">
+                                                            <label>License type</label>
+                                                            <apex:inputField styleClass="form-control depDD requiredFld" id="xltp__c" value="{!rq.xltp__c}" />
+                                                            <script type="text/javascript">cs['xltp__c']=getC('{!$Component.xltp__c}');
+                                                            </script>    
+                                                        </div>  
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row" >
+                                                    <div class="col-lg-6" id="emrts" style="display:none;" >
+                                                        <label>Emirate</label>
+                                                        <apex:outputPanel layout="none" > 
+                                                            <apex:inputField styleClass="form-control requiredFld  input-select2-flat" id="xcemrt__c" value="{!rq.xcemrt__c}" onclick="removepdoc(this.value)" />
+                                                            <script type="text/javascript">
+                                                            cs['xcemrt__c']=getC('{!$Component.xcemrt__c}');
+                                                            </script>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row" >
+                                                    <div class="col-lg-6" id="nold" style="display:none;" >
+                                                        <label>Select the lost document(s) from the list (select multiple) </label>
+                                                        
+                                                        <select id="availableDocs" class="form-control input-select2-tags dum requiredFld" multiple="multiple" 
+                                                                onChange="docsOnchange();">
+                                                            <apex:repeat value="{!availableDocs}" var="doc">
+                                                                <apex:outputPanel rendered="{!IF(CONTAINS(rq.xnld__c,doc), true, false)}" >
+                                                                    <option value="{!doc}" selected="true">{!doc}</option>
+                                                                </apex:outputPanel>
+                                                                <apex:outputPanel rendered="{!!IF(CONTAINS(rq.xnld__c,doc), true, false)}">
+                                                                    <option value="{!doc}">{!doc}</option>
+                                                                </apex:outputPanel>
+                                                            </apex:repeat>
+                                                        </select>
+                                                        
+                                                        <apex:inputHidden id="xnld__c" value="{!rq.xnld__c}"/>
+                                                        <script type="text/javascript">
+                                                        cs['xnld__c']=document.getElementById('{!$Component.xnld__c}');
+                                                        cs['ndoc']=getC('ndoc'); nld='availableDocs'; //tod=nld+'_unselected';
+                                                        //tod = 'availableDocs';
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                                
+                                                <apex:outputpanel id="panelmof1" >
+                                                    <hr class="my-1"/> 
+                                                    <h4 class="mt-4"> Document Attestation Service</h4>
+                                                    <div class="form-group">
+                                                        <apex:outputpanel id="msgMof">
+                                                            For your convenience, we have partnered with VFS Global for attestation services (Ministry of Foreign Affairs and Diplomatic Missions) with special rates and priority services for axs customers. <br/>
+                                                        </apex:outputpanel>
+                                                        <apex:outputPanel id="pdgprices">
+                                                            <a href="{!$Label.VFS_AXS_PriceList}" title="" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;" style="color:#3a87d0;">
+                                                                View attestation services price list   
+                                                            </a>
+                                                        </apex:outputPanel>
+                                                    </div>                                                
+                                                    <apex:inputField style="display:none" styleClass="form-control" id="xoca__c" value="{!rq.xoca__c}" onclick="dispMOF1();" />
+                                                    <script type="text/javascript">
+                                                    cs['xoca__c'] = getC('{!$Component.xoca__c}');
+                                                    </script>
+                                                    
+                                                    <div class="col-12">
+                                                        <div class="mb-2">
+                                                            <label class="custom-checkbox custom-checkbox-sm">
+                                                                <input type="checkbox" id="insyes" name="insurance" value="1" onclick="findSelection('insyes');"/>
+                                                                <span>
+                                                                    I would like to get the certificate attested (additional fees applicable)
+                                                                </span>
+                                                            </label>
+                                                            <label style="display:none;" class="custom-checkbox custom-checkbox-sm">
+                                                                <input type="checkbox" id="insno" name="insurance" value="2" onclick="findSelection('insno');"/>
+                                                                <span>
+                                                                    I don't want to apply for VFS attestation services.
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div id="panelmof">
+                                                        <div class="col-lg-8">
+                                                            <div class="form-group">                                            
+                                                                <label>Attested by Embassy of:</label>  
+                                                                <apex:outputPanel id="emb2"> <!-- NOT(rq.ap__c>0)-->
+                                                                    <apex:selectList styleClass="form-control requiredFld input-select2-flat" id="embC" value="{!selectedEmb}" multiselect="false" size="1" onchange="chkcmof('xcnc__c');" >
+                                                                        <apex:selectOptions value="{!countriesOptions}"/>
+                                                                    </apex:selectList>
+                                                                    <div class="input-info">
+                                                                        <i class="fa fa-exclamation-circle text-info"></i>&nbsp;
+                                                                        This includes attestation by Ministry of Foreign Affairs  
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                                <script type="text/javascript">
+                                                                cs['embC']=getC('{!$Component.embC}');
+                                                                cs['panelmof1']=getC('{!$Component.panelmof1}');
+                                                                cs['panelmof1'].style.display='none';
+                                                                </script>     
+                                                            </div>
+                                                        </div>
+                                                        <hr class="my-2"/>
+                                                        <label>Document will be delivered to your registered company office</label>
+                                                        <c:collectionanddeliveryinfo req="{!rq}" id="collDelcmp" cmpTitle="Delivery Information"/> 
+                                                        
+                                                        <script type="text/javascript">
+                                                        cs['collDelcmp']=getC('{!$Component.collDelcmp}');
+                                                        </script>  
+                                                    </div>
+                                                </apex:outputpanel>
+                                                
+                                                <apex:outputPanel id="sBoat">
+                                                    <hr class="my-1"/>
+                                                    
+                                                    <h3 class="base-main-title">Boat Info</h3>
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">
+                                                                <label>Boat Name </label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xbtnm__c" value="{!rq.xbtnm__c}" />
+                                                                <script type="text/javascript">cs['xbtnm__c']=getC('{!$Component.xbtnm__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">
+                                                                <label>Body Type</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xbdt__c" value="{!rq.xbdt__c}" />
+                                                                <script type="text/javascript">cs['xbdt__c']=getC('{!$Component.xbdt__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">
+                                                                <label>Coast Guard</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xcst__c" value="{!rq.xcst__c}" />
+                                                                <script type="text/javascript">cs['xcst__c']=getC('{!$Component.xcst__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6 col-lg-3">
+                                                            <div class="form-group">
+                                                                <label>Length</label>
+                                                                <apex:inputField styleClass="form-control numOnly requiredFld" id="xln__c" value="{!rq.xln__c}" />
+                                                                <script type="text/javascript">cs['xln__c']=getC('{!$Component.xln__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6 col-lg-3">
+                                                            <div class="form-group">
+                                                                <label>Width</label>
+                                                                <apex:inputField styleClass="form-control numOnly requiredFld" id="xwdt__c" value="{!rq.xwdt__c}" />
+                                                                <script type="text/javascript">cs['xwdt__c']=getC('{!$Component.xwdt__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div> 
+                                                    </div>
+                                                </apex:outputPanel>
+                                                
+                                                <apex:outputPanel id="locDetails"> </apex:outputPanel>
+                                                <script type="text/javascript">cs['locDetails']=getC('{!$Component.locDetails}');
+                                                </script>
+                                                
+                                                <apex:outputPanel id="sV">
+                                                    <hr class="my-1"/>
+                                                    <h4 class="mt-4"> Vehicle Information </h4>
+                                                    <div class="row">
+                                                        <!--<div class="col-sm-6">
+<div class="form-group">
+<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xvn__c.label}" />
+<apex:inputField styleClass="form-control requiredFld" id="xvn__c" value="{!rq.xvn__c}" />
+<script type="text/javascript">cs['xvn__c']=getC('{!$Component.xvn__c}');
+</script>
+</div>
+</div>-->
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">
+                                                                <!--<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xvbr__c.label}" />-->
+                                                                <label>Brand of the vehicle</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xvbr__c" value="{!rq.xvbr__c}" />
+                                                                <script type="text/javascript">cs['xvbr__c']=getC('{!$Component.xvbr__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">        
+                                                                <!--<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xvtyp__c.label}" />-->
+                                                                <label>Model</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xvtyp__c" value="{!rq.xvtyp__c}" />
+                                                                <script type="text/javascript">cs['xvtyp__c']=getC('{!$Component.xvtyp__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">
+                                                                <!--<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xvch__c.label}" />-->
+                                                                <label>Chassis number</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xvch__c" value="{!rq.xvch__c}" />
+                                                                <script type="text/javascript">cs['xvch__c']=getC('{!$Component.xvch__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                
+                                                
+                                                <apex:outputPanel id="sEng">
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <div id="xengt_l" class="form-group">
+                                                                <label>Engine Type</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xengt__c" value="{!rq.xengt__c}" />
+                                                                <script type="text/javascript">cs['xengt__c']=getC('{!$Component.xengt__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6 col-lg-3">
+                                                            <div id="xengp_l" class="form-group">
+                                                                <label>Engine Power</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xengp__c" value="{!rq.xengp__c}" />
+                                                                <script type="text/javascript">cs['xengp__c']=getC('{!$Component.xengp__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6 col-lg-3">
+                                                            <div id="xneng_l"  class="form-group">
+                                                                <label>Number of Engines</label>
+                                                                <div class="input-number">
+                                                                    <!--<apex:inputField styleClass="form-control numOnly requiredFld" id="xneng__c" value="{!rq.xneng__c}" />-->
+                                                                    <input type="number" id="xneng" class="form-control requiredFld" value="2" onchange="updateEngNum(this.value);"/>
+                                                                    <div class="input-number-nav">
+                                                                        <button type="button" class="input-number-up"><i class="fa fa-angle-up"></i></button>
+                                                                        <button type="button" class="input-number-down"><i class="fa fa-angle-down"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                                <script type="text/javascript">
+                                                                
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                
+                                                <apex:outputPanel id="sTrnsfr">
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">
+                                                                <!--<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xvown__c.label}" />-->
+                                                                <label>Current vehicle owner</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xvown__c" value="{!rq.xvown__c}" />
+                                                                <script type="text/javascript">cs['xvown__c']=getC('{!$Component.xvown__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">
+                                                                <!--<apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xtr2__c.label}" />-->
+                                                                <label>New vehicle owner (transfer to)</label>
+                                                                <apex:inputField styleClass="form-control requiredFld" id="xtr2__c" value="{!rq.xtr2__c}" />
+                                                                <script type="text/javascript">cs['xtr2__c']=getC('{!$Component.xtr2__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <apex:inputHidden value="{!rq.xloc__c}" id="locHide"/>
+                                                    <script type="text/javascript">cs['locHide']=getC('{!$Component.locHide}');
+                                                    </script>
+                                                </apex:outputPanel>
+                                                
+                                                <div id="rmdp" style="display:none;">  <!-- ## ToDo : check for corporate letters --> 
+                                                    <apex:outputLabel value="Locations" id="loclabel"/> 
+                                                    <apex:selectList size="1" id="locAdd"  value="{!selectedLoc}"  onchange="assignloc(this.value)">
+                                                        <apex:selectOptions value="{!locList}"/>
+                                                    </apex:selectList> 
+                                                    <script type="text/javascript">
+                                                    cs['locAdd']=getC('{!$Component.locAdd}'); cs['loclabel']=getC('{!$Component.loclabel}');
+                                                    </script>
+                                                    
+                                                    <apex:outputPanel id="tnc">
+                                                        <apex:outputPanel id="termId">
+                                                            <apex:inputCheckbox id="chktnc" styleClass="tnc" label="" /> 
+                                                            I have read and agreed to the Ramadan Permit                
+                                                            <a href="/resource/RamadanPermitTerms"  onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;" title="Terms and Conditions" > Guidelines .</a> 
+                                                        </apex:outputPanel>
+                                                        <script type="text/javascript">cs['termId']=getC('{!$Component.termId}'); 
+                                                        </script>
+                                                    </apex:outputPanel>
+                                                </div>
+                                                
+                                                <!--Catering Permit -->
+                                                <div id="cateringdetails" style="display:none;">
+                                                    <div>
+                                                        <div id="loclabel2" class="row row-lg">
+                                                            <div class="col-lg-12">
+                                                                <div class="form-group">
+                                                                    <label> Location</label>
+                                                                    <apex:selectList styleClass="requiredFld form-control loc-placeholder input-select2-flat" size="1" id="locAdd2"  value="{!selectedLoc2}"  onchange="assignloc(this.value)">
+                                                                        <apex:selectOption ></apex:selectOption>
+                                                                        <apex:selectOptions value="{!locList2}"/>
+                                                                    </apex:selectList> 
+                                                                    <script type="text/javascript">
+                                                                    cs['locAdd2']=getC('{!$Component.locAdd2}');
+                                                                    </script>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-sm-12">
+                                                            <div id="cdoc" class="form-group">
+                                                                <label> Name of the catering company</label>
+                                                                <apex:inputField id="xccn__c" styleClass="form-control requiredFld" value="{!rq.xccn__c}" />
+                                                                <script type="text/javascript">
+                                                                cs['xccn__c']=getC('{!$Component.xccn__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-sm-12">
+                                                            <div id="cdoc" class="form-group">
+                                                                <label>Dubai Municipality permit number</label>
+                                                                <apex:inputField id="xdmpn__c" styleClass="form-control requiredFld" value="{!rq.xdmpn__c}" />
+                                                                <script type="text/javascript">
+                                                                cs['xdmpn__c']=getC('{!$Component.xdmpn__c}');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <div id="cpps" class="form-group">
+                                                                <label> Permission from</label>
+                                                                <div class="input-datepicker-group input-group">
+                                                                    <apex:inputHidden id="xcpid__c" value="{!rq.xcpid__c}" />
+                                                                    <input type="text" class="requiredFld form-control input-datepicker left-radius" id="xcpid" data-toggle="datetimepicker" data-target="#xcpid" value="{!rq.xcpid__c}" onchange="valDates();" />
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcpid">
+                                                                            <i class="icon-date"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <script type="text/javascript">
+                                                                cs['xcpid__c']=getC('{!$Component.xcpid__c}'); dformat('{!JSENCODE(rq.xcpid__c)}','xcpid');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="col-sm-6">
+                                                            <div id="cppe" class="form-group">
+                                                                <label> Permission until </label>
+                                                                <div class="input-datepicker-group input-group">
+                                                                    <apex:inputHidden id="xcped__c" value="{!rq.xcped__c}" />
+                                                                    <input type="text" class="requiredFld form-control input-datepicker left-radius" id="xcped" data-toggle="datetimepicker" data-target="#xcped" value="{!rq.xcped__c}" onchange="valDates();" />
+                                                                    <div class="input-group-append">
+                                                                        <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xcped">
+                                                                            <i class="icon-date"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <script type="text/javascript">
+                                                                cs['xcped__c']=getC('{!$Component.xcped__c}');  dformat('{!JSENCODE(rq.xcped__c)}','xcped');
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="custom-checkbox custom-checkbox-sm">
+                                                            <input id="cat_tnc" type="checkbox" onchange="changeColor();" />
+                                                            <span id="lab_tnc">I agree to <a href="/servlet/servlet.FileDownload?file=0150I000007Owjf" target="_blank" class="text-underline font-weight-bold text-dark">Guidelines and
+                                                                Terms &amp; Conditions</a></span>
+                                                        </label>
+                                                        <!--<div class="frmErrMsg">Please read and agree to Guidelines and Terms &amp; Conditions in order to process with your application!</div>-->
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <div id="Ltr2" class="form-group">
+                                                            <label>{!$ObjectType.g_Req__c.Fields.xltr_Others__c.label} </label>
+                                                            <div id="xltr_Others__cRI">
+                                                                <apex:inputField id="xltr_Others__c" styleClass="form-control requiredFld" value="{!rq.xltr_Others__c}" onchange="aO=this.value;assignVals(getC(cs['xltr__c'].id).value);"/><br/> <!--ltrToHide(this.value);-->
+                                                                <script type="text/javascript">
+                                                                cs['xltr_Others__c']='{!$Component.xltr_Others__c}';
+                                                                </script>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                
+                                                <!-- <apex:outputPanel rendered="{!rq.AOP__c>0}"> -->
+                                                <!--<div class="mt-4 base-main-footer">
+<div class="base-nav">
+<a id="prdbtn" onClick="checkFields();" class="btn btn-primary base-nav-next"  style="color:#fff">
+PROCEED TO PAY
+</a>
+</div>
+</div>-->
+                                                <!--<div class="base-main-footer">
+<div class="base-nav">
+<a id="prdbtn" onClick="checkFields();" class="btn btn-primary base-nav-next"  style="color:#fff">
+PROCEED TO PAY
+</a>
+</div>
+</div>-->
+                                                <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}"/>
+                                                <script type="text/javascript">
+                                                sBoat='{!$Component.sBoat}';sV='{!$Component.sV}';sEng='{!$Component.sEng}'; sTrnsfr='{!$Component.sTrnsfr}';
+                                                </script>
+                                            </div>
+                                        </apex:outputPanel>           
+                                        
+                                        <script type="text/javascript">
+                                        la2='{!JSENCODE(rq.xla2__c)}';
+                                        ifrm();          
+                                        </script>
+                                        <apex:inputHidden value="{!rq.xadh__c}"  id="xadh__c"/>
+                                        <apex:inputHidden value="{!rq.ias__c}"  id="ias__c"/>
+                                        <apex:inputHidden value="{!rq.xcnc__c}"  id="xcnc__c"/>
+                                        <apex:inputHidden value="{!rq.xneng__c}"  id="xneng__c"/>
+                                        <apex:inputHidden value="{!rq.rtacn__c}"  id="rtacn__c"/>
+                                        <apex:inputHidden value="{!rq.xvcol__c}"  id="xvcol__c"/>
+                                        
+                                        <script type="text/javascript">            
+                                        cs['xadh__c']=getC('{!$Component.xadh__c}'); cs['xcnc__c']=getC('{!$Component.xcnc__c}'); 
+                                        cs['ias__c']=getC('{!$Component.ias__c}'); 
+                                        cs['xneng__c']=getC('{!$Component.xneng__c}'); cs['xneng__c'].value = '2';
+                                        cs['rtacn__c']=getC('{!$Component.rtacn__c}');cs['xvcol__c']=getC('{!$Component.xvcol__c}');
+                                        </script>   
+                                            
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel id="testout"> 
+                                        <script type="text/javascript">  
+                                        $('script').each(function(){
+                                            var v1 = $(this).attr('src'); var elem1=''; 
+                                            if(v1!=undefined&&v1.includes('script.js')){
+                                                elem1 = $(this);$(this).remove();  $('head').append(elem1);
+                                            }
+                                        });
+                                        </script>         
+                                    </apex:outputPanel>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade modal-base" id="dcNOC" tabindex="-1" role="dialog" aria-hidden="true" >
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="icon-close"></i>
+                        </button>
+                        <div class="modal-body" style="padding: 50px 40px;padding-bottom: 0px !important;">
+                            <p>
+                                We hereby acknowledge and accept that any violation by us of the Applicable Laws may result in immediate cancellation of our customs code and that the relevant authorities shall have the rights to impose any penalties against us as it deems fit.  
+                            </p>
+                            <ul> 
+                                <li>
+                                    Comply with the Authority, the Dubai Customs’ and relevant federal as well as local policies, laws, rules, regulations, guidelines (the <b>“Applicable Laws”</b>) in relation to the import and sale of goods inside and outside the Free Zone.
+                                </li><br/>
+                                <li>
+                                    Only sell the imported goods outside the Free Zone after obtaining necessary customs code from the Dubai Customs and make payment of the applicable customs duty to the Dubai Customs immediately after it becomes due upon the sale of imported goods outside the Free Zone. 
+                                </li><br/>
+                                <li>
+                                    Maintain inventory of all goods brought within the Free Zone and sold outside the Free Zone and promptly provide details of such inventory to the Authority and relevant Government authorities upon request.
+                                </li><br/>
+                                <li>    
+                                    Fully indemnify and keep indemnified and hold harmless the Authority (and its respective affiliates, parents, subsidiaries, shareholders, officers, directors, employees, agents, attorneys, predecessors, successors and assigns), from and against any and all claims, demands, liabilities, losses, damages, costs, charges, expenses (including legal fees and expenses), actions and proceedings arising directly or indirectly out of, or in connection with our import of any goods, non-payment of the customs duty and/or breach of the Applicable Laws.
+                                </li><br/><br/>
+                                
+                            </ul>
+                        </div>
+                        
+                        <div class="text-right p-4">
+                            <button class="btn btn-primary" onclick="toggleGLoader();closeModal(); afso();" type="button">
+                                PROCEED TO PAY
+                            </button>
+                            <button class="btn btn-primary" onclick="closeModal();" type="button">
+                                CANCEL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </apex:form>  
+    
+    <script type="text/javascript">  
+    function createDepDds(){
+        setTimeout(function(){
+            $('.depDD').select2();
+            $('.ddValidation').on('change',function(){
+                //debugger;
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                showErrMsg($(this),'rqrd',true);
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    if($(this).is('select'))
+                        showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                    else
+                        showErrMsg($(this),'rqrd','invalid');
+                    return false;
+                }
+            });
+        },400);
+    }
+    </script>  
+
+</apex:page>

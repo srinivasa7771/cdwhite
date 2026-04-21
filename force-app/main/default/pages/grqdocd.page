@@ -1,0 +1,661 @@
+<apex:page id="page" sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!pt}" standardController="g_Req__c" extensions="gctlReq">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+          margin-left: 0.5em;
+          margin-bottom: 0.6em;
+        }
+    </style> 
+    
+<script type="text/javascript">
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(rq.STA__c)}',cs={}; 
+    var isNew = '{!md.isNew}';var isView = '{!md.isView}'; var isEdit = '{!md.isEdit}';
+    var lf='',af='',adf='',aif,adif,cif,fnxPg;
+    var csf=new Array();
+  
+    var cs={}
+    $(document).ready(function(){hdflds();})
+    
+    function vfrm(nSTA){return hsSnc(nSTA)?!1:hRq(nSTA)?(alrt("{!$Label.msgRF}","{!$Label.msgRFD}"),!1):hErr(nSTA)?(alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"),!1):valcbx()?(alrt("Agreement Missing","Agreement selection is required in order to process with your application."),!1):!0}
+    function hsSnc(nSTA){return false;}
+    function hErr(nSTA){return false;}
+    
+    function hdflds() {
+        
+        if(sta!="Draft"){
+            var test = document.getElementsByClassName("btnNrm"); for(i=0;i<test.length;i++){if(test[i].text=="Edit"){test[i].style.display="none"}}
+            getC("page:form:pbMain:pbsec").style.display='none';
+        }
+
+        if(isView=='false'){
+            getC("page:form:noagr").style.display='none';
+            if('{!$Profile.Name}'=='CC2'){cs['xchn__c'].style.display="none";}else{cs['Con__c'].style.display="none";cs['Con__clk'].style.display='none';}
+        
+            if('{!JSENCODE(srv.uid__c)}'=='197' && getC('xdcmt__cRI')!=null){
+                /*getC('xdcmt__cRI').style.display='none';cs['xdcmt__cn'].style.display='none';cs['xdcmt__c'].value ="Lease Document Collection(Along with Cheque)";*/
+                var selectobject=cs['xdcmt__c'];selectobject.length = 0;
+                var option = document.createElement('option');option.text = 'Lease Document Collection(Along with Cheque)';option.value ='Lease Document Collection(Along with Cheque)';selectobject.add(option,0);
+                cs['xdcmt__c'].style.display = 'none';cs['xdcmt__cn'].style.display = 'none';
+            }
+            shwAgreements();
+            if('{!JSENCODE(srv.uid__c)}'=='197' ){
+                if(typeof(cs['xanum__c'])!='undefined'){cs['xanum__c'].style.display='none';cs['xanum__cn'].style.display='none';}
+                if('{!JSENCODE(rq)}'!=null && ((sta=="Draft" || sta=="Open") && ((isEdit=='true' || isNew=='true') && sta!="Under Review"))) {
+                    if('{!ispu}'=='true'){callWS();}else{document.getElementById("page:form:pbMain").style.display='block';}
+                }
+            }else{document.getElementById("page:form:pbMain").style.display='block';getC('page:form:pbMain:pbsec').style.display='none';}
+            
+            
+            if(typeof(cs['xchn__c'])!='undefined'){cs['xchn__c'].value = "{!$User.firstName}" +" "+ "{!$User.lastName}";}
+        }
+        /**var tInfo = getC('page:form:pbMain:pbsec:testTable_info');
+        if(tInfo!=null && typeof(tInfo)!='undefined'){tInfo.style.display='none';}**/
+    }
+    
+    function hRq(nSTA) {
+        //if('{!JSENCODE(srv.uid__c)}'=='197'){return false;}
+        if(!ispu){fldErr('acc__c',null,!0);}
+        fldErr('xcfn__c',null,!0);fldErr('xcln__c',null,!0);fldErr('xdcmt__c',null,!0);fldErr('Con__c',null,!0);
+        fldErr('rmob__c',null,!0);fldErr('xbn__c',null,!0);fldErr('xbrnd__c',null,!0);fldErr('xaloc__c',null,!0);
+        fldErr('xanum__c',null,!0);fldErr('xchn__c',null,!0); 
+        var brq = false; 
+        if(!ispu){brq = fldReq('acc__c',cs)||brq;} 
+        /***brq = fldReq('xcfn__c',cs)||brq; brq = fldReq('xcln__c',cs)||brq;***/ 
+        if(!ispu){brq = fldReq('xdcmt__c',cs)||brq; }
+        if('{!JSENCODE(srv.uid__c)}'!='197'){brq = fldReq('xanum__c',cs)||brq; }
+        brq = fldReq('rmob__c',cs)||brq; brq = fldReq('xbrnd__c',cs)||brq; brq = fldReq('xaloc__c',cs)||brq; 
+        if('{!$Profile.Name}'!='CC2'){brq = fldReq('xchn__c',cs)||brq;}else{brq = fldReq('Con__c',cs)||brq;}
+        return brq;
+    }
+    
+    function assignCon(name,mobile,zone,building,loc){
+        cs['xchn__c'].value = name;cs['rmob__c'].value = mobile;
+        cs['xbrnd__c'].value = zone;cs['xaloc__c'].value = loc;
+        cs['xbn__c'].value = building;
+    }
+    
+    function jumpToPage(){var table = $('[id$=testTable]').DataTable();table.page.jumpToData("true",3); table.column(4).visible(false);autoChck(); }
+    function autoChck(){ 
+        var checkboxs=document.getElementsByClassName("chk");        
+        for(var i=0,l=checkboxs.length;i<l;i++) {if(checkboxs[i].checked){checkboxs[i].onclick();break;}}
+    }
+
+    function getSt(st){
+        
+        if(st=='true'){
+            document.getElementById("page:form:pbMain").style.display='block';
+            document.getElementById("page:form:noagr").style.display='none';
+        }else{
+            document.getElementById("page:form:pbMain").style.display= 'none';
+            document.getElementById("page:form:noagr").style.display='block';
+        } 
+        
+        if(isView=='false'){ 
+            if('{!$Profile.Name}'=='CC2'){cs['xchn__c'].style.display="none";}else{cs['Con__c'].style.display="none";cs['Con__clk'].style.display='none';}
+            if('{!JSENCODE(srv.uid__c)}'=='197' && getC('xdcmt__cRI')!=null){
+                var selectobject=cs['xdcmt__c'];selectobject.length = 0;
+                var option = document.createElement('option');option.text = 'Lease Document Collection(Along with Cheque)';option.value ='Lease Document Collection(Along with Cheque)';selectobject.add(option,0);
+                cs['xdcmt__c'].style.display = 'none';cs['xdcmt__cn'].style.display = 'none';
+            }
+        }
+    }
+    
+    function valcbx(){
+        if('{!JSENCODE(srv.uid__c)}'!='197'){return false;}
+        var checkboxs=document.getElementsByClassName("chk");var okay=false;           
+        if(checkboxs.length <= 0) {okay=true;}else{for(var i=0,l=checkboxs.length;i<l;i++) {if(checkboxs[i].checked){okay=true;break;}}}
+        return !okay;
+    }
+    
+    function  chngNoOfDoc(a,flag,agNo){
+        
+        if(flag == 'valChng')  {
+            var nDocId = a.id.replace("noDoc","chk");
+            if( getC(nDocId).checked == false){ getC(nDocId).checked=true;}
+        }
+        var x=0;var y='';var z='';
+        
+        for(var i=0;i<csf.length;i++){
+            var chkId = csf[i].id.replace("noDoc","chk");
+            var argId = csf[i].id.replace("noDoc","cdnum");
+            
+            if(getC(chkId).checked == true){
+                x =Number(x) +Number(csf[i].value);
+                if(y==''){y = getC(argId).innerHTML;}else{y = y +',' + getC(argId).innerHTML;}
+                if(z==''){z = getC(argId).innerHTML + ':' + csf[i].value;}else{z = z +',' + getC(argId).innerHTML + ':' + csf[i].value;}
+            }
+        }
+        cs['prntcnt__c'].value =x;
+        cs['xneng__c'].value =x;cs['xanum__c'].value =y;cs['xccn__c'].value =z;
+        //  return a;
+    }
+    
+    function urinfo(a,cardNum,sector,vehicleNumber,vDetails,cardId,noOfCheq){
+        //alert('cardNum : '+ cardNum + ' sector: ' + sector+ ' vehicleNumber: ' + vehicleNumber+ ' vDetails: ' + vDetails+ ' cardId: ' + cardId);
+        
+        if($(a).is(":checked")){
+            var exNum = cs['xanum__c'].value;
+            /**    exNum = exNum+':'+ noOfCheq +',' + cardNum;
+           if(exNum!==''){exNum += +':'+noOfCheq+',' + cardNum;
+                }else{exNum = cardNum+':'+noOfCheq;}
+            cs['xanum__c'].value = exNum;**/
+
+        }else{
+            /**  var agValue = cs['xanum__c'].value;
+            if(agValue.includes(','+cardNum)){
+                cs['xanum__c'].value = agValue.replace(','+cardNum,'');
+            }else if(agValue.includes(cardNum+',')){
+                cs['xanum__c'].value = agValue.replace(cardNum+',',''); 
+            }else if(agValue.includes(cardNum)){
+                cs['xanum__c'].value = agValue.replace(cardNum,''); 
+            } **/
+        }
+    }
+    
+    function updateAgr(){if('{!JSENCODE(srv.uid__c)}'=='197'){if(cs['acc__c'].value!=''){fldErr('acc__c',null,!0);callWS();assignMngr();} shwAgreements();}}
+    
+    function shwAgreements(){
+        
+        if(getC('page:form:pbMain:pbsec')!=null){
+            getC('page:form:pbMain:pbsec').style.display='none';getC('page:form:pbMain:pbBkof').style.display='none';
+            
+            if('{!JSENCODE(srv.uid__c)}'=='197' && (isNew || isEdit)){ 
+                if(typeof(cs['acc__c'])!='undefined' && cs['acc__c'].value==''){getC('page:form:pbMain:pbsec').style.display='none';getC('page:form:pbMain:pbBkof').style.display='block';
+                }else{if(sta=="Draft"){getC('page:form:pbMain:pbsec').style.display='block';}getC('page:form:pbMain:pbBkof').style.display='none';}
+            }
+       }
+    }
+    
+    function updateConName(){cs['xchn__c'].value = cs['Con__c'].value;}
+    function ifrm(){}
+  
+    function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+    function pvc2(){window.open("/apex/gcp?id={!rq.Con__c}","gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",false);}
+    /*changes for DI starts*/
+    function setToRQFld(id,el){
+        if(cs[id]!=undefined)
+            cs[id].value=$(el).val();
+    }
+    /*changes for DI ends*/
+    
+    </script>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!pt}" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="{!pDsc}" STA="{!rq.STA__c}"/>
+    
+    <chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" rendered="{!AND(NOT(pgHide),OR(md.isEdit,md.isView))}" />
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+    <apex:form id="form">
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+        <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>   
+        <apex:actionFunction name="afso" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();">
+            <apex:param name="nextPage" value="spg"/>
+        </apex:actionFunction>   
+        <apex:actionFunction name="afs" action="{!save}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>
+        <apex:actionFunction name="afcr" action="{!CancelR}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" onbeforedomupdate="javascript: toggle_inputs();"/>    
+        <apex:actionFunction name="assignMngr" action="{!assignMngr}" status="theStatus" rerender="coninfo" oncomplete="assignCon('{!JSENCODE(mngr.name)}','{!JSENCODE(mngr.MobilePhone)}','{!JSENCODE(mngr.Account.xcuzn__c)}','{!JSENCODE(mngr.Account.xcublg__c)}','{!JSENCODE(mngr.Account.Location__c)}');" />
+        
+        <apex:actionFunction name="callWS" action="{!loadCards}" oncomplete="jumpToPage('{!JSENCODE(hdCnt)}');getSt('{!JSENCODE(st)}');" status="theStatus" rerender="noagr,msg,pbsec,pbTable" />
+        
+        <!-- Correction Component Section --> 
+        <!-- Correction Component look and feel display settings  --> 
+        <apex:variable var="isRC" value="{!IF(true,false,false)}" />
+        <apex:repeat value="{!rq.Items__r}" var="i"> 
+            <apex:outputPanel rendered="{!AND(i.sta__r.staown__c == 'Customer',i.sta__r.statype__c == 'Correction')}">
+                <apex:variable var="isRC" value="{!IF(true,true,true)}" />
+            </apex:outputPanel>
+        </apex:repeat>
+        <apex:variable var="showEr" value="{!OR(AND(OR(acc.lcsnc__c , acc.psasnc__c , acc.ecsnc__c),srv.ckgsnc__c) , AND(acc.snc__c !=null,acc.snc__c != '',srv.snc__c !=null , srv.snc__c !=''))}"/>
+        <apex:variable var="showWrn" value="{!OR(isRC)}" />   
+        <apex:variable var="OnlyAct" value="{!IF(AND(rq.amsgs__c != null),rq.amsgs__c,'')}" /> 
+        <apex:variable var="correctionSec" value="{!IF(OR(showEr,showWrn,OnlyAct !=null,OnlyAct !=''), TRUE, FALSE)}" /> 
+        
+        <!-- End of Correction Component look and feel display settings  -->
+        <script type="text/javascript" >
+        //document.getElementById('x:f:pbMain').style.display = '{!IF(correctionSec == true, 'none', 'block')}';
+        </script> 
+        <apex:outputPanel id="crctnOt" rendered="{!AND(correctionSec,ispu)}" >
+            <div id="box"> 
+                <div class="topCc" >       
+                    <div class="bPageBlock"   >
+                        <div class="botmCc"  style="border-top-color: #900" id="crctnCmp" >  
+                            <apex:outputPanel id="crctnit" rendered="{!correctionSec}" >                   
+                                <c:ocrctn ispu="{!ispu}" pg="grqev" R="{!rq}" A="{!acc}" CR="{!isRC}" S="{!srv}"/> 
+                            </apex:outputPanel>
+                        </div>  
+                    </div>          
+                </div>
+            </div> 
+        </apex:outputPanel> 
+        <!-- Correction Component Section End -->
+        
+        <div id="p" style="display: {!IF(AND(correctionSec,ispu), 'none', 'block')};"> 
+            
+            <div style="background-color: #dedede;display: {!IF(AND(correctionSec,ispu), 'block', 'none')};">
+                <span class="actHeading" >
+                    <a class="actLink" href="#" onclick="document.getElementById('box').style.display = 'block'; document.getElementById('p').style.display = 'none';  " > <b>Click here for Correction details <apex:image id="theImage" styleClass="top" alt="Click here for Correction Items"  value="{!$Resource.CRImg1}" width="25px" height="25px"/></b> </a>
+                </span>                     
+            </div> 
+            
+            <apex:pageBlock rendered="{!NOT(md.isView)}" id="noagr" tabStyle="g_Req__c" title="{!pt}">
+                <b> NO AGREEMENTS AVAILABLE FOR COURIER COLLECTION. </b> 
+                <apex:outputPanel rendered="{!NOT(ispu)}">
+                    <a Style="color:blue;" href="/apex/grqn?c=197" title="Refresh">Click Here</a> to refresh !
+                </apex:outputPanel>
+            </apex:pageBlock>
+            
+            <apex:pageBlock mode="{!IF(md.isView,'detail','edit')}" id="pbMain" tabStyle="g_Req__c" title="{!pt}" > <!--  rendered="{!IF(srv.uid__c=='197',false,true)}"-->
+                
+                <apex:variable var="fnxPg" value="grqei" />
+                <apex:pageBlockButtons location="top">                                
+                    <c:qrbtns isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" nxtPg="grqei" />
+                </apex:pageBlockButtons>
+                <apex:pageBlockButtons location="bottom">
+                    <c:qrbtns showInfo="false" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" pg="{!pg}" R="{!rq}" A="{!Acc}" nxtPg="grqei"/>
+                </apex:pageBlockButtons>
+                <apex:pageMessages id="msg" escape="false"/>
+                
+                <apex:outputpanel layout="none" rendered="{!NOT(pgHide)}">
+                     <apex:outputPanel rendered="{!AND((ispu),md.isNew)}">
+                         <div style="margin-left: 13px;font-size:1.7 em;font-family: Arial,Helvetica,sans-serif;">
+                          <br/><br/><b>  The Tenant are required to comply with the following: </b> <br/><br/>
+                         </div>
+                    <div style="margin-left: 13px;font-size:1.7 em;font-family: Arial,Helvetica,sans-serif;">
+                                    <ul>
+                            <li>     Two sets of lease details to be signed and stamped by 'Manager in Charge' as per DCCA trade license.</li> 
+                            <li>     Two sets of lease terms to be initialed by the 'Manager in Charge' and stamped on all pages.</li>
+                            <li>     Copy of valid insurance policies: third party liability, all risks insurance and workers compensation (as per lease terms).  <a href="{!URLFOR($Resource.InsuranceForms)}">Click here to download Insurance form</a> </li>
+                            <li>     Cheques (PDC) are to be prepared as per payment schedule in the lease details.</li>
+                            <li>     All cheque payments to be addressed to <b style="color: #37494A;">TECOM Investments FZ-LLC</b>.</li>
+                            <li>     In case cheques are not from  COMPANY NAME (such as personal cheques / different company) then an undertaking must be submitted by the issuer on behalf of the tenant along with the cheques.<a href="{!URLFOR($Resource.Undertakingpayement)}">Click here to download Undertaking Doc</a></li>
+                            <li>     Ejari Fee <b style="color: #37494A;">AED 204.00</b> is applicable per lease and can be included along with the First payment. Ejari is payable only on lease agreements.</li> 
+                            <li>     EMPOST will collect documents and cheque  from Sunday to Thursday  between 9am to 4pm .</li>
+                            <li>     The signed lease document and receipts will be delivered once it has been counter signed by TECOM.</li> 
+                            <li>     For any clarification, please contact axs call center: <b style="color: #37494A;">800 4297</b>.</li> <br/><br/>
+                        </ul>
+
+                        </div>  
+                        </apex:outputPanel> 
+                    
+                    <apex:pageBlockSection collapsible="false" columns="1" id="pbBkof" rendered="{!if((((rq.STA__c=='Draft' || rq.STA__c == 'Open') && (md.isNew)) || md.isEdit),true,false)}" title="Select Agreement(s)" > 
+                        <p style="color:red;">
+                             <b>Please select Account to get the list of available agreements.</b>
+                        </p>
+
+                    </apex:pageBlockSection>
+                    
+                    <apex:pageBlockSection collapsible="false" columns="1" id="pbsec" rendered="{!if((((rq.STA__c=='Draft' || rq.STA__c == 'Open') && (md.isNew)) || md.isEdit),true,false)}" title="Select Agreement(s)" > 
+                        <script type="text/javascript" charset="utf8">
+                        var oTable;var currentNumberDisplayed = 25;
+                        $(document).ready(function() {
+                            $('#load').click( function () {
+                                var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                            oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 25}); 
+                            var table = $('[id$=testTable]').DataTable();table.column(4).visible(false);
+                            
+                            var srchText = getC('page:form:pbMain:pbsec:testTable_filter');
+                            if(srchText!=null && typeof(srchText)!='undefined'){srchText.style.float='left';}
+                            
+                            var tInfo = getC('page:form:pbMain:pbsec:testTable_info');
+                            if(tInfo!=null && typeof(tInfo)!='undefined'){tInfo.innerText = tInfo.innerText.replace("cards","Agreements");}
+                        });
+                        </script>
+                      <Script>
+                        var nc=0;
+                        </Script>
+                        <apex:outputText rendered="{!Not(st)}" value="No Agremeets " />
+                        <apex:dataTable rendered="{!st}" captionClass="testTable" value="{!lst_pd}" var="p" id="testTable" bgcolor="EEEEEE" border="below" cellspacing="5%" columnsWidth="10%" style="width:300px;float:left;" >
+                            <apex:column >
+                                <apex:facet name="header" ><apex:outputLabel value="Select" /></apex:facet>
+                                <apex:inputCheckbox id="chk" styleClass="chk" onclick="urinfo(this,'{!JSENCODE(p.cardNum)}','{!JSENCODE(p.sector)}','{!JSENCODE(p.vehicleNumber)}','{!JSENCODE(p.vDetails)}','{!JSENCODE(p.cardId)}','{!JSENCODE(p.BusinessPark)}');chngNoOfDoc(this,'noVal','{!JSENCODE(p.cardNum)}');"  value="{!p.sel}" />
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header"><apex:outputLabel value="Agreement Number" /></apex:facet>
+                                <apex:outputText id="cdnum"  styleClass="cdnum" value="{!p.cardNum}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header"><apex:outputLabel value="Category Type" /></apex:facet>
+                                <apex:outputText value="{!p.cardType}"/>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header"><apex:outputLabel value="No of Cheques" /></apex:facet>
+                                <apex:inputText value="{!p.BusinessPark}" styleClass="noDoc" id="noDoc"  style="width:30px !important;text-align:right;float:right;" onkeyup="chngNoOfDoc(this,'valChng','{!JSENCODE(p.cardNum)}');" >
+                                </apex:inputText> 
+                            <script>
+                                csf[nc]=getC('{!$Component.noDoc}');
+                                nc++;
+                                </script>
+                            
+                            </apex:column>
+                            <apex:column id="flag" style="display:none;">
+                                <apex:facet name="header"><apex:outputLabel value="Checked" /></apex:facet>
+                                <apex:outputText value="{!p.sel}"/>
+                            </apex:column>
+                        </apex:dataTable>
+                        <!-- use custom label -->
+                        <apex:outputLabel value="There are no Agreements for selection." rendered="{!NOt(st)}"/>
+                      <div >
+        
+                 <apex:inputText id="xneng__c" label="Total Number of Cheque"  style="width:33px;" value="{!rq.xneng__c}" disabled="true" />
+                         <script type="text/javascript">
+                         cs['xneng__c']=getC('{!$Component.xneng__c}');
+                        </script>
+                          </div>
+                    </apex:pageBlockSection>
+                    
+                    
+                    <apex:outputPanel layout="none" style="display:none">
+                        <apex:inputHidden id="rtacn__c" value="{!rq.rtacn__c}" />
+                        <apex:inputHidden id="prntcnt__c" value="{!rq.prntcnt__c}" />
+                        <apex:inputHidden id="xccn__c" value="{!rq.xccn__c}" />
+                        
+                        <script type="text/javascript">
+                        cs['rtacn__c']=getC('{!$Component.rtacn__c}');
+                       cs['prntcnt__c']=getC('{!$Component.prntcnt__c}');
+                         cs['xccn__c']=getC('{!$Component.xccn__c}');
+                        </script>
+                    </apex:outputPanel>
+                    
+                    
+                    <apex:pageBlockSection columns="2" collapsible="false"  title="Account Details" rendered="{!NOT(ispu)}"> 
+                        <apex:pageBlockSectionItem rendered="{!AND(NOT(ispu),OR(md.isView,md.isEdit))}">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                            <apex:outputPanel layout="none" >
+                                    <div class="requiredBlock"></div>
+                                    <apex:outputField value="{!rq.Acc__c}"/>
+                            </apex:outputPanel>                 
+                        </apex:pageBlockSectionItem>     
+                        <apex:pageBlockSectionItem rendered="{!AND(NOT(ispu),md.isNew)}">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />
+                            <apex:outputPanel layout="none" >
+                                <div class="requiredInput" id="acc__cRI">
+                                    <div class="requiredBlock"></div>
+                                    <apex:inputField id="acc__c" value="{!rq.Acc__c}" onchange="updateAgr();" required="true"/>
+                                    
+                                    <script type="text/javascript">cs['acc__c']=getC('{!$Component.acc__c}');
+                                    </script>
+                                </div>
+                            </apex:outputPanel>                 
+                        </apex:pageBlockSectionItem> 
+                        
+                    </apex:pageBlockSection> 
+                    
+                    <apex:pageBlockSection columns="1" id="coninfo" collapsible="true" title="Contact Info">
+                        <apex:pageBlockSectionItem helptext="">
+                            <apex:outputLabel value="Contact Name" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!AND(st,OR(md.isNew,md.isEdit))}">
+                                    <div class="requiredInput" id="xchn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xchn__c" value="{!rq.xchn__c}" />
+                                        <script type="text/javascript">cs['xchn__c']=getC('{!$Component.xchn__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                
+                                <apex:outputPanel rendered="{!AND(st,OR(md.isNew,md.isEdit))}">
+                                    <div class="requiredInput" id="Con__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="Con__c" value="{!rq.Con__c}" onchange="updateConName();" />
+                                        <script type="text/javascript">
+                                        cs['Con__c']=getC('{!$Component.Con__c}');
+                                        cs['Con__clk']=getC('{!$Component.Con__c}_lkwgt');</script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xchn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xchn__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel id="xanum__cn" value="{!$ObjectType.g_Req__c.Fields.xanum__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!AND(st && OR(md.isNew,md.isEdit))}">
+                                    <div class="requiredInput" id="xanum__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xanum__c" value="{!rq.xanum__c}" />
+                                        <script type="text/javascript">
+                                        cs['xanum__c']=getC('{!$Component.xanum__c}');
+                                        cs['xanum__cn']=getC('{!$Component.xanum__cn}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xanum__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xanum__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                            
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem rendered="{!md.isView}">
+                            <apex:outputLabel value="Total Number of Cheque" />
+                            <apex:outputPanel >
+                                <apex:outputField value="{!rq.prntcnt__c}"  />
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel id="xdcmt__cn" value="{!$ObjectType.g_Req__c.Fields.xdcmt__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput"   id="xdcmt__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xdcmt__c" value="{!rq.xdcmt__c}"/>
+                                        <script type="text/javascript">cs['xdcmt__c']=getC('{!$Component.xdcmt__c}');
+                                        cs['xdcmt__cn']=getC('{!$Component.xdcmt__cn}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <apex:outputField value="{!rq.xdcmt__c}" />
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>      
+                    
+                    <apex:pageBlockSection columns="1" collapsible="true" title="Document Collection">
+                        <apex:pageBlockSectionItem helpText="Mobile phone number for the person who follow-up on this request. Starts 050 or 052 or 055 or 056 (e.g. 050 xxxxxx)">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.rmob__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="rmob__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="rmob__c" value="{!rq.rmob__c}" onchange=" vMob('rmob__c',cs,true);"/>
+                                        <script type="text/javascript">cs['rmob__c']=getC('{!$Component.rmob__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="rmob__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.rmob__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <!-- changes for DI starts -->
+                        <apex:pageBlockSectionItem rendered="{!NOT(OR(srv.uid__c=='195',srv.uid__c=='197'))}" helptext="Pick-up and delivery location for courier services.">
+                            <apex:outputLabel value="Zone" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="xbrnd__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xbrnd__c" value="{!rq.xbrnd__c}" style="width:10%"/>
+                                        <script type="text/javascript">cs['xbrnd__c']=getC('{!$Component.xbrnd__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xbrnd__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xbrnd__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem rendered="{!NOT(OR(srv.uid__c=='195',srv.uid__c=='197'))}" helptext="Pick-up and delivery location for courier services.">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xbn__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="xbn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xbn__c" value="{!rq.xbn__c}" />
+                                        <script type="text/javascript">cs['xbn__c']=getC('{!$Component.xbn__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xbn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xbn__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem rendered="{!(OR(srv.uid__c=='195',srv.uid__c=='197'))}" helptext="Pick-up and delivery location for courier services.">
+                            <apex:outputLabel value="Zone" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="xbrnd__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <select id="community_xbrnd" class="form-control input-select2-tags dum requiredFld" 
+                                                onChange="setToRQFld('xbrnd__c',this);showDepFld(this);">
+                                            <option value="">--None--</option>
+                                            <option value="DI">DI</option>
+                                            <option value="D3">D3</option>
+                                            <option value="DHCC">DHCC</option>
+                                            <option value="DIAC">DIAC</option>
+                                            <option value="DIC">DIC</option>
+                                            <option value="DKP">DKP</option>
+                                            <option value="DMC">DMC</option>
+                                            <option value="DOZ">DOC</option>
+                                            <option value="IMPZ">DPC</option>
+                                            <option value="DSC">DSC</option>
+                                            <option value="DSP">DSP</option>
+                                            <option value="TECOM">TECOM</option>
+                                        </select>
+                                        <apex:inputHidden id="xbrnd__c" value="{!rq.xbrnd__c}" /> 
+                                        <script type="text/javascript">
+                                        cs['xbrnd__c']=document.getElementById('{!$Component.xbrnd__c}');
+                                        if(cs['xbrnd__c'].value &&cs['xbrnd__c'].value!='--None--')
+                                            $('#community_xbrnd').val(cs['xbrnd__c'].value);
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xbrnd__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xbrnd__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <apex:pageBlockSectionItem rendered="{!(OR(srv.uid__c=='195',srv.uid__c=='197'))}" helptext="Pick-up and delivery location for courier services.">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xbn__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="xbn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <select id="bldng_xbn" class="form-control input-select2-tags dum requiredFld" 
+                                                onChange="setToRQFld('xbn__c',this)">
+                                            <option value="">--None--</option>
+                                        </select>
+                                        <apex:inputHidden id="xbn__c" value="{!rq.xbn__c}" /> 
+                                        <script type="text/javascript">
+                                        cs['xbn__c']=document.getElementById('{!$Component.xbn__c}');
+                                        if(cs['xbn__c'].value &&cs['xbn__c'].value!='--None--')
+                                            $('#bldng_xbn').val(cs['xbn__c'].value);
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xbn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xbn__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        <!-- changes for DI ends -->
+                        
+                        <apex:pageBlockSectionItem helptext="Pick-up and delivery location for courier services.">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.xaloc__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="xaloc__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xaloc__c" value="{!rq.xaloc__c}" style="width:30%"/>
+                                        <script type="text/javascript">cs['xaloc__c']=getC('{!$Component.xaloc__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="xaloc__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:outputField value="{!rq.xaloc__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                        
+                        <apex:pageBlockSectionItem helpText="Any additional information you would like to inform our team about">
+                            <apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.nt__c.label}" />
+                            <apex:outputPanel layout="none">
+                                <apex:outputPanel rendered="{!OR(md.isNew,md.isEdit)}">
+                                    <div class="requiredInput" id="nt__cRI">
+                                        <div class=""></div>
+                                        <apex:inputField id="nt__c" value="{!rq.nt__c}" style="width:30%"/>
+                                        <script type="text/javascript">
+                                        cs['nt__c']=getC('{!$Component.nt__c}');
+                                        </script>
+                                    </div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!md.isView}">
+                                    <div id="nt__cRI">
+                                        <div class="requiredBlock"/>
+                                        <apex:outputField value="{!rq.nt__c}" />
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSection>
+                    
+                    <c:grms id="Milestones" ispu="{!ispu}" R="{!rq}" rendered="{!md.isView}"/>
+                </apex:outputPanel>
+                
+                <script type="text/javascript">ifrm();
+                </script>
+            </apex:pageBlock>
+                
+    </div>
+</apex:form>
+    <c:qrlstr id="pbRelated" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!rq}" pg="{!pg}"/>  
+    <script>
+    var customBuildingbj = {"DI":"Building 01","DHCC":"AL BAKER Building. 26,AL FARIS Building. 39,Al Mossa Group Building,Al Razi Building 64,Al Zahrawi-Building 34,AXS Satellite Office at DHCC,Building 24,Building 25,Building 33,Building 40,Building 41,Building 47,Building 49,Building 53,Building 55,Building 59,Building 71,Building 72,Ibn Sina 27A,Ibn Sina 27B,Ibn Sina 27C,Ibn Sina 27D,Marriot Hotel Jadaf,MBR-AMC,School Primary Building,","DIAC":"All Day Shopping Center,AXS Satellite Office at DIAC,BITS Pilani,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Heriot-Watt Building,Institute of Management Technology,MANIPAL ETA,Sr. Building 01,Sr. Building 02,","DIC":"APTEC (EIB 03),Arenco Tower,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Building 13,Building 14,Building 15,Building 16,Building 17,Building 18,Butterfly Building,Cordoba Villa,EIB 01,EIB 02,EIB 03,EIB 04,EIB 05,EIB 06,Galadhari & Associates,Gloria Hotel(Dalma Tower 1),HSBC Building (Building 02),Huawei,Innovation Hub,Mashreq Bank DIC (Building 03 ),Master Card,Media One Tower,MSQ01,Office Park Block A,Office Park Block B,Office Park Block C,Office Park Block D,Office Park Block E,Shatha Tower,Studio DIC,","DKP":"AXS Satellite Office at DKV,Block 01,Block 02,Block 03,Block 04,Block 05,Block 06,Block 07,Block 08,Block 09,Block 10,Block 11,Block 12,Block 13,Block 14,Block 15,Block 16,Block 17,Block 18,Block 19,CYS &CO INC,DP Headquarters,Holiday INN Express Hotel,Injaz Building,Injaz Building PMS,Star Holding (EIB 04),Zayed University,","D3":"Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Design office,Others,","DOZ":"ACSS Building,Al Shaiba Building,Al Shaiba Building 03,Al Shaiba Building 04,Arab Bank Building,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Buliding A,Emirates Building,Mashreq Bank,Mashreq Bank PSC,","DMC":"Al Salam Tower,Al Sufouh Complex,Atlas Business Center,Boutique Office 01,Boutique Office 02,Boutique Office 03,Boutique Office 04,Boutique Office 05,Boutique Office 06,Boutique Office 07,Boutique Office 08,Boutique Office 09,Boutique Office 10,Boutique Office 11,Boutique Office 12,Boutique Office 13,Boutique Office 14,Boutique Office 15,Boutique Office 16,Boutique Office 17,Boutique Office 18,Boutique Office 19,Boutique Office 20,Boutique Office 21,Boutique Office 22,Boutique Office 23,Building 01,Building 02,Building 03,Building 04,Building 05,Building 06,Building 07,Building 08,Building 09,Building 10,Building 11,Building 12,Building 13,Building 14,Business Central Tower WA,Business Central Tower- WB,CNN Building ( Building 02),Concord Tower,Dubai Jewel Tower,Dubai TV News Center,GBS Building PMS,Loft Office 1,Loft Office 2,Loft Office 3,Makjoda Building,OMD Building,Radisson Blue Hotel,Showtime Head Quarter,Taj TV Building,The Palladium,Zee Tower,","DSC":"Boutique Studio 01,Boutique Studio 02,Boutique Studio 03,Boutique Studio 04,Boutique Studio 05,Boutique Studio 06,Boutique Studio 07,Boutique Studio 08,Boutique Studio 09,Boutique Studio 10,Boutique Studio 11,Boutique Studio 12,Boutique Studio 13,Boutique Studio 14,Boutique Studio 15,Boutique Studio 16,Boutique Studio 17,Boutique Studio 18,BSR,Building 01,Building 02,Building 03,Building 04,DSC Tower,Gate Building 1,Gate Building 2,Sound Stage A,SoundStages Complex-Ph A,SoundStages Complex-Ph B,Workshop 01,Workshop 02,Workshop 03,Workshop 04,Workshop 05,Workshop 06,Workshop 07,Workshop 08,Workshops,","IMPZ":"Circular Building-G1,Circular Building-G2,Gate Building,Makateb,Makateb 1,Makateb 2,Makateb 3,Makateb 4,MASAR Printing & Publishing,PBU-A,PBU-A1,PBU-A10,PBU-A11,PBU-A12,PBU-A13,PBU-A14,PBU-A15,PBU-A16,PBU-A17,PBU-A18,PBU-A19,PBU-A2,PBU-A3,PBU-A4,PBU-A5,PBU-A6,PBU-A7,PBU-A8,PBU-A9,PBU-B,PBU-B20,PBU-B21,PBU-B22,PBU-B23,PBU-B24,PBU-B25,PBU-B26,PBU-B27,PBU-B28,PBU-B29,PBU-B30,PBU-B31,PBU-B32,PBU-B33,PBU-B34,PBU-B35,PBU-B36,PBU-B37,PBU-B38,PBU-C,PBU-C39,PBU-C40,PBU-C41,PBU-C42,PBU-C43,PBU-C44,PBU-C45,PBU-C46,PBU-C47,PBU-C48,PBU-C49,PBU-C50,PBU-C51,PBU-C52,PBU-C53,PBU-D,PBU-D54,PBU-D55,PBU-D56,PBU-D57,PBU-D58,PBU-D59,PBU-D60,PBU-D61,PBU-D62,PBU-D64,PBU-D65,PBU-D66,PBU-D67,PBU-D68,PBU-E,PBU-E69,PBU-E70,PBU-E71,PBU-E72,PBU-E73,PBU-E74,PBU-E75,PBU-E76,PBU-E77,PBU-E78,PBU-E79,PBU-E80,PBU-E81,PBU-E82,PBU-E83,PBU-E84,PBU-E85,PBU-E86,PBU-E87,PBU-F,PBU-F100,PBU-F101,PBU-F102,PBU-F104,PBU-F105,PBU-F106,PBU-F88,PBU-F89,PBU-F90,PBU-F91,PBU-F92,PBU-F93,PBU-F94,PBU-F95,PBU-F96,PBU-F97,PBU-F98,PBU-F99,Publishing Pavilion,The Crescent,","DSP":"DSP HQ Tower – North,DSP HQ Tower – South,DSP Laboratory Complex,DSP Warehouse Complex Block A1,DSP Warehouse Complex Block A2,DSP Warehouse Complex Block A3,DSP Warehouse Complex Block A4,DSP Warehouse Complex Block A5,DSP Warehouse Complex Block A6,DSP Warehouse Complex Block B10,DSP Warehouse Complex Block B11,DSP Warehouse Complex Block B12,DSP Warehouse Complex Block B13,DSP Warehouse Complex Block B7,DSP Warehouse Complex Block B8,DSP Warehouse Complex Block B9,DSP Warehouse Complex Block C14,DSP Warehouse Complex Block C15,DSP Warehouse Complex Block C16,DSP Warehouse Complex Block C17,DSP Warehouse Complex Block C18,DSP Warehouse Complex Block C19,DSP Warehouse Complex Block D20,DSP Warehouse Complex Block D21,DSP Warehouse Complex Block D22,DSP Warehouse Complex Block D23,DSP Warehouse Complex Block D24,DSP Warehouse Complex Block D25,DSP Warehouse Complex Block E,Smart Start Kindergarten building,Three Towers,","TECOM":"Al Ameri Tower,Al Hawai Residence,Al Shafar Tower,Al Sheba Tower,Al Yassat Tower,Atana Hotel,Auris Inn Al Muhanna Hotel,Auris Suites,Aurora Tower,Boutique 7 Hotel & Suites,Byblos Hotel,Cayan Business Centre,DAMAC Executive Heights,DAMAC SMART HEIGHTS,Design House,First Central Hotel Apartments,Golden Tulip Al Thanyah Hotel Apartment,Grand Millennium Hotel,Grosvenor Business Tower,Gulf Oasis Hotel Apartment,Home to Home Hotel Apartments,Icon Tower,I-Rise Office Tower,Media Rotana Dubai,Metro Appartment,Pacific Buiding,Promoseven Tower,SIDRA Tower,Tameem House,The One Tower,Thuraya 1,Thuraya Telecommunications Building,Time Oak Hotel & Suits,Two Towers,"};
+    function showDepFld(e){
+        let v = $(e).val();
+        var options = '<option value="">--None--</option>';
+        if(v&&Object.keys(customBuildingbj).includes(v)){
+            for([i,j] of customBuildingbj[v].split(',').entries()){
+                if(j)
+                    options+= '<option value="'+j+'">'+j+'</option>';
+            }
+            //options+= '<option value="'+customBuildingbj[v]+'">'+customBuildingbj[v]+'</option>';
+        }
+        $('#bldng_xbn option').remove();
+        $('#bldng_xbn').append(options);
+        $('#bldng_xbn').select2();
+    }
+    </script>
+</apex:page>

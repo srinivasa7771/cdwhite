@@ -1,0 +1,430 @@
+<apex:page id="x" sidebar="false" cache="false" expires="0" tabStyle="g_Req__c"  title="{!rq.srvc__r.lbl__c}" standardController="g_Req__c" extensions="gctlRequ">
+<script type="text/javascript"> 
+var cs={};
+</script>  
+    
+<style type="text/css">.actionColumn.c1 {width:1%;white-space:nowrap;}.message.infoM4.d1 {background-color:#f5fcff;border-color:#bee6ff;}</style>    
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>            
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9,'css/gsodocupload.css')}"/>       
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/jquerycss.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/jquery-ui.css')}" />
+<apex:stylesheet value="{!URLFOR($Resource.gso_fileuploadNew9, 'css/scan.css')}" />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'avgrund.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.gso_fileuploadNew9, 'jquery-1.8.0.min.js')}"  />
+ <!-- version 10 scripts--->   
+<apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.initiate.js')}"  />
+<apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.config.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.AxsWebTwain12, 'dynamsoft.webtwain.addon.pdf.js')}"  />
+ <!-- end version 10 scripts-->   
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+ <apex:includeScript value="{!$Resource.AxsWebTwain12_part2}"/>
+<c:pgHeader id="sH" entityId="{!rq.Id}" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="Upload Documents" subtitle="{!IF(ISNULL(rq.Name),'New Request',rq.Name)}" description="Upload all required documents to ensure smooth processing of your application" STA="{!rq.STA__c}"/>
+<chatter:feedWithFollowers entityId="{!rq.Id}" showHeader="true" />
+<apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+<apex:form id="f">
+    <apex:actionFunction name="afs" action="{!saveAttachment}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:setAttachment();"/>
+    <apex:actionFunction name="afdltA" action="{!deleteAttachment}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount()" />
+    <apex:actionFunction name="afsvc" action="{!saveContinue}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();" oncomplete="javascript:resetAttchmentCount()" />
+    <apex:actionFunction name="afcnt" action="{!nextPage}" status="theStatus" rerender="p,sH,twinPp,msg" onbeforedomupdate="javascript: toggle_inputs();"/>                
+    <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.docq__c}" rendered="false" />
+    <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+    <apex:InputHidden value="{!pdfimageBase64}" id="pdfimageBase64"/>
+    <apex:InputHidden value="{!reqDocId}" id="reqDocId"/>
+    <apex:InputHidden value="{!docName}" id="docName"/> 
+    <input type="hidden" name="dfileId" id="dfileId" value=""/>         
+    <input type="hidden" id="width" value="700"/>
+    <input type="hidden" id="height" value="855"/>
+    <input type="hidden" id="resolution" value="300"/>
+    <input type="hidden" size="20" id="txt_fileNameforSave"/>
+    <input type="hidden" name="txt_fileName" id="txt_fileName"/>
+    <input type="hidden" name="uploaded_count" id="uploaded_count" value="0"/>
+    <input type="hidden" name="htempfieldname" id="htempfieldname" value="test"/>
+    <input type="hidden" name="currentImage" id="currentImage" value="test"/>
+    <input type="hidden" name="currentImageURL" id="currentImageURL" value="{!$Resource.gso_fileuploadNew9}"/>
+    <input type="hidden" name="attchId" id="attchId" value=""/>  
+     <input type="hidden" name="serviceCode" id="serviceCode" value="{!rq.srvc__r.uid__c}"/>                   
+   
+    <script type="text/javascript">
+        //<![CDATA[
+            var imageBase64=document.getElementById("{!$Component.imageBase64}"),reqDocId=document.getElementById("{!$Component.reqDocId}"),docName=document.getElementById("{!$Component.docName}");            
+      var pdfimageBase64=document.getElementById("{!$Component.pdfimageBase64}")
+        //]]> 
+    
+$(document).ready(function(){
+    // alert('start');
+    //alert(cs['xdrv__c']);alert(cs['dsgu__c']);alert(getC('dsg'));
+    // alert(''+'{!rq.Service_Code__c}');
+    // boolean expryDtFlag = false;
+    var expryDtFlag = false;
+ if(cs['xdrv__c']!=null && cs['dsgu__c']!=null  && getC('dsg')!=null){
+         if(cs['xdrv__c'].checked == true && cs['dsgu__c'].checked == false)     getC('dsg').style.display  = 'none'; 
+            }
+         if(cs['xdrv__c']!=null && cs['dsgu__c']!=null && cs['dsgu__c'].checked == true && cs['xdrv__c'].checked == false){
+              getC('xdr').style.display  = 'none'; 
+            }
+     if('{!rq.epexpdt__c}'!='' && '{!rq.epexpdt__c}' <= '{!Today()}' && cs['xdrv__c'].checked == true){
+         //alert(1);
+         expryDtFlag= true;
+               getC('xdr').style.display  = 'none'; 
+               getC('dsg').style.display  = 'block'; 
+              }
+    
+    var  docs='{!rq.xcddocs__c}';
+
+                            docs = docs.substring(0, docs.length - 1); 
+                            var doclist = docs.split(';');
+                            var doclen=doclist.length;
+    //||  docs.includes("NOC from Knowledge Human Department Authority")
+    // alert(expryDtFlag);
+    if(expryDtFlag == false){
+        var flg=false;
+        if('{!rq.x30gr__c}'=='true' && docs!=null && (docs.includes("Good Standing") || docs.includes("UAE license issued by Economic Department") || docs.includes("UAE trade license issued by Economic Department") || docs.includes("DED Commercial License" )))
+          {cs['ixdrv__c'].style.display='block';flg=true;}
+        else if(cs['ixdrv__c']){cs['ixdrv__c'].style.display='none';}
+
+        if( docs!=null && doclen==1  && (( docs.includes("KHDA") ||docs.includes("NOC from Knowledge Human Development Authority(KHDA)" || docs.includes("NOC from Knowledge Human Department Authority"))))){cs['ixdrv__c'].style.display='block';}
+                            else{ if (doclen==1 && !flg && cs['ixdrv__c'])cs['ixdrv__c'].style.display='none'; }
+                
+                
+        /*  if(doclen!=1 && !flg && doclen!=0 && (docs.includes("NOC from Dubai Health Authority")|| docs.includes("Approval from Broadcasting Committee")|| docs.includes("NOC from Dubai Legal Affairs Department")|| docs.includes("Copy of Higher Education Permit from Knowledge Human Department Authority")|| docs.includes("Copy of Certificate from Ministry of Education")|| docs.includes("A certificate from the Zoning Authority (If Applicable)")|| docs.includes("A Valid Copy of Dubai Tourism and Commercial Marketing")|| docs.includes("NOC from Public Health & Safety Department - Dubai Municipality")|| docs.includes("Original Title Deed issued by  Dubai Land Department for verification")|| docs.includes("Valid Tourism license issued by Dept of Tourism and Commerce Marketing")|| docs.includes("Waste Disposal pymt receipt obtained from Waste Mgmt Dept in Dubai Municipality")|| docs.includes("Valid cert of Classification issued by Dept of Tourism and Commerce Marketing")|| docs.includes("Copy of the account registration made with Dubai Municipality")|| docs.includes("certificate from the Zoning Authority")|| docs.includes("Copy of the lease contract endorsed by  Dubai Lands Dept")|| docs.includes("Valid No Objection Cert (NOC) from the Real Estate Regulatory Agency, Dubai")|| docs.includes("A1 copy of valid UAE license issued by Economic Department")|| docs.includes("NOC from Road Roads and Transport Authority")|| docs.includes("NOC from Central Bank")|| docs.includes("NOC from Ministry of Social Affairs and Dubai Municipality")|| docs.includes("NOC from Real Estate Regulatory Agency")|| docs.includes("NOC from Dubai Department of Health and Medical Services")|| docs.includes("Original Title Deed issued by Dubai Land Department for verification")) )
+                            {  cs['ixdrv__c'].style.display='none'; 
+                             }else if(doclen!=1 && doclen!=0 && (docs.includes("KHDA") || docs.includes("NOC from Knowledge Human Department Authority") || docs.includes("NOC from Knowledge Human Development Authority(KHDA)" ))){
+                                //  alert('Inside');
+                                 cs['ixdrv__c'].style.display='block';
+                                 }*/
+        if(cs['ixdrv__c'] && docs!=null && doclen!=1 && doclen!=0 && (docs.includes("KHDA") || docs.includes("NOC from Knowledge Human Department Authority") || docs.includes("NOC from Knowledge Human Development Authority(KHDA)" ))){
+                                //  alert('Inside');
+                                 cs['ixdrv__c'].style.display='block';
+                                 }else if(cs['ixdrv__c'] && doclen!=1 && !flg && doclen!=0)
+                                     {  cs['ixdrv__c'].style.display='none'; 
+                                }
+        // cs['ixdrv__c'].style.display='none';
+    }
+    
+      var  pmsleas='{!rq.xpmsle__c}';   
+    var  psfVer='{!rq.xppsfv__c}';  
+    if(cs['ixdrv__c'] != null && pmsleas!=null && pmsleas=='true' && psfVer!=null && psfVer=='false' ){ cs['ixdrv__c'].style.display='none';}
+    })
+         function hideDisplay(a,b){
+       if(b=='dsg'){ 
+        if(a.checked){
+            getC('dsg').style.display  = 'none'; 
+        }else{
+            getC('dsg').style.display  = 'block'; 
+        }
+        } else {
+             if(a.checked){
+            getC('xdr').style.display  = 'none'; 
+        }else{
+            getC('xdr').style.display  = 'block'; 
+        }
+            }
+    } 
+     
+    </script>
+    <!--- pop up page start --->
+       <c:fileuploadPopUpNew12 id="twinPp"  /> 
+       <!-- <c:fileuploadpopupnew16 R="{!rq}"  /> -->
+    <!--- pop up page end --->
+    <apex:pageBlock mode="edit" id="p" tabStyle="g_Req__c" title="Upload Documents">
+     
+        <!--
+        <apex:pageBlockSection columns="2" collapsible="false"  title="Retrieve Details">             
+            <apex:inputField id="acc__c" value="{!rq.Reference__c}"/>
+            <apex:commandbutton value="Retreive Information" action="{!Get}"/>
+        </apex:pageBlockSection>
+        -->
+        
+        <apex:pageBlockButtons location="top">
+            <c:qrbtns isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqei" R="{!rq}" A="{!rq.acc__r}" Stp="3"/>
+        </apex:pageBlockButtons>
+         <apex:pageBlockButtons location="bottom">
+            <c:qrbtns showInfo="false" isNew="false" isEdit="true" isView="false" pgHide="{!pgHide}" ispu="{!ispu}" pg="grqei" R="{!rq}" A="{!rq.acc__r}" Stp="3"/>
+        </apex:pageBlockButtons>
+        <apex:pageMessages id="msg"  escape="false"/>
+       <apex:outputpanel layout="none">  
+           <apex:pageBlockSection id="iAxdrv__c" rendered="{!rq.srvc__r.uid__c=='220'}">               
+               <apex:pageBlockSectionItem >
+                     <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="Axdrv__cRI">
+                      
+                            <apex:inputField id="xdrv__c"  value="{!rq.xdrv__c}" >
+                                <apex:outputLabel value="We hereby declare that the Application Form and all the uploaded documents contain accurate, truthful, and complete information to the best of my knowledge. We also undertake to comply with the applicable laws, regulations and rules of the Authority." />
+                 
+                            </apex:inputField>
+                            <script type="text/javascript">
+                            cs['Axdrv__c']=getC('{!$Component.xdrv__c}');
+                             cs['iAxdrv__c']=getC('{!$Component.iAxdrv__c}');
+                            
+                            </script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem>                
+           </apex:pageBlockSection>
+             <apex:pageBlockSection id="iAdsgu__c" rendered="{!AND(rq.srvc__r.uid__c=='220',rq.x30gr__c)}">               
+               <apex:pageBlockSectionItem >
+                     <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="Adsgu__cRI">
+                      
+                            <apex:inputField id="Adsgu__c"  value="{!rq.dsgu__c}" >
+                                <apex:outputLabel value="We hereby undertake that the company will submit the original or notarized/attested documents once requested by the Authority and acknowledge that a Sanction will be imposed on the Company for non-submission within the given period as communicated by the Authority." />
+                 
+                            </apex:inputField>
+                            <script type="text/javascript">
+                            cs['Axdsgu__c']=getC('{!$Component.dsgu__c}');
+                             cs['iAxdsgu__c']=getC('{!$Component.iAxdsgu__c}');
+                            
+                            </script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem>                
+           </apex:pageBlockSection>
+        </apex:outputpanel>
+        <apex:outputpanel layout="none">
+         <div id='xdr'>
+             <apex:pageBlockSection id="ixdrv__c" rendered="{!If(AND(NOT(rq.xmloc__c),rq.srvc__r.uid__c=='208'),true,false)}">
+                 <apex:pageBlockSectionItem >
+                     <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="xdrv__cRI">
+                      <apex:outputLabel style="white-space: nowrap" value="We hereby undertake that the company will submit the required documents within 30 days and acknowledge that a Sanction will be imposed on the Company for non-submission within the grace period." />
+                 
+                            <apex:inputField id="xdrv__c"  value="{!rq.xdrv__c}" onclick="hideDisplay(this,'dsg');" >
+                            </apex:inputField>
+                            <script type="text/javascript">
+                            cs['xdrv__c']=getC('{!$Component.xdrv__c}');
+                             cs['ixdrv__c']=getC('{!$Component.ixdrv__c}');
+                            var  docs='{!rq.xcddocs__c}';
+                            docs = docs.substring(0, docs.length - 1); 
+                            var doclist = docs.split(';');
+                            var doclen=doclist.length;
+                          
+                           if(doclen==1 && (docs.includes("KHDA")||  docs.includes("NOC from Knowledge Human Department Authority"))){cs['ixdrv__c'].style.display='';}
+                            else{cs['ixdrv__c'].style.display='none';}
+
+                            
+                            </script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem> 
+                </apex:pageBlockSection>
+              </div>
+            <!--     <apex:pageBlockSection >
+        <apex:pageBlockSectionItem id="tnc"  helpText="Documents terms"  >
+                    <apex:inputCheckbox id="chktnc" styleClass="tnc" label=""  /> 
+                    I do hereby confirm that  all the uploaded documents are correct.
+<script type="text/javascript"> //cs['chktnc']=getC('{!$Component.chktnc}')
+</script>
+             </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>-->
+            
+            <div id="dsg">
+                
+           
+             <apex:pageBlockSection id="idsgu__c" rendered="{!If(rq.srvc__r.uid__c=='208',true,false)}">
+                 <apex:pageBlockSectionItem >
+                           <apex:outputPanel layout="none" >
+                        <div class="requiredInput" id="dsgu__cRI">
+                        <apex:outputLabel value="We hereby confirms that all the uploaded documents are correct." />
+               
+                            <apex:inputField id="dsgu__c" value="{!rq.dsgu__c}"  onclick="hideDisplay(this,'xdr');"  />
+                            <script type="text/javascript">
+                            cs['dsgu__c']=getC('{!$Component.dsgu__c}');
+                            
+                            </script>
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:pageBlockSectionItem> 
+                </apex:pageBlockSection>
+             </div>
+            
+            
+            <apex:pageBlockSection id="a" collapsible="true" columns="1" title="Details">
+                <apex:outputpanel id="b">                               
+                    <table class="list" border="0" cellpadding="0" cellspacing="0" id="tData" style="width:100%;font-size:11px;">
+                        <tbody>
+                            <tr class="headerRow">
+                                <th scope="col" class="actionColumn c1" colspan="3">Document</th>
+                                 <apex:outputpanel layout="none" rendered="{!NOT(ispu)}">
+                                    <th class="actionColumn c1">{!$ObjectType.g_reqDoc__c.fields.or__c.label}</th>
+                                    <th class="actionColumn c1">{!$ObjectType.g_reqDoc__c.fields.nt__c.label}</th>
+                                </apex:outputPanel>
+                                <th class="actionColumn c1" colspan="2"><apex:outputLink value="/apex/docPrint?id={!rq.id}" id="theLink">View All</apex:outputLink></th>
+                            </tr>
+
+                            <apex:repeat id="r0" value="{!Docs}" var="D">
+                                <tr class="dataRow">
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                    {!D.Doc.Name} {!IF(ISNULL(D.Doc.mbr__c),'','(&nbsp;&nbsp;{!D.Doc.mbr__r.Bane}&nbsp;)')}
+                                    </td>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputpanel layout="none" rendered="{!NOT(ISBLANK(D.Doc.tplt__c))}" >
+                                            <apex:outputLink value="{!D.Doc.tplt__c}" target="_blank" title="Template is available to download.">Download Template</apex:outputLink>
+                                        </apex:outputpanel>
+                                    </td>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputPanel layout="none" rendered="{!AND(NOT(pgHide),D.cnUp)}"> 
+                                            <a class="btnNrm" onclick="javascript:openDialogDW('{!D.Doc.Name}', '');">Upload...</a>
+                                            <input type="hidden" id="{!D.Doc.Name}_Id" value="{!D.Doc.Id}"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_cur" value="0"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_max"  value="{!D.Doc.mxAts__c}"/>
+                                            <input type="hidden" id="{!D.Doc.Name}_min"  value="{!D.Doc.mnAts__c}"/> 
+                                        </apex:outputpanel>
+                                    </td>
+                                    <apex:outputpanel layout="none" rendered="{!NOT(ispu)}">
+                                        <td class="actionColumn c1" style="vertical-align:top;">
+                                             <apex:inputField value="{!D.Doc.or__c}" rendered="{!AND(NOT(pgHide),D.Doc.reqOr__c)}"/> 
+                                              
+                                            <apex:outputField value="{!D.Doc.or__c}" rendered="{!AND(pgHide,D.Doc.reqOr__c)}"/> 
+                                        </td>
+                                        <td class="actionColumn c1" style="vertical-align:top;">
+                                            <apex:inputField value="{!D.Doc.nt__c}" style="width: 150px;" rendered="{!NOT(pgHide)}"/>
+                                            <apex:outputField value="{!D.Doc.nt__c}" rendered="{!pgHide}"/>
+                                        </td>
+                                    </apex:outputpanel>
+                                    <td class="actionColumn c1" style="vertical-align:top;">
+                                        <apex:outputPanel layout="none" rendered="{!D.Ats.size>0}">
+                                            <table border="0" cellpadding="0" cellspacing="0" class="">
+                                                <tr>
+                                                    <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                                    
+                                                        <td class="actionColumn c1" style="vertical-align:top;border: none;"> 
+                                                         
+                                                      <apex:outputPanel rendered="{!NOT(If(CONTAINS(A.A.Name,'.pdf'),true,false ))}">
+                                                            <a href="" onclick="imgPreview('{!D.Doc.Name}','/servlet/servlet.FileDownload?file={!A.A.Id}');" >
+                                                                <img id="{!A.A.Id}" src="/servlet/servlet.FileDownload?file={!A.A.Id}" style="width:57px; height:57px;cursor:pointer;"/>
+                                                            </a><br/>                                                            
+                                                         </apex:outputPanel> 
+                                                         
+                                                          <apex:outputPanel rendered="{!If(CONTAINS(A.A.Name,'.pdf'),true,false)}">
+                                                          <a href="/servlet/servlet.FileDownload?file={!A.A.Id}" target="_new" >
+                                                        <!--
+                                                              <img  id="{!A.A.Id}" src="{!URLFOR($Resource.AxsWebTwain12, 'reference/pdf_Thumb.png')}" width="57" height="57"/> 
+                                                          -->   
+                                                                <img  id="{!A.A.Id}" src="{!URLFOR($Resource.pdfThumbnail, 'pdf/pdf_Thumb.png')}" width="57" height="57"/>  
+                                                            </a><br/>                                                           
+                                                         </apex:outputPanel>  
+                                                        </td>                                                           
+                                                    </apex:repeat>
+                                                </tr>
+                                                <tr>
+                                                    <apex:repeat id="r2" value="{!D.Ats}" var="A">
+                                                        <td class="actionColumn c1" style="vertical-align:top;border: none;">
+                                                            <!--<a href="" onclick="printImage('/servlet/servlet.FileDownload?file={!A.A.Id}');" style="width:57px; height:57px;cursor:pointer;">
+                                                                <apex:image url="{!$Resource.printLogo}" width="20" height="20"/>
+                                                            </a>-->
+                                                            <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!NOT(ispu)}">                                                                          
+                                                                <a class="btnCncl" onclick="printImage('/servlet/servlet.FileDownload?file={!A.A.Id}');">Print</a>
+                                                            </apex:outputpanel>
+                                                            <!-- 
+                                                            <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!AND(NOT(pgHide),NOT(D.VF),OR(ispu,AND(NOT(ispu),NOT(A.crtbyPU))))}">                                                                          
+                                                                <a class="btnCncl" onclick="dltA('{!A.A.Id}');">Delete</a>
+                                                            </apex:outputpanel>
+                                                            -->  
+                                                                                                                          
+                                                            <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!AND(ispu,NOT(pgHide),NOT(D.VF))}">                                                                          
+                                                                <a class="btnCncl" onclick="if(!confirm('Are you sure?')){return}else{dltA('{!A.A.Id}');};">Delete</a>
+                                                            </apex:outputpanel>
+                                                            <apex:outputPanel layout="inline" style="display: inline-block;" rendered="{!NOT(ispu)}">                                                                          
+                                                                <a class="btnCncl" onclick="if(!confirm('Are you sure?')){return}else{dltA('{!A.A.Id}');};">Delete</a>
+                                                            </apex:outputpanel>
+                                                             
+                                                        </td>
+                                                    </apex:repeat>
+                                                </tr>
+                                            </table>
+                                        </apex:outputpanel>
+                                    </td>
+                                    <td class="datacell" style="vertical-align:top;">
+                                        <apex:variable var="sN" value="{!OR(NOT(ISBLANK(D.info)),AND(NOT(pgHide),D.cnUp),AND(ispu,OR(D.Doc.reqOr__c,NOT(ISNULL(D.Doc.nt__c)))))}" />
+                                        <apex:outputPanel rendered="{!sN}">
+                                            <div class="message infoM4 d1">
+                                                <table border="0" cellpadding="0" cellspacing="0" class="messageTable">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="actionColumn c1" style="vertical-align:top;border:none;"><img alt="Information" class="msgIcon" src="/s.gif" title="Warnings"/></td>
+                                                            <td class="messageCell" style="border: none;">
+                                                                <div class="messageText">
+                                                                     <ul>
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(ispu,D.Doc.reqOr__c)}">
+                                                                            <apex:outputPanel layout="none" rendered="{!NOT(D.Doc.or__c)}">
+                                                                                <li><span>Original document is required</span></li>
+                                                                            </apex:outputpanel>                                                             
+                                                                            <apex:outputPanel layout="none" rendered="{!D.Doc.or__c}">
+                                                                                <li><span>Original document has been collected by back-office</span></li>
+                                                                            </apex:outputpanel>
+                                                                        </apex:outputpanel>  
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(NOT(pgHide),D.cnUp,OR(NOT(D.VF),NOT(ispu)))}">
+                                                                            <li><span>
+                                                                            <apex:outputPanel layout="none" rendered="{!D.Ats.size < D.Doc.mnAts__c}">
+                                                                            At least {!D.Doc.mnAts__c} attachment{!IF(D.Doc.mnAts__c>1,'s are ',' is')} required.
+                                                                            </apex:outputpanel>
+                                                                            <apex:outputPanel layout="none" rendered="{!AND(D.Ats.size < D.Doc.mxAts__c, D.Ats.size>=D.Doc.mnAts__c,D.Doc.mxAts__c>D.Doc.mnAts__c)}">
+                                                                            Up-to {!D.Doc.mxAts__c} attachment{!IF(D.Doc.mxAts__c>1,'s','')} can be uploaded.
+                                                                            </apex:outputpanel>
+                                                                            </span></li>
+                                                                        </apex:outputpanel>
+                                                                        <apex:outputPanel layout="none" rendered="{!AND(ispu,NOT(ISNULL(D.Doc.nt__c)))}">
+                                                                            <li><apex:outputField value="{!D.Doc.nt__c}"/></li>
+                                                                        </apex:outputpanel>
+                                                                         <li><span><apex:outputText value="{!D.Info}" escape="true" /></span></li>
+                                                                    </ul>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </apex:outputpanel>
+                                    </td>
+                                </tr>                                           
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                    
+                </apex:outputpanel>
+            </apex:pageBlockSection>
+        </apex:outputPanel>
+    </apex:pageBlock>
+   
+</apex:form>
+<script type="text/javascript">
+    //<![CDATA[
+         //var previousOnload = window.onload;        
+         //window.onload = function(){if(previousOnload){Pageonload();}}
+    //]]>  
+</script>
+<div id="imgPrv" title="Image Preview" style="vertical-align:center; text-align:center;" >
+    <img id="imP" src="" />
+</div>
+<script type="text/javascript">
+function openDialogDW(docName,val){
+    // Dynamsoft.webtwain.__unload();
+    $("#default-popup").load();   
+     $("#dwtcontrolContainer").load();
+    Dynamsoft.WebTwainEnv.Load();
+    openDialog(docName,val);
+    //Dynamsoft.webtwain.Load();
+    
+    }
+    $("#imgPrv").dialog({autoOpen: false,show: {effect: "scale",duration: 200},hide: {effect: "explode",duration: 400}});
+function imgPreview(fName,src){
+    document.getElementById("imP").src=src;
+    $("#imgPrv").dialog("option","title",fName);        
+    $('#imgPrv').dialog({height:700,width:1000,maxHeight:750,maxWidth:1000,resizable:true,modal: true});
+    $( "#imgPrv" ).dialog({ position: { my: "left", at: "left", of: window } });
+    $( "#imgPrv" ).dialog({ position: { my: "top", at: "top", of: window } });
+    $("#imgPrv").dialog("open");    
+}   
+function printImage(src){    
+    var html  = "<html><head>" +
+                "</head>" +
+                "<body  style ='-webkit-print-color-adjust:exact;'>"+
+                "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+                "</body>";
+                var win = window.open("about:blank","_blank");
+                win.document.write(html);                
+}
+   
+</script> 
+</apex:page>

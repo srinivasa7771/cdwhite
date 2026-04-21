@@ -1,0 +1,979 @@
+<apex:component controller="ApplicantDetailController" id="pg" allowDml="true" >
+    <!--apex:attribute name="mdList" type="grqWsDccaGetService" description="Segment And Activities" />
+<apex:attribute name="acc" type="Account" description="Current Account details" /-->
+    <body> 
+        <div class="row">
+            
+            <apex:outputPanel id="exSegActList" >
+                <div id="exSegAct" style="display:none;">
+                    <h2>Existing Segments and Activities</h2>
+                    <apex:outputPanel >
+                        <div class="form-group" id="segmentTble">
+                            <table class="table table-align-middle" id="table-exMem" data-page-length='25'>
+                                <thead>
+                                    <tr>
+                                        <th>Segment<i class="fa text-primary"></i></th>
+                                        <th>Activities<i class="fa text-primary"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!segmentList}" var="seg">
+                                        <tr><td><apex:outputText value="{!seg}" /></td>
+                                            <td>
+                                                <apex:variable var="c" value="{!1}" /> 
+                                                <apex:repeat value="{!existingSegandActMap[seg]}" var="act">
+                                                    <html> 
+                                                        
+                                                        <head> 
+                                                            <style>
+                                                                ul.horizontal-list { 
+                                                                list-style-type: none; 
+                                                                margin: 0; 
+                                                                padding: 0; 
+                                                                display: flex; 
+                                                                } 
+                                                                
+                                                                ul.horizontal-list li { 
+                                                                margin-right: 10px; 
+                                                                } 
+                                                            </style>
+                                                        </head>
+                                                        <body>
+                                                            <ul class="horizontal-list">
+                                                                <li>{!act}</li>
+                                                            </ul>
+                                                        </body>
+                                                    </html>
+                                                    <!--apex:outputText value="{!act+IF(existingSegandActCountMap[seg] == c,'.','  ;  ')}"/>
+                                                    <apex:variable var="c" value="{!c+1}"/-->
+                                                </apex:repeat>
+                                            </td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                            <apex:outputText rendered="{!isAmdReq}">
+                                <span class="text-primary" style="font-size: 125%"><b>You have an ongoing service request  {!existingRequestNumber} for this service. Please check the status under the Request Tab.</b></span>
+                            </apex:outputText>
+                            <apex:outputText rendered="{!isAmdReq==false}">
+                            <div class="custom-scroll business-segments mt-4 mb-3" id="existingActivities" style="display:none">
+                                <div class="row">
+                                    <div class="loader" style="position: fixed;top: 80%;left: 15px;padding-left: 62%;z-index: 100;display:none">
+                                        <svg class="spinner spinner-primary" width="45px" height="45px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg" >
+                                            <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30">
+                                            </circle>
+                                        </svg>
+                                    </div>
+                                    
+                                    <apex:repeat value="{!activityMap}" var="seg" rendered="{!isActivity}"> <!-- segmentList -->
+                                        <!--apex:repeat value="{!activityMap[seg]}" var="act" display:{!VALUE(activityMap[seg].size)>0}?'show':'none'-->
+                                        <div class="col-lg-4 col-md-4 col-6 Seg" style="cursor:pointer;"> <!-- segmentMap -->
+                                            <a data-value="{!segmentMap[seg]}" id="{!segmentMap[seg]}" onclick="showSection(this);" class ="forReadOnly business-segment box-grey box-grey-hover added">
+                                                <span class="added-number text-primary selectedCountSpan" style="{!IF(selectedCount[seg] >0, 'display:show','display:none')}"> {!selectedCount[seg]}
+                                                </span>
+                                                <span class="segmentId" style="display:none">{!seg}</span>
+                                                <span class="box-grey-title segmentSpan" >{!seg}</span>
+                                            </a>
+                                        </div>
+                                        <!--/apex:repeat-->
+                                    </apex:repeat>
+                                </div>
+                            </div>
+                            
+                            <div class="custom-scroll business-segments mt-4 mb-3" id="newSegment" style="display:none">
+                                <div class="row">
+                                    <div class="loader" style="position: fixed;top: 80%;left: 15px;padding-left: 62%;z-index: 100;display:none">
+                                        <svg class="spinner spinner-primary" width="45px" height="45px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg" >
+                                            <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30">
+                                            </circle>
+                                        </svg>
+                                    </div>
+                                    <!-- JS Code -->
+                                    <apex:repeat value="{!newSegmentList}" var="seg" rendered="true"> <!-- {!isSegment}" -->
+                                        <div class="col-lg-3 col-md-4 col-6 Seg" style="cursor:pointer;">
+                                            <a data-value="{!segmentMap[seg]}" id="{!segmentMap[seg]}" onclick="showSection(this);" class ="forReadOnly business-segment box-grey box-grey-hover added"> <!-- newSegMap -->
+                                                <span Class="added-number text-primary selectedCountSpan" style="{!IF(selectedCount[seg] >0, 'display:show','display:none')}">{!selectedCount[seg]}
+                                                </span>
+                                                <span class="segmentId" style="display:none">{!seg}</span>
+                                                <span class="box-grey-title segmentSpan" >{!seg}</span>
+                                            </a>
+                                        </div>
+                                    </apex:repeat>
+                                </div>
+                            </div>
+                            
+                            <div class="custom-scroll business-segments mt-4 mb-3" id="removeActivity" style="display:none">
+                                <div class="row">
+                                    <div class="loader" style="position: fixed;top: 80%;left: 15px;padding-left: 62%;z-index: 100;display:none">
+                                        <svg class="spinner spinner-primary" width="45px" height="45px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg" >
+                                            <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30">
+                                            </circle>
+                                        </svg>
+                                    </div>
+                                    
+                                    <apex:repeat value="{!segmentList}" var="seg" rendered="{!isRemoveActivity}"> <!-- activityMap segmentMap segmentList {!isSegment}" -->
+                                        <div class="col-lg-3 col-md-4 col-6 Seg" style="cursor:pointer;">
+                                            <a data-value="{!segmentMap[seg]}" data-segment="{!seg}" data-activities="{!activityCountMap[seg]}" id="{!segmentMap[seg]}" onclick="showSection(this);" class ="forReadOnly business-segment box-grey box-grey-hover added"> <!-- newSegMap -->
+                                                <span Class="added-number text-primary selectedCountSpan" style="{!IF(selectedCount[seg] >0, 'display:show','display:none')}">{!selectedCount[seg]}
+                                                </span>
+                                                <span class="segmentId" style="display:none">{!seg}</span>
+                                                <span class="box-grey-title segmentSpan" >{!seg}</span>
+                                            </a>
+                                        </div>
+                                    </apex:repeat>
+                                </div>
+                            </div>
+                            
+                            <div class="custom-scroll business-segments mt-4 mb-3" id="removeSegment" style="display:none">
+                                <div class="row">
+                                    
+                                    <apex:repeat value="{!segmentList}" var="seg" rendered="{!isSegment}"> <!-- activityMap segmentList {!isSegment}" -->
+                                       
+                                        <div class="col-lg-4 col-md-4 col-6" style="cursor:pointer;"> <!--col-lg-4 col-lg-3 col-md-4 col-6 Seg -->
+                                            <label class="{!segmentList.size} box-check" attr="{!seg}">
+                                                <input type="checkbox" name="business_activity" data-count="{!segmentList.size}" data-selected="{!selectedCount[seg]}" onclick="notify(this)" attr="{!activityMap1[seg]}" class="{!segmentMap[seg]} {!segmentList.size} forReadOnly avtivityCheckBox" id="btnShow"/>
+                                                <span class="box box-center box-padding box-hover" style="min-height: 74px;background-color: #DCDCDC;">
+                                                    <a attr="{!seg}" data-value="{!segmentMap[seg]}" id="{!segmentMap[seg]}" class ="forReadOnly business-segment box-grey box-grey-hover added"> <!-- newSegMap -->
+                                                        <span Class="added-number text-primary selectedCountSpan" style="{!IF(selectedCount[seg] >0, 'display:show','display:none')}">{!selectedCount[seg]}
+                                                        </span>
+                                                        <span class="segmentId" style="display:none">{!seg}</span>
+                                                        <span class="box-grey-title segmentSpan" >{!seg}</span>
+                                                    </a>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </apex:repeat>
+                                    
+                                </div>
+                            </div>
+                            <div class="custom-scroll business-segments mt-4 mb-3" id="addTitle" style="display:none">
+                                <div class="row">
+                                    <apex:repeat value="{!actvityWithTitleList}" var="title" rendered="true"> <!-- {!isSegment}" -->
+                                        
+                                    </apex:repeat>
+                                    
+                                </div>
+                            </div>
+                            </apex:outputText>
+                        </div>
+                    </apex:outputPanel>
+                    <script>
+                    
+                </script>
+                <div>
+                    <div id="activities" style="display:block">
+                        <apex:repeat value="{!finalSegmentList}" var="seg" rendered="true">
+                            <apex:repeat value="{!segMap[seg]}" var="smg">
+                                <div class="{!segmentMap[seg]} SegAct" style="display:block"> <!-- segMap[seg].segmentId -->
+                                    <h3>
+                                    </h3>
+                                    <p>
+                                        <br/>
+                                        
+                                        
+                                        <apex:outputText rendered="{!req.xvtyp__c != 'DED'}">
+                                        </apex:outputText>
+                                        <span class="remaining"></span> 
+                                        <span class ="segName" style="display:none">{!smg.Label}</span> 
+                                        <span class ="segId" style="display:none">{!smg.segmentId}</span>
+                                        <span class ="allowed" style="display:none">{!smg.AllowedActivites}</span>
+                                    </p>
+                                    <i class="icon-info-circle text-primary icon" style="vertical-align: middle;display:none"></i>
+                                    <span class ="info" style="display:none"></span>
+                                    <span class ="error" style="display:none;color:red" ></span>
+                                    <div class="row mt-4 mb-3">
+                                        <div class="col-lg-3">
+                                            <a href="#" class="forReadOnly business-segment box box-center bg-primary text-white">
+                                                <span class="box-title" data-toggle="tooltip" data-placement="bottom" title="{!segMap[seg].Description}" data-original-title="{!segMap[seg].Description}">
+                                                    <!--  {!segMap[seg].Label} --> {!seg}
+                                                </span>   
+                                            </a>
+                                        </div>
+                                        
+                                        <div class="col-lg-9">
+                                            <div class="custom-scroll business-activities1" seg="{!segmentMap[seg]}">
+                                                <div class="row">
+                                                    <apex:outputText rendered="{!AND(ammendVal == 'Add Activity',VALUE(activityMap1[seg]) == 0)}">
+                                                        <span class="text-primary" style="padding-left:36px; margin-top: 20px"><h2>All the activities under this segment are opted.</h2></span>
+                                                        </apex:outputText>
+                                                    <apex:repeat value="{!activityMap[seg]}" var="activity1">
+                                                        <apex:repeat value="{!activity1}" var="act">  
+                                                            <div class="col-lg-4">
+                                                                <label class="box-check" attr="{!segMap[seg].Label} -{!act.Label}"> 
+                                                                    <input type="checkbox" name="business_activity" onclick="notify(this)" data-isRelatedToTitles="{!act.isRelatedtoTitles}" data-isRelatedToChannels="{!act.isRelatedtoChannel}"  attr="{!act.Label} {!act.activityId}" class="{!segmentMap[seg]} forReadOnly avtivityCheckBox" id="btnShow"/><!-- -->
+                                                                    <span class="box box-center box-padding box-hover" style="min-height: 74px;"> <!-- box box-center box-hover business-activity activityDiv -->
+                                                                        <span class="ActivityPrice" style="display:none">{!act.Price}</span> 
+                                                                        <span id ="{!act.activityId}" class="box-title ActivitySpan" data-toggle="tooltip" data-placement="bottom" title="{!act.Description}" data-original-title="{!act.Description}">
+                                                                            {!act.Label}
+                                                                        </span> 
+                                                                        <span class="docList">
+                                                                            <apex:repeat value="{!act.doclist}" var="doc">
+                                                                                <input type="hidden" class="docName" value="{!doc.docName}"/>
+                                                                                <input type="hidden" class="mandatory" value="{!doc.isMandatory}"/>
+                                                                            </apex:repeat>
+                                                                        </span>
+                                                                    </span>
+                                                                    <!--/input-->
+                                                                </label>
+                                                            </div>  
+                                                        </apex:repeat>
+                                                    </apex:repeat>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> 
+                            </apex:repeat>
+                        </apex:repeat>
+                        <apex:outputPanel id="feeCalc">
+                            <apex:outputPanel rendered="{!IF(amountTobePaid > 0, true, false)}">
+                                <div class="text-info-icon">
+                                    <i class="icon-info-circle text-primary"></i>
+                                    For selected Segment activities  total amount to be paid AED {!amountTobePaid}
+                                </div><br/>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:outputPanel id="DocSec">
+                            <apex:outputPanel rendered="{!IF(AND(xcddocs!=null,xcddocs!=''),true,false)}">
+                             <div class="text-info-icon">
+                                    <i class="icon-info-circle text-primary"></i>
+                                    Required Documents : {!xcddocs}
+                                </div><br/>   
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </div>
+                    
+                    <div class="onboarding-nav" id="activityBackBtn" style="display:none;">
+                        <a data-value ="back" onclick='showSection(this);' class="forReadOnly btn btn-primary btn-primary-3 onboarding-nav-previous" style="color: #fff;">
+                            <i class="fa fa-angle-left"></i> <span>BACK</span>
+                        </a>
+                    </div>
+                  
+                    <!--
+                    <apex:outputPanel id="feeCalc">
+                        <apex:outputPanel rendered="{!IF(amountTobePaid > 0, true, false)}">
+                            <h2> Fees Calculation</h2>
+                            <table class="table table-align-middle" id="tableFee" data-page-length='25'>
+                                <thead>
+                                    <tr>
+                                        <th>Fee Description<i class="fa text-primary"></i></th>
+                                        <th>Amount<i class="fa text-primary"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!feeMap}" var="fee">
+                                        <tr>
+                                            <td> {!fee}</td>
+                                            <td> {!feeMap[fee]}</td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+-->
+                </div>
+                <c:LicAmdPopup rendered="{!segmentList.size>0}"> </c:LicAmdPopup>
+                
+                </div>
+            </apex:outputPanel>
+        </div>
+        <apex:outputPanel id="xcddocs">
+            <script>
+            //alert("{!xcddocs}");
+            var xcddocs = "{!xcddocs}";
+            var adhcResp = "{!JSENCODE(existingMemDetail)}"; //"{!existingMemDetail}";
+            activityMap = "{activityMap}";
+            console.log('ACTMAP'+activityMap);
+            //cs['xcddocs__c'].value = xcddocs;
+            //cs['xadtx4__c'].value = adhcResp;//JSON.stringify(
+            adhoc4Proto = adhcResp;
+            xcdDocs = xcddocs;
+            //alert(xcdDocs);
+            console.log(xcddocs);
+            console.log('--adhcResp--'+adhcResp);
+            </script>
+        </apex:outputPanel>
+        <apex:outputPanel id="jsScript">
+            <script>
+            
+            activityMap = "{!(activityMap)}";
+            activity = "{!activityJson}";
+            console.log(activityMap+'oooooooo');
+            console.log("{!segMap}");
+            console.log("{!segmentMap}");
+            console.log("{!newSegmentList}");
+            console.log('Test=2==',activityMap);
+            console.log('Test=1==',activity);
+            $("a").click(function(){
+                console.log('ammendVal====+++',ammendVal);
+                if($(this).hasClass('disabled'))
+                    return;
+                var val =$(this).data("value");
+                if(val == 'back'){
+                    if(ammendVal == 'Add Activity') {
+                        $('#existingActivities').show();
+                        $('#activities').children().hide();
+                        $('#activities').hide();
+                    } else if(ammendVal == 'Add Segment' ) {
+                        $('#newSegment').show();
+                        $('#activities').children().hide(); //newActivities
+                        $('#activities').hide();
+                    } else if(ammendVal == 'Remove Activity') {
+                        $('#removeActivity').show();
+                        //$('#newSegment').show();
+                        $('#activities').children().hide(); //newActivities
+                        $('#activities').hide();
+                    } else if(ammendVal == 'Remove Segment') {
+                        $('#removeSegment').show();
+                        $('#activities').children().hide(); //newActivities
+                        $('#activities').hide();
+                    }
+                }else if(val == 'next'){
+                    $(this).attr("disabled", false);        
+                    var checkBoxCount =$('#activities input.avtivityCheckBox:checkbox:checked').length;
+                    //alert(checkBoxCount);
+                    if(cs['xadtx2__c'].value){cs['xadtx2__c'].value = cs['xadtx2__c'].value.replaceAll('&amp;amp;','&');}
+                    var selSeg = cs['xadtx2__c'].value;
+                    console.log('');
+                    if(checkBoxCount>0 || (selSeg&&JSON.parse(selSeg).length>0)){
+                        var segActJson = createSegmentActivityJson();
+                        updateSegments();
+                        $('#businessActivities').removeClass('active-section').addClass('completed-section');
+                        $('#members').removeClass('incomplete-section').addClass('active-section');
+                        cs["xadtx2__c"].value = createSegmentActivityJson();
+                        nextpg('members'); 
+                    }else{
+                        updateSegments();
+                        $('#segment').find('.activityErrorElement').show();   
+                        $('html, body').animate({scrollTop: $('.activityErrorElement').offset().top + 'px'}, 'slow');
+                    }
+                }else if(val == 'moreSegment'){
+                    console.log('val::::'+val);
+                    searchJson = {};
+                    moreSegment();
+                    $('.loader').show();
+                }else if( val =='businessName'){
+                    var segActJson =  createSegmentActivityJson();
+                    if(segActJson){segActJson = segActJson.replaceAll('&#38;amp;','&');}
+                    cs['xadtx2__c'].value=segActJson;
+                    cs['adhoc2'].value=segActJson;
+                    console.log('cs:::'+ cs['xadtx2__c'].value);
+                    updateSegments();
+                    showTempLoader(event.target);
+                    if(cs['xvtyp__c'].value == 'DED')
+                        nextpg1('confpage');
+                    else
+                        nextpg1('businessName');
+                }else if(val != undefined){
+                    console.log('val:::'+val);
+                    if(ammendVal == 'Add Activity') {
+                        $('#existingActivities').hide();
+                        $('#activities').show(); //
+                        $('#activities').find('div.'+val).show();
+                    } else if(ammendVal == 'Add Segment') {
+                        $('#newSegment').hide();
+                        $('#activities').show(); //newActivities
+                        $('#activities').find('div.'+val).show();
+                    } else if(ammendVal == 'Remove Activity') {
+                        $('#removeActivity').hide();
+                        $('#activities').show(); //newActivities
+                        $('#activities').find('div.'+val).show();
+                    } 
+                    $('#activityBackBtn').show();
+                    if(ammendVal == 'Remove Segment') {
+                        $('#activityBackBtn').hide();
+                    }
+                }
+            });
+            
+            </script>
+        </apex:outputPanel>
+        <script>
+        function displayExisting(val) {
+            let vIns = val;
+            let activityArr = adhoc3Proto.serviceRequests[0].activities;
+            console.log(typeof activityArr);
+            console.log(typeof $('.'+val));
+            console.log('display Exist');
+            if(val == 'Remove Segment') { val = 'avtivityCheckBox';}
+            let v = $('.'+val).each(function () { //.avtivityCheckBox
+                console.log(this);
+                var attr = this.getAttribute('attr');//.split("-->");
+                console.log(attr);
+                if(vIns == 'Remove Segment') {
+                    attr = null; //to stop executing further lines of code.
+                    let c = this.getAttribute('data-selected');
+                    if(c >0) { // to display selected values.
+                        $(this).prop("checked", true);
+                    }
+                }
+                console.log('display Exist');
+                
+                if(attr != null) {
+                    var classNames = this.className.split(" ");
+                    var segId =  classNames[0];
+                    let list = attr.split(" ");
+                    console.log(list);
+                    let ddaId = list[list.length-1];
+                    console.log(ddaId);
+                    
+                    for(const x of activityArr) {
+                        if(ddaId == x.ddaId){
+                            $(this).prop("checked", true);
+                        } else { // remove channels.
+                            for(const y of x.channelTitles) {
+                                if(y.licensedTitleChannelDdaId == ddaId) {
+                                    $(this).prop("checked", true);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function showSection(ele) {
+            //alert();
+            console.log('Test=1==',activityMap);
+            activityMap = "{!(activityMap)}";
+            console.log('Test=2==',activityMap);           
+            console.log('ammendVal====',ammendVal);
+            if($(this).hasClass('disabled'))
+                return;
+            console.log('this----', $(this));
+            var val =$(ele).data("value");
+            activityCount = $(ele).data("activities");
+            selectedSegmentName = $(ele).data("segment");
+            console.log('val==2132==',val);
+            if(val == 'back'){
+                $('#activityBackBtn').hide();
+                if(ammendVal == 'Add Activity') {
+                    $('#existingActivities').show();
+                    $('#activities').children().hide();
+                    $('#activities').hide();
+                } else if(ammendVal == 'Add Segment' ) {
+                    $('#newSegment').show();
+                    $('#activities').children().hide(); //newActivities
+                    $('#activities').hide();
+                } else if(ammendVal == 'Remove Activity') {
+                    //var count = $('.segmentId input.avtivityCheckBox:checkbox:checked').length;
+                    selectedCount =0;
+                    $('#removeActivity').show();
+                    //$('#newSegment').show();
+                    $('#activities').children().hide(); //newActivities
+                    $('#activities').hide();
+                } else if(ammendVal == 'Remove Segment') {
+                    $('#removeSegment').show();
+                    //$('#newSegment').show();
+                    $('#activities').children().hide(); //newActivities
+                    $('#activities').hide();
+                } else if(ammendVal == 'Remove Broadcasting Channels' || ammendVal == 'Remove Publishing Title' || ammendVal == 'Adding New Publishing Title') {
+                    $('#existingActivities1').show();
+                    //$('#newSegment').show();
+                    $('#activities2').children().hide(); //newActivities
+                    $('#activities2').hide();
+                }
+            } else if(val == 'next'){
+                $(this).attr("disabled", false);        
+                var checkBoxCount =$('#activities input.avtivityCheckBox:checkbox:checked').length;
+                if(cs['xadtx2__c'].value){cs['xadtx2__c'].value = cs['xadtx2__c'].value.replaceAll('&amp;amp;','&');}
+                var selSeg = cs['xadtx2__c'].value;
+                if(checkBoxCount>0 || (selSeg&&JSON.parse(selSeg).length>0)){
+                    var segActJson = createSegmentActivityJson();
+                    //alert(segActJson);
+                    //###SHUI updateRequest_seg(segActJson);
+                    updateSegments();
+                    $('#businessActivities').removeClass('active-section').addClass('completed-section');
+                    $('#members').removeClass('incomplete-section').addClass('active-section');
+                    cs["xadtx2__c"].value = createSegmentActivityJson();
+                    nextpg('members'); 
+                    //nextpg2('members');
+                }else{
+                    //###SHUI updateRequest_seg('');
+                    updateSegments();
+                    $('#segment').find('.activityErrorElement').show();   
+                    $('html, body').animate({scrollTop: $('.activityErrorElement').offset().top + 'px'}, 'slow');
+                }
+            } else if(val == 'moreSegment'){
+                    console.log('val::::'+val);
+                    searchJson = {};
+                    moreSegment();
+                    $('.loader').show();
+                } else if( val =='businessName'){
+                        //showTempLoader($('.onboarding-nav-prev'));
+                        var segActJson =  createSegmentActivityJson();
+                        if(segActJson){segActJson = segActJson.replaceAll('&#38;amp;','&');}
+                        cs['xadtx2__c'].value=segActJson;
+                        cs['adhoc2'].value=segActJson;
+                        console.log('cs:::'+ cs['xadtx2__c'].value);
+                        updateSegments();
+                        showTempLoader(event.target);
+                        if(cs['xvtyp__c'].value == 'DED')
+                            nextpg1('confpage');
+                        else
+                            nextpg1('businessName');
+                } else if(val != undefined){
+                    console.log('val:::'+val);
+                    console.log(adhoc3Proto.serviceRequests[0].activities);
+                    displayExisting(val);
+                    if(ammendVal == 'Add Activity') {
+                        $('#existingActivities').hide();
+                        $('#activities').show(); //
+                        $('#activities').find('div.'+val).show();
+                    } else if(ammendVal == 'Add Segment') {
+                        
+                        //console.log(adhoc3Proto.serviceRequests[0].activities);
+                        //console.log(v); 
+                        //var child = $('.box-check input.avtivityCheckBox:nth-child(1)');
+                        //console.log(child);
+                        //alert(v.length);
+                        $('#newSegment').hide();
+                        $('#activities').show(); //newActivities
+                        $('#activities').find('div.'+val).show();
+                    } else if(ammendVal == 'Remove Activity') {
+                        $('#removeActivity').hide();
+                        $('#activities').show(); //newActivities
+                        $('#activities').find('div.'+val).show();
+                    } else if(ammendVal == 'Remove Broadcasting Channels' || ammendVal == 'Remove Publishing Title' || ammendVal == 'Adding New Publishing Title') {
+                        $('#existingActivities1').hide();
+                        $('#activities2').show(); //newActivities
+                        $('#activities2').find('div.'+val).show();
+                        $('#activityBackBtn2').show();
+                    }
+                        
+                    $('#activityBackBtn').show();
+                    if(ammendVal == 'Remove Segment') {
+                        $('#activityBackBtn').hide();
+                    }
+                }
+            //alert(adhoc3Proto.serviceRequests[0].activities.length);
+            if(adhoc3Proto.serviceRequests[0].activities.length ==0) {
+                $('base-nav-next').hide();
+            } else {
+                $('base-nav-next').show();
+            }
+        }
+        </script>
+        
+    </body>
+        
+    <apex:actionFunction name="calculateFee" action="{!fetchCalculationFees}" status="theStatus" reRender="xcddocs,feeCalc,DocSec" oncomplete="toggleGLoader();">
+        <apex:param name="jsonVal" assignTo="{!enteredText1}" value="" />
+    </apex:actionFunction> <!-- callSegandAct -->
+    <apex:actionFunction name="callSegandAct" action="{!fetchAllDDAMembers}" status="theStatus"  reRender="exSegActList,jsScript,feeCalc,DocSec" oncomplete="finishLoading();"> <!-- testing(JSON.stringify('{!segmentMap}'), JSON.stringify('{!newSegmentList}')); -->
+        <apex:param name="ammendmentValue" value="" />
+    </apex:actionFunction> <!-- callSegandAct -->
+    
+    <script>
+    var adhoc3Proto = '{"serviceRequests": [{"serviceId": "","axsRefNo":"","licenseNo": "","ddaSegmentId":","activities": [{"name": "","ddaId": "", "actionType": "ADD","channelTitles": null},{"name": "","ddaId": "","actionType": "ADD","channelTitles": null},{"name": "","ddaId": "","actionType": "ADD","channelTitles": null},{"name": "","ddaId": "", "actionType": "ADD","channelTitles": null},{"name": "","ddaId": "","actionType": "ADD","channelTitles": null}]}]}';
+    var adhoc4Proto = '[{"Salutation":"","Given_Name":"","Surname":"","MR_Gender":"","Date_of_Birth":"","Place_of_Issue":"","undefined":"","Passport_No":"","Date_of_Issue2":"","Date_of_Expiry2":"","country":"","Place_of_Birth":"","eid":"","InOrOut":"","AttachmentId":""}]';
+    var xcdDocs = '';
+    var obj = {};
+    var ammendVal = '';
+    var isRelatedToTitle=false;
+    var isRelatedtoChannel=false;
+    var selectedDdaId;
+    var selectedVal;
+    var flag = true;
+    var resp;
+    var activityMap;
+    var activity;
+    var selectedCount = 0;
+    var activityCount =0;
+    var selectedSegmentName = '';
+    var segmentCount = {};
+    var segmentList = [];
+    function calculateFeeFunc() {
+        console.log(adhoc3Proto);
+        toggleGLoader();
+        calculateFee(JSON.stringify(adhoc3Proto));  
+    }
+    function finishLoading(){
+        
+         activity = "{!activityJson}";
+        $('#exSegAct').show();
+        document.getElementById('org.ajax4jsf.oncomplete').style.display = 'none';
+        if(ammendVal == 'Add Activity') {
+            $('#existingActivities').show();
+            $('#newSegment').hide();
+            $('#activities').children().hide();
+            $('#activities').hide();
+        } else if(ammendVal == 'Add Segment') {
+            $('#newSegment').show();
+            $('#existingActivities').hide();
+            $('#activities').children().hide(); //newActivities
+            $('#activities').hide();
+            console.log("{!segMap}");
+        console.log("{!segmentMap}");
+        console.log("{!newSegmentList}");
+        } else if(ammendVal == 'Remove Activity') {
+            $('#newSegment').show();
+            $('#existingActivities').hide();
+            $('#activities').children().hide(); //newActivities
+            $('#activities').hide();
+            $('#removeActivity').show();
+        } else if(ammendVal == 'Remove Segment') {
+            $('#newSegment').show();
+            $('#existingActivities').hide();
+            $('#activities').children().hide(); //newActivities
+            $('#activities').hide();
+            $('#removeSegment').show();
+            displayExisting(ammendVal);
+        }
+        //toggleGLoader();
+    }
+    
+    function execSegandAct(val) {
+        ammendVal = val;
+        $('.base-nav-next').hide();
+        $('#conInfo,#collectInfo').hide();
+        console.log('--exis--'+{!isAmdReq});
+        if(adhoc3Proto.serviceRequests[0].activities.length>0)//'{!req.id}'!=null && {!isAmdReq}==false
+        {
+            //alert(5);
+            $('.base-nav-next').show();
+        }
+        //if(flag) {  
+        $('#exSegAct').show();
+        toggleGLoader();
+        console.log('--1isAmdReq--1'+{!isAmdReq});
+        if({!isAmdReq}==false){
+            //setTimeout(callSegandAct,1000,val); //
+            callSegandAct(val);
+        }
+    }
+    
+    $(document).ready(function(){
+        $('#conInfo,#collectInfo').hide();
+        obj.serviceRequests= [];
+        var ActivitiesObj = [];
+        var serviceObj = {};
+        serviceObj.serviceId = 'a15IS0000005f91YAA';
+        serviceObj.licenseNo = '{!u.Contact.Account.lc__c}';  //'102889';
+        console.log(serviceObj.licenseNo);
+        //serviceObj.axsRefNo='{!req.name}';
+        serviceObj.activities = [];
+        serviceObj.members = [];
+        serviceObj.locations = null;
+        serviceObj.companyInfo = null;
+        serviceObj.isPaid = null;
+        serviceObj.ddaSegmentId=null;
+        obj.serviceRequests.push(serviceObj);
+        var jsonString= JSON.stringify(obj);
+        console.log(jsonString);
+        adhoc3Proto = obj; //JSON.stringify(obj);
+        console.log(adhoc3Proto);
+        activityMap = "{!activityMap}";
+        activity = "{!activityJson}";
+        console.log('ACTMAP'+activityMap);
+        console.log("{!segMap}");
+        console.log("{!segmentMap}");
+        console.log("{!newSegmentList}");
+        if('{req.id}'!=''){
+            
+            //alert(6);
+            // $('.base-nav-next').show();
+            if(cs['xadtx3__c']&&cs['xadtx3__c'].value){
+                adhoc3Proto = JSON.parse(cs['xadtx3__c'].value);
+                obj = adhoc3Proto;
+                //alert(cs['xadtx4__c'].value);
+                console.log(adhoc3Proto);
+                //displayExisting2();
+                //if(ammendVal == 'Add Segment') {
+                //alert(segId+'--'+count);
+                //$('#newSegment').find('#'+segId).find(".selectedCountSpan").html(count).show();
+                //}
+            }
+            if(cs['xadtx4__c']&&cs['xadtx4__c'].value) {
+                adhoc4Proto = JSON.parse(cs['xadtx4__c'].value);
+            }
+            //alert(cs['xcddocs__c'].value);
+            if(cs['xcddocs__c']&&cs['xcddocs__c'].value) {
+                xcdDocs = cs['xcddocs__c'].value;
+            }  
+        }
+    });
+    
+  
+    const stringToBoolean = (str) => {
+        if(str.toLowerCase().trim() == 'true') return true;
+        if(str.toLowerCase().trim() == 'false') return false;
+    }
+    
+    function notify(seg){
+        console.log(seg);
+        console.log(obj);
+        selectedVal = seg;
+        if(ammendVal == 'Add Activity' || ammendVal == 'Add Segment' || ammendVal == 'Remove Activity' ){
+            var attr = seg.getAttribute('attr');//.split("-->");
+            console.log(attr);
+            isRelatedToTitle = stringToBoolean(seg.getAttribute('data-isrelatedtotitles'));
+            isRelatedtoChannel = stringToBoolean(seg.getAttribute('data-isrelatedtochannels'));
+            console.log(seg.getAttribute('data-isrelatedtotitles'));
+            var classNames = seg.className.split(" ");
+            var segId =  classNames[0];
+            let list = attr.split(" ");
+            console.log(list);
+            let ddaId = list[list.length-1];
+            selectedDdaId = ddaId;
+            list.pop();
+            console.log('attrList--='+attr);
+            //console.log(attrList.length);
+            console.log(seg);
+            var sr = adhoc3Proto.serviceRequests[0];
+            if($(seg).prop("checked") == true){ //Add rows.
+                var objIns = {};
+                objIns.name = list.join(" "); //attrList[0];
+                objIns.ddaId = ddaId; //attrList[1];
+                if(ammendVal == 'Add Activity' || ammendVal == 'Add Segment'){
+                    objIns.actionType = 'ADD';
+                } 
+                else if(ammendVal == 'Remove Activity'){ //|| ammendVal == 'Remove Segment'  
+                    selectedCount = $('.'+segId+' input.avtivityCheckBox:checkbox:checked').length;
+                    if(activityCount == (selectedCount)) {
+                        $(seg).prop("checked", false);
+                        axsAlert('Error','At least one active license segment and activity is required to apply for this service');
+                        //$('#activities').find('.'+segId).find('.error').html('You cannot select all values:'+(selectedCount)+'<br/>').show();
+                        return; 
+                    } else {
+                        segmentCount[selectedSegmentName] += 1;
+                    }
+                    objIns.actionType = 'REMOVE';
+                }
+                objIns.channelTitles = [];
+                objIns.noOfTitleAndChannels = null;
+                sr.activities.push(objIns);
+                console.log(isRelatedToTitle+'------'+isRelatedtoChannel);
+                if((ammendVal == 'Add Activity' || ammendVal == 'Add Segment') && isRelatedToTitle){
+                    //$('#modal_add_Title2').modal('show');
+                    //$('#modal_add_Title').modal('show');
+                    $('#modal_add_TitleTT').modal('show');
+                }else if((ammendVal == 'Add Activity' || ammendVal == 'Add Segment') && isRelatedtoChannel){
+                    $('#modal_add_ChannelCC').modal('show');
+                }else { 
+                    calculateFeeFunc();
+                }
+                resp='{!adhc4Resp}';
+                console.log('----resp1----'+resp);
+                console.log(adhoc3Proto);
+                
+            } 
+            else if($(seg).prop("checked") == false) { // Remove rows.
+                if((ammendVal == 'Add Activity' || ammendVal == 'Add Segment') && (isRelatedtoChannel || isRelatedToTitle)){
+                    if(!$(seg).prop("checked")) { // on uncheck, check checkbox.
+                        $(seg).prop("checked", true); 
+                    }
+                    //Display existing data in popup.
+                    console.log(adhoc3Proto);
+                    let selectedIndex = 0;
+                    let actList = adhoc3Proto.serviceRequests[0].activities;
+                    for(var i=0; i<actList.length;i++) {
+                        if(actList[i].ddaId == selectedDdaId) {
+                            selectedIndex = i;
+                        }
+                    }
+                    console.log(adhoc3Proto.serviceRequests[0].activities[selectedIndex]);
+                    let channelList = adhoc3Proto.serviceRequests[0].activities[selectedIndex].channelTitles;
+                    for(let j=0;j<channelList.length;j++) {
+                        if(isRelatedToTitle) {
+                            $('#addedMems_T').append(createNewAddRow(channelList[j]));
+                            selectedArrValues.push(mergeDataMsg(channelList[j]));
+                        } else if(isRelatedtoChannel){
+                            $('#addedMems_C').append(createNewAddRow(channelList[j]));
+                            selectedArrValues.push(mergeDataMsg(channelList[j]));
+                        } 
+                    }
+                    console.log(adhoc3Proto);
+                    if(isRelatedToTitle) {
+                        $('#modal_add_TitleTT').modal('show');
+                    } else if(isRelatedtoChannel){
+                        $('#modal_add_ChannelCC').modal('show');
+                    }
+                }  else if(ammendVal == 'Add Activity' || ammendVal == 'Add Segment' || ammendVal == 'Remove Activity') {
+                    var arr = sr.activities;
+                    for(var i=0,j=arr.length;i<j;i++){
+                        console.log(arr[i]);
+                        console.log(attrList);
+                        if(arr[i] != undefined && arr[i].ddaId == ddaId){ //attrList[1]
+                            arr.splice(i, 1);
+                        }
+                    }
+                    segmentCount[selectedSegmentName] -= 1;
+                    console.log(adhoc3Proto);
+                    calculateFeeFunc();
+                }
+            } /*else {
+                var arr = sr.activities;
+                for(var i=0,j=arr.length;i<j;i++){
+                    console.log(arr[i]);
+                    console.log(attrList);
+                    if(arr[i] != undefined && arr[i].ddaId == ddaId){ //attrList[1]
+                        arr.splice(i, 1);
+                    }
+                }
+                segmentCount[selectedSegmentName] -= 1;
+                console.log(adhoc3Proto);
+            } */
+        }
+        
+        if(ammendVal == 'Remove Segment'){
+            console.log(seg);
+            var attrList = seg.getAttribute('attr');//.split("-->");
+            let actMap = [];
+            let s = attrList.split(":::");
+            console.log(s);
+            let classNames = seg.className.split(" ");
+            let segId =  classNames[1];
+            activityCount = seg.getAttribute('data-count');
+            selectedCount =  $('.'+segId+' input.avtivityCheckBox:checkbox:checked').length; //
+            if($(seg).prop("checked")) {
+                if(activityCount == (selectedCount)) {
+                    $(seg).prop("checked", false);
+                    axsAlert('Error','At least one active license segment and activity is required to apply for this service');
+                    // $('#activities').find('.'+segId).find('.error').html('You cannot select all values:'+(selectedCount)+'<br/>').show();
+                    return; 
+                }
+            }
+            
+            for(let j=0; j<s.length; j++) {
+                if(s[j] != null && s[j] != '') {
+                    let temp = s[j].split("-SPACE-");
+                    let obj = {};
+                    obj.Name = temp[0];
+                    obj.activityId = temp[1];
+                    actMap.push(obj);
+                }
+            }
+            //var actMap1 ="{!activity}";  //"{!activityMap}";
+            //console.log(JSON.parse(JSON.stringify(activity)));
+            //var actMap = activity[attrList];
+            console.log(actMap);
+            var sr = adhoc3Proto.serviceRequests[0];
+            //let ddaId = list[list.length-1];
+            //console.log(ddaId);
+            //console.log($(seg).prop("checked"));
+            if($(seg).prop("checked") == true){ //Add rows.
+                for(var i=0,j=actMap.length;i<j;i++){
+                    var obj = {};
+                    obj.name = actMap[i].Name; //list.join(" ");
+                    obj.ddaId = actMap[i].activityId; //ddaId;
+                    obj.actionType = 'REMOVE';
+                    obj.channelTitles = null;
+                    obj.noOfTitleAndChannels = null;
+                    sr.activities.push(obj);
+                }
+                calculateFeeFunc();
+                resp='{!adhc4Resp}';
+                console.log('----resp1----'+resp);
+                console.log(adhoc3Proto);
+                console.log(sr);
+            } else if($(seg).prop("checked") == false) { // Remove rows.
+                var arr = sr.activities;
+                let ddaIdList =[];
+                for(var i=0,j=actMap.length;i<j;i++){
+                    console.log(actMap[i]);
+                    ddaIdList.push(actMap[i].activityId);
+                }
+                console.log(ddaIdList);
+                for(var j=0;j<ddaIdList.length;j++){
+                    for(var i=0;i<arr.length;i++){
+                        console.log(arr[i]);
+                        console.log(arr[i].ddaId+'---'+ddaIdList.includes(arr[i].ddaId));
+                        if(arr[i] != undefined && ddaIdList[j] == arr[i].ddaId){
+                            arr.splice(i, 1);
+                        }
+                    }
+                }
+                console.log(adhoc3Proto);
+                console.log(sr);
+            }  
+        }
+        
+        
+        if(adhoc3Proto.serviceRequests[0].activities.length>0){
+            //alert(7);
+            $('.base-nav-next').show();
+        } else {  
+            $('.base-nav-next').hide(); 
+        }
+        
+        console.log(classNames);
+        console.log(segId);
+        var count = $('.'+segId+' input.avtivityCheckBox:checkbox:checked').length;
+        var allowed =$('#activities').find('.'+segId).find('.allowed').html();
+        var rem = allowed - count;
+        selectedCount = count;
+        //console.log(count+'-----'+allowed);
+        //console.log($(seg).prop("checked"));
+        /*if(rem<0 && $(seg).prop("checked") == true){
+        //cannot select more activities than allocated
+        $(seg).prop("checked",false);
+        return;
+    }*/
+        ///
+        if(count>0){
+            //Price calculation
+            var standardPrice = $('#activities').find('.'+segId).find('.standardPrice').html();
+            var activityPrice = $(seg).next().find('.ActivityPrice').html();
+            var price  =  $('#activities').find('.'+segId).find('.selectedPrice').html();
+            console.log(standardPrice);
+            if(allowed>=count){
+                $('#activities').find('.'+segId).find('.selectedPrice').html(standardPrice);
+            }else{
+                var selectedPrice ='';
+                if($(seg).prop("checked") == true){
+                    selectedPrice = +price + +activityPrice;    
+                }else if($(seg).prop("checked") == false){
+                    selectedPrice = +price - +activityPrice;
+                }
+                selectedPrice=150;
+                $('#activities').find('.'+segId).find('.selectedPrice').html(selectedPrice);
+            }   
+            
+            //Remaining Notification in activity
+            if(rem>0){
+                //$('#activities').find('.'+segId).find('.remaining').html('you can select('+rem+ ' more )').show();
+            }else if(rem<=0){
+                $('#activities').find('.'+segId).find('.remaining').hide();
+            }else{
+                $('#activities').find('.'+segId).find('.remaining').hide();
+                
+            }
+            //Selected count notification in both segment and activity
+            // $('#activities').find('.'+segId).find('.info').html('You have selected '+count+'<br/>').show();
+            //$('#activities').find('.'+segId).find('.icon').show();
+            if(ammendVal == 'Add Activity') {
+                $('#existingActivities').find('#'+segId).find(".selectedCountSpan").html(count).show();
+            } else if(ammendVal == 'Add Segment') {
+                //alert(segId+'--'+count);
+                $('#newSegment').find('#'+segId).find(".selectedCountSpan").html(count).show();
+            } else if(ammendVal == 'Remove Activity') {
+                $('#removeActivity').find('#'+segId).find(".selectedCountSpan").html(count).show();
+            }
+            
+            
+        }else {
+            $('#activities').find('.'+segId).find('.info').html('').hide();
+            $('#activities').find('.'+segId).find('.error').html('').hide();
+            //$('#activities').find('.'+segId).find('.icon').hide();
+            $('#activities').find('.'+segId).find('.remaining').hide();
+            $('#existingActivities').find('#'+segId).find(".selectedCountSpan").html('').hide();
+            $('#newSegment').find('#'+segId).find(".selectedCountSpan").html('').hide();
+            $('#removeActivity').find('#'+segId).find(".selectedCountSpan").html('').hide();
+            $('#activities').find('.'+segId).find('.selectedPrice').html('');
+        }
+        if($(seg).prop("checked")){
+            //hide error element
+            $('#segment').find('.activityErrorElement').hide();
+            //show pop if channel/title exists
+            if(($(seg).parent().prev().find('.channel').html() == "true"|| $(seg).parent().prev().find('.title').html() == "true")){
+                $(seg).parent().prev().modal("show");
+                
+            }
+        }
+    }; 
+    
+    
+    </script>
+</apex:component>

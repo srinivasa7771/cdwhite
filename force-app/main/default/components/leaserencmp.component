@@ -1,0 +1,337 @@
+<apex:component controller="LeaseCmpCtl" allowDML="true">
+    
+    <style>
+        .waterMark {
+        height: 100%;
+        width: 100%;
+        //border: 1px solid #e8e1e1;
+        border-radius: 12px;
+        position: relative;
+        }
+        
+        .waterMark span {
+        position: absolute;
+        display: block;
+        transform: translate(-100%, -100%) rotate(-45deg);
+        left: 100%;
+        top: 58%;
+        font-size: 3rem;
+        width: 100%;
+        color: #ebebeb;
+        font-weight: 500;
+        }
+    </style>
+    
+    <!--apex:attribute name="req" description=".." type="g_Req__c" assignTo="{!rq}" required="true" />
+    <apex:attribute name="rid" description="request ID" type="String" assignTo="{!rqid}" required="false"  /-->
+    <apex:attribute name="R" description="Request" type="g_Req__c" assignTo="{!rq}" required="true"/>
+    <apex:attribute name="PrMap" description="Price details" type="String" assignTo="{!pMap}"/>
+    <apex:attribute name="LicMap" description="fee details" type="String" assignTo="{!licpriceMap}" />
+    <apex:attribute name="segStr" description="json for fee breakdown" type="String" assignTo="{!segJson}" required="true"  />
+     <apex:actionFunction name="updateOfferStatus"  action="{!updateOffer}"  rerender="leaseId" oncomplete="hideTempLoader_input();">
+            <apex:param name="itmCd" value=""/> 
+    </apex:actionFunction> 
+    <apex:outputPanel id="leaseId">
+     <div class="onboarding-left">
+            <div class="onboarding-side-main">
+                <div class="onboarding-side-header text-primary d-md-block d-none">
+                    <h3>SPACE REQUIREMENTS (LEASE)</h3>
+                </div>
+                <a href="#" class="onboarding-side-header d-block d-md-none collapsed" data-toggle="collapse"
+                    data-target="#onboarding_side_content">
+                    <h3>SPACE REQUIREMENTS (LEASE)</h3>
+                </a>
+                <div class="collapse" id="onboarding_side_content">
+                    <div class="onboarding-side-content"  style="display:block"> 
+                        <p>The following are the leasing units</p>
+                        <div style="height:400px; overflow: auto;" >
+                           
+                            <apex:outputPanel id="unitInfoId"  >
+            <div class="onboarding-side-footer">
+                <a href="#" class="onboarding-side-footer-modal-toggle" data-toggle="modal" data-target="#modal_lease_breakdown">
+                    <i class="icon-popup"></i>
+                </a>
+                <div class="data-info data-info-lg">
+                   <apex:repeat value="{!tecomLeaseList}" var="l" id="theRepeat2">
+                                <div class="onboarding-unit">
+                                    <i class="{! IF(l.Category == 'Office', 'icon-commercial','icon-lease-3')} onboarding-unit-icon text-primary"></i>
+                                    <div class="onboarding-unit-value badge-status">{!l.OppArea} SQFT</div>
+                                    <h5>{!l.Category}</h5>
+                                    <div><strong>
+                                    <apex:repeat value="{!LeaseNameMap[l.AgNo]}" var="key2">
+                                        {!l.AgNo} <br/> {!key2} <br/>
+                                        {!l.ContractEndDate} <br/>
+                                        {!l.ContractStatusReason}
+                                    </apex:repeat>
+                                    </strong></div>
+                                      
+                                </div>
+                            </apex:repeat> 
+                </div>
+            </div>
+            </apex:outputPanel>
+                            
+                        </div>
+
+                        <div class="my-4" style="{!IF(OR(rq.os__c =='LCL Issued',rq.os__c =='CCL Issued',rq.os__c =='LCL Accepted'), 'display:block', 'display:none')}">
+                            <a href="/DisplayDoc?id={!ritm.ccrmid__c}" target="_new" class="btn btn btn-primary">
+                                lease Details
+                            </a>
+                           <!-- <button type="button" class="btn btn-outline-primary"><i class="fa fa-arrow-down"></i> VIEW
+                                OFFER</button> -->
+                        </div>
+
+                        <p>If you have any questions about the lease, please contact your
+                        Relationship Manager.</p>
+                        <div style="{!IF(OR(rq.os__c =='LCL Issued',rq.os__c =='CCL Issued'), 'display:block', 'display:none')}">
+                            <a href="#" onclick="showTempLoader_input(this);updateOfferStatus('ok');"  class="btn btn-primary">ACCEPT</a>
+                            <a href="#" onclick="showTempLoader_input(this);updateOfferStatus('cr');" class="btn btn-primary">Rereview</a>
+                        </div>  
+                    </div>
+                    
+                   
+                    
+                </div>
+                <!-- .onboarding-side-content -->
+            </div>
+            <!-- .onboarding-side-main -->
+            <apex:outputPanel id="dueAmount"  >
+            <div class="onboarding-side-footer" style="display:block">
+               <apex:outputText rendered="{!NOT(AND(A.Prk__c != 'Dubai Design District',A.Legal_Framework__c == 'Freelancer'))}">
+                <a href="#" class="onboarding-side-footer-modal-toggle" data-toggle="modal" data-target="#modal_fees_breakdown">
+                    <i class="icon-popup"></i>
+                </a>
+               </apex:outputText> 
+                <div class="data-info data-info-lg">
+                    <h4 class="data-label">Payment Due</h4>
+                    <div class="data-value">  
+                     <apex:outputText value="{0, number, ###,###,###,##0}" >  
+                                AED <apex:param value="{!R.xtpa__c}" /> 
+                            </apex:outputText> 
+                    </div>
+                    <!--div class="data-value"> {!dueAmt}</div-->
+                </div>
+            </div>
+            </apex:outputPanel>
+            
+           
+            <!-- .onboarding-side-footer -->
+        </div>
+     </apex:outputPanel>   
+    <!-- lease breakdown Model start -->
+       <div class="modal fade modal-base" id="modal_lease_breakdown" tabindex="-1" role="dialog"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 1000px;">
+            <apex:outputPanel id="lesaeBreak"  >
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body px-xl-5">
+                    <h2>Units breakdown</h2>
+                    <p>
+                        Below are the Unit(s).
+                    </p>
+
+                    <div class="onboarding-review-table onboarding-review-table-static">
+                        
+                       <!-- <apex:repeat value="{!tecomLeaseList}" var="l" > -->
+                        
+                            <div class="onboarding-review-toggle">
+                                <div class="onboarding-review-row">
+                                    <span class="onboarding-review-label">Unit Number</span>
+                                    <span class="onboarding-review-label">Area (Sft)</span>
+                                     <span class="onboarding-review-value">Building Name</span> <!--Product -->
+                                    <span class="onboarding-review-value">Contract Start Date</span>
+                                     <span class="onboarding-review-value">Contract End Date</span>
+                                    <span class="onboarding-review-value">Agreement Number</span>
+                                    
+                                </div>
+                            </div>
+                          
+                            <!-- .onboarding-review-toggle -->
+                           <apex:repeat value="{!unitList}" var="key1"> 
+                              
+                            <div class="onboarding-review-body">
+                                 
+                                   
+                                <div class="onboarding-review-row">
+                                     
+                                   <span class="onboarding-review-label">{!key1.UnitNumber}</span>
+                                   <span class="onboarding-review-label">{!key1.UnitArea}</span>
+                                    <span class="onboarding-review-value">{!key1.ProductName}</span>
+                                    <span class="onboarding-review-value"><apex:outputText value="{!key1.ContractStartDate}" /></span>
+                                    <span class="onboarding-review-value">{!key1.ContractEndDate}</span>
+                                    <span class="onboarding-review-value">{!key1.AgNo}</span>
+                                    
+                                </div>
+                                   
+                              
+                            </div>
+                         
+                          </apex:repeat> 
+                        <!-- </apex:repeat> -->
+                        
+                        <!--</apex:repeat>  -->
+                        
+                        
+                    </div>
+                    <!-- .onboarding-review-table -->
+                </div>
+            </div>
+            </apex:outputPanel>
+        </div>
+    </div>
+    <!-- lease breakdown Model end -->
+        <!-- fees_breakdown Modal Start-->
+    <div class="modal fade modal-base" id="modal_fees_breakdown" tabindex="-1" role="dialog"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 1000px;">
+            <apex:outputPanel id="feeBreak"  >
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body px-xl-5">
+                    <h2>Fees breakdown</h2>
+                    <p>
+                       Below are the approximate fees calculated, which are subject to change based on your final selections. 
+
+                    </p>
+
+                    <div class="onboarding-review-table onboarding-review-table-static">
+                        <div class="onboarding-review-toggle">
+                                <div class="onboarding-review-row">
+                                    <span class="onboarding-review-label">
+                        <table>                     
+                      <apex:outputText value="{!PrMap}" escape="false" /> 
+                        </table>
+                                        </span>
+                                    
+                                </div>
+                            </div>
+                        
+                      <!--  <apex:repeat value="{!LicMap}" var="key1">
+                            <div class="onboarding-review-toggle">
+                                <div class="onboarding-review-row">
+                                    <span class="onboarding-review-label">{!key1}</span>
+                                    
+                                </div>
+                            </div>
+                          </apex:repeat> -->
+                        
+                        
+                        <!-- .onboarding-review-body -->
+                        <apex:outputPanel id="footer1"  >
+                            <div class="onboarding-review-row total"
+                                style="border-top: 3px solid #F5F5F5; padding-top: 10px;margin-top: 15px;">
+                                <span class="onboarding-review-label"></span>
+                                <span class="onboarding-review-value font-weight-bold">{!rq.xtpa__c} AED</span>
+                            </div>
+                        </apex:outputPanel>
+                        
+                    </div>
+                    <!-- .onboarding-review-table -->
+                </div>
+            </div>
+            </apex:outputPanel>
+        </div>
+    </div>
+        <!-- fees_breakdown Modal End -->
+    <!-- edit Modal Strat -->
+        <div class="modal fade modal-base" id="modal_changeName" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="width: 990px;">
+        <div class="modal-content">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <i class="icon-close"></i>
+            </button>
+            <div class="modal-body">
+                <h2>Modify and confirm the information</h2>
+                <p> 
+                    Kindly review to confirm and proceed to save.
+                </p>
+                <p>
+                    <i class="icon-info-circle text-primary" style="vertical-align: middle;"></i>
+                    All fields are mandatory
+                </p>
+
+                <div class="form-style">
+                    <div class="row">
+                        <div class="col-md-6">
+                          
+                            <div class="form-group">
+                                <label>Type of formation</label>
+                                <!--apex:inputText styleClass="form-control" id="formation" value="{!formation}" /-->
+                                <div>
+                                    <apex:actionRegion >
+                                    <apex:selectlist size="1" multiselect="false" styleclass="form-control input-select2-flat" value="{!formation}"  id="formation" >
+                                        <apex:selectoptions value="{!Pick2}" />
+                                        <apex:actionSupport event="onchange" reRender="false" action="{!formationUpdate}"  />
+                                        </apex:selectlist>
+                                     </apex:actionRegion>
+                                </div>
+                            </div>
+                            <!--
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label>Industry</label>
+                                        <div>
+                                        <apex:actionRegion >
+                                            <apex:selectlist size="1" multiselect="false" styleclass="form-control input-select2-flat" value="{!indTyp}"  id="indTyp" >
+                                                <apex:selectoptions value="{!Pick1}" />
+                                                <apex:actionSupport event="onchange" reRender="false" action="{!indTypUpdate}" />
+                                            </apex:selectlist>
+                                             </apex:actionRegion>
+                                        </div>
+                                    </div>
+                                </div>
+                              end of  col
+                            </div>
+                           .row -->
+                            
+                        </div>
+                        
+                        <!-- .col -->
+                    </div>
+                    <!-- .row -->
+                    <div class="row">
+                        <div class="col-md-6">
+                             <div class="form-group text-right">
+                                <label>&nbsp;</label><br/>
+                                <!--button class="btn btn-primary">SAVE</button-->
+                                <apex:commandButton action="{!editFromLeaseCmp}" value="Save" id="theButton" styleClass="btn btn-primary"/>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- .form-style -->
+
+            </div>
+            <!-- .modal-body -->
+
+
+        </div>
+    </div>
+</div>
+
+    <!-- edit Modal End -->
+
+    <script>
+    // auto open popup
+    $(function () {
+      //  $('#modal_changeName').modal('show');
+    });
+</script>
+    <script type="text/javascript">
+    ///console.log('LeaseDueAmount >>>'+ LeaseDueAmount);
+        //jQuery('[id$=dueAmt]').text(LeaseDueAmount) ; 
+       
+    function assignType(fType){
+        console.log(fType);
+        cs['xfb__c'].value = fType
+        showCmpInfo();
+    }
+    </script>
+</apex:component>

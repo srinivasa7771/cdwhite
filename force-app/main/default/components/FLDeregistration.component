@@ -1,0 +1,230 @@
+<apex:component >
+    
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="Acc" description="Account" type="Account" required="true"/>
+    <apex:attribute name="srvLst" description="Received list of Service records" type="g_Srvc__c[]"  required="true"/>
+    <apex:attribute name="srvLbl" description="Service Type Label" type="String"  required="true"/>
+    <apex:attribute name="srv" description="Service " type="g_Srvc__c" />
+    <apex:attribute name="accType" description="Account Type " type="String" />  
+    <apex:attribute name="activeDep" description="Active Dependents " type="Boolean" />  
+    <style>
+        #upload_button{
+        display:none;
+        float: right;
+        }
+        #inUAEPrnt{
+        display:none;
+        }
+    </style>
+    <div class="">
+        <apex:inputHidden id="inUAE__c" value="{!req.inUAE__c}" />
+        <apex:inputHidden id="Reason__c" value="{!req.Reason__c}" />
+        <apex:inputHidden id="xfme__c" value="{!req.xfme__c}" />
+        <apex:inputHidden id="xddatc__c" value="{!req.xddatc__c}" />
+        <script>                    
+        cs["inUAE__c"] = document.getElementById("{!$Component.inUAE__c}");
+        cs["Reason__c"] = document.getElementById("{!$Component.Reason__c}");
+        cs["xfme__c"] = document.getElementById("{!$Component.xfme__c}");
+        cs["xddatc__c"] = document.getElementById("{!$Component.xddatc__c}");
+        </script>
+        
+        <div class="row">
+            
+            <div>
+                <label class="mb-3 fs-18">{!srvLbl}</label>
+            </div>
+        </div>
+          <apex:outputText rendered="{!activeDep}">
+         <div class="row">
+            <div class="col-lg-12" >
+                <div class="form-group">
+                  You currently have active dependents.To avoid delay and fines please make sure to cancel or complete the family hold at Immigration of all sponsored dependents before you apply License Cancellation application
+                  If your Dependents application has already been submitted, placed on hold, or requires further information, please proceed with the submission. Our Relationship Manager will contact you for additional details
+                </div>
+             </div>
+        </div>
+       </apex:outputText> 
+        <div class="row">
+            <div class="col-lg-6" >
+                <div class="form-group">
+                    <label>License cancellation reason</label>
+                    <select id="reason" class="form-control input-select2-tags requiredFld"
+                            onChange="reasonOnchange(this)">
+                        <option value="">--None--</option>
+                        <option value="Upgrading to FZ-LLC within TECOM">Upgrading to FZ-LLC within TECOM</option>
+                        <option value="Moving to Another Freezone">Moving to Another Freezone</option>
+                        <option value="Incorporating a New Company">Incorporating a New Company</option>
+                        <option value="Employed in a Company">Employed in a Company</option>
+                        <option value="Obtained the Golden Visa">Obtained the Golden Visa</option>
+                        <option value="Traveling Back to Home Country">Traveling Back to Home Country</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+            </div>
+           
+            <div class="col-lg-12" id="inUAEPrnt">
+                <div class="form-group">
+                    <label class="mb-3 fs-18">Are you currently residing in the UAE?</label>
+                    <div class="row">
+                        <div class="col-lg-3 col-sm-6">
+                            <label class="box-check">
+                                <input type="radio" name="insideUAE" class="serRadio" value="YES" />
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">Yes</span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-lg-3 col-sm-6">
+                            <label class="box-check">
+                                <input type="radio" name="insideUAE" class="serRadio" value="NO" />
+                                <div class="box box-center box-padding box-hover" style="min-height: 70px;">
+                                    <span class="box-title font-weight-medium">No</span>
+                                </div>
+                            </label>
+                        </div>
+                        <!-- .col -->
+                    </div>
+                    <div class="serErr">Please choose an option.</div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12" >
+                <div class="form-group">
+                    <label>Notes (optional)</label>
+                    <apex:inputField onkeyup="notesChange(this)" ignoreEditPermissionForRendering="true" styleClass="jsnfld form-control" value="{!req.nt__c}" id="nt__c"/>
+                    <script type="text/javascript">
+                    cs['nt__c']=document.getElementById('{!$Component.nt__c}');
+                    </script>
+                </div>
+            </div>
+        </div>
+        <div class="row row-lg">
+            
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label id="MobId">Reference mobile</label>
+                    <div class="d-flex">
+                        <input type="text" class="form-control mr-3" value="+971" disabled="true" style="flex-basis: 80px;width: 60px;"/>
+                        <apex:inputField styleClass="applMob form-control requiredFld ml-3 numOnly jsnfld" id="xcmob__c" value="{!req.xcmob__c}" onchange="isUAEMobNum(this);"/> 
+                        <script type="text/javascript"> cs['xcmob__c']=getC('{!$Component.xcmob__c}');
+                        </script> 
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label id="emailId">Email
+                        <!--<apex:outputText escape="true" rendered="{!uid!='159'}">Email</apex:outputText>-->
+                    </label>
+                    <apex:inputField value="{!req.xceml__c}" styleClass="jsnfld requiredFld form-control"
+                                     onchange="checkEmail(this)" id="xceml__c"/>
+                    <script type="text/javascript">
+                    cs['xceml__c']=document.getElementById('{!$Component.xceml__c}');
+                    </script>
+                </div>
+            </div>
+            <div class="col-md-12 form-group">
+                <p class="chk mt-4" style="vertical-align: middle; font-size: 1em;">
+                    <label class="custom-checkbox mr-4">
+                        <input id="tANDc" onchange="chkTC()" type="checkbox" />
+                        <span>I confirm that to the best of my knowledge and ability, I have met all outstanding debts and obligations, that there are no claims, actual or pending, against the Sole Practitioner Permit, that no third party has an outstanding security or other interest in any assets of the Permit and that there are no other reasons I know of that could prevent the cancellation of the Permit. </span>
+                    </label>  
+                </p>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(document).ready(function(){
+        $('#upload_button').html('SUBMIT');
+        $('[name="insideUAE"]').unbind().on('change',function(){
+            removeValError($('[name="insideUAE"]'));
+            cs["inUAE__c"].value=false;
+            if($('[name="insideUAE"]:checked').val()=='NO')
+                cs["inUAE__c"].value=true;
+        });
+    });
+    function chkTC(){
+        if($('#tANDc').is(':checked')){
+            $('.chk').find('.frmErrMsg').remove();
+            cs["xddatc__c"].value = true;
+        }
+        else{
+            cs["xddatc__c"].value = false;
+            var errElem = '<div class="frmErrMsg">Please acknowledge.</div>';
+            $('.chk').append(errElem);
+        }
+    }
+    function reasonOnchange(e){
+        $('#upload_button').unbind('click').click(fldProceed);
+        $('#inUAEPrnt').hide();
+        $('[name="insideUAE"]').prop('checked',false);
+        $(cs['nt__c']).parent().find('label').text('Notes (optional)');
+        $(cs['nt__c']).removeClass('requiredFld');
+        let v = $(e).val();
+        $('#upload_button').show();
+        if(v=='Traveling Back to Home Country'){
+            $('#inUAEPrnt').show();
+        }
+        else if(v=='Others'){
+            $('#upload_button').hide();
+            $(cs['nt__c']).parent().find('label').html('Notes<b>*</b>');
+            $(cs['nt__c']).addClass('requiredFld');
+        }
+    }
+    function notesChange(e){
+        let v = $(e).val();
+        if(!v){
+            $('#upload_button').hide();
+            if($(e).hasClass('requiredFld'))
+                addValError($(e),'**This field is required!');
+        }
+        else{
+            $('#upload_button').show();
+            removeValError($(e));               
+        }
+    }
+    function validateData(){
+        let validated='validated';
+        removeValError($('[name="insideUAE"]'));
+        if($('#inUAEPrnt').is(':visible')&& !$('[name="insideUAE"]:checked').val()){
+            addValError($('[name="insideUAE"]'),'Please choose an option!');
+            return $('[name="insideUAE"]');
+        }
+        $('.requiredFld:visible').each(function(){
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            var v = $(this).val();
+            console.log('id:::::'+$(this).attr("id"));
+            console.log('v:::::'+v);
+            if(!v||v=='--None--'){
+                addValError(this,'**This field is required!');
+                validated=$(this);
+            }else{
+                removeValError(this);  
+            }
+            if(!$('#tANDc').is(':checked')){
+                var errElem = '<div class="frmErrMsg">Please acknowledge.</div>';
+                $('.chk').append(errElem);
+                validated = false;
+            }
+                
+        });
+        return validated;
+    }
+    
+    function fldProceed(){
+        console.log('aiiiiiii');
+        if(validateData()=='validated'){
+            cs['Reason__c'].value = $('#reason').val();
+            cs["srvc__c"].value = '{!srv}';
+            cs["xadh__c"].value = 'dsr;';
+            cs["xfme__c"].value='{!Acc.PRM_Email__c}';
+            showGLoader();
+            saveRequest2();
+        }
+    }
+    </script>
+    
+</apex:component>

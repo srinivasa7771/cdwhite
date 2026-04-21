@@ -1,0 +1,770 @@
+<apex:page cache="false" controller="gctlUsersNew" docType="html-5.0" standardStylesheets="false" showHeader="true" sidebar="false" title="AXS">
+    
+    <html>
+        
+        <head>
+            <title>AXS</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel="icon" href="./favicon.ico" />
+            <apex:includeScript value="{!$Resource.jsH}"/>
+            <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+            <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+            <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+            <!-- icons -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+            <!-- main css -->
+            <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+
+
+        </head>
+        <script type="text/javascript">
+        
+        var cs= {};
+        var manageUser= false;
+        function manageUser1(){
+            var e = document.getElementById('{!$Component.frmDiv:empInfo:usrname}');
+            if(!e.value)
+                return;
+            e.setAttribute('disabled', 'true');
+            e.value = e.value.split('@')[0];
+        }
+        function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parents('.form-group').find('.subText,.frmErrMsg').eq(0).remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            elem.parents('.form-group').eq(0).append(errElem);
+        }
+        function showUserName(elem){
+            $(elem).val($(elem).val().replace(/[^0-9a-zA-Z.]/g, ""));
+            /*var v = $(elem).val();
+            $(elem).parents('.form-group').find('.subText,.frmErrMsg').eq(0).remove();
+            if(!v)
+                return;
+            var errElem = '<div class="subText">Your username is: '+v+'@'+userInfo.prk+'.axs.ae</div>';
+            $(elem).parents('.form-group').eq(0).append(errElem);*/
+        }
+        function checkUsername(elem){
+            var v = $(elem).val();
+            if(!isNaN(parseInt(v))){
+                addValError($(elem),'Should not contain only numbers!');
+                return;
+            }
+            /*if(v){
+                $(elem).val(v+'@'+userInfo.prk+'.axs.ae');
+            }*/
+        }
+        function focusUsername(elem){
+            var v = $(elem).val();
+            if(v){
+                $(elem).val($(elem).val().split('@')[0]);
+            }
+        }
+        function imgError(elem,g){
+            elem.onerror = "";
+            var gen = (g=="Female")?g:"Male";
+            elem.src = "./resource/assets_NUI/images/"+gen+"-Default.png";
+            return true;
+        }
+        function enUser(dob)
+        {   
+         console.log('enUser >>'+dob);
+        }
+        function dsbUser(dob)
+        {
+            console.log('dsbUser >>'+dob);
+        }
+        function manageAccess()
+        {
+            console.log('manageAccess >>manageAccess');
+        }
+        function openAddUserModal()
+        {
+            document.getElementById("modal_add_user").classList.add('show');
+        }
+        function assignSelectEmp(str,accessType)
+        {
+            manageUser = true;
+            var acType = accessType;
+            console.log('accessType >>'+accessType);
+            myFun(str);
+            if(acType == 'fromManage'){SelectEmp();}
+        }
+        function SelectEmp()
+        {
+            console.log('inside SelectEmp >>');
+            document.getElementById('lookupDiv').style.display = 'none';
+            document.getElementById('selectedNameDisplay').style.display = 'block';
+            document.getElementById('AddUserHeader').style.display = 'none';
+            document.getElementById('ManageUserHeader').style.display = 'block';
+            document.getElementById('addUserButton').style.display = 'none';
+            document.getElementById('ManageUserButton').style.display = 'block';
+            document.getElementById('{!$Component.frmDiv:empInfo:usrname}').setAttribute("disabled", "true");
+            //reDisplayHead();
+        }
+        function closeSelected()
+        {
+            manageUser = false;
+            $('#selectedNameDisplay,#ManageUserHeader').hide();
+            $('#AddUserHeader,#lookupDiv').show();
+            document.getElementById('{!$Component.frmDiv:empInfo:usrname}').removeAttribute("disabled");
+            clearData();
+            //window.top.location.reload();
+        }
+        function defaultSelected(sel){
+            accessDefault(sel);
+        }
+        function showConfirmation(showMessage,MsgString){
+            console.log(showMessage);
+            console.log(MsgString);
+            var attr = showMessage;
+            if(attr == 'true'){
+                axsConfirmation('Warning',MsgString,false,'','','closeSelected');
+            } 
+        }
+        function showFldErr(showMessage,elem){
+            if(showMessage == 'true'){
+                addValError(elem,'That username is taken! Try another.')
+            } 
+            else {
+                $(elem).parents('.form-group').find('.subText,.frmErrMsg').eq(0).remove();
+                var errElem = '<div class="subText"><i class="pr-1 fa fa-check" style="color: #2bd672;"></i>Username is available.</div>';
+                $(elem).parents('.form-group').eq(0).append(errElem);
+            }
+        }
+        function showAlert(showMessage,MsgString){
+            axsAlert(showMessage,MsgString);
+        }
+        function copySelectedContactInfo(){
+            var srvId = cs['Con__c'].value;
+            console.log(srvId);
+        }
+        function copyApplicantInfo(){
+            var srvId = cs['Con__c'].value;
+            assignSelectEmp(srvId,'fromLookup');
+        }
+        function checkDependentVal(checkVal,strVal)
+        {
+            console.log(checkVal);
+            console.log(strVal);
+        }
+        function loadInitalData()
+        {
+            initDataLoad();
+        }
+        function initDataLoad()
+        {
+            
+        }
+        function showServices(elem){
+            var mob = elem.id;
+            console.log("id==="+mob);
+            console.log("id==="+mob.charAt(0));
+            var vmob = mob.charAt(0)+'down';
+            var vser = mob.charAt(0)+'serName';
+            document.getElementById(mob).style.display = 'none';
+            document.getElementById(vmob).style.display = 'inline';
+            document.getElementById(vser).style.display = 'inline';
+        }
+        function hideServices(elem){
+            var mob = elem.id;
+            console.log("id==="+mob);
+            console.log("id==="+mob.charAt(0));
+            var vmob = mob.charAt(0)+'right';
+            var vser = mob.charAt(0)+'serName';
+            document.getElementById(mob).style.display = 'none';
+            document.getElementById(vmob).style.display = 'inline';
+            document.getElementById(vser).style.display = 'none';
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                var v = $(this).val();
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            $('.ddValidation').each(function(){
+                //debugger;
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                showErrMsg($(this),'rqrd',true);
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined){
+                    if($(this).is('select'))
+                        showErrMsg($(this).next().find('.select2-selection'),'rqrd','invalid');
+                    else
+                        showErrMsg($(this),'rqrd','invalid');
+                    return false;
+                }
+            });
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                callAddUser();
+            }
+        }
+        function clearfirstname()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:empFrtName}').value;
+            if(val=='Please enter you First name'){
+                document.getElementById('{!$Component.frmDiv:empInfo:empFrtName}').value = '';
+            }
+        }
+        
+        function clearLastname()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:emplstName}').value;
+            if(val=='Please enter you Last name'){
+                document.getElementById('{!$Component.frmDiv:empInfo:emplstName}').value = '';
+            }
+        }
+        function clearPassNumber()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:passportNumber}').value;
+            if(val=='Please enter you Passport Number'){
+                document.getElementById('{!$Component.frmDiv:empInfo:passportNumber}').value = '';
+            }
+        }
+        function clearEmail()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:empmail}').value;
+            if(val=='Please enter you email address'){
+                document.getElementById('{!$Component.frmDiv:empInfo:empmail}').value = '';
+            }
+        }
+        function clearUsername()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:usrname}').value;
+            if(val=='Please enter your prefered username'){
+                document.getElementById('{!$Component.frmDiv:empInfo:usrname}').value = '';
+            }
+        }
+        function clearMobNo()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:mobNum}').value;
+            if(val=='Please enter your mobile number'){
+                document.getElementById('{!$Component.frmDiv:empInfo:mobNum}').value = '';
+            }
+        }
+        function clearAddress()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:addressVal}').value;
+            if(val=='Please enter your address'){
+                document.getElementById('{!$Component.frmDiv:empInfo:addressVal}').value = '';
+            }
+        }
+        function clearWrkNo()
+        {
+            var val= document.getElementById('{!$Component.frmDiv:empInfo:wrkNum}').value;
+            if(val=='Please enter your work number'){
+                document.getElementById('{!$Component.frmDiv:empInfo:wrkNum}').value = '';
+            }
+        }
+        function checkEmail(elem){
+            var t = $(elem).attr('att');
+            var email = $(elem).val();
+            var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+            var r = (regex.test(email))?true:'invalid';
+            if(r == 'invalid' && email != ''){
+                if(t=='email') addValError(elem,'Please enter valid email Address.');
+                //else addValError(elem,'Username should be in valid email format.');
+                if(t=='uName'){
+                    showTempLoader_input(elem);
+                    removeValError(this);
+                    cs['username'].value = email;
+                    chkUserName();
+                }
+                return false;
+            }else{
+                removeValError(elem);
+                if(t=='email'){
+                    showTempLoader_input(elem);
+                    chkUserEmail();
+                }
+            }
+        }
+        </script>
+        <body>
+            
+            <apex:actionStatus id="theStatus" startText="Loading... Please wait.">
+                <apex:facet name="start">
+                    <apex:outputPanel >
+                        <c:progress />
+                    </apex:outputPanel>
+                </apex:facet>
+            </apex:actionStatus>     
+            
+            <apex:form id="frmDiv"> 
+                
+                <apex:actionFunction name="chkUN" action="{!enUser}" oncomplete="hideTempLoader_input()" rerender="frmDiv" > 
+                </apex:actionFunction>
+                <apex:actionFunction name="enUser" action="{!enUser}" status="theStatus" rerender="frmDiv" > 
+                    <apex:param id="uid1" name="uid1" value="" />
+                </apex:actionFunction>
+                <apex:actionFunction name="dsbUser" action="{!dsbUser}" status="theStatus" rerender="frmDiv" > 
+                    <apex:param id="uid2" name="uid2" value="" />
+                </apex:actionFunction>
+                <apex:actionFunction name="myFun" action="{!loadEmployeeData}" reRender="empInfo,dataTable,nameDisplayFld,accessCheckBox" oncomplete="showConfirmation('{!UsrExistWithAnotherAcc}','{!JSENCODE(pgMsg)}');manageUser1();" >
+                    <apex:param id="selInd" name="selInd" value="" />
+                    <apex:param id="acsType" name="acsType" value="" />
+                    <apex:param id="showMsg" name="showMsg" value="" assignTo="{!UsrExistWithAnotherAcc}"/>
+                    <apex:param id="msgVal" name="msgVal" value="" assignTo="{!pgMsg}"/>
+                </apex:actionFunction>
+                <apex:actionFunction name="clearData" action="{!clearDataCntrl}" reRender="empInfo,selectionFld,dataTable">
+                </apex:actionFunction>
+                <apex:actionFunction name="accessDefault" action="{!accessDefaultCntrl}" reRender="dataTable">
+                    <apex:param id="sel" name="sel" value="" />
+                </apex:actionFunction>
+                <apex:actionFunction action="{!addUser}" name="callAddUser" oncomplete="showAlert('Success!!!','User has been added successfully.');"/>
+                <apex:actionFunction name="reDisplayHead" reRender="nameHeaderBlock"/>
+                <!--<apex:actionFunction name="initDataLoad" action="{!loadEmployeeContact}" rerender="dataTable" />-->
+                
+                <div id="main">
+                    
+                    
+                    <div id="page_content">
+                        <div class="container">
+                            <div class="page-header">
+                                <ul class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                                    <li class="breadcrumb-item">My Account</li>
+                                </ul>
+                                <!-- .breadcrumb -->
+                                
+                                <h1 class="page-title mr-auto">MY ACCOUNT</h1>
+                                
+                                <div class="myaccount-header">
+                                    
+                                    <div class="avatar">
+                                        <img onerror="imgError(this,'{!JSENCODE(U.contact.Gender__c)}')" src="/servlet/servlet.FileDownload?file={!U.contact.Photo_ID__c}" alt="" />
+                                    </div>
+                                    <div class="myaccount-header-body">
+                                        <div class="myaccount-name-wrapper">
+                                            <div class="myaccount-status">
+                                                <span class="badge badge-account badge-account-active">ACTIVE</span>
+                                            </div>
+                                            <div class="myaccount-name">
+                                                {!U.FirstName}&nbsp;{!U.LastName}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="myaccount-details">
+                                            <div class="row">
+                                                <div class="col-sm-8">
+                                                    <div class="data-info">
+                                                        <div class="data-label">Email</div>
+                                                        <div class="data-value">{!C.Email}</div>
+                                                    </div>
+                                                    <div class="data-info">
+                                                        <div class="data-label">Address</div>
+                                                        <div class="data-value"> <!--, {!A.Building_Name__c}-->
+                                                            {!A.lPrk__c},<br/> {!A.xcublg__c} , {!A.Location__c} , {!A.Location_Cluster__c} , {!A.xcuzn__c}.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- .col-6 -->
+                                                <div class="col-sm-3">
+                                                    <div class="data-info">
+                                                        <div class="data-label">Mobile number</div>
+                                                        <div class="data-value">{!C.Mobilephone}</div>
+                                                    </div>
+                                                    <div class="data-info">
+                                                        <div class="data-label">Work phone</div>
+                                                        <div class="data-value"> 1234567890</div>
+                                                    </div>
+                                                </div>
+                                                <!-- .col-6 -->
+                                            </div>
+                                            <!-- .row -->
+                                        </div>
+                                        <!-- .myaccount-details -->
+                                        
+                                        <div class="myaccount-buttons" style="display:none;">
+                                            <button type="button" class="btn btn-outline-primary">EDIT</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- .myaccount-header-body -->
+                                </div>
+                                <!-- .myaccount-header -->
+                                
+                                <!--<h4 class="mt-5 mb-4 pl-lg-4">USER ACCOUNTS</h4>-->
+                                <div class="d-flex mt-5 mb-4">
+                                    <h4 class="pl-lg-4">USER ACCOUNTS</h4>
+                                    
+                                    <div class="ml-auto">
+                                        <button class="btn btn-black btn-new-request" onclick="event.preventDefault();loadInitalData();" data-toggle="modal" data-target="#modal_add_user" style="{!IF(showAddButton == false, 'display:none' , 'display:block')}">
+                                            ADD NEW USER &nbsp;<i class="icon-add"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive table-responsive-lg table-people">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th><span> NAME / JOB TITLE</span></th>
+                                                <th>STATUS</th>
+                                                <th>USERNAME / EMAIL</th>
+                                                <th class="text-center">SUPER USER</th>
+                                                <th>ACCESS LEVELS</th>
+                                                <th class="actions"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            <apex:repeat value="{!myAccountLst}" var="m" id="theRepeat1">
+                                                <tr>
+                                                    <td class="table-people-mobile-start">
+                                                        <div class="action-dropdown dropdown">
+                                                            <button type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown">
+                                                                <i class="fa fa-ellipsis-v"></i>
+                                                            </button>
+                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                <h4 class="dropdown-header">ACTIONS</h4>
+                                                                <apex:commandLink styleClass="dropdown-item" action="{!enUser}"  rendered="{!NOT(m.usr.isActive)}"  value="ACTIVATE" >
+                                                                    <apex:param name="uid" value="{!m.usr.id}"/>
+                                                                </apex:commandLink> 
+                                                                <apex:commandLink styleClass="dropdown-item" action="{!dsbUser}"  rendered="{!m.usr.isActive}" value="DEACTIVATE" >
+                                                                    <apex:param name="uid" value="{!m.usr.id}"/>
+                                                                </apex:commandLink>
+                                                                <button class="btn-new-request open-request-modal" data-toggle="modal" data-target="#modal_add_user">
+                                                                    ADD NEW USER &nbsp;<i class="icon-add"></i>
+                                                                </button>
+                                                                <apex:commandLink styleClass="dropdown-item" action="{!dsbUser}"  rendered="{!m.usr.isActive}" value="DEACTIVATE" >
+                                                                    <apex:param name="uid" value="{!m.usr.id}"/>
+                                                                </apex:commandLink>
+                                                                <button class="dropdown-item" style="display: block;padding: 0.75rem 1rem;border-bottom: 1px solid rgba(103, 109, 120, 0.2);background-color: #F5F5F5;" data-toggle="modal" data-target="#modal_add_user" value="{!m.con.id}" onclick="event.preventDefault(); assignSelectEmp(this.value,'fromManage');">
+                                                                    MANAGE ACCESS
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    
+                                                    
+                                                    <td>
+                                                        <div class="people-name-wrapper">
+                                                            <div class="avatar">
+                                                                <img onerror="imgError(this)" src="/servlet/servlet.FileDownload?file={!m.con.Photo_ID__c}"  alt="" />
+                                                            </div>
+                                                            <div class="people-name">{!m.con.Name}</div>
+                                                            <div class="people-job">{!m.con.Job_Title_Formula__c}</div>
+                                                        </div>
+                                                    </td>
+                                                    
+                                                    <td>
+                                                        <div class="people-property">
+                                                            <apex:outputLabel rendered="{!m.usr.isActive}">Active </apex:outputLabel>
+                                                            <apex:outputLabel rendered="{!NOT(m.usr.isActive)}"> Inactive</apex:outputLabel>
+                                                            
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="people-property">
+                                                            {!m.usr.Username} &nbsp;/&nbsp; <br/>
+                                                            {!m.con.Email}
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-sm-center">
+                                                        <div class="people-property">
+                                                            <span class="people-property-label"></span>
+                                                            <span class="{!IF((m.usrtype == 'SuperUser'),'checkbox-static','checkbox-static checkbox-static-unchecked')}"></span>
+                                                            
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="people-property">
+                                                            <span class="people-property-label">Access Level -- {!m.usrtype}</span>
+                                                            <apex:outputLabel rendered="{!m.usrtype == 'SuperUser'}">Full Access (Super User) </apex:outputLabel>
+                                                            <apex:outputLabel rendered="{!NOT(m.usr.isActive)}"> No Access (User is inactive)</apex:outputLabel>
+                                                            <apex:outputLabel rendered="{!m.usrtype == 'DataEntryUser'}">Data Entry User</apex:outputLabel>
+                                                            <apex:outputLabel rendered="{!m.usrtype == 'ParkingUser'}">Parking User</apex:outputLabel>
+                                                        </div>
+                                                    </td>
+                                                    
+                                                    <td class="table-people-mobile-end"></td>
+                                                    
+                                                    <td class="actions">
+                                                        <div class="action-dropdown dropdown">
+                                                            <button type="button" class="btn btn-secondary button-dropdown" data-toggle="dropdown">
+                                                                <i class="fa fa-ellipsis-v"></i>
+                                                            </button>
+                                                            <div class="dropdown-menu" style="" id="{!m.usr.id}">
+                                                                <h4 class="dropdown-header bg-primary">ACTIONS</h4>
+                                                                <apex:commandLink styleClass="dropdown-item" action="{!enUser}"  rendered="{!NOT(m.usr.isActive)}"  value="ACTIVATE" >
+                                                                    <apex:param name="uid" value="{!m.usr.id}"/>
+                                                                </apex:commandLink> 
+                                                                <apex:commandLink styleClass="dropdown-item" action="{!dsbUser}"  rendered="{!m.usr.isActive}" value="DEACTIVATE" >
+                                                                    <apex:param name="uid" value="{!m.usr.id}"/>
+                                                                </apex:commandLink>
+                                                                <button class="dropdown-item" style="display: block;padding: 0.75rem 1rem;border-bottom: 1px solid rgba(103, 109, 120, 0.2);background-color: #F5F5F5;" data-toggle="modal" data-target="#modal_add_user" value="{!m.con.id}" onclick="event.preventDefault(); assignSelectEmp(this.value,'fromManage');">
+                                                                    MANAGE ACCESS
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </apex:repeat>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                
+                            </div>
+                            <!-- .page-header -->
+                        </div>
+                        <!-- .container -->
+                    </div>
+                    <!-- #page_content -->
+                    
+                    
+                    
+                    
+                </div>
+                <!-- .modal -->
+                <!-- User Management Modal Starts-->
+                <div class="modal fade modal-base" id="modal_add_user" tabindex="-1" role="dialog" data-select2-id="modal_add_user" style="overflow: scroll;" data-backdrop="static" data-keyboard="false">
+                    <div class="modal-dialog" role="document" style="width: 780px;">
+                        <div class="modal-content">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeSelected();">
+                                <i class="icon-close"></i>
+                            </button>
+                            <div class="modal-body">
+                                <h2 class="modal-title mb-4" id="AddUserHeader">Add User</h2>
+                                <h2 class="modal-title mb-4" id="ManageUserHeader" style="display:none;">Manage User</h2>
+                                <div class="form-group">
+                                    <apex:pageBlock id="nameHeaderBlock">
+                                        <div id="lookupDiv">
+                                            <c:gconlookup id="conlookup" role="Employee;Non Sponsored;" accId="{!A.id}" sta="Active" heading="Select from your Employees" saveRq="true" Request="{!DummpyReq}"/>  
+                                        </div>
+                                        <div class="search-field mb-0" style="width:auto; display:none;" id="selectedNameDisplay">
+                                            <div class="input-group">
+                                                <apex:outputText styleClass="form-control" id="nameDisplayFld" value="{!firstName +' '+ lastName}"></apex:outputText>
+                                            </div>
+                                        </div>
+                                    </apex:pageBlock>
+                                </div>
+                                <apex:pageBlock id="empInfo">
+                                    <div class="form-style">
+                                        <div class="row row-lg">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>First name</label>
+                                                    <apex:inputText id="empFrtName" styleClass="form-control requiredFld" value="{!firstName}" onfocus="clearfirstname();" disabled="{!conExist}"/>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Last name</label>
+                                                    <apex:inputText id="emplstName" styleClass="form-control requiredFld" value="{!lastName}" onfocus="clearLastname();" disabled="{!conExist}"/>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Passport number</label>
+                                                    <apex:inputText id="passportNumber" styleClass="form-control requiredFld" value="{!passNumber}" onfocus="clearPassNumber();" disabled="{!conExist}">
+                                                        <apex:actionSupport event="onchange" action="{!validateUnique}" oncomplete="showConfirmation('{!JSENCODE(contactAlreadyExisits)}','{!JSENCODE(pgMsg)}');" reRender="dummyblock">
+                                                            <apex:param id="showMsg1" name="showMsg1" value="" assignTo="{!contactAlreadyExisits}"/>
+                                                            <apex:param id="msgVal1" name="msgVal1" value="" assignTo="{!pgMsg}"/>
+                                                        </apex:actionSupport>
+                                                    </apex:inputText>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Nationality</label>
+                                                    <apex:selectList value="{!nationality}" id="nationVal" size="1" styleClass="form-control input-select2-flat requiredFld" disabled="{!conExist}">
+                                                        <apex:selectOption itemLabel="--None--" itemValue="Select" itemDisabled="true"></apex:selectOption>
+                                                        <apex:selectOptions value="{!regions}"/>
+                                                        <apex:actionSupport event="onchange" action="{!validateUnique}" oncomplete="showConfirmation('{!JSENCODE(contactAlreadyExisits)}','{!JSENCODE(pgMsg)}');" reRender="dummyblock">
+                                                            <apex:param id="showMsg2" name="showMsg2" value="" assignTo="{!contactAlreadyExisits}"/>
+                                                            <apex:param id="msgVal2" name="msgVal2" value="" assignTo="{!pgMsg}"/>
+                                                        </apex:actionSupport>
+                                                    </apex:selectList>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            
+                                        </div>
+                                        <!-- .row -->
+                                        
+                                        <div class="separator-dashed"></div>
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Email</label>
+                                                    <apex:inputText id="empmail" styleClass="form-control requiredFld" value="{!emailId}" onfocus="clearEmail();">
+                                                        <apex:actionSupport event="onchange" onsubmit="showTempLoader_input(this)" action="{!checkUserExistWithAnotherAcc}" oncomplete="showConfirmation('{!UsrExistWithAnotherAcc}','{!JSENCODE(pgMsg)}');hideTempLoader_input();" reRender="dummyblock">
+                                                            <apex:param id="showMsg3" name="showMsg3" value="" assignTo="{!UsrExistWithAnotherAcc}"/>
+                                                            <apex:param id="msgVal3" name="msgVal3" value="" assignTo="{!pgMsg}"/>
+                                                        </apex:actionSupport>
+                                                    </apex:inputText>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Username</label>
+                                                    <div class="d-flex">
+                                                        <apex:inputText id="usrname" styleClass="form-control requiredFld" html-att="uName" html-placeholder="No special characters allowed." onblur="checkUsername(this)" onkeyup="showUserName(this)" onchange="checkEmail(this)" value="{!username}" /> <!-- onfocus="focusUsername(this)" -->
+                                                        <input class="form-control ml-3 requiredFld" value="{!'@'+A.park__c+'.axs'}" style="flex-basis: 110px;width: 110px;" disabled="true"/>
+                                                    </div>
+                                                    <apex:inputHidden id="username" value="{!username}" />
+                                                    <!--<apex:actionSupport event="onchange" onsubmit="removeValError(this);showTempLoader_input(this)" action="{!chkUserName}" oncomplete="showFldErr('{!UsrExistWithAnotherAcc}',document.getElementById('{!$Component.frmDiv:empInfo:usrname}'));hideTempLoader_input();" reRender="usrname">-->
+                                                    <apex:actionFunction name="chkUserName" action="{!chkUserName}" oncomplete="showFldErr('{!UsrExistWithAnotherAcc}',document.getElementById('{!$Component.frmDiv:empInfo:usrname}'));hideTempLoader_input();">
+                                                        <apex:param id="showMsg4" name="showMsg4" value="" assignTo="{!UsrExistWithAnotherAcc}"/>
+                                                        <apex:param id="msgVal4" name="msgVal4" value="" assignTo="{!pgMsg}"/>
+                                                    </apex:actionFunction>
+                                                    <script>
+                                                        cs['username'] = document.getElementById("{!$Component.username}");
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Mobile number</label>
+                                                    <div class="d-flex">
+                                                        
+                                                        <apex:inputText styleClass="form-control mr-3 requiredFld" value="{!CounCode}" style="flex-basis: 80px;width: 80px;" maxlength="4" disabled="true"/>
+                                                        <apex:inputText styleClass="applMob form-control requiredFld ml-3 numOnly jsnfld" value="{!phNo}" id="mobNum" onfocus="clearMobNo();" maxlength="9"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Address</label>
+                                                    <apex:inputText styleClass="form-control requiredFld" value="{!addVal}" onfocus="clearAddress();" id="addressVal"/>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>Work phone</label>
+                                                    <div class="d-flex">
+                                                        <apex:inputText styleClass="form-control mr-3" value="{!WrkCounCode}" style="flex-basis: 80px;width: 80px;" maxlength="4" disabled="true"/>
+                                                        <apex:inputText styleClass="applMob form-control ml-3 numOnly jsnfld" value="{!wrkphNo}" id="wrkNum" onfocus="clearWrkNo();" maxlength="9" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- .col -->
+                                        </div>
+                                        <!-- .row -->
+                                        
+                                    </div>
+                                    <!-- .form-style -->
+                                </apex:pageBlock>
+                                <div class="separator-dashed"></div>
+                                
+                                <h2 class="modal-title mb-4">Access Levels</h2>
+                                
+                                <div class="mb-1">
+                                    <label class="custom-checkbox custom-checkbox-sm">
+                                        <apex:inputCheckbox value="{!defaultGroupsAccess}" onchange="defaultSelected(this.value);" id="accessCheckBox"/>
+                                        <span>Default</span>
+                                    </label>
+                                </div>
+                                <apex:pageBlock id="dataTable">
+                                    <div class="form-style">
+                                        <div class="row row-lg">
+                                            <div class="col-lg-6">
+                                            </div>
+                                            <div class="col-lg-2" style = "text-align: center;background-color: transparent;border-top: none;border-bottom: 2px solid rgba(103, 109, 120, 0.2);color: #979AA7;font-weight: 500;font-family: Helvetica Neue Cond, Helvetica Neue, Arial, sans-serif;letter-spacing: 0.75px;border: none;vertical-align: bottom;padding: 0.75rem;">
+                                                DATA ENTRY
+                                            </div>
+                                            <div class="col-lg-4" style = "text-align: center;background-color: transparent;border-top: none;border-bottom: 2px solid rgba(103, 109, 120, 0.2);color: #979AA7;font-weight: 500;font-family: Helvetica Neue Cond, Helvetica Neue, Arial, sans-serif;letter-spacing: 0.75px;border: none;vertical-align: bottom;padding: 0.75rem;">
+                                                PAYMENT APPROVER
+                                            </div>
+                                        </div>
+                                        <div style="width:100%; height:2px; background: rgba(103, 109, 120, 0.2);"></div>
+                                        <apex:variable value="{!0}" var="ind"/>
+                                        
+                                        <apex:repeat value="{!servOptions}" var="ser1" id="servRepeat1">
+                                            <apex:variable var="ind" value="{!ind+1}"/>
+                                            <div class="row row-lg" style="border-color: rgba(151, 151, 151, 0.3);border-bottom-style: dashed;border-width: thin;">
+                                                <div class="col-sm-1" style="border-color: rgba(151, 151, 151, 0.3);vertical-align: middle;position: relative;padding-top: 20px;padding-bottom: 20px;padding-left: 30px;">
+                                                    <img id="{!ind}right" src="{!$Resource.chevronright_60}" onclick="showServices(this);" style="display:inline;"/>
+                                                    <img id="{!ind}down" src="{!$Resource.chevrondown_60}" onclick="hideServices(this);" style="display:none;"/>
+                                                </div>
+                                                <div class="col-lg-5" style="border-color: rgba(151, 151, 151, 0.3);vertical-align: middle;position: relative;padding-top: 20px;padding-bottom: 20px;padding-left: 10px;">
+                                                    {!ser1.grpName}
+                                                </div>
+                                                <div class="col-lg-2" style="text-align: center;border-color: rgba(151, 151, 151, 0.3);vertical-align: middle;position: relative;padding-top: 20px;padding-bottom: 20px;padding-left: 30px;">
+                                                    <label class="custom-checkbox custom-checkbox-sm custom-checkbox-no-label mb-0">
+                                                        <apex:inputCheckbox value="{!ser1.grpDE}" />
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                                <div class="col-lg-4" style="text-align: center;border-color: rgba(151, 151, 151, 0.3);vertical-align: middle;position: relative;padding-top: 20px;padding-bottom: 20px;padding-left: 30px;">
+                                                    <label class="custom-checkbox custom-checkbox-sm custom-checkbox-no-label mb-0">
+                                                        <apex:inputCheckbox value="{!ser1.grpAE}" onchange="checkDependentVal({!ind},this.value);"/>
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                                <div class="col-lg-6" id="{!ind}serName" style="display:none;padding-left: 40px;">
+                                                    <apex:repeat value="{!ser1.groupedSerName}" var="srName" id="servRepeat">
+                                                        <ul>{!srName}</ul>
+                                                    </apex:repeat>
+                                                </div>
+                                            </div>
+                                            
+                                        </apex:repeat>
+                                    </div>
+                                </apex:pageBlock>
+                                <div class="separator-dashed"></div>
+                                <div class="text-right" id="addUserButton">
+                                    <a href="#" onClick="validateData()" class="btn btn-primary"> ADD USER </a>
+                                </div>
+                                <div class="text-right" id="ManageUserButton" style="display:none;">
+                                    <a href="#" onClick="validateData()" class="btn btn-primary"> MANAGE USER </a>
+                                </div>
+                                <apex:pageBlock id="dummyblock"></apex:pageBlock>
+                            </div>
+                            <!-- .modal-body -->
+                        </div>
+                        <!-- .modal-content -->
+                    </div>
+                    <!-- .modal-dialog -->
+                </div>
+                <!-- User Management Modal Ends-->
+                
+            </apex:form> 
+            
+            <!-- .connect-buttons -->
+            
+            <!-- main js -->
+            <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+            
+        </body>
+        
+    </html>
+</apex:page>

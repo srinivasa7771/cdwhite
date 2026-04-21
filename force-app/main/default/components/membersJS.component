@@ -1,0 +1,3161 @@
+<!--**************************************************************************************************
+@Version History
+* Version       Date            Name                        Description
+* 1.0         Initial          DHAM                        Initial Draft
+* 1.1         25-07-2024       Prateek Jangir              Added validation for passport number.Removed commented code.
+* 1.2         03-10-2024       Prateek Jangir              Added code to capture PEP details.
+* 1.3         28-02-2025       Prateek Jangir              Added code to auto add source of fund on click on save.
+**************************************************************************************************-->
+
+
+<apex:component >
+    <apex:attribute name="rq" description="request" type="g_Req__c" required="true" />
+    
+    <script>
+    const ext1 = ["pdf", "jpg", "jpeg"];
+    if(!cs)
+        var cs= {};
+    cs["xadtx4__c"] = document.getElementById("{!$Component.xadtx4__c}");
+    /* Added For land */
+    cs["xadtx5__c"] = document.getElementById("{!$Component.xadtx5__c}");
+    /*cs["xadh__c"] = document.getElementById("{!$Component.xadh__c}");*/
+    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+    cs["AOADoc"] = document.getElementById("{!$Component.AOADoc}");
+    cs["docname"] = document.getElementById("{!$Component.docname}");
+    cs["xfb__c"] = document.getElementById("{!$Component.xfb__c}");
+    cs["attch_id"] = document.getElementById("{!$Component.attch_id}");
+    var adhoc4Val = {};
+    var totalSharesEntered = 0;
+    var addCtgArr={'ub':[],'bd':[],'lr':[],'gm':[]};
+    var modalDefaultContent = {'ind':{'heading':'Verify and confirm the information','pInfo':'We have gathered this information from the uploaded passport copy. It may vary or have few errors depending on the quality of the image. Kindly review to confirm and proceed to <b>ADD MEMBER</b>.','saveMember':'ADD MEMBER'},'corp':{'heading':'Add corporate shareholder','pInfo':'Please provide the information below to add member.','saveMember':'ADD MEMBER'}};
+    //PJ 1.2 //MS 1.1
+    var backEndKeys = { 'uboRelatedTo': 'uboRelatedTo', 'rRegNum': 'rRegNum', "birthCountry": "birthCountry",'inUAE': 'inUAE', 'visitedUAE':'visitedUAE',"phoneCode": "phoneCode", "placeborn": "placeborn", "role": "addCtg", "ctg": "ctg", "ctgCode": "ctgCode", "ctgCode1": "ctgCode1", "gender": "MR Gender", "fname": "Given Name", "lname": "Surname", "mname": "", "passportNo": "Passport No", "email": "email", "nationality": "Nationality", "mobile": "mobileNum", "sh": "shareNum", "fullName": "fullname", "pIssuedDate": "Date of Issue", "pExpDate": "Date of Expiry", "passportId": "passportId", "dob": "Date of Birth", "address": "address", "corpORind": "type", "placeissued": "Place of Issue", "phoneno": "phoneno", "moreshares": "moreshares", "directorShares": "directorShares", "corpbody": "corpbody", "managementcontrol": "managementcontrol", "controlsCorpBody": "controlsCorpBody", "Area": "Area", "street": "street", "emirate": "emirate", "city": "city", "cityIn": "cityIn", "buildingname": "buildingname", "pobox": "pobox", "resnum": "resnum", "mobilenum1": "mobilenum1", "mobilenum2": "mobilenum2", "cityhm": "cityhm", "country": "country", "resphone": "resphone", "mobnumhm": "mobnumhm", "legals": "legals", "uboShDt": "uboShDt", "uboType": "uboType", "eid": "eid", "eidExp": "eidExp","emiratesIdIssueDate":"emiratesIdIssueDate", "actingAsNomineeShareholder": "actingAsNomineeShareholder", "actingAsNomineeDirector": "actingAsNomineeDirector","pepAssociation":"pepAssociation","pepRelated":"pepRelated","pepCloselyRelatedOthers":"pepCloselyRelatedOthers","pepCloselyAssociatedOthers":"pepCloselyAssociatedOthers","pepCountry":"pepCountry","sourceOfwealth":"sourceOfwealth" };
+    var allCountriesObj = [];
+    var currentAddingShData={};
+    var currentAddingCat;
+    var shType = '';
+    var tSharesFlag = false;
+    var allMembersData = {'shareHoldersType':'','shareDetails':{'totalShares':'','shareValue':''},'members':''};
+    var categoryObj = {'gm':'General Manager','ub':'Ultimate Beneficiary','bd':'Board of Director','lr':'Legal Representative','sh':'Shareholder'};
+    var categoryCodeObj = {'General Manager':'gm','Ultimate Beneficiary':'ub','Board of Director':'bd','Legal Representative':'lr','Shareholder':'sh'};
+    var backEndKeysCorp = {'iAuthority':'iAuthority','website':'website','fda':'fda','uboException':'uboException','phoneCode':'phoneCode','role':'addCtg','cshType':'cshType','ctg':'ctg','ctgCode':'ctgCode','ctgCode1':'ctgCode1','compName':'compName','lname':'lname','passportNo':'RegNum','email':'emailId','nationality':'nationality','mobile':'mobileNum','sh':'shareNum','dob':'incDate','address':'address','corpORind':'type','placeissued':'Place of Issue','phoneno':'phoneno','uboType':'uboType','legals':'legals','actingAsNomineeShareholder':'actingAsNomineeShareholder','actingAsNomineeDirector':'actingAsNomineeDirector','birthCountry': 'birthCountry'};
+    var binaryData;
+    var base64String;
+    var addingOtherMems = false;
+    var editMode;
+    var currentDoc;
+    var aoaDocList = '';
+    var curShare=0;
+    var allpassports = [];
+    var stopTrigger = false;
+    var backEndKeys_temp = {};
+    Object.keys(backEndKeys).forEach(function(i){
+        if(backEndKeys[i]) backEndKeys_temp[backEndKeys[i]]= i;
+    });
+    var csdUploaded='false';
+    var csdSubmitted=false;
+    $(document).ready(function(){
+    
+        setTimeout(function(){
+            $("#nat").select2({
+                dropdownParent: $('#modal_confirm_information .modal-content')
+            });
+             $("#bnat").select2({
+                dropdownParent: $('#modal_confirm_information .modal-content')
+            });
+             $("#countryCode1").select2({
+                dropdownParent: $('#modal_confirm_information .modal-content')
+            });
+             $("#emirate").select2({
+                dropdownParent: $('#modal_confirm_information .modal-content')
+            });
+             $("#countryCode2").select2({
+                dropdownParent: $('#add_corp_shareholder .modal-content')
+            });
+            $('.crpNat').select2({
+                dropdownParent: $('#add_corp_shareholder .modal-content')
+            });
+            
+               }, 5000);
+                
+
+        
+        csdUploaded = "{!rq.xoca__c}";
+        if(csdUploaded=='true'){
+            csdSubmitted=true;
+        }
+        setTimeout(function(){
+            $('.forEdit').unbind('keypress').bind('keypress',function(){
+                let v = $(this).val();
+                if(!v){
+                    $(this).addClass('is-invalid');
+                }
+                else
+                    $(this).removeClass('is-invalid');
+            });
+            if('{!rq.crflg__c}'=='true'){
+                $('#modal_Correction_submission').modal('show')
+            }
+        },400);
+        
+        var sta = "{!rq.sta__c}";
+        var obSta = "{!rq.os__c}";
+        editMode = (sta == 'Draft' || sta == 'Open' || obSta == "Members Re-Review") ? true : false;
+        if(editMode == false){
+            makeReadOnly('forReadOnly');
+        }
+        
+        $('label').each(function(){
+            if($(this).children().length>1||$(this).children().length<1||$(this).next().length<1) return;
+            else{
+                var e = $(this).next();
+                $(this).next().remove();
+                $(this).append(e);
+            }
+        });
+        if(cs["xadtx4__c"]==null || cs["xadtx4__c"]==undefined){return;}
+        
+        adhoc4Val = cs["xadtx4__c"].value;
+        stopTrigger = true; 
+        
+        if (!cs['xfb__c'].value.includes('Branch') && ('{!rq.xvtyp__c}' != 'DED' && '{!rq.Acc__r.clt__c}' != 'Land')) {
+           $('#pg1').show();
+        }else{
+            $('.onboarding-nav-next').addClass('disabled');
+            createDropdowns();
+            // $('#pg4').show();
+            // document.getElementById('currentpgid').value = 'pg4';
+            addingOtherMems = true; 
+        }
+       
+        if (Object.keys(adhoc4Val).length > 0)
+        {
+            $('#pg4').show();
+            document.getElementById('currentpgid').value = 'pg4';
+            getAdhoc4Vals();
+            console.log('in ready getAdhoc4Vals===');
+        }
+        else
+        {
+            if(('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land') || (  !cs['xfb__c'].value.includes('Branch')))
+            { 
+                $('#pg1').show();
+                document.getElementById('currentpgid').value = 'pg1';
+            }
+            else if(cs['xfb__c'].value.includes('Branch')   )
+            {
+                $('#pg4').show();
+                document.getElementById('currentpgid').value = 'pg4';
+            }
+           
+            
+        }
+        loadData_mem();
+        
+        setTimeout(function(){
+            if(editMode == false){
+                makeReadOnly('forReadOnly');
+                $('.pgs,.onboarding-nav-next').hide();
+                $('#pg5').show();
+                if($('attName')){
+                    $('.attName').each(function(){
+                        let t = $(this).text();
+                        $(this).text(t.split('-')[1].split('.')[0].trim());
+                    });
+                }
+            }
+            else if(obSta == "Members Re-Review"){
+                $('.pgs').hide();
+                page2();
+            }
+        },0);
+        stopTrigger = false;
+    });
+    
+    function getAdhoc4()
+    {
+        console.log('adhoc4===',adhoc4);
+        return adhoc4;
+    }
+    
+    $('#sharesTotal,#shareVal').unbind().on('keyup',function(){
+        var v = $(this).val();
+        if(document.getElementById('currentpgid').value == 'pg2') validateShvalSht();
+    });
+    var fileInput = document.getElementById('files');
+    function checkFile(e){
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0) showPrview(e);
+    }
+    function showPrview(elem) {
+        if (elem.files && elem.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#image-area div').hide();
+                $('#image-area img').show().attr('src', e.target.result);
+            }
+            reader.readAsDataURL(elem.files[0]);
+        }
+        $('#uploadDel').unbind().on('click',function(){
+            if(document.getElementById('files').value == ''){
+                $('#uploadToolsValidation').modal("show");
+                return;
+            }
+            document.getElementById('files').value = '';
+            $('#image-area div').show();
+            $('#image-area img').hide();
+            $('.saveAtt').addClass('disabled');
+        });
+    }
+    function checkFile1(e){
+        $('.saveAtt').removeClass('disabled');
+        if(e!=undefined || $(e).length>0){ 
+            $('#saveText').show();
+        }
+        else{
+            $('#saveText').hide();
+        }
+        
+    }
+    function saveAttachment_doc(elem) {
+        if($(elem).hasClass('disabled')) return;
+        $('[forLoad="Attested Certificate"]').find('.loader_img').show();
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_doc();
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function handleFileSelect_doc(evt) {
+        let f = $('#docFiles')[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                let binaryData = e.target.result;
+                let base64String = window.btoa(binaryData);
+                cs["AOADoc"].value = base64String;
+                let dname = currentDoc.split('-')[1].split('.')[0].trim();
+                cs["docname"].value= (dname.includes('AOA Onboarding'))?'Signed AOA':'Resolution for Incorporation of the FZ-LLCn for FZ LLC DDA';
+                $('#modal_upload_Doc_2').modal('hide');
+                showTempLoader_input($('[btnfor="'+currentDoc+'"]'));
+                currentDoc = "";
+                saveDocs();
+            }
+        }(fgrqec);
+        reader.readAsBinaryString(f);
+    }
+    function deleteAOADocs1(id){
+        axsConfirmation('Please Confirm','Are You Sure to delete this document',true,'deleteAOADocs',id);
+    }
+    
+    function saveAttachment_gmDec(elem) {
+        if($(elem).hasClass('disabled')) return;
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_gmDec();
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function handleFileSelect_gmDec(evt) {
+        let f1 = $('#gmDecFiles')[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                let binaryData = e.target.result;
+                let base64String = window.btoa(binaryData);
+                cs["AOADoc"].value = base64String;
+                let ext =  'pdf';
+                var filesp = f1.name.split('.');
+                if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  filesp[filesp.length-1] : 'pdf';/*MS 11.1*/
+                if(!ext1.includes(ext.toLowerCase()))
+                {
+                    ext = 'pdf';
+                }
+                cs["docname"].value= 'Declaration of Appointment as General Manager.'+ext;
+                console.log('declagm===',cs["docname"].value);
+                $('#modal_upload_gmDec').modal('hide');
+                currentDoc = "";
+                savegmDec();
+            }
+        }(f1);
+        reader.readAsBinaryString(f1);
+    }
+    function deletegmDec(id){
+        axsConfirmation('Please Confirm','Are You Sure to delete this document GMDEC',true,'deleteAOADocs',id);
+    }
+    function saveAttachment_csd(elem) {
+        if($(elem).hasClass('disabled')) return;
+        $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            handleFileSelect_csd();
+        } else {
+            alert('The File APIs are not fully supported in this browser.');
+        }
+    }
+    function handleFileSelect_csd(evt) {
+        let f1 = $('#csdFiles')[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function (theFile) {
+            return function (e) {
+                let binaryData = e.target.result;
+                let base64String = window.btoa(binaryData);
+                cs["AOADoc"].value = base64String;
+                let ext =  'pdf';
+                var filesp = f1.name.split('.');
+                if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  filesp[filesp.length-1] : 'pdf';/*MS 11.1*/
+                if(!ext1.includes(ext.toLowerCase()))
+                {
+                    ext = 'pdf';
+                }
+                cs["docname"].value= 'Company Structure Doc.'+ext;
+                $('#modal_upload_csd').modal('hide');
+                currentDoc = "";
+                savecsd();
+                csdSubmitted=true;
+            }
+        }(f1);
+        reader.readAsBinaryString(f1);
+    }
+
+    function deletecsd1(id){
+        axsConfirmation('Please Confirm','Are You Sure to delete this document CSD',true,'falseCsdSubmitted',id);
+        
+    }
+    function falseCsdSubmitted(id){
+        if(csdSubmitted==true){
+            deletecsdaf(id);
+            csdSubmitted=false; 
+        }
+    }
+    function chageSaveAttEvent_mem(){
+        $('#saveAtt, #saveOnbMob').unbind().removeAttr('onclick').on('click',function(){closeDialog();saveAttachment_mem(this);});
+    }        
+    function saveAttachment_mem(elem) {
+        if($(elem).hasClass('disabled')) return;
+        $('#clickMsg').removeClass('d-md-block');
+        var text = $(elem).text().trim().toLowerCase();
+        var doc = $(elem).attr('doc');
+        doc = (doc)?doc.trim().toLowerCase():'';
+        $('#image-area div').show();
+        $('#image-area img').hide();
+        $('.attVals').each(function(){
+            var val = $(this).val();
+            //if($('#files').val() == val)
+            if($('.d-loadImage').eq(0).val() == val)
+                axsAlert('Alert','passport already uploaded!');
+        });
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+
+            handleFileSelect_mem();
+        } else {
+            axsAlert('Alert','The File APIs are not fully supported in this browser.');
+        }
+    }
+    
+    function srch4prsn(){
+        var p = document.getElementById('p').value;
+        if(p.length > 3)
+            prsnSrch(p);
+    }
+    function statusFilter(){
+        var roleid = document.getElementById('roleid').value;
+        var stsId = document.getElementById('stsId').value;
+        if(roleid == 'ALL Roles')
+            roleid = '';
+        if(stsId == 'Everyone')
+            stsId = '';
+        statusSearch(roleid,stsId);
+    }
+    
+    $("input[name='shareholders_type']").on('change',function(){
+        $('.onboarding-nav-next').removeClass('disabled');
+        deleteAllMembers();
+    });
+    function page1(){
+        $('#pg2').show();
+        document.getElementById('currentpgid').value = 'pg2';
+        validateShvalSht();    
+    }
+    
+    function page2(){
+        $('#onShNumChange').hide();
+        shType = $('[name="shareholders_type"]:checked').attr('val');
+        totalSharesEntered = parseInt($('#sharesTotal').val());
+        $('.sHDivs').hide();
+        if(shType=='onlyMem'){ 
+            $('#addSHDiv').show(); $('#addCrpSHDiv').hide();
+        }else if(shType=='onlyCorp'){
+            $('#addCrpSHDiv').show(); $('#addSHDiv').hide();
+        }else if(shType=='memAndCorp'){
+            $('#addSHDiv,#addCrpSHDiv').show();
+        }
+        if(totalSharesEntered!=0 && previousShares!=0 &&totalSharesEntered != previousShares){
+            $('#onShNumChange').show();
+            $('#onShNumChange elem').text(totalSharesEntered);
+        }
+        $('#saveAtt').unbind().removeAttr('onclick').on('click',function(){closeDialog();saveAttachment_mem(this);});
+        $('#pg3').show();
+        $('#remShares elem').text(parseInt($('#sharesTotal').val()));
+        $('#shareInfo elem').eq(0).text($('#sharesTotal').val());$('#shareInfo elem').eq(1).text($('#sharesTotal').val());
+        document.getElementById('currentpgid').value = 'pg3';
+        validateAddSHDIV();
+        addingOtherMems = false;
+    }
+    var mandatoryUBO = [];
+    function page3(){
+        if(backToSH){
+            showGLoader();
+            window.location.reload();
+        }
+        $('#saveAtt').unbind().removeAttr('onclick').on('click',function(){closeDialog();btnUpload_onclick('123','300','355','96');});
+        addingOtherMems = true;
+        $('.addedMems').each(function(){
+            totalSharesEntered = (totalSharesEntered)?totalSharesEntered:parseInt($('#sharesTotal').val());
+            var v = JSON.parse($(this).val());
+            var p = $(this).attr('id');
+            var mSh = (v.shareNum)?parseInt(v.shareNum):0;
+            if(mSh>0){
+                var mShPerc = (mSh/totalSharesEntered)*100;
+                if(mShPerc>=25){
+                    if(!mandatoryUBO.includes(p) && p != '')
+                        {console.log('mandatoryUBO===',p);
+                        mandatoryUBO.push(p);
+                            }
+                }
+            }
+        });
+        document.getElementById('currentpgid').value = 'pg4';
+       
+        $('#pg4').show();
+        console.log('in page31');
+        $('.onboarding-nav-next').addClass('disabled');
+        console.log('in page312343', $('.onboarding-nav-next'));
+         if (editMode)
+            createDropdowns();
+        //MS 1.1 
+        /*console.log('in page33', $('.pendingRole').size());
+        if($('.pendingRole').size() == 0)
+            {
+            $('.onboarding-nav-next').removeClass('disabled');
+                }*/
+        //$('.add-board-member').unbind();
+    }
+    function page4(){
+        $('#pg4').show();
+        document.getElementById('currentpgid').value = 'pg4'
+    }
+    function createDropdowns(){
+        $('.dropdowns').each(function(){
+            var elem = this;
+            let pctoUBO = '';
+            let selcode= $(elem).attr('selcode');
+            $(elem).find('option').remove();
+            $(elem).append('<option value="" >Select</option>');
+            $('.shareholder-box-main input').each(function(e,v){
+                if(v.value){
+                    var x = JSON.parse(v.value);
+                    if(x.isParentComp)
+                        return;
+                    var shPerc = x["shareNum"]/$('#sharesTotal').val()*100;
+                    if(x["type"]=="corp"){
+                        var y = x["compName"];
+                        var z = x["RegNum"];
+                        if($(elem).attr('selcode').includes('ub') && shPerc>=25)
+                            $('[selcode="ub"]').append('<option type="'+x["type"]+'" pno="'+z+'" value="'+y+'" >'+y+'</option>');
+                        return;
+                    }
+                    var y = x["fname"]+" "+x["lname"];
+                    var z = x["passportNo"];
+                    if((x['ctgCode']=='ub' && shPerc>=25) || x['ctgCode']=="bd"){//$(elem).attr('selcode').includes('ub'){
+                        var cd = x['ctgCode'];
+                        $('[selcode="'+cd+'"]').append('<option type="'+x["type"]+'" disabled="true" pno="'+z+'" value="'+y+'" >'+y+'</option>');
+                    }
+                    else{
+                        if($(elem).attr('selcode').includes('ub')){
+                            if(shPerc>=25)
+                                $(elem).append('<option pno="'+z+'" value="'+y+'" >'+y+'</option>');
+                        }
+                        else
+                            if($(elem).attr('selcode').includes('gm') && dropDownData['gm']&&dropDownData['gm'].selected&&z==dropDownData['gm'].selected){
+                                $(elem).append('<option pno="'+z+'" selected value="'+y+'" >'+y+'</option>');
+                            }
+                            else
+                                $(elem).append('<option pno="'+z+'" value="'+y+'" >'+y+'</option>');
+                    }
+                    if(x.uboRelatedTo && x.rRegNum && x.isParentCompToUbo){
+                        pctoUBO = ' disabled="true" ';
+                    }
+                }
+            });
+            if($(elem).attr("selCode")!='ub'){
+                $(elem).append('<option value="'+$(elem).attr("selCode")+'">Add New Member</option>');
+            }
+            else{/*MS 1.1*/
+                 if( '{!rq.Acc__r.clt__c}' != 'Land' && '{!rq.xvtyp__c}' != 'DED' && cs['xccn__c']&&cs['rtacn__c']&&cs['xccn__c'].value&&cs['rtacn__c'].value){
+                    $('[selcode="ub"]').append('<option'+pctoUBO+' parentcomp="true" type="corp" pno="'+'{!rq.rtacn__c}'+'" value="'+'{!rq.xccn__c}'+'" >'+'{!rq.xccn__c}'+'</option>');
+                }
+                $(elem).append('<option value="'+$(elem).attr("selCode")+'">Add new UBO</option>');
+            }
+        });
+        let emptyACA = true;
+        for(i in addCtgArr){
+            if(addCtgArr[i] && addCtgArr[i].length>0)
+                emptyACA = false;
+        }
+        if(!emptyACA){
+            for(i in addCtgArr){
+                for(let j of addCtgArr[i]){
+                    let v = $('#'+j).val();
+                    if($('[selcode="'+i+'"]').find('option[pno="'+j+'"]').length>0)
+                        $('[selcode="'+i+'"]').find('option[pno="'+j+'"]').attr('disabled',true);
+                    else if(v && JSON.parse(v).uboRelatedTo && JSON.parse(v).rRegNum) /*Ms 1.1*/
+                        $('[selcode="'+i+'"]').find('option[pno="'+JSON.parse(v).rRegNum+'"]').attr('disabled',true);
+                }
+            }
+        }
+        memCompletion();
+    }
+    
+    var backToSH;
+    
+    function nextBlock(){
+        if(document.getElementById('currentpgid').value == 'pg1'){
+            $('#pg1').find('.frmErrMsg').remove();
+            if(!$('[name="shareholders_type"]').is(':checked')){
+                $('#pg1').append('<div class="frmErrMsg" style="font-style: normal;">Please select <b>Your shareholding type</b>.');
+                return;
+            }
+        }
+        if(shType=='memAndCorp' && document.getElementById('currentpgid').value == 'pg3'){ 
+            var tCorpShares = 0; var tIndvShares=0;
+            $('.addedMems').each(function(){
+                /*MS 1.1*/
+                if($(this).val()!=undefined && $(this).val()!=null){
+                    var mem = JSON.parse($(this).val());
+                    console.log('mem====',mem);
+                    var sharenum = mem.shareNum ? mem.shareNum : mem.sh;
+                    console.log('sharenum====',sharenum);
+                    if(mem.type=='corp' || mem.corpORind == 'corp'){
+                        tCorpShares += parseInt(sharenum);
+                    }else if(mem.type=='ind' || mem.corpORind == 'ind'){
+                        tIndvShares += parseInt(sharenum);
+                    }
+                    console.log('tCorpShares====',tCorpShares);
+                    console.log('tIndvShares====',tIndvShares);
+                }
+            });
+            if(tIndvShares==0 || tCorpShares==0){
+                var msgShareholder = tCorpShares==0 ? "Corporate shareholder" : tIndvShares==0 ? "individual shareholder":"";
+                $('#validShares .modal-body h1').html('Please select atleast one ' + msgShareholder);
+                $('#validShares .modal-body p').html('You have selected shareholding type as Individuals and Corporates / Companies, in case of any change in shareholding pattern click on back button and change the share holding type.');
+                $('#validShares').modal('show');
+                return;        
+            }
+        }
+        
+        var pg = document.getElementById('currentpgid').value;
+        $('.onboarding-nav-next').addClass('disabled');
+        $('.pgs').hide();
+        if(pg == 'pg1'){
+            /* cs['xadtx4__c'].value = ''; /*MS 1.1*/
+           /* $('#sharesTotal').val('');/*MS 1.1*/
+             /*$('#sharesTotal').val('');/*MS 1.1*/
+            /* addCtgArr={'ub':[],'bd':[],'lr':[],'gm':[]};/*MS 1.1*/
+          /*   $('.addedMems').remove();/*MS 1.1*/
+            /*$('.dropdowns').remove();/*MS 1.1*/
+            page1();
+            saveMems();
+        }else if(pg == 'pg2'){
+            page2();
+            saveMems();
+        }else if(pg == 'pg3'){
+            $('#pg3').show();
+            $('.onboarding-nav-next').removeClass('disabled');
+            addMemTOConfirmation();
+        } else if(pg=='pg4'){
+            if($('#docs_tobesubmitted .box-danger ').length > 0)
+            {
+ 				
+                alert('Please upload the required documents.');
+                page4();
+                 $('.onboarding-nav-next').removeClass('disabled');
+                
+            }
+            else
+            {
+                addMemTOConfirmation();
+                page4();
+            }
+            // $('.onboarding-nav-next').removeClass('disabled');
+            
+        }
+    }
+    function prvBlock() {
+        if('{!rq.os__c}' == "Application Payment" && '{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )
+        {
+            nextpg1('members'); 
+        }
+        else
+        {   
+            backToSH = false;
+            $('.onboarding-nav-next').removeClass('disabled');
+            var pg = document.getElementById('currentpgid').value;
+            $('.pgs').hide();
+            if (pg == 'pg5') {
+                $('.onboarding-nav-next').hide();
+                $('#pg4').show();
+                document.getElementById('currentpgid').value = 'pg4';
+            } else if (pg == 'pg3') {
+                validateShvalSht();
+                page1();
+            } else if (pg == 'pg4') {
+                /*if(!tSharesFlag) $('.onboarding-nav-next').addClass('disabled'); $('#pg3').show();  document.getElementById('currentpgid').value = 'pg3';*/
+                if (!cs['xfb__c'].value.includes('Branch') || ('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' )) {
+                    page2();
+                } else {
+                    console.log('in pg1');
+                    saveMems();
+                    showTempLoader(event.target);
+                    nextpg1('segments');
+                    return;
+                }
+            } else if (pg == 'pg2') {
+                $('#pg1').show();
+                document.getElementById('currentpgid').value = 'pg1';
+            } else if (pg == 'pg1') {
+                showTempLoader($('.onboarding-nav-prev'));
+                showTempLoader_input();
+                nextpg1('segments');
+                return;
+            }
+            saveMems();
+        }
+    }
+    
+    function handleBrowseClick(){
+        var fileinput = document.getElementById("files");
+        fileinput.click();
+    }
+    function handleBrowseClick_doc(e){
+        $("#docFiles").click();
+    }
+    function docBtnClick(e){
+        currentDoc = $(e).attr('btnFor');
+        $('#modal_upload_Doc_2 .upHead').html(currentDoc);
+        $('#modal_upload_Doc_2').modal('show');
+    }
+    function handleBrowseClick_gmDec(e){
+        $("#gmDecFiles").click();
+    }
+    function handleBrowseClick_csd(e){
+        $("#csdFiles").click();
+    }
+    function gmDecBtnClick(e){
+        currentDoc = $(e).attr('btnFor');
+        $('#modal_upload_gmDec').modal('show');
+    }
+    function csdBtnClick(e){
+        currentDoc = $(e).attr('btnFor');
+        $('#modal_upload_csd').modal('show');
+    }
+    var currentlyEditingPP = '',currentlyEditingRegNum='';
+    function memberEdit(val,cat){
+        backEndKeys_temp = {};
+        Object.keys(backEndKeys).forEach(function(i){
+            if(backEndKeys[i]) backEndKeys_temp[backEndKeys[i]]= i;
+        });
+        if($(event.target).hasClass('disabled'))
+            return;
+        
+        let invalData;
+        $('.frmErrMsg').remove();
+        $('.errField').removeClass('errField');
+        var fileinput = document.getElementById(val).value;
+        var members = JSON.parse(fileinput);
+        console.log('members prateek : '+JSON.stringify(members));
+        console.log('members actingAsNomineeShareholder : '+members.actingAsNomineeShareholder); 
+        if(members.actingAsNomineeShareholder)
+        {
+            var radios = document.getElementsByName('yName1');
+            for (var j = 0; j < radios.length; j++) {
+                console.log('attr===',$(radios[j]).attr('for'));
+                if(members.actingAsNomineeShareholder == 'Yes' && $(radios[j]).attr('for') == 'nSHyes')
+                {
+                    console.log('members yes actingAsNomineeShareholder : '+members.actingAsNomineeShareholder); 
+                   $(radios[j]).prop('checked', true);
+                   
+                }
+                else if(members.actingAsNomineeShareholder == 'No' && $(radios[j]).attr('for') == 'nSHno')
+                {
+                    console.log('members no actingAsNomineeShareholder : '+members.actingAsNomineeShareholder);
+                    $(radios[j]).prop('checked', true);
+                    
+                }   
+            }
+        }
+        if(members.actingAsNomineeDirector)
+        {
+            var radios = document.getElementsByName('yName2');
+            for (var j = 0; j < radios.length; j++) {
+                console.log('attr===',$(radios[j]).attr('for'));
+                if(members.actingAsNomineeDirector == 'Yes' && $(radios[j]).attr('for') == 'nDyes')
+                {
+                   $(radios[j]).prop('checked', true);
+                }
+                else if(members.actingAsNomineeDirector == 'No' && $(radios[j]).attr('for') == 'nDno')
+                {
+                    $(radios[j]).prop('checked', true);
+                }   
+            }
+        }
+        
+        
+        if(cat.includes('ind')){
+            $('#modal_confirm_information .saveEditMem').show();
+            $('#modal_confirm_information #addMemBtn').hide();
+            $('#modal_confirm_information #passportid').attr('disabled',true);
+            $('#modal_confirm_information h2').html('Edit Member');
+            $('#modal_confirm_information p').eq(0).html('Update relevant information and click on SAVE');
+
+            $('.forEdit').each(function(){
+                console.log('f====',$(this).attr('fldName'));
+                let f = $(this).attr('fldName');
+               
+                $(this).val(members[backEndKeys_temp[f]]);
+                if(f=='shareNum'){
+                    curShare = members['shareNum']?members['shareNum']:members['sh'];
+                    $(this).val(parseInt(curShare));
+                }
+                else if(f=='Nationality'){
+                    let v = members["Nationality"];
+                    v = (v)?v:members["nationality"];
+                    v = countryToNationality(v);
+                    $(this).val(v);
+                }
+                else if (f == 'sourceOfwealth') { // PJ 1.2
+                    let sourceofwealth = members["sourceOfwealth"];
+                    console.log('sourceofwealth initial PJ :'+sourceofwealth);
+                    if(sourceofwealth){
+                        let sourceofwealthTemp = [];
+                        let fundJSON={};
+                        var newRow = '';
+                        document.getElementById('tableBody').innerHTML = newRow;
+                        sourceofwealth.forEach(fund => {
+                            let key = fund.incomeSource+'-'+fund.incomeCountry;
+                            newRow = '<tr id="'+key+'"><td class="text-black">' + fund.incomeSource + '</td><td class="text-black">' + fund.detail + '</td><td class="text-black">' + fund.incomeCountry + '</td><td><elem class="btn" onclick="removeAdded(\''+key+'\',\''+fund.incomeSource+'\',\''+fund.detail+'\',\''+fund.incomeCountry+'\')" style="color: #bf0000;padding:0px;">Remove</elem></td></tr>';
+                            
+                            fundJSON['incomeSource']=fund.incomeSource;
+                            fundJSON['detail']=fund.detail;
+                            fundJSON['incomeCountry']=fund.incomeCountry;
+                            sourceofwealthTemp.push(fundJSON);
+                            document.getElementById('tableBody').innerHTML += newRow;
+                        });
+                        cs['sourceoffunds'].value = JSON.stringify(sourceofwealthTemp);
+                    }
+                }
+                else if(members['pepAssociation'] =='Closely Related to PEP' && f == 'pepCloselyRelated' && members['pepRelated'] != ''){ // PJ 1.2
+                    $('[fldname="pepCloselyRelated"]').val(members['pepRelated']);
+                }
+                else if(members['pepAssociation']  =='Closely Associated to PEP' && f== 'pepCloselyAssociated' && members['pepRelated'] != ''){ // PJ 1.2
+                    $('[fldname="pepCloselyAssociated"]').val(members['pepRelated']);
+                }
+                else{
+                    if(backEndKeys_temp[f] == 'street')
+                    {
+                        console.log('backEndKeys_temp[f]===', backEndKeys_temp[f]);
+                        console.log('members[backEndKeys_temp[f]===', members[backEndKeys_temp[f]]); 
+                        console.log('this===', $(this)); 
+                        $(this).val('Test');
+                        
+                    }
+                    $(this).val(members[backEndKeys_temp[f]]);
+                }
+                 console.log(' $("#street")val1==="',  $('#street').val()); 
+              
+                if($(this).is('select')) $(this).trigger('change');
+            });
+            if(members.uboType){
+                $('input.dynaubo').each(function(){
+                    var t = $(this).parent().find('span').text().trim();
+                    if(members.uboType.includes(t))
+                        $(this).prop('checked',true).trigger('change');
+                    else
+                        $(this).prop('checked',false).trigger('change');
+                });
+            }
+             console.log(' $("#street")val2==="',  $('#street').val()); 
+            if(members.inUAE){
+                $('[name="eid"][for="'+members.inUAE+'"]').prop('checked',true).trigger('change');
+            }
+             console.log(' $("#street")val3==="',  $('#street').val()); 
+            
+            /*MS 1.1*/
+            if (members.visitedUAE) {
+                $('[name="vid"][for="' + members.visitedUAE + '"]').prop('checked', true).trigger('change');
+            }
+             console.log(' $("#street")val4==="',  $('#street').val()); 
+            var p = members["passportNo"];
+            currentlyEditingPP = p;
+            $('.inEditOnly a').attr('onclick','deleteItem("'+p+'")');
+            if(addingOtherMems|| document.getElementById('currentpgid').value=='pg4')
+                $('[fldname="shareNum"]').parent().hide();
+            else $('[fldname="shareNum"]').parent().show();
+            var s = "/servlet/servlet.FileDownload?file="+members.passportId;
+            $('.psprtPrv img').attr('src',s);
+             console.log(' $("#street")val5==="',  $('#street').val()); 
+            currentAddingCat = members.ctgCode;
+            if(members.ctgCode=="ub"){
+                if(members.uboRelatedTo&&members.rRegNum&&!members.uboType){
+                    relatedCmpName = members.uboRelatedTo;
+                    relatedCmprRegNum = members.rRegNum;
+                }
+                $(".ubofld").show(); $(".nonubo").hide();
+            }else{
+                $(".ubofld").hide(); $(".nonubo").show();
+            }
+            $(".passport-info").show(); $(".ubo-all-details").show(); 
+            $('#modal_confirm_information').modal({backdrop: 'static', keyboard: false});
+            
+        } else if(cat.includes('corp')){
+            $('#add_corp_shareholder [objKey="RegNum"]').attr('disabled',true);
+            $('#add_corp_shareholder p').eq(0).html('Update relevant information and click on SAVE');
+            if(addingOtherMems){
+                if(currentAddingShData.ctgCode=='ub'){
+                    //$('.forAdditionalUbo').show();
+                    $('[name="sExp"][val1="'+currentAddingShData.uboException+'"]').prop('checked',true);
+                    $('#add_corp_shareholder h2').html('Edit Corporate Ultimate Beneficiary Owner');
+                }
+                $('[objkey="shareNum"]').parents('.col-md-6').hide();
+            }else{
+                $('#add_corp_shareholder h2').html('Edit Corporate Member');
+                $('.forAdditionalUbo').hide();
+                $('[objkey="shareNum"]').parents('.col-md-6').show();
+            }
+            
+            for(i in members)
+                currentAddingShData[i] = members[i];
+            $('.crpData').each(function(){
+                var k = $(this).attr('objKey');
+                var v = $(this).val(currentAddingShData[k]);
+            });
+            
+            
+            
+            $('.forEdit').each(function(){
+                let f = $(this).attr('fldName');
+                //$(this).val(members[f]);
+                if(f=='shareNum'){
+                    curShare = members['shareNum']?members['shareNum']:members['sh'];
+                    $(this).val(parseInt(curShare));
+                }
+                if(f=='Nationality'){
+                    let v = members["nationality"];
+                    v = countryToNationality(v);
+                    $(this).val(v);
+                }
+                if($(this).is('select')) $(this).trigger('change');
+            });
+            
+            var p = members["RegNum"];
+            currentlyEditingRegNum = p;
+            isCurrentlyEditing=true;
+            $('[name="cshType"][for="'+members.cshType+'"]').prop('checked',true);
+            $('#add_corp_shareholder').modal('show');
+        }
+         console.log(' $("#street")val6==="',  $('#street').val()); 
+        $('.saveEditMem').unbind().on('click',function(){
+            isCurrentlyEditing = true;
+            var pId = members["passportNo"];
+            $('.forEdit').each(function(){
+                if($(this).is(':visible')  && !$(this).hasClass('chkubo')){
+                    var elem ='';
+                    var k = $(this).attr('fldname');
+                    var v = $(this).val();
+                    if(addingOtherMems && k=='shareNum') return;
+                    if(currentAddingCat =='lr'&&(k=="country"||k=="street"||k=="city"))
+                        return;
+                    if((!v|| v=='--None--')&&(!($(this).attr('optional')=='true')) && k != 'sourceOfwealth'){ // PJ 1.2
+                        if(elem=='') elem = $(this);
+                        if($(this).is('select'))
+                            $(this).next().find('.select2-selection').addClass('is-invalid');
+                        else
+                            $(this).addClass('is-invalid');
+                        $('.rqrdMsg').addClass('high');
+                        invalData = true;
+                    }
+                    if (currentAddingCat =='ub' && k == 'sourceOfwealth' && (cs['sourceoffunds'] == undefined || cs['sourceoffunds'] == '' || cs['sourceoffunds'].value == '' || cs['sourceoffunds'].value == '[]')) { // PJ 1.2
+                        addValError($('[id$="incomeSource"]'), 'Please select a option!');
+                        invalData = true;
+                    }
+                    else{
+                    }
+                }
+            });
+             console.log(' $("#street")val7==="',  $('#street').val()); 
+            $('.reqRadio:visible').each(function () { // PJ 1.2
+                var checked = false;
+                $(this).find(':radio').each(function () {
+                    if ($(this).is(':checked')) {
+                        checked = true;
+                        return;
+                    }
+                });
+                if (!checked) {
+                    $(this).find('.option-error').show();
+                    invalData = true;
+                } else
+                    $(this).find('.option-error').hide();
+            });
+            
+            checkAllDates('dateCheck');
+            if(invalData){
+                invalData = false;
+                return;
+            }
+             console.log(' $("#street")val8==="',  $('#street').val()); 
+            if($('.frmErrMsg:visible').length>0)
+                return;
+            delMem(pId);
+            addMem();
+             console.log(' $("#street")val9==="',  $('#street').val()); 
+        });
+    }
+    function checkPPEdit(e){ 
+        var newPP = $(e).val();
+        const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+        if (isCurrentlyEditing && currentlyEditingPP != newPP) { //1.1
+            $(e).val(currentlyEditingPP);
+            addValError($(e), 'Changing <b>Passport number</b> is not allowed, please delete member and add again.');
+        }
+        else if(psNoPattern.test(newPP) == false || newPP.length < 6 || newPP.length > 12){ //1.1
+            addValError($(e),'Passport Number must be 6-12 characters long and contain only letters and numbers !'); 
+        }
+    }
+    function checkRegNumEdit(e){
+        var newPP = $(e).val();
+        if(!isCurrentlyEditing)
+            return;
+        if(currentlyEditingRegNum!=newPP){
+            $(e).val(currentlyEditingRegNum);
+            addValError($(e),'Changing <b>Registration number</b> is not allowed, please delete member and add again.');
+        }
+    }
+    /******************VMKR*********************/
+    $('[fldName="Nationality"]').append(nationalityOptions);
+    $('[fldName="birthCountry"]').append(countryOptions); /*Ms 1.1*/
+    $('[fldName="Country"], [fldName="country"]').append(countryOptions);
+    
+    /*MS 1.1 start*/
+    console.log('Test===');
+    setTimeout(function(){
+        $('[fldName="Nationality"]').select2();
+        $('[fldName="birthCountry"]').select2();
+        $('[fldName="Country"]').select2();
+    },500);
+     /*MS 1.1 end*/
+    
+    $('#cntr').find('option').each(function(){
+        if($(this).text()=='United Arab Emirates')
+            $(this).remove();
+    });  
+    var existMemToUBOPP = '',existMemToUBO = false;
+    function addMemPopup(e,c){
+        if($(e).find('option:selected').text()==''||$(e).val()==''||$(e).find('option:selected').text()=='Select'){
+            if(c=='gm'){
+                addCtgArr[c] = [];
+                memCompletion();
+            }
+            return;
+        }
+        currentlyEditingPP = ''; 
+        resetModalInputs('#modal_confirm_information');
+        resetModalInputs('#add_corp_shareholder');
+        $('.passport-info').show(); $('.uboquest').show();
+        
+        if(addCtgArr==undefined){
+            addCtgArr={'ub':[],'bd':[],'lr':[],'gm':[]};
+        }
+        $(e).find('option').each(function(){
+            if(c=='gm'){
+                addCtgArr[c] = [];
+            }
+        });
+        if(!c)
+            return;
+        currentAddingCat = c;
+        var p = $(e).find('option:selected').attr('pno');
+        if(c=='ub'){
+            $('.ubofld').show(); $('.exp2').hide();
+            if($(e).find('option:selected').text().toLowerCase().includes('add new') ){
+                if($(e).find('option:selected').text().toLowerCase().includes('corporate')){
+                    resetModalInputs('#add_corp_shareholder');
+                    $('#add_corp_shareholder').find('[fldname="shareNum"]').parents('.col-md-6').hide();
+                    $('#add_corp_shareholder').find('.heading').text('Add corporate Ultimate Beneficiary Owner');
+                    $('#add_corp_shareholder').modal('show');
+                }
+                else{
+                    chageSaveAttEvent_mem();
+                    popupDocModel('Passport copy','Passport copy','');
+                }
+            }
+            else{
+                existMemToUBOPP = p;
+                existMemToUBO = true;
+                cs['sourceoffunds'].value = ''; // PJ 1.2
+                document.getElementById('tableBody').innerHTML = ''; // PJ 1.2
+                if($(e).find('option:selected').attr('type')=='corp'){
+                    isParentCompToUbo = $(e).find('option:selected').attr('parentcomp');
+                    $('#modal_corp_ubo').modal('show');
+                    $(e).val('');
+                    $(e).trigger('change');
+                    return;
+                }
+                if(p!=undefined){
+                    $('.saveBtns,.passport-info').hide();
+                    $('#indToUbo').show();
+                    $('#modal_confirm_information').modal('show');
+                }
+            }
+            $(e).val('');
+            $(e).trigger('change');
+        }
+        else if((c=='bd' || c=='lr') && !$(e).find('option:selected').text().includes('Add') && !$(e).val()==''){
+            var bdData = {};
+            var mNewRow;
+            if(cs["xadtx4__c"].value && JSON.parse(cs["xadtx4__c"].value).members){
+                for([i,m] of JSON.parse(cs["xadtx4__c"].value).members.entries()){
+                    if(p==m["passportNo"]){
+                        bdData = m;
+                    }
+                }
+            }
+            if($.isEmptyObject(bdData)){
+                $('.additionalMems').each(function(){
+                    if(p==JSON.parse($(this).val())["passportNo"]){
+                        bdData = JSON.parse($(this).val());
+                    }
+                });
+            }
+            if(!($.isEmptyObject(bdData))){
+                addExtraMemWOinput(bdData,c);
+            }
+            $(e).val('');
+            $(e).trigger('change');
+        }
+            else{
+                if($(e).find('option:selected').text().includes('Add') ){
+                    if($(e).find('option:selected').text().includes('Corporate')){
+                        $('[objkey="shareNum"],#docsCorp').parents('.col-lg-6,.col-md-6').hide();
+                        $('#add_corp_shareholder h2').eq(0).text('Add Corporate Legal Representative');
+                        $('#add_corp_shareholder [fldName="Nationality"]').val('Emirati, Emirian, Emiri');
+                        $('#add_corp_shareholder [fldName="Nationality"]').trigger('change');
+                        $('#add_corp_shareholder [fldName="Nationality"]').attr('disabled',true);
+                        $('#add_corp_shareholder').modal({backdrop: 'static', keyboard: false});
+                    } 
+                    else{
+                        chageSaveAttEvent_mem();
+                        popupDocModel('Passport copy','Passport copy','');
+                    }
+                    $(e).val('');
+                    $(e).trigger('change');
+                    
+                }else{
+                    addCtgArr[c] = addCtgArr[c].filter(i=>i!=p);
+                    var p = $(e).find('option:selected').attr('pno');
+                    if(p!=undefined){
+                        addCtgArr[c].push(p);
+                    }
+                }
+            }
+        memCompletion();
+    }
+    
+    function checkDateRange(pdate)
+    {
+        var myelement = $(pdate).parent();
+        let isErrorchild = $(myelement .frmErrMsg).is(':visible'); 
+        console.log('isErrorchild===', isErrorchild); 
+        console.log('myelement===', myelement); 
+        var birthdate =   $('input[fldName="Date of Birth"]').val();
+        birthdate =  birthdate.split('/')[1]+'/'+birthdate.split('/')[0]+'/'+birthdate.split('/')[2];
+        var pd =  $(pdate).val();
+        var pdte = new Date(pd.split('/')[1]+'/'+pd.split('/')[0]+'/'+pd.split('/')[2]);
+        var brthdate = new Date(birthdate);
+        if(pdte < brthdate &&  isErrorchild == false)
+        {
+            showErrMsg($(pdate), 'pid', 'invalid');
+        }
+        else if(isErrorchild == false)
+        {
+            removeValError($(pdate)); 
+        }
+        
+    }
+    function addMem(c){/*vmkr - 03/10/2025*/
+        currentAddingMemData = {};
+        removeValError($('#addMemBtn'));
+        $('.saveBtns').hide();
+        $('#addMemBtn').show();
+        checkAllDates('dateCheck');
+        if($('.frmErrMsg').is(':visible')&&$('.frmErrMsg').length>0)
+            return;
+        var invalData = false;
+        /*starts MS 1.1 */
+        var birthdate =   $('input[fldName="Date of Birth"]').val();
+        var pissudate =   $('input[fldName="Date of Issue"]').val();
+        var pexpdate =   $('input[fldName="Date of Expiry"]').val();
+        /*if(pissudate < birthdate)
+                 {
+                         showErrMsg($('input[fldName="Date of Issue"]'), 'pid', 'invalid');
+                         invalData = true;
+                 }
+                 if(pexpdate < birthdate)
+                 {
+                         showErrMsg($('input[fldName="Date of Expiry"]'), 'pid', 'invalid');
+                         invalData = true;
+                 }*/
+        
+        /*starts MS 1.1 */
+        $('.forEdit:visible').each(function(){
+            var elem ='';
+            var k = $(this).attr('fldname');
+            var v = $(this).val();
+            if($(this).hasClass('chkubo')){
+                v = $(this).is(":checked");
+            }
+            if(addingOtherMems && k=='shareNum') return;
+            if((currentAddingCat =='ub' && k=='legals' && !$('[fldname="legals"]').val())){
+                addValError('[fldname="legals"]','Please select a option!');
+                var checked = true;
+                $('input.dynaubo').parents('.uboChkPrnt').find('.frmErrMsg').remove();
+                $('input.dynaubo').each(function(){
+                    if(!$(this).prop('checked'))
+                        checked = false;
+                });
+                if(!checked)
+                    $('input.dynaubo').parents('.uboChkPrnt').append('<div class="frmErrMsg">Please select an option</div>');
+            }
+            if ((!v || v == '--None--') && (!($(this).attr('optional') == 'true')) && k != 'sourceOfwealth') {//(v==null||v==''||v.length<1)
+                if($(this).hasClass('foreign'))
+                    return;
+                if(currentAddingCat =='lr'&&(k=="country"||k=="street"||k=="city"||k=="Area"||k=="cityIn"||k=="emirate"))
+                    return;
+                if(elem=='') elem = $(this);
+                if($(this).is('select'))
+                    $(this).next().find('.select2-selection').addClass('is-invalid');
+                else
+                    $(this).addClass('is-invalid');
+                $('.rqrdMsg').addClass('high');
+                invalData = true;
+            }else{
+                if(k=='Passport No' && v.includes(' ')){
+                    currentAddingMemData[backEndKeys_temp[k]] = v.replaceAll(' ','');
+                }
+                else if(k != 'pepCloselyRelated' && k != 'pepCloselyAssociated'){ // PJ 1.2
+                    currentAddingMemData[backEndKeys_temp[k]] = v;
+                }
+            }
+            if(elem)
+                scrollToDiv(elem);
+        });
+        
+        console.log('invalData initial forEdit:'+invalData);
+        /*Ms 1.1 starts*/
+        /*   $('.reqRadio:visible').each(function(){
+                         var checked=false;
+                         $(this).find(':radio').each(function(){
+                                 if($(this).is(':checked')){
+                                         if($(this).attr('name') == 'eid')
+                                                 currentAddingMemData.inUAE = $(this).attr('for');
+                                         checked = true;
+                                         return;
+                                 }
+                         });
+                         if(!checked){
+                                 $(this).find('.option-error').show();
+                                 invalData= true;
+                         }else
+                                 $(this).find('.option-error').hide();
+                 });*/
+        
+        $('.inuae.reqRadio:visible').each(function () {
+            var checked = false;
+            $(this).find(':radio').each(function () {
+                
+                if ($(this).is(':checked') && this.name == 'eid') {
+                    currentAddingMemData.inUAE = $(this).attr('for');
+                    checked = true;
+                    return;
+                }
+            });
+            if (!checked) {
+                $(this).find('.option-error').show();
+                invalData = true;
+            } else
+                $(this).find('.option-error').hide();
+        });
+        console.log('invalData initial reqRadio:'+invalData);
+        $('.isVisited.reqRadio:visible').each(function () {
+            var checked = false;
+            $(this).find(':radio').each(function () {
+                
+                if ($(this).is(':checked') && this.name == 'vid') {
+                    currentAddingMemData.visitedUAE = $(this).attr('for');
+                    checked = true;
+                    return;
+                }
+            });
+            if (!checked) {
+                $(this).find('.option-error').show();
+                // invalData = true;
+            } else
+                $(this).find('.option-error').hide();
+        });
+        console.log('invalData initial isVisited:'+invalData);
+        /*Ms 1.1 end*/
+        currentAddingMemData["type"]='ind';
+        currentAddingMemData["corpORind"]='ind';
+        if( currentAddingMemData['nationality']) currentAddingMemData['nationality'] = nationalityToCountry(currentAddingMemData['nationality']);
+        if(currentAddingMemData["shareNum"]) currentAddingMemData["shareNum"] = parseInt($('[fldname="shareNum"]:visible').val());
+        //1.1 Start
+        let passportElement = $('#passportid');
+        let passportValue = $('#passportid').val();
+        console.log('passportValue :'+passportValue);
+        const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+        if(passportValue && (psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12)){
+            addValError(passportElement,'Passport Number must be 6-12 characters long and contain only letters and numbers !');
+            invalData = true;
+        }
+        console.log('invalData initial:'+invalData);
+        /* 1.3 PJ - Start */
+        if(currentAddingCat=='ub' ){
+            let incomeSourceElem = $('[id$="incomeSource"]');
+            removeValError(incomeSourceElem);
+            
+            let incomeSource = incomeSourceElem.val();
+            let incomeCountry = $('#incomeCountry').val();
+            let detail = $('#detail').val();
+            
+            console.log('incomeSource  : '+incomeSource);
+            console.log('incomeCountry  :'+incomeCountry);
+            console.log('detail  :'+detail);
+            
+            let validatePEP = validData(incomeSource,detail,incomeCountry,'Add',true);
+            
+            console.log('validatePEP :'+validatePEP);
+            
+            invalData = !validatePEP ? true : invalData;
+        }
+        
+        if (!invalData && currentAddingCat == 'ub' && (cs['sourceoffunds'] == undefined || cs['sourceoffunds'] == '' || cs['sourceoffunds'].value == '' || cs['sourceoffunds'].value == '[]')) {
+            addValError($('[id$="incomeSource"]'), 'Please select a option!');
+            invalData = true;
+        }
+        /* 1.3 PJ - End */
+        console.log('invalData :'+invalData);
+        //1.1 End
+        if(invalData){
+            invalData = false;
+            return;
+        }
+        var attVal = JSON.stringify($('#files').val());
+        var duplicatePassport = false;
+        $('.addedMems').each(function(){
+            var v = JSON.parse($(this).val())['passportNo'];
+            var v1 = JSON.parse($(this).val())['RegNum'];
+            var memEmail = JSON.parse($(this).val())['email'];
+            var mempcode = JSON.parse($(this).val())['phoneCode'];
+            var memobile = JSON.parse($(this).val())['mobile'];
+            
+            if((currentAddingMemData["passportNo"] == v || currentAddingMemData["passportNo"] == v1) && !isCurrentlyEditing){
+                //$('#uploadErr').modal('show');
+                addValError('#passportid','<b>Passport copy already used for another member.</b>');
+                duplicatePassport = true;
+            }
+            if(currentAddingMemData["email"] == memEmail)
+            {
+                addValError('#indemail','<b>Email already used for another member.</b>');
+                duplicatePassport = true;
+            }
+            if(currentAddingMemData["mobile"] == memobile)
+            {
+                addValError('[fldname="mobileNum"]','<b>Mobile already used for another member.</b>');
+                duplicatePassport = true;
+            }
+        });
+        if(duplicatePassport){
+            $('#modal_process_upload').modal('hide');
+            $('#image-area img').hide();
+            $('#image-area div').show();
+            return;
+        };
+        var mNewRow = $("<div class='col-lg-6'>");
+        var mCols = "";
+        var sharesPerc = parseInt($('#shareid').val());
+        if(!isCurrentlyEditing){
+            
+            let ext =  'pdf';
+            
+            var filesp = file1.name.split('.'); /*MS 11.1*/
+            if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  filesp[filesp.length-1] : 'pdf';/*MS 11.1*/
+            if(!ext1.includes(ext.toLowerCase()))
+            {
+                ext = 'pdf';
+            }
+            cs["docname"].value = "Passport - first page#"+currentAddingMemData["passportNo"]+'.'+ext;
+            attachmentSave();
+        }
+        if(currentAddingMemData["type"]=='ind') currentAddingMemData.passportId = cs["attch_id"].value;
+        
+        currentAddingMemData["shareNum"] = $('#shareid').val();
+        currentAddingMemData["sh"] = $('#shareid').val();
+        
+        if(addingOtherMems && currentAddingCat=='ub'){
+            currentAddingMemData['legals'] = $('[fldname="legals"]').val();
+            currentAddingMemData['uboType'] = uboChecks.join(';');
+        }
+        currentAddingMemData.ctgCode= currentAddingCat;
+        currentAddingMemData.ctg= categoryObj[currentAddingCat];
+        
+        currentAddingMemData.fullname = currentAddingMemData['fname']+' '+currentAddingMemData['lname'];
+        var existingubo='';
+        var existingUboDetails='';
+        var currentUboDetails='';
+        
+        if(currentAddingCat=='ub' ){
+            currentUboDetails = currentAddingMemData['fname']+'/'+currentAddingMemData['lname']+'/'+currentAddingMemData['dob']+'/'+currentAddingMemData['nationality'];
+            if(cs["xadtx4__c"].value && JSON.parse(cs["xadtx4__c"].value).members){
+                currentUboDetails = currentAddingMemData['fname']+'/'+currentAddingMemData['lname']+'/'+currentAddingMemData['dob']+'/'+currentAddingMemData['nationality'];
+                for([i,m] of JSON.parse(cs["xadtx4__c"].value).members.entries()){
+                    console.log(i);
+                    console.log(m);
+                    existingUboDetails = m["fname"]+'/'+m["lname"]+'/'+m["dob"]+'/'+m["nationality"];
+                    
+                    if(currentUboDetails===existingUboDetails && m["uboType"]){
+                        addValError($('#addMemBtn'),'An entry already exists with the same First Name, Last Name, Nationality and Date of Birth');
+                        return true;
+                    }
+                }
+            }
+            
+            currentAddingMemData.actingAsNomineeShareholder=nomineeSholder;
+            
+            currentAddingMemData.actingAsNomineeDirector=nomineeDirector;
+            if(relatedCmpName&&relatedCmprRegNum){
+                currentAddingMemData['uboRelatedTo'] = relatedCmpName;
+                currentAddingMemData['rRegNum'] = relatedCmprRegNum;
+                currentAddingMemData['isParentCompToUbo'] = isParentCompToUbo;
+            }
+            // PJ 1.2 Start
+            currentAddingMemData.pepAssociation = $('[fldname="pepAssociation"]').val();
+            
+            
+            currentAddingMemData.pepRelated = currentAddingMemData.pepAssociation == 'Closely Related to PEP'? $('[fldname="pepCloselyRelated"]').val()  : currentAddingMemData.pepRelated;
+            currentAddingMemData.pepRelated = currentAddingMemData.pepAssociation == 'Closely Associated to PEP' ? $('[fldname="pepCloselyAssociated"]').val()  : currentAddingMemData.pepRelated;
+            
+            currentAddingMemData.pepCloselyRelatedOthers = currentAddingMemData.pepAssociation == 'Closely Related to PEP'  ? $('[fldname="pepCloselyRelatedOthers"]').val() : '';
+            currentAddingMemData.pepCloselyAssociatedOthers = currentAddingMemData.pepAssociation == 'Closely Associated to PEP'  ?  $('[fldname="pepCloselyAssociatedOthers"]').val() : '';
+            currentAddingMemData.pepCountry = $('[fldname="pepCountry"]').val();
+            currentAddingMemData.sourceOfwealth = cs['sourceoffunds'] && cs['sourceoffunds'].value ? JSON.parse(cs['sourceoffunds'].value) : '';
+            
+            if(currentAddingMemData.pepAssociation != 'Closely Related to PEP' && currentAddingMemData.pepAssociation != 'Closely Associated to PEP'){
+                currentAddingMemData.pepCloselyAssociatedOthers ='';
+                currentAddingMemData.pepCloselyRelatedOthers = '';
+                currentAddingMemData.pepRelated = null;
+                
+                currentAddingMemData.pepCountry = currentAddingMemData.pepAssociation == 'Not Applicable' ? '' : currentAddingMemData.pepCountry;
+            }
+            
+            cs['sourceoffunds'].value = '';
+            console.log('## currentAddingMemData final ## '+JSON.stringify(currentAddingMemData));
+            // PJ 1.2 End
+        }
+        mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+        if(addingOtherMems){
+            if(currentAddingMemData['uboRelatedTo']&&currentAddingMemData['rRegNum'])
+                mCols += "<label>"+currentAddingMemData.fullname+" - "+currentAddingMemData.ctg.toLocaleUpperCase()+" for "+currentAddingMemData['uboRelatedTo']+"</label> <input type='hidden' class='additionalMems addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+            else
+                mCols += "<label>"+currentAddingMemData.fullname+" - "+currentAddingMemData.ctg.toLocaleUpperCase()+"</label> <input type='hidden' class='additionalMems addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+        }
+        else mCols += "<label>"+currentAddingMemData.fullname+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+        mCols += '<button type="button" onclick="memberEdit(\''+currentAddingMemData["passportNo"]+'\',\'ind\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+        mCols += '<a onclick="deleteItem(\''+currentAddingMemData["passportNo"]+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a></div>';
+        if(!addingOtherMems) mCols += "<div class='shareholder-box-right'><div class='input-percentage-wrapper' for='"+currentAddingMemData['passportNo']+"'><input type='text' readonly='true' class='form-control' value='"+sharesPerc+"' /> </div><label>Number of shares</label></div >";
+        mCols += ' </div>';
+        mNewRow.append(mCols);
+        
+        if(!allpassports.includes(currentAddingMemData["passportNo"])) allpassports.push(currentAddingMemData["passportNo"]);
+        
+        if(addingOtherMems){
+            $("#board_members").append(mNewRow);
+            if(currentAddingCat=='ub' ){
+                currentAddingMemData.actingAsNomineeShareholder=nomineeSholder;
+                currentAddingMemData.actingAsNomineeDirector=nomineeDirector;
+                if(relatedCmpName&&relatedCmprRegNum){
+                    $('[selcode="'+currentAddingCat+'"]').find('[pno="'+relatedCmprRegNum+'"]').attr('disabled',true);
+                    addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+                    mandatoryUBO = mandatoryUBO.filter(i=>i!=relatedCmprRegNum);
+                    relatedCmpName='',relatedCmprRegNum='';
+                }
+                else{
+                    addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+                    $('[selcode="'+currentAddingCat+'"]').append('<option disabled="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                }
+                allMembersData.members = (cs["xadtx4__c"].value)?JSON.parse(cs["xadtx4__c"].value).members:[];
+                allMembersData.members.push(currentAddingMemData);
+            }
+            else{
+                if(currentAddingCat=='gm')
+                    $('[selcode="'+currentAddingCat+'"]').attr('disabled',true);
+                addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+            }
+            $('.dropdowns').each(function(){
+                if(currentAddingCat==$(this).attr('selcode')){
+                    if(currentAddingCat=='gm' ){
+                        $('[selcode="'+currentAddingCat+'"]').append('<option selected="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                        $('[selcode="'+currentAddingCat+'"]').attr('disabled',true);
+                    }
+                    else if(currentAddingCat=='lr' ){
+                        $('[selcode="'+currentAddingCat+'"]').append('<option disabled="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                    }
+                }
+                if(currentAddingCat!=$(this).attr('selcode') )
+                    $(this).append('<option pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+            });
+            memCompletion();
+        } else{
+            $("#addedMembers").prepend(mNewRow);
+        }
+        /*var prsh = 0;
+                         $('.input-percentage-wrapper input').each(function(index, element) {
+                         console.log('this===',this.value);
+                         prsh+=parseInt(this.value);
+                         console.log('prsh===',prsh);
+                 });*/
+        let rmShrs = parseInt($('#remShares elem').text())-currentAddingMemData["shareNum"];
+        
+        console.log('rmShrs===', rmShrs);
+        $('#modal_confirm_information').modal('hide');
+        $('#files,#memShares').val('');
+        $('.saveAtt').addClass('disabled');
+        $('[btnfor="corp"],[btnfor="ind"]').addClass('disabled').attr('data-target','#validShares').parent().parent().find('input').val('');
+        validateAddSHDIV();
+        if(!isCurrentlyEditing){
+            
+        }
+        isCurrentlyEditing = false;
+        $('.is-invalid').removeClass('is-invalid');
+        $('.high').removeClass('high');
+        $('.frmErrMsg').remove();
+        $('.errField').removeClass('errField');
+        cs["attch_id"].value = '';
+        $('.modal-backdrop').remove();
+        if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' != 'Land'){
+            $('.onboarding-nav-next').removeClass('disabled');
+        }
+        console.log('currentAddingMemData==123=',currentAddingMemData);
+        /* For EID docs start - VMKR - 03/10/2025*/
+         let eidDocsFront1 = 'Emirates / National ID - front - '+currentAddingMemData.fname.trim()+' '+currentAddingMemData.lname.trim();
+         let eidDocsBack1 = 'Emirates / National ID - back - '+currentAddingMemData.fname.trim()+' '+currentAddingMemData.lname.trim();
+         console.log('currentAddingMemData.ctgCode===',currentAddingMemData.ctgCode);
+          let eidDocsFront = 'Emirates / National ID - front - '+currentAddingMemData.fname.trim()+' '+currentAddingMemData.lname.trim()+ ':'+currentAddingMemData.ctgCode.trim()+';';
+        let eidDocsBack = 'Emirates / National ID - back - '+currentAddingMemData.fname.trim()+' '+currentAddingMemData.lname.trim()+':'+currentAddingMemData.ctgCode.trim();
+        let eidDocs = eidDocsFront1+';'+eidDocsBack1;
+          let eidDocs1 = eidDocsFront+eidDocsBack;
+         var erDoc = '';
+         //  cs['xcddocs__c'].value = cs['xcddocs__c'].value.replaceAll(eidDocs1,'').replaceAll(eidDocs,'').replaceAll(eidDocsFront,'').replaceAll(eidDocsBack,'').replaceAll(eidDocsFront1,'').replaceAll(eidDocsBack1,'');
+       if(cs['xcddocs__c'].value.indexOf(eidDocsFront) < 0 || cs['xcddocs__c'].value.indexOf(eidDocsFront1) < 0)
+       {
+           erDoc += eidDocsFront;
+       }
+        if(cs['xcddocs__c'].value.indexOf(eidDocsBack) < 0 || cs['xcddocs__c'].value.indexOf(eidDocsBack1) < 0)
+        {
+            erDoc += eidDocsBack;
+        }
+         //  if(currentAddingMemData.inUAE=='yes'){
+         if(erDoc.length > 0 ) cs['xcddocs__c'].value +=';'+erDoc;
+         //  }
+         console.log('xcddocs__cvalue===',cs['xcddocs__c'].value);
+          console.log('currentAddingMemData==', currentAddingMemData);
+        console.log('addingOtherMems===',addingOtherMems);
+        /* For EID docs end - VMKR - 03/10/2025*/
+        if(!addingOtherMems){
+            validatepg4Next();
+            saveMems();/* For EID docs - VMKR - 03/10/2025*/
+        }
+        
+        if(addingOtherMems)
+         {
+             stopTrigger = false;
+             saveMems();
+             stopTrigger = true;
+         }
+         
+        rmShrs =  calRmShare(); /*MS 1.1*/
+        console.log('calRmShare==1=', rmShrs);
+        if(rmShrs>0){
+            $('#remShares elem').text(rmShrs);
+            $('#remShares elem').show();
+            $('#remShares').show();
+        }
+        else
+        {
+            $('#remShares elem').text('0');
+            $('#remShares elem').hide();
+            $('#remShares').hide();
+        }
+    }
+
+    function addMem_old(c){/*vmkr - 03/10/2025*/
+        currentAddingMemData = {};
+        removeValError($('#addMemBtn'));
+        $('.saveBtns').hide();
+        $('#addMemBtn').show();
+        checkAllDates('dateCheck');
+        if($('.frmErrMsg').is(':visible')&&$('.frmErrMsg').length>0)
+            return;
+        var invalData = false;
+        /*starts MS 1.1 */
+        var birthdate =   $('input[fldName="Date of Birth"]').val();
+        var pissudate =   $('input[fldName="Date of Issue"]').val();
+        var pexpdate =   $('input[fldName="Date of Expiry"]').val();
+        /*if(pissudate < birthdate)
+        {
+            showErrMsg($('input[fldName="Date of Issue"]'), 'pid', 'invalid');
+            invalData = true;
+        }
+        if(pexpdate < birthdate)
+        {
+            showErrMsg($('input[fldName="Date of Expiry"]'), 'pid', 'invalid');
+            invalData = true;
+        }*/
+        
+         /*starts MS 1.1 */
+        $('.forEdit:visible').each(function(){
+            var elem ='';
+            var k = $(this).attr('fldname');
+            var v = $(this).val();
+            if($(this).hasClass('chkubo')){
+                v = $(this).is(":checked");
+            }
+            if(addingOtherMems && k=='shareNum') return;
+            if((currentAddingCat =='ub' && k=='legals' && !$('[fldname="legals"]').val())){
+                addValError('[fldname="legals"]','Please select a option!');
+                var checked = true;
+                $('input.dynaubo').parents('.uboChkPrnt').find('.frmErrMsg').remove();
+                $('input.dynaubo').each(function(){
+                    if(!$(this).prop('checked'))
+                        checked = false;
+                });
+                if(!checked)
+                    $('input.dynaubo').parents('.uboChkPrnt').append('<div class="frmErrMsg">Please select an option</div>');
+            }
+            if ((!v || v == '--None--') && (!($(this).attr('optional') == 'true')) && k != 'sourceOfwealth') {//(v==null||v==''||v.length<1)
+                if($(this).hasClass('foreign'))
+                    return;
+                if(currentAddingCat =='lr'&&(k=="country"||k=="street"||k=="city"||k=="Area"||k=="cityIn"||k=="emirate"))
+                    return;
+                if(elem=='') elem = $(this);
+                if($(this).is('select'))
+                    $(this).next().find('.select2-selection').addClass('is-invalid');
+                else
+                    $(this).addClass('is-invalid');
+                $('.rqrdMsg').addClass('high');
+                invalData = true;
+            }else{
+                if(k=='Passport No' && v.includes(' ')){
+                    currentAddingMemData[backEndKeys_temp[k]] = v.replaceAll(' ','');
+                }
+                else if(k != 'pepCloselyRelated' && k != 'pepCloselyAssociated'){ // PJ 1.2
+                    currentAddingMemData[backEndKeys_temp[k]] = v;
+                }
+            }
+            if(elem)
+                scrollToDiv(elem);
+        });
+
+        console.log('invalData initial forEdit:'+invalData);
+        /*Ms 1.1 starts*/
+        /*   $('.reqRadio:visible').each(function(){
+            var checked=false;
+            $(this).find(':radio').each(function(){
+                if($(this).is(':checked')){
+                    if($(this).attr('name') == 'eid')
+                        currentAddingMemData.inUAE = $(this).attr('for');
+                    checked = true;
+                    return;
+                }
+            });
+            if(!checked){
+                $(this).find('.option-error').show(); 
+                invalData= true;
+            }else
+                $(this).find('.option-error').hide(); 
+        });*/
+        
+         $('.inuae.reqRadio:visible').each(function () {
+                var checked = false;
+                $(this).find(':radio').each(function () {
+                    
+                    if ($(this).is(':checked') && this.name == 'eid') {
+                        currentAddingMemData.inUAE = $(this).attr('for');
+                        checked = true;
+                        return;
+                    }
+                });
+                if (!checked) {
+                    $(this).find('.option-error').show();
+                    invalData = true;
+                } else
+                    $(this).find('.option-error').hide();
+            });
+            console.log('invalData initial reqRadio:'+invalData);
+            $('.isVisited.reqRadio:visible').each(function () {
+                var checked = false;
+                $(this).find(':radio').each(function () {
+                    
+                    if ($(this).is(':checked') && this.name == 'vid') {
+                        currentAddingMemData.visitedUAE = $(this).attr('for');
+                        checked = true;
+                        return;
+                    }
+                });
+                if (!checked) {
+                    $(this).find('.option-error').show();
+                    // invalData = true;
+                } else
+                    $(this).find('.option-error').hide();
+            });
+            console.log('invalData initial isVisited:'+invalData);
+         /*Ms 1.1 end*/
+        currentAddingMemData["type"]='ind';
+        currentAddingMemData["corpORind"]='ind';
+        if( currentAddingMemData['nationality']) currentAddingMemData['nationality'] = nationalityToCountry(currentAddingMemData['nationality']);
+        if(currentAddingMemData["shareNum"]) currentAddingMemData["shareNum"] = parseInt($('[fldname="shareNum"]:visible').val());
+        //1.1 Start
+        let passportElement = $('#passportid');
+        let passportValue = $('#passportid').val();
+        console.log('passportValue :'+passportValue);
+        const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+        if(passportValue && (psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12)){
+            addValError(passportElement,'Passport Number must be 6-12 characters long and contain only letters and numbers !');
+            invalData = true;
+        }
+        console.log('invalData initial:'+invalData);
+        /* 1.3 PJ - Start */
+        if(currentAddingCat=='ub' ){
+            let incomeSourceElem = $('[id$="incomeSource"]');
+            removeValError(incomeSourceElem);
+
+            let incomeSource = incomeSourceElem.val();
+            let incomeCountry = $('#incomeCountry').val();
+            let detail = $('#detail').val();
+
+            console.log('incomeSource  : '+incomeSource);
+            console.log('incomeCountry  :'+incomeCountry);
+            console.log('detail  :'+detail);
+
+            let validatePEP = validData(incomeSource,detail,incomeCountry,'Add',true);
+
+            console.log('validatePEP :'+validatePEP);
+
+            invalData = !validatePEP ? true : invalData;
+        }
+
+        if (!invalData && currentAddingCat == 'ub' && (cs['sourceoffunds'] == undefined || cs['sourceoffunds'] == '' || cs['sourceoffunds'].value == '' || cs['sourceoffunds'].value == '[]')) {
+                addValError($('[id$="incomeSource"]'), 'Please select a option!');
+                invalData = true;
+        }
+        /* 1.3 PJ - End */
+        console.log('invalData :'+invalData);
+        //1.1 End
+        if(invalData){
+            invalData = false;
+            return;
+        }
+        var attVal = JSON.stringify($('#files').val());
+        var duplicatePassport = false;
+        $('.addedMems').each(function(){
+            var v = JSON.parse($(this).val())['passportNo'];
+            var v1 = JSON.parse($(this).val())['RegNum'];
+            var memEmail = JSON.parse($(this).val())['email'];
+            var mempcode = JSON.parse($(this).val())['phoneCode'];
+            var memobile = JSON.parse($(this).val())['mobile'];
+            
+            if((currentAddingMemData["passportNo"] == v || currentAddingMemData["passportNo"] == v1) && !isCurrentlyEditing){
+                //$('#uploadErr').modal('show');
+                addValError('#passportid','<b>Passport copy already used for another member.</b>');
+                duplicatePassport = true;
+            }
+            if(currentAddingMemData["email"] == memEmail)
+            {
+                addValError('#indemail','<b>Email already used for another member.</b>');
+                duplicatePassport = true;
+            }
+            if(currentAddingMemData["mobile"] == memobile)
+            {
+                addValError('[fldname="mobileNum"]','<b>Mobile already used for another member.</b>');
+                duplicatePassport = true;
+            }
+        });
+        if(duplicatePassport){
+            $('#modal_process_upload').modal('hide');
+            $('#image-area img').hide();
+            $('#image-area div').show();
+            return;
+        };
+        var mNewRow = $("<div class='col-lg-6'>");
+        var mCols = "";
+        var sharesPerc = parseInt($('#shareid').val());
+        if(!isCurrentlyEditing){
+            
+            let ext =  'pdf';
+            
+            var filesp = file1.name.split('.'); /*MS 11.1*/
+            if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  filesp[filesp.length-1] : 'pdf';/*MS 11.1*/
+            if(!ext1.includes(ext.toLowerCase()))
+            {
+                ext = 'pdf';
+            }
+            cs["docname"].value = "Passport - first page#"+currentAddingMemData["passportNo"]+'.'+ext;
+            attachmentSave();
+        }
+        if(currentAddingMemData["type"]=='ind') currentAddingMemData.passportId = cs["attch_id"].value;
+       
+        currentAddingMemData["shareNum"] = $('#shareid').val();
+        currentAddingMemData["sh"] = $('#shareid').val();
+        
+        if(addingOtherMems && currentAddingCat=='ub'){
+            currentAddingMemData['legals'] = $('[fldname="legals"]').val();
+            currentAddingMemData['uboType'] = uboChecks.join(';');
+        }
+        currentAddingMemData.ctgCode= currentAddingCat;
+        currentAddingMemData.ctg= categoryObj[currentAddingCat];
+
+        currentAddingMemData.fullname = currentAddingMemData['fname']+' '+currentAddingMemData['lname'];
+        var existingubo='';
+        var existingUboDetails='';
+        var currentUboDetails='';
+        
+        if(currentAddingCat=='ub' ){
+            currentUboDetails = currentAddingMemData['fname']+'/'+currentAddingMemData['lname']+'/'+currentAddingMemData['dob']+'/'+currentAddingMemData['nationality'];
+            if(cs["xadtx4__c"].value && JSON.parse(cs["xadtx4__c"].value).members){
+                currentUboDetails = currentAddingMemData['fname']+'/'+currentAddingMemData['lname']+'/'+currentAddingMemData['dob']+'/'+currentAddingMemData['nationality'];
+                for([i,m] of JSON.parse(cs["xadtx4__c"].value).members.entries()){
+                    console.log(i);
+                    console.log(m);
+                    existingUboDetails = m["fname"]+'/'+m["lname"]+'/'+m["dob"]+'/'+m["nationality"];
+
+                    if(currentUboDetails===existingUboDetails && m["uboType"]){
+                        addValError($('#addMemBtn'),'An entry already exists with the same First Name, Last Name, Nationality and Date of Birth');
+                        return true;
+                    }
+                }
+            }
+
+            currentAddingMemData.actingAsNomineeShareholder=nomineeSholder;
+          
+            currentAddingMemData.actingAsNomineeDirector=nomineeDirector;
+            if(relatedCmpName&&relatedCmprRegNum){
+                currentAddingMemData['uboRelatedTo'] = relatedCmpName;
+                currentAddingMemData['rRegNum'] = relatedCmprRegNum;
+                currentAddingMemData['isParentCompToUbo'] = isParentCompToUbo;
+            }
+            // PJ 1.2 Start
+            currentAddingMemData.pepAssociation = $('[fldname="pepAssociation"]').val();
+
+
+            currentAddingMemData.pepRelated = currentAddingMemData.pepAssociation == 'Closely Related to PEP'? $('[fldname="pepCloselyRelated"]').val()  : currentAddingMemData.pepRelated;
+            currentAddingMemData.pepRelated = currentAddingMemData.pepAssociation == 'Closely Associated to PEP' ? $('[fldname="pepCloselyAssociated"]').val()  : currentAddingMemData.pepRelated;
+
+            currentAddingMemData.pepCloselyRelatedOthers = currentAddingMemData.pepAssociation == 'Closely Related to PEP'  ? $('[fldname="pepCloselyRelatedOthers"]').val() : '';
+            currentAddingMemData.pepCloselyAssociatedOthers = currentAddingMemData.pepAssociation == 'Closely Associated to PEP'  ?  $('[fldname="pepCloselyAssociatedOthers"]').val() : '';
+            currentAddingMemData.pepCountry = $('[fldname="pepCountry"]').val();
+            currentAddingMemData.sourceOfwealth = cs['sourceoffunds'] && cs['sourceoffunds'].value ? JSON.parse(cs['sourceoffunds'].value) : '';  
+
+            if(currentAddingMemData.pepAssociation != 'Closely Related to PEP' && currentAddingMemData.pepAssociation != 'Closely Associated to PEP'){
+                currentAddingMemData.pepCloselyAssociatedOthers ='';
+                currentAddingMemData.pepCloselyRelatedOthers = '';
+                currentAddingMemData.pepRelated = null;
+
+                currentAddingMemData.pepCountry = currentAddingMemData.pepAssociation == 'Not Applicable' ? '' : currentAddingMemData.pepCountry;
+            }  
+
+            cs['sourceoffunds'].value = '';
+            console.log('## currentAddingMemData final ## '+JSON.stringify(currentAddingMemData));
+            // PJ 1.2 End
+        }
+        mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+        if(addingOtherMems){
+            if(currentAddingMemData['uboRelatedTo']&&currentAddingMemData['rRegNum'])
+                mCols += "<label>"+currentAddingMemData.fullname+" - "+currentAddingMemData.ctg.toLocaleUpperCase()+" for "+currentAddingMemData['uboRelatedTo']+"</label> <input type='hidden' class='additionalMems addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+            else
+                mCols += "<label>"+currentAddingMemData.fullname+" - "+currentAddingMemData.ctg.toLocaleUpperCase()+"</label> <input type='hidden' class='additionalMems addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+        }
+        else mCols += "<label>"+currentAddingMemData.fullname+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+currentAddingMemData["passportNo"]+"' value='"+JSON.stringify(currentAddingMemData)+"'/>";
+        mCols += '<button type="button" onclick="memberEdit(\''+currentAddingMemData["passportNo"]+'\',\'ind\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+        mCols += '<a onclick="deleteItem(\''+currentAddingMemData["passportNo"]+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a></div>';
+        if(!addingOtherMems) mCols += "<div class='shareholder-box-right'><div class='input-percentage-wrapper' for='"+currentAddingMemData['passportNo']+"'><input type='text' readonly='true' class='form-control' value='"+sharesPerc+"' /> </div><label>Number of shares</label></div >";
+        mCols += ' </div>';
+        mNewRow.append(mCols);
+        
+        if(!allpassports.includes(currentAddingMemData["passportNo"])) allpassports.push(currentAddingMemData["passportNo"]);
+        
+        if(addingOtherMems){
+            $("#board_members").append(mNewRow);
+            if(currentAddingCat=='ub' ){
+                currentAddingMemData.actingAsNomineeShareholder=nomineeSholder;
+                currentAddingMemData.actingAsNomineeDirector=nomineeDirector;
+                if(relatedCmpName&&relatedCmprRegNum){
+                    $('[selcode="'+currentAddingCat+'"]').find('[pno="'+relatedCmprRegNum+'"]').attr('disabled',true);
+                    addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+                    mandatoryUBO = mandatoryUBO.filter(i=>i!=relatedCmprRegNum);
+                    relatedCmpName='',relatedCmprRegNum='';
+                }
+                else{
+                    addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+                    $('[selcode="'+currentAddingCat+'"]').append('<option disabled="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                }
+                allMembersData.members = (cs["xadtx4__c"].value)?JSON.parse(cs["xadtx4__c"].value).members:[];
+                allMembersData.members.push(currentAddingMemData);
+            }
+            else{
+                if(currentAddingCat=='gm')
+                    $('[selcode="'+currentAddingCat+'"]').attr('disabled',true);
+                addCtgArr[currentAddingCat].push(currentAddingMemData['passportNo']);
+            }
+            $('.dropdowns').each(function(){
+                if(currentAddingCat==$(this).attr('selcode')){
+                    if(currentAddingCat=='gm' ){
+                        $('[selcode="'+currentAddingCat+'"]').append('<option selected="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                        $('[selcode="'+currentAddingCat+'"]').attr('disabled',true);
+                    }
+                    else if(currentAddingCat=='lr' ){
+                        $('[selcode="'+currentAddingCat+'"]').append('<option disabled="true" pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+                    }
+                }
+                if(currentAddingCat!=$(this).attr('selcode') )
+                    $(this).append('<option pno="'+currentAddingMemData["passportNo"]+'" value="'+currentAddingMemData.fullname+'" >'+currentAddingMemData.fullname+'</option>');
+            });
+            memCompletion();
+        } else{
+            $("#addedMembers").prepend(mNewRow); 
+        } 
+        /*var prsh = 0;
+            $('.input-percentage-wrapper input').each(function(index, element) {
+            console.log('this===',this.value);
+            prsh+=parseInt(this.value);
+            console.log('prsh===',prsh);
+        });*/
+        let rmShrs = parseInt($('#remShares elem').text())-currentAddingMemData["shareNum"];
+        
+       console.log('rmShrs===', rmShrs);
+        $('#modal_confirm_information').modal('hide');
+        $('#files,#memShares').val('');
+        $('.saveAtt').addClass('disabled');
+        $('[btnfor="corp"],[btnfor="ind"]').addClass('disabled').attr('data-target','#validShares').parent().parent().find('input').val('');
+        validateAddSHDIV();
+        if(!isCurrentlyEditing){
+            
+        }
+        isCurrentlyEditing = false;
+        $('.is-invalid').removeClass('is-invalid');
+        $('.high').removeClass('high');
+        $('.frmErrMsg').remove();
+        $('.errField').removeClass('errField');
+        cs["attch_id"].value = '';
+        $('.modal-backdrop').remove();
+        if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' != 'Land'){
+            $('.onboarding-nav-next').removeClass('disabled');
+        }
+        if(!addingOtherMems)
+            validatepg4Next();
+       
+          rmShrs =  calRmShare(); /*MS 1.1*/
+        console.log('calRmShare==1=', rmShrs);
+        if(rmShrs>0){
+            $('#remShares elem').text(rmShrs);
+             $('#remShares elem').show();
+            $('#remShares').show();
+        }
+        else
+        {
+            $('#remShares elem').text('0');
+            $('#remShares elem').hide();
+            $('#remShares').hide();
+        }
+    }
+    
+
+    function validateMobileNumber(elem) {
+        var mobileNumber = $(elem).val();
+
+        if (mobileNumber.startsWith('0')) {
+            addValError( $(elem),'Please enter valid mobile number.');
+            return true;
+        }
+        if (mobileNumber.includes('-')) {
+            addValError( $(elem),'Please enter valid mobile number.');
+            return true;
+        }
+        if (mobileNumber.length < 8 || mobileNumber.length > 11) {
+            addValError( $(elem),'Please enter valid mobile number.');
+            return true;
+        }
+        return false;
+    }
+    
+    function validatepg4Next(){
+        var dropdownsSelected = true;
+        $('.dropdowns').each(function(){
+            if($(this).is(":visible")){
+                if($(this).val()=='' || $(this).val()==undefined || $(this).val()==null){
+                    if($(this).attr('selcode')=='lr'){
+                    }else { //if($(this).attr('selcode')!='lr')
+                        if(cs['xfb__c'].value.includes('Branch') && $(this).attr('selcode')!='bd'){}
+                        dropdownsSelected = false; 
+                        $('.onboarding-nav-next').addClass('disabled');
+                    }
+                }
+            }
+        });
+        
+        if(dropdownsSelected && document.getElementById('currentpgid').value == 'pg4')
+            $('.onboarding-nav-next').removeClass('disabled');
+        var proceed = true;
+        console.log('gmSelec====',$('[selcode="gm"]')?.find('option:selected').text());
+        if(!$('[selcode="gm"]').find('option:selected') ||$('[selcode="gm"]').find('option:selected').text().toLowerCase()=='select')
+            proceed = false;
+        for(i in addCtgArr){
+            if(i!='lr' && addCtgArr[i].length<1&& !$('[selcode="'+i+'"]').val()){
+                if(!('{!rq.xfb__c}'.includes('Branch') && i=='bd')){proceed = false;}
+                
+            }
+        }
+        var u = 0;
+        console.log('proceed==5756==',proceed);
+        for(let i of mandatoryUBO){
+            for(let j of addCtgArr.ub){
+                if($('#'+j) && $('#'+j).val() && $('#'+j).val() != '') /*MS 1.1*/
+                    {
+                let v = JSON.parse($('#'+j).val());
+                if(i==j || i==v.rRegNum){
+                    u++;            
+                }
+                        }
+            }
+        }
+        if((!cs['xfb__c'].value.includes('Branch') || ('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land'))  && u>=mandatoryUBO.length )
+            proceed = true;
+        if(document.getElementById('currentpgid').value == 'pg4'){
+            if(!proceed)
+                $('.onboarding-nav-next').addClass('disabled');
+            else{
+                //MS 1.1
+                if($('.pendingRole').size() == 0)
+                    $('.onboarding-nav-next').removeClass('disabled');
+                console.log('saveMems update::');
+                saveMems();
+            }
+        }
+    }
+    
+    
+    function isEmail(elem,type) {
+        var email = $(elem).val();
+        if(email)email=email.toLowerCase();
+        var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+        return regex.test(email);
+    }
+    
+    function isValidMob(elem,type) {
+        var mobile = '';
+        if(type=='ind'){
+            mobile = $('#modal_confirm_information').find('[validationName="'+elem+'"]').val();
+        }
+        else{
+            mobile = $('#add_corp_shareholder').find('[validationName="'+elem+'"]').val();
+        }
+        var regex = /^(\+\d{1,3}[- ]?)?\d{10}$/;
+        return mobile.length>=9;
+    }
+    
+    function validateDOB(elem,type){
+        if(type=='ind'){ // checks when type is individual
+            var date = $('#modal_confirm_information').find('[validationName="'+elem+'"]').val();
+            var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+            if(elem=='dob')
+                return (days>=(365*18)); // 18years for date of birth
+            else if(elem=='pid')
+                return (days>=1); // atleaset one day old passport
+                else if(elem=='ped')
+                    return (180<Math.abs(days)); //atleast a 6 month validity for passport
+        }
+        else{ // checks when type is corporate
+            var date = $('#add_corp_shareholder').find('[validationName="'+elem+'"]').val();
+            var days = new Date(new Date()-new Date(date))/1000/60/60/24;
+            return (days>=(365*2)); // atlease 2 year old company
+        }
+    }
+    
+    function valPopShares(e){
+        var tShares = parseInt($('#sharesTotal').val());
+        var elesh = $(e).val() == "" ? 0 : parseInt($(e).val());
+        var mShares = 0;
+        //var mShares = $(e).val() == "" ?0:parseInt($(e).val());
+        if(elesh<1){
+            addValError( $(e),'Share value shouldn\'t be zero.');
+            return true;
+        }
+        if($('.input-percentage-wrapper').length>0){
+            $('.input-percentage-wrapper').each(function(e,o){
+                var pp = $(o).attr('for');
+                if(currentlyEditingPP == pp)
+                    return;
+                var val = parseInt($(this).find('input').val());
+                //mShares+= Math.round((val*tShares)/100);
+                mShares+=val;
+            });
+        }
+        if (isCurrentlyEditing) { mShares = mShares - curShare; }
+        mShares += elesh;
+        if(elesh>=1){
+            if(mShares>tShares){
+                addValError( $(e),'Shares should be less than or equal to <b>Total Shares</b> entered in Previous page. <b>Total shares</b> are '+tShares+'!');
+                return true;
+            }
+        }
+        
+        showErrMsg($(e),'grShares',true);
+        return false;
+    }
+    
+    function validateShares(e){
+        
+        var tShares = parseInt($('#sharesTotal').val());
+        var mShares = $(e).val() == "" ?0:parseInt($(e).val());
+        var entredVal = $(e).val() == "" ?0:parseInt($(e).val());
+        
+        var shType1 = $('[name="shareholders_type"]:checked').attr('val');
+        curShare = mShares;
+
+        if($('.input-percentage-wrapper').length>0){
+            $('.input-percentage-wrapper').each(function(e,o){
+                var val = parseInt($(this).find('input').val());
+                mShares+=val;
+            });
+        }
+        if(shType1=='memAndCorp' && entredVal==tShares){
+            $('#validShares .modal-body h1').html('Total share(s) cannot be allocated to one member.');
+            $('#validShares .modal-body p').html('You have selected shareholding type as Individuals and Corporates / Companies, in case of any change in shareholding pattern click on back button and change the share holding type.');
+            $(e).parent().parent().find('button').addClass('disabled').attr('data-target','#validShares').removeClass('blinkAny_4');
+            $('#validShares').modal('show');
+            return;
+        }
+        
+        if(mShares>=1){
+            if(mShares>tShares){
+                $('#validShares .modal-body h1').html('Number of shares should not be greater than Total shares.');
+                $('#validShares .modal-body p').html('Shares should be less than or equal to <b>Total Shares</b> entered in Previous page. <b>Total shares</b> are '+$("#sharesTotal").val()+'!');
+                $('#validShares').modal('show');
+                $(e).parent().parent().find('button').addClass('disabled').attr('data-target','#validShares').removeClass('blinkAny_4');
+                console.log('btnFor==3454==', $(e).parent().parent().find('button').attr('btnFor'));
+                if($(e).parent().parent().find('button').attr('btnFor') && $(e).parent().parent().find('button').attr('btnFor').includes('corp')){
+                    $(e).parent().parent().find('button').addClass('disabled').attr('data-target','#add_corp_shareholder').removeClass('blinkAny_4');    
+                }
+                else if($(e).parent().parent().find('a').attr('btnFor'))
+                {
+                     $(e).parent().parent().find('a').addClass('disabled').attr('data-target','').removeClass('blinkAny_4');
+                }
+            }else{
+                if($(e).parent().parent().find('button').attr('btnFor') && $(e).parent().parent().find('button').attr('btnFor').includes('corp')){
+                    $('#add_corp_shareholder').find('[fldname="shareNum"]').parents('.col-md-6').show();
+                    resetModalInputs('#add_corp_shareholder');
+                    $('.forAdditionalUbo').hide();
+                    $(e).parent().parent().find('button').removeClass('disabled').attr('data-target','#add_corp_shareholder').addClass('blinkAny_4');//modal_upload_coi
+                }
+                else if($(e).parent().parent().find('a').attr('btnFor'))
+                    $(e).parent().parent().find('a').removeClass('disabled').attr('data-target','').addClass('blinkAny_4');
+            }
+        }
+        else{
+            if($(e).parent().parent().find('button').attr('btnFor') && $(e).parent().parent().find('button').attr('btnFor').includes('corp')){
+                $(e).parent().parent().find('button').addClass('disabled').attr('data-target','#validShares').removeClass('blinkAny_4');//modal_upload_coi
+            }
+            else if($(e).parent().parent().find('a').attr('btnFor'))
+                $(e).parent().parent().find('a').addClass('disabled').attr('data-target','#validShares').removeClass('blinkAny_4');
+        }
+    }
+    
+    $('.numOnly,.onlyNum').on('keyup',function(){
+        validDigits($(this));
+    });
+    $('.alphaNumOnly').on('keyup',function(){
+        validAlphaNumeric($(this));
+    });
+    function validAlphaNumeric(e){
+        let n = $(e);
+        n.val(n.val().replace(/[^0-9a-zA-Z]*$/, ''));
+    }
+    function validateShvalSht(){
+        if($('#sharesTotal').val()==''||$('#shareVal').val()==''||parseInt($('#shareVal').val())<1||parseInt($('#sharesTotal').val())<10||parseInt($('#sharesTotal').val())==NaN)
+            $('.onboarding-nav-next').addClass('disabled');
+        else
+            $('.onboarding-nav-next').removeClass('disabled');
+    }
+    var currentPage = document.getElementById('currentpgid').value;
+    function validateAddSHDIV(){
+        var mShares = 0;
+        var tShares = parseInt($('#sharesTotal').val());
+        tShares = isNaN(tShares)?0:tShares;
+        $('.input-percentage-wrapper').each(function(e,o){
+            var val = parseInt($(this).find('input').val());
+            mShares+=val;
+        });
+        if(mShares==tShares){
+            $('#addSHDiv,#addCrpSHDiv').hide();
+            $('.onboarding-nav-next').removeClass('disabled');
+            if(document.getElementById('currentpgid').value=='pg3'){
+            }
+            tSharesFlag = true; 
+            if(document.getElementById('currentpgid').value=='pg4'){
+                validatepg4Next();
+            }
+        }else{
+            $('.onboarding-nav-next').addClass('disabled');
+            validateaddSHDivNext();
+        }
+        $('#image-area div').show();
+        $('#image-area img').hide();
+    }
+    function deleteItem(pId) {
+        axsConfirmation('Please Confirm','Are you sure to delete the Member?',false,'delMem',pId);
+    }
+    function delMem(pId){
+        var dMem, dMemCat;
+        if(document.getElementById('currentpgid').value == 'pg4'){
+            dMem = JSON.parse($('#'+pId).val());
+            dMemCat = dMem.ctgCode;
+            $('[selcode="'+dMemCat+'"]').removeAttr('disabled');
+            if(dMem.uboRelatedTo && dMem.rRegNum)
+                $('option[pno="'+dMem.rRegNum+'"]').removeAttr('disabled');
+            $('option[pno="'+pId+'"]').remove();
+        }
+        $('#modal_confirm_information').modal('hide');
+        
+        var v = JSON.parse($('#'+pId).val());
+
+        /*ms1.1*/
+        var delDoc = '';
+        if(v.type == 'ind' && document.getElementById('currentpgid').value == 'pg4')
+        {
+            var emiratefront = 'Emirates / National ID - front - ' + v.fname.trim() + ' '+v.lname.trim() ;
+            var emirateback = 'Emirates / National ID - back - ' + v.fname.trim() + ' '+v.lname.trim() ;
+            var emiratefront1 = 'Emirates / National ID - front - ' + v.fname.trim() + ' '+v.lname.trim()+':'+v.ctgCode.trim();
+            var emirateback1 = 'Emirates / National ID - back - ' + v.fname.trim() + ' '+v.lname.trim()+':'+v.ctgCode.trim();
+            delDoc += emiratefront+';'+emirateback;
+            console.log('emiratefront==='+emiratefront+'===emirateback==='+emirateback+ '===emiratefront1==='+emiratefront1+'===emirateback1==='+emirateback1);
+            console.log('xcddocs==='+cs['xcddocs__c'].value);
+            cs['xcddocs__c'].value = cs['xcddocs__c'].value.replaceAll(emiratefront1, '').replaceAll(emirateback1, '').replaceAll(emiratefront, '').replaceAll(emirateback, ''); 
+            console.log('xcddocs==1='+cs['xcddocs__c'].value);
+        
+        }
+
+        if(addedCodes.indexOf(v.ctgCode1)>-1)
+            addedCodes.splice(addedCodes.indexOf(v.ctgCode1),1);
+        cs['xadh__c'].value=addedCodes.join(';');
+          console.log('pIdmem===',  $('#'+pId).val());
+          console.log('currentAddingShData===',  currentAddingShData);
+         console.log('remShares===',  $('#remShares elem').text());
+         let rmShrs = parseInt($('#remShares elem').text())+parseInt(JSON.parse($('#'+pId).val()).shareNum);
+        $('*[id*='+pId+']:visible').parents('.col-lg-6').remove();
+        $('*[id*='+pId+']')?.parents('.col-lg-6').remove();/*MS1.1*/
+      
+        $('#'+pId).parent().parent().parent().remove();
+        for(i in addCtgArr){
+            addCtgArr[i] = addCtgArr[i].filter(i=>i!=pId);
+            if(dMem&&dMem.uboRelatedTo && dMem.rRegNum)
+                addCtgArr[i] = addCtgArr[i].filter(i=>i!=dMem.rRegNum);
+        }
+        allpassports = allpassports.filter(i=>i!=pId);
+        if(dMem&&dMem.uboRelatedTo && dMem.rRegNum){
+            if(!mandatoryUBO.includes(dMem.rRegNum))
+                mandatoryUBO.push(dMem.rRegNum);
+        }
+        validateaddSHDivNext();
+        console.log('addCtgArr===1=',addCtgArr);
+
+        if(document.getElementById('currentpgid').value == 'pg4' && delDoc != null && delDoc != '')
+        {
+            stopTrigger = false;
+            showTempLoader_input( this);
+            console.log('landDocTodel=1=='+delDoc);
+            saveLandDoc(delDoc); 
+        }
+
+        memCompletion();
+        console.log('addCtgArr===2=',addCtgArr);
+        console.log('pId===', pId);
+        console.log('currentAddingShData===', currentAddingShData);
+        console.log('pId3355s===', $('#'+pId).val());
+        //  let rmShrs = parseInt($('#remShares elem').text())+parseInt(JSON.parse($('#'+pId).val()).shareNum);
+        //  let rmShrs = parseInt($('#remShares elem').text()) +parseInt(currentAddingShData['shareNum']); /*MS 1.2*/
+
+        //let rmShrs = calRmShare(); /*MS 1.1*/
+        rmShrs = calRmShare();
+        console.log('rmShrs==1==',rmShrs);
+        if(rmShrs>0)
+        {
+            $('#remShares elem').show().text(rmShrs);
+            $('#remShares').show();
+        }
+        else
+        {
+            $('#remShares elem').text('0');
+            $('#remShares elem').hide();
+            $('#remShares').hide();
+        }
+    }
+    function validateaddSHDivNext(){
+        if(document.getElementById('currentpgid').value != 'pg3') return;
+        if(shType=='onlyMem') $('#addSHDiv').show();
+        else if(shType=='onlyCorp') $('#addCrpSHDiv').show();
+            else if(shType=='memAndCorp') $('#addSHDiv,#addCrpSHDiv').show();
+        $(".onboarding-nav-next").addClass('disabled');
+    }
+    
+    /*MS 1.1 */
+    function calRmShare()
+    {
+        var prsh = 0;
+        $('.input-percentage-wrapper input').each(function(index, element) {
+            console.log('this===',this.value);
+            prsh+=parseInt(this.value);
+            console.log('prsh===',prsh);
+        });
+        return  parseInt($('#sharesTotal').val()) - prsh; 
+    }
+    function getAdhoc4Vals(){ /*********  To get the values from adhoc 4 and create member data on reload *********/
+         adhoc4Val = cs["xadtx4__c"].value;/*MS 1.1*/
+        var adhocJSONData = JSON.parse(adhoc4Val);
+        shType = adhocJSONData["shareHoldersType"];
+        var currentpage = adhocJSONData['currentpgid'];
+        dropDownData = adhocJSONData['dropDownData'];
+        console.log('dropDownData===',dropDownData);
+        if(currentpage==undefined && currentpage=='') return;
+        $('[val="'+shType+'"]').prop( "checked", true );
+        if(shType!=undefined && shType!='' & currentpage=='pg1') $('.onboarding-nav-next').removeClass('disabled');
+        var mems = adhocJSONData["members"];
+        var mems1;
+        $('#sharesTotal').val(adhocJSONData["shareDetails"]["totalShares"]);
+        $('#shareVal').val(adhocJSONData["shareDetails"]["shareValue"]);
+        for(let i in mems){
+            var memData1 = mems[i];
+            var memData = {};
+            if(mems[i].corpORind =='corp'){
+                for(j in backEndKeysCorp){
+                    memData[backEndKeysCorp[j]] = mems[i][j];
+                     if(backEndKeysCorp[j] == 'compName' &&  !mems[i][j] )
+                    {
+                        memData['compName'] = mems[i]['lname'];
+                    }
+                }
+            }
+            else{
+                memData = mems[i];
+            }
+            if(memData.isParentComp=='true'){
+                isParentCompToUbo = 'true';
+                addParentCompAsUBO(memData,'ub');
+            }
+            else{
+        console.log('in memData.ctgCode',memData);
+                console.log('in else==');
+                var sharePerc = memData["shareNum"]?parseInt(memData["shareNum"]):parseInt(memData["sh"]);
+                var mNewRow = $("<div class='col-lg-6'>");
+                var mCols = "";
+                var memberType = (memData.corpORind)?memData.corpORind:memData.type;
+                if(memberType=='corp' || memData.ctgCode1);
+                addedCodes.push(memData.ctgCode1);
+        // var pid = (memberType=='ind')?memData['passportNo']:memData['RegNum'];
+        var pid = memData.passportNo ? memData.passportNo: memData.RegNum;
+        console.log('pid===',pid);
+                var fullName = (memberType=='ind')?(memData['fullname']?memData['fullname']:memData['fullName']):(memData['compName']?memData['compName']:memData['lname']);
+                mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+                if(memData.ctgCode.includes('sh'))
+                    {
+                        console.log('in memData.ctgCode==',fullName);
+                    mCols += "<label>"+fullName+"</label> <input for="+fullName+" type='hidden' class='forReadOnly addedMems' id='"+pid+"' value='"+JSON.stringify(memData)+"'/>";
+                }else if(memData.isParentCompToUbo=='true'){
+                    mCols += "<label>"+fullName+" - "+memData.ctg.toUpperCase()+" for "+'{!rq.xccn__c}'+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+pid+"' value='"+JSON.stringify(memData)+"'/>";
+                }else if(memData.uboRelatedTo && memData.rRegNum){
+                    mCols += "<label>"+fullName+" - "+memData.ctg.toUpperCase()+" for "+memData.uboRelatedTo+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+pid+"' value='"+JSON.stringify(memData)+"'/>";
+                }else
+                    mCols += "<label>"+fullName+" - "+memData.ctg.toLocaleUpperCase()+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+pid+"' value='"+JSON.stringify(memData)+"'/>";
+                mCols += '<button type="button" onclick="memberEdit(\''+pid+'\',\''+memberType+'\');"  class="forReadOnly btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+                mCols += '<a onclick="deleteItem(\''+pid+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2 ml-2"><i class="icon-delete"></i></a></div>';
+                if(memData.ctgCode.includes('sh'))
+                    mCols += "<div class='shareholder-box-right'><div class='input-percentage-wrapper' for='"+pid+"'><input type='text' title='"+sharePerc+"' readonly='true' class='form-control' value='"+sharePerc+"' /> </div><label>Number of shares</label></div >";
+                mCols += ' </div>';
+                mNewRow.append(mCols);
+                allpassports.push(pid);
+                if(!memData.ctgCode.includes('sh')){
+                    addCtgArr[memData.ctgCode].push(memData.passportNo);
+                }
+                console.log('in else=1=', dropDownData);
+               // console.log('in else=2=', dropDownData['gm']);
+               //  console.log('in else=3=', dropDownData['gm']['selected']);
+                if(dropDownData != null &&  dropDownData['gm'] && dropDownData['gm']['selected']){
+                    console.log('in==', dropDownData['gm']['selected']);
+                    addCtgArr['gm'] = [];
+                    addCtgArr['gm'].push(dropDownData['gm']['selected']);
+                      console.log('addCtgArr=gn=', addCtgArr);
+                }
+                if(memData.ctgCode.includes('sh'))
+                    $("#addedMembers").prepend(mNewRow);
+                else
+                    $("#board_members").append(mNewRow);
+                var mCtg = (memData.role)?memData.role:memData.addCtg;
+                if(mCtg && (mCtg.includes(categoryObj["bd"]) || mCtg.includes(categoryObj["ub"]))){
+                    for(i of mCtg.split(',')){
+                        if(i==categoryObj["ub"] && memData.ctgCode!='ub'){
+                            addExtraMemWOinput(memData,'ub');
+                        }
+                        if(i==categoryObj["bd"] && memData.ctgCode!='bd'){
+                            addExtraMemWOinput(memData,'bd');
+                        }
+                    }
+                }
+            }
+            
+        }
+        
+        $('.pgs').hide();
+        var fun = window['page'+(parseInt(currentpage.split('pg')[1])-1)];
+        if(currentpage=="pg1" || currentpage=="pg5")
+            $('#'+currentpage).show();
+        else
+            fun();
+        if(dropDownData && Object.keys(dropDownData).length>0)
+            createDropdowns();
+        console.log('addCtgArr===',addCtgArr);
+        for(let i in addCtgArr){
+            for(let j of addCtgArr[i]){
+                $('[selcode="'+i+'"] [pno="'+j+'"]').attr('disabled',true);
+                if(i=='gm' ){
+                    $('[selcode="'+i+'"] [pno="'+j+'"]').prop('selected',true);
+                    $('[selcode="'+i+'"]').attr('disabled',true);
+                }
+            }
+        }
+        $('#currentpgid').val(currentpage);
+        addedCodes =  addedCodes.filter(i => i);
+        memCompletion();
+    }
+    /******************VMKR*********************/
+    </script>
+
+    <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-de7e2ef6bfefd24b79a3f68b414b87b8db5b08439cac3f1012092b2290c719cd.js"></script>
+    <script id="rendered-js">
+        
+        var passportData;
+    var currentAddingMemData={};
+    var file1 = {};
+    var datesTobeFromatted = ["Date of Birth2","Date of Birth","Date of Expiry","Date of Issue","Date of Issue2","Date of Expiry2"];
+    var monthObj = {'JAN':'01','FEB':'02','MAR':'03','APR':'04','MAY':'05','JUN':'06','JUL':'07','AUG':'08','SEP':'09','OCT':'10','NOV':'11','DEC':'12'};
+    function formatDate(date,ev){
+        var d ;
+        if(date.includes(' ')){
+            date = date.toLowerCase();
+            d = date.split(' ');
+            if(Object.keys(monthObj).includes(d[1].toUpperCase())){  // case-1: date format -- 01 Jan 2020
+                return date.split(d[1].toLowerCase()).join(monthObj[d[1].toUpperCase()]).split(' ').join('/');
+            }
+            else              // case-2: date format -- 01 01 2020
+                return date.split(' ').join('/');
+        }
+        else if(date.includes('-'))          // case-3: date format -- 01-01-2020
+            return date.split(' ').join('/');
+            else if(date.length==6){          // case-4: date format -- 200101
+                var ds = date.split('');
+                date = (ev.includes('issue')||ev.includes('expiry'))? ds[4]+ds[5]+'/'+ds[2]+ds[3]+'/20'+ds[0]+ds[1]:ds[4]+ds[5]+'/'+ds[2]+ds[3]+'/19'+ds[0]+ds[1];
+                return date;
+            }
+                else               // case-5: date format -- 01/01/2020
+                    return date;
+    }
+    var memData_x = {};
+    function handleFileSelect_mem(evt) {
+
+        file1 = $('.d-loadImage').eq(0)[0].files[0];
+        console.log('file1==',file1.name);
+        var reader = new FileReader();
+        // Closure to capture the file information.
+        reader.onload = function (theFile) {
+            return function (e) {
+                var binaryData = e.target.result;
+                //Converting Binary Data to base 64
+                base64String = window.btoa(binaryData);
+                //showing file converted to base64
+                $.ajax({
+                    url:"https://voorx3je03.execute-api.eu-central-1.amazonaws.com/prod/recognize-document?ocr_engine=all&raw_text=true",
+                    beforeSend: function(xhr) { 
+                        xhr.setRequestHeader("x-api-key", "qChy0AcviI37pT56MYNXwaqGoXlsC4677v2yrUq9"); 
+                    },
+                    type: 'POST',
+                    dataType: 'json', 
+                    crossOrigin: true,
+                    contentType: 'application/json',              
+                    processData: false,
+                    data: '{"image":'+base64String+'}',
+                    success: function (data) { 
+                        var t=JSON.stringify(data);
+                        var memberObject={};
+                        var dd='['+t+']'; 
+                        var ddd=JSON.parse(t);
+                        passportData = ddd["data"];
+                        for(i in ddd["data"]){
+                            memberObject[i] = ddd["data"][i];
+                            memData_x[i] = ddd["data"][i];
+                        }
+                        var k1=[];
+                        var passportNo = '';
+                        var membrStr = '';
+                        var fullname = '';
+                        memberObject["type"] = 'ind';
+                        memberObject["shareNum"] = $('#memShares').val() == "" ?0:parseInt($('#memShares').val());
+                        fullname =  memberObject['Surname']+' '+memberObject['Given Name'];
+                        memberObject["fullname"] = fullname;
+                        membrStr = JSON.stringify(memberObject);
+                        if(memberObject["type"]=='ind'){
+                            $('.forEdit').each(function(){
+                                var f = $(this).attr('fldName');
+                                if(memberObject[f]!=undefined){
+                                    if(memberObject[f].length>0||memberObject[f]!='')
+                                        $(this).val(memberObject[f]);
+                                    if($(this).attr('class').includes('datepicker'))
+                                        $(this).val(formatDate(memberObject[f],f.toLowerCase()));
+                                }
+                                else if(memberObject[f+'2']!=undefined){
+                                    $(this).val(memberObject[f+'2']);
+                                    if($(this).attr('class').includes('datepicker'))
+                                        $(this).val(formatDate(memberObject[f+'2'],f.toLowerCase()));
+                                }else if(memberObject["MR "+f]!=undefined){
+                                    $(this).val(memberObject["MR "+f]);
+                                    if($(this).attr('class').includes('datepicker'))
+                                        $(this).val(formatDate(memberObject["MR "+f],f.toLowerCase()));
+                                }else{
+                                    $(this).val('');
+                                }
+                                if($(this).attr('extFld')){
+                                    var e = $(this)
+                                    var ef = $(this).attr('extFld'); 
+                                    var ef1 = $(this).attr('extFld1');
+                                    if(ddd[ef]!=undefined && ddd[ef].includes('Passport')){
+                                        var vl = ddd[ef].split(' ')[1];
+                                        e.find('option').each(function(){
+                                            var t = $(this).text();
+                                            if(t.toLowerCase()==vl.toLowerCase())
+                                                $(this).prop('selected',true);
+                                        });
+                                    }
+                                    else if(ddd.data!=undefined && ddd.data[ef1]!=undefined)
+                                        $(this).val(countryCodetoObj(ddd.data[ef1]));
+                                }
+                                if($(this).is('select')) $(this).trigger('change');
+                            });
+                            $('#addMemBtn').show();
+                            $('#modal_confirm_information h2').html('Success! Verify your information details');
+                            $('#modal_confirm_information #passportid').removeAttr('disabled');
+                            $('#modal_confirm_information p').eq(0).html('Please review and confirm the below information extracted from your uploaded passport copy. It may vary or have errors depending on the quality of the image.');
+                            $('.saveEditMem').hide();
+                            $('.inEditOnly').hide();
+                            cs["imageBase64"].value = base64String;
+                           
+                            let ext =  'pdf';
+                            var filesp = file1.name.split('.');
+                            if(file1.name) ext = (file1.name.split('.')[1]!=undefined) ?  filesp[filesp.length-1] : 'pdf';/*MS 11.1*/
+                            if(!ext1.includes(ext.toLowerCase()))
+                            {
+                                ext = 'pdf';
+                            }
+                            cs["docname"].value="Passport - first page#"+memberObject["Passport No"]+'.'+ext; /*MS 11.1*/
+                            $('[fldname="shareNum"]').parent().hide();
+                            $('#modal_process_upload').modal('hide');
+                            $('[fldname="Nationality"],[fldname="contryCode"]').trigger('change');
+                            $('.is-invalid').removeClass('is-invalid');
+                            $('.high').removeClass('high');
+                            
+                            console.log(' currentAddingCat: ' + currentAddingCat );
+                            $('#rCmpName,#rRegNum').parents('.col-md-6').hide();
+                            if(currentAddingCat=="ub"){
+                                $(".ubofld").show(); $(".nonubo").hide();
+                                if(relatedCmpName&&relatedCmpName){
+                                    $('#rCmpName').val(relatedCmpName);$('#rRegNum').val(relatedCmprRegNum);
+                                    $('#rCmpName,#rRegNum').parents('.col-md-6').show();
+                                }
+                                document.getElementById('tableBody').innerHTML = ''; // PJ 1.2
+                                cs['sourceoffunds'].value  = ''; // PJ 1.2
+                            }else{
+                                $(".ubofld").hide(); $(".nonubo").show(); $(".ubo-all-details").show();
+                            }
+
+                            $('#modal_confirm_information').modal('show').on('hidden.bs.modal',function(){
+                                resetModalInputs('#modal_confirm_information'); 
+                            });
+                            $('#modal_confirm_information').modal({backdrop: 'static', keyboard: false}).on('shown.bs.modal',function(){
+                                setTimeout(function(){$('body').addClass('modal-open'); },0); 
+                            });
+                        }
+                        if(!addingOtherMems){
+                            currentAddingCat = 'sh';
+                            $('[fldname="shareNum"]').parent().show();
+                        }
+                        else
+                            $('[fldname="shareNum"]').parent().hide();
+                        return;
+                        // }
+                        var attVal = JSON.stringify($('#files').val(''));
+                        var mNewRow = $("<div class='col-lg-6'>");
+                        var mCols = "";
+                        var sharesPerc = parseInt($('#memShares').val());
+                        mCols = "<div class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+                        mCols += "<label>"+fullname+"</label> <input type='hidden' class='forReadOnly addedMems' id='"+memberObject["Passport No"]+"' value='"+membrStr+"'/>";
+                        mCols += '<button type="button" onclick="memberEdit(\''+memberObject["Passport No"]+'\',\'ind\');"  class="forReadOnly btn btn-outline-primary btn-outline-primary-2 focus shareholder-edit-button"><i class="icon-formation text-primary"></i> EDIT DETAILS</button>';
+                        mCols += '<a onclick="deleteItem(\''+memberObject["Passport No"]+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a>';
+                        mCols +=  "</div><div class='shareholder-box-right'><div class='input-percentage-wrapper' for='"+memberObject['Passport No']+"'>";
+                        mCols += "<input type='text' readonly='true' title='"+sharesPerc+"' class='form-control' value='"+sharesPerc+"' /> </div><label>Number of shares</label> ";//Share Percentage
+                        mCols += ' </div></div>';
+                        mNewRow.append(mCols);
+                        $("#addedMembers").prepend(mNewRow);      
+                        $('#modal_process_upload').modal('hide');
+                        $('#files,#memShares').val('');
+                        $('.d-loadImage').eq(0).val('');
+                        $('.saveAtt').addClass('disabled');
+                        validateAddSHDIV();
+                        
+                    },
+                    error: function(){
+                    }
+                });
+                $('#modal_upload_passport').modal('hide');
+                $('#modal_process_upload').modal('show');
+                btnRemoveCurrentImage_onclick();
+            };
+        }(file1);
+        // Read in the image file as a data URL.
+        reader.readAsBinaryString(file1);
+    }
+    
+    var adhoc4  = ''
+    $(document).ready(function() { //alert(1);
+         adhoc4 = '{!rq.xadtx4__c}';
+        if(!cs['xadh__c'])
+            cs['xadh__c']=getC('{!$Component.xadh__c}');
+        
+        $('#members').removeClass('incomplete-section').addClass('active-section');
+
+        var base64Str ='';
+        $.ajax({
+            url: "https://5dj8s285bi.execute-api.eu-west-1.amazonaws.com/dev/recognize-document?ocr_engine=all",
+            beforeSend: function(xhr) { 
+                
+                xhr.setRequestHeader("x-api-key", "jVUfFUSMkq1hrnLuhI70b2NWC7wAOaMtH0MdAfXb"); 
+            },
+            type: 'POST',
+            crossOrigin: true,    
+            dataType: 'json',
+            contentType: 'application/json',              
+            processData: false,
+            data: '{"image":'+base64Str+'}',
+            success: function (data) { 
+                var t=JSON.stringify(data);
+                var dd='['+t+']'; 
+                var ddd=JSON.parse(dd);
+                var k1=[];
+                for (var k = 0; k < Object.keys(ddd[0].data).length; k++) {
+                    k1.push(Object.keys(ddd[0].data)[k])
+                    var kk= Object.keys(ddd[0].data)[k];
+                }
+                $("#base64").val(JSON.stringify(data));
+            },
+            error: function(){
+                // alert("Cannot get data");
+            }
+        });
+    });
+    function shareTotoalChange(){
+        if($('.addedMems') && $('.addedMems').length>0){
+            axsConfirmation('Please Confirm','This action will remove all your existing members, do you want to continue?',false,'deleteAllMembers1','','undoShTotalchange');
+        }
+    }
+    function undoShTotalchange(){
+        $('#sharesTotal').val(parseInt(totalSharesEntered));
+    }
+    var previousShares = 0;
+    function shNumChange(e){
+        var v = $(e).val();
+        v=v?parseInt(v):0;
+        if(totalSharesEntered!=0 && totalSharesEntered != v){
+            $('#onShNumChange').show();
+            $('#onShNumChange elem').text(totalSharesEntered);
+            previousShares = totalSharesEntered;
+            axsAlert('Alert','By changing the Total number of shares you need to readjust the added members.');
+        }
+    }
+    function deleteAllMembers(){
+        if($('.addedMems') && $('.addedMems').length>0){
+            axsConfirmation('Please Confirm','This action will remove all your existing members, do you want to continue?',false,'deleteAllMembers1','','undoShtypechange');
+        }
+    }
+    function undoShtypechange(){
+        console.log('undo====');
+        $('[name="shareholders_type"][val="'+shType+'"]').prop('checked',true);
+         cs['xadtx4__c'].value = ''; /*MS 1.1*/
+         $('#sharesTotal').val(totalSharesEntered);/*MS 1.1*/
+          $('#sharesTotal').val(totalSharesEntered);/*MS 1.1*/
+    }
+    function deleteAllMembers1(){
+        /*MS 1.1 starts*/
+         mandatoryUBO = [];
+         var gmtext= $('[selcode="gm"]')?.find('option:selected')?.text();
+         if(gmtext)
+         {
+            $('[selcode="gm"] option[value="'+gmtext+'"]').remove();
+         }
+         
+         $('[rolCompletionCode="ub"]').addClass('pendingRole').removeClass('completedRole');
+         $('[rolCompletionCode="gm"]').addClass('pendingRole').removeClass('completedRole');
+         $('[rolCompletionCode="bd"]').addClass('pendingRole').removeClass('completedRole');
+         $('[rolCompletionCode="ub"]').removeClass('addedMemberLI');
+         $('[rolCompletionCode="gm"]').removeClass('addedMemberLI');
+         $('[rolCompletionCode="bd"]').removeClass('addedMemberLI');
+         $( '#board_members .memAdded').each(function( index ) {$(this).removeClass('memAdded');});
+        /*MS 1.1 end*/
+        $('.addedMems').each(function(){
+            delMem($(this).attr('id'))
+        });
+         var docToDel = cs['xcddocs__c'].value;
+        cs['xcddocs__c'].value = ' ';
+         // saveLandDoc(docToDel); 
+    }
+    
+    
+    function updateForm(e){
+        $(".nonubo").hide();
+        var val = $(e).attr('val1');
+        $('#corpUbo').addClass('disabled');
+        $('#noStockExchange').hide();
+        if(!$(e).prop('checked'))
+            return;
+        if(val){
+            $('#corpUbo').removeClass('disabled');
+            if(val=='None'){
+                $('#fda').removeAttr('disabled');
+                $('#corpUbo').text('ADD MEMBER');
+                $('#noStockExchange').fadeIn().fadeOut().fadeIn();
+            }else{
+                $('#fda').attr('disabled',true);
+                $('#corpUbo').text('ADD AS UBO');
+            }
+        }
+    }
+    function updateForm1(e,eid){
+        var val = $(e).val();
+        $('#corpUbo').addClass('disabled');
+        if(val&&val!='Select' ){
+            $('#corpUbo').removeClass('disabled');
+            if(val=='true'){
+                $('#corpUbo').text('ADD AS UBO');
+            }else{
+                $('#corpUbo').text('ADD MEMBER');
+                $('#noStockExchange').fadeIn().fadeOut().fadeIn();
+            }
+        }
+    }
+    
+    function resetUBO(){
+        if(currentAddingCat=='ub'){
+            $("#ultben").val('').trigger('change');
+        }
+        $('#modal_confirm_information').modal('hide');
+    }
+    
+    function resetModalInputs(modalId) {
+        $(modalId).find('input').val('');
+        $(modalId).find('[type="radio"]').prop('checked', false);
+        $(modalId).find('select').val('').trigger('change');
+        $(modalId).find('[type="checkbox"]').prop('checked', false).trigger('change');
+         $(modalId).find('.ifVisa').hide(); /*MS 1.1*/
+        $(modalId).find('#isVisited').hide();/*MS 1.1*/
+         
+        $('.forAdditionalUbo').hide();
+        var editMemType = (modalId=='#add_corp_shareholder')?'corp':'ind';
+        if(editMemType){
+            var data = modalDefaultContent[editMemType];
+            for(i in data){
+                $(modalId+' .'+i).html(data[i]);
+            }
+        }
+    }
+    
+    /*MS 1.1 starts*/
+    /* function showEIDfields(e){
+        $(e).parent().parent().find('.option-error').hide();
+        
+        if($(e).prop('checked')==true && $(e).attr('for')=='yes'){
+            $('.ifVisa').show();
+            $('.insideUAE').css('display','flex');
+        }
+        else{
+            $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+            $('.ifVisa').hide();
+            $('.insideUAE').css('display','none');
+        }
+    }*/
+     function showEIDfields(e) {
+            $(e).parent().parent().find('.option-error').hide();
+             $('.isVisited.reqRadio:visible').each(function () {
+                $(this).find(':radio').each(function () {
+                    this.checked = false; 
+                });
+            });
+            if ($(e).prop('checked') == true && $(e).attr('for') == 'yes') {
+                $('.ifVisa').show();
+                $('.insideUAE').css('display', 'flex');
+                $('#isVisited').hide();
+                $('.outsideUAE').hide();
+                $('.outsideUAE').parents('.row').hide();
+            }
+              else{
+                $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+                $('.ifVisa').hide();
+                $('.insideUAE').css('display','none');
+                /*Start MS 1.1*/
+                $('#isVisited').show();
+                  // $('.ifVisa,.outsideUAE').find('select,input').val(''); 
+                  $('.ifVisa').hide();
+                $('#isVisa,.outsideUAE').show();
+                $('.outsideUAE').parents('.row').show();
+                //$('#visitRes').hide();
+                /*END MS 1.1*/
+            }
+         /* else if($(e).prop('checked') == true && $(e).attr('for') == 'no')
+            {
+                $('#isVisited').show();
+                $('.ifVisa').hide();
+                $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+                $('.insideUAE').css('display', 'none');
+                $('.ifVisa').hide();
+                $('#isVisa,.outsideUAE').show();
+                $('.outsideUAE').parents('.row').show();
+            }
+            else {
+                $('.insideUAE,.ifVisa').find('input,select').val('').trigger('change');
+                $('.ifVisa').hide();
+                $('.insideUAE').css('display', 'none');
+                $('#isVisited').hide();
+            }*/
+        }    
+     /*MS 1.1 ends*/
+    var nomineeSholder='No';
+    var nomineeDirector='No';
+    function nomineeSH(e){
+        if($(e).prop('checked')==true && $(e).attr('for')=='nSHyes'){
+            nomineeSholder='Yes'; 
+            if(cs['anSH'])
+                cs['anSH'].value='Yes';
+        } 
+        else{
+            nomineeSholder='No';
+            if(cs['anSH'])
+                cs['anSH'].value='No';
+        }
+    }
+    function nomineeD(e){
+        if($(e).prop('checked')==true && $(e).attr('for')=='nDyes'){
+            nomineeDirector='Yes';
+            if(cs['anDir'])
+                cs['anDir'].value='Yes';
+        } 
+        else {
+            nomineeDirector='No';
+            if(cs['anDir'])
+                cs['anDir'].value='No';
+        }
+    }
+    function closeCrtnFromParent(){
+        scrollToDiv($('body'));
+        $('#modal_Correction_submission').modal('hide');
+    }
+    /*********** for UBO popup ***********/
+    
+    /*----------- Corporate member to UBO ------------*/
+    var relatedCmpName='',relatedCmprRegNum = '',isParentCompToUbo='';
+    function corpToUbo(e){
+        if($(e).hasClass('disabled'))
+            return;
+        if($('[name="cExp"]:checked').attr('val1')!="None" ){//|| $('#fda').val()=='true'
+            if(isParentCompToUbo){
+                var mem = JSON.parse(cs["xuvdet__c"].value);
+                mem.uboException = $('[name="cExp"]:checked').attr('val1');
+                existMemToUBO = false;
+                existMemToUBOPP = '';
+                if(!($.isEmptyObject(mem))){
+                    addParentCompAsUBO(mem,'ub');
+                }
+                $('[name="cExp"]').prop('checked',false).trigger('change');
+                $('#modal_corp_ubo').modal('hide');
+                
+            }
+            else if(existMemToUBO && existMemToUBOPP){
+                var mem = JSON.parse($('#'+existMemToUBOPP).val());
+                mem.uboException = $('[name="cExp"]:checked').attr('val1');
+                $('#'+existMemToUBOPP).val(JSON.stringify(mem));
+                existMemToUBO = false;
+                existMemToUBOPP = '';
+                if(!($.isEmptyObject(mem))){
+                    addExtraMemWOinput(mem,'ub');
+                }
+                $('[name="cExp"]').prop('checked',false).trigger('change');
+                $('#modal_corp_ubo').modal('hide');
+            }
+        }
+        else {//if($('[for="exp2"]').val()=='false')
+            relatedCmprRegNum = existMemToUBOPP;
+            relatedCmpName = (isParentCompToUbo)?'{!rq.xccn__c}':$('#'+existMemToUBOPP).attr('for');
+            existMemToUBO = false;
+            existMemToUBOPP = '';
+            $('#modal_corp_ubo').modal('hide');
+            chageSaveAttEvent_mem();
+            popupDocModel('Passport copy','Passport copy','');
+        }
+        $('#noStockExchange').hide();
+    }
+    /*----------- Corporate member to UBO ------------*/
+    
+    
+    /*----------- Individual member to UBO ------------*/
+    var uboChecks = [];
+    function setUboData(e){
+        $(e).parents('.uboChkPrnt').find('.frmErrMsg').remove();
+        var val = $(e).parent().find('span').text().trim();
+        if(!val) return;
+        uboChecks = uboChecks.filter((v) => {return v != val});
+        if($(e).prop('checked'))
+            uboChecks.push(val);
+        enableUBOSave();
+    }
+    function enableUBOSave(){
+        var enableSave = false;
+        if(uboChecks.length>0 && cs["legals"].value)
+            enableSave = true;
+        if(enableSave == true)
+            $('#indToUbo').removeClass('disabled');
+        else
+            $('#indToUbo').addClass('disabled');
+    }
+    
+    function indMemToUBO(e){
+        let invalData = false;
+        if($(e).hasClass('disabled'))
+            return;
+
+        $('.forEdit:visible').each(function(){
+            var elem ='';
+            var k = $(this).attr('fldname');
+            var v = $(this).val();
+            if($(this).hasClass('chkubo')){
+                v = $(this).is(":checked");
+            }
+            if ((!v || v == '--None--') && (!($(this).attr('optional') == 'true')) && k != 'sourceOfwealth' ){
+                if($(this).hasClass('foreign'))
+                    return;
+                if(elem=='') elem = $(this);
+                if($(this).is('select'))
+                    $(this).next().find('.select2-selection').addClass('is-invalid');
+                else
+                    $(this).addClass('is-invalid');
+                $('.rqrdMsg').addClass('high');
+                invalData = true;
+            }
+            if(elem)
+                scrollToDiv(elem);
+        });
+        console.log('invalData after initiatl valida:'+invalData);
+        $('.reqRadio:visible').each(function () { // PJ 1.2
+            var checked = false;
+            $(this).find(':radio').each(function () {
+                if ($(this).is(':checked')) {
+                    checked = true;
+                    return;
+                }
+            });
+            if (!checked) {
+                $(this).find('.option-error').show();
+                invalData = true;
+            } else
+                {
+                $(this).find('.option-error').hide();
+                    }
+        });
+
+        console.log('invalData before starting valida:'+invalData);
+        /* 1.3 PJ - Start */
+        let incomeSourceElem = $('[id$="incomeSource"]');
+        removeValError(incomeSourceElem);
+
+        let incomeSource = incomeSourceElem.val();
+        let incomeCountry = $('#incomeCountry').val();
+        let detail = $('#detail').val();
+
+        console.log('incomeSource  : '+incomeSource);
+        console.log('incomeCountry  :'+incomeCountry);
+        console.log('detail  :'+detail);
+
+        let validatePEP = validData(incomeSource,detail,incomeCountry,'Add',true);
+
+        console.log('validatePEP :'+validatePEP);
+
+        invalData = !validatePEP ? true : invalData;
+        /* 1.3 PJ - End */
+        console.log('invalData :'+invalData);
+        
+        if (!invalData && cs['sourceoffunds'] == undefined || cs['sourceoffunds'] == '' || cs['sourceoffunds'].value == '' || cs['sourceoffunds'].value == '[]') {
+                addValError($('[id$="incomeSource"]'), 'Please select a option!');
+                invalData = true;
+        }
+
+        if(existMemToUBO && existMemToUBOPP && !invalData){
+            var mem = JSON.parse($('#'+existMemToUBOPP).val());
+            mem.actingAsNomineeShareholder=nomineeSholder;
+            mem.actingAsNomineeDirector=nomineeDirector;
+            mem['legals'] = $('[fldname="legals"]').val();
+            mem['uboType'] = uboChecks.join(';');
+
+
+            // PJ 1.2 Start
+            mem.pepAssociation = $('[fldname="pepAssociation"]').val();
+            mem.pepRelated = mem.pepAssociation == 'Closely Related to PEP'? $('[fldname="pepCloselyRelated"]').val()  : mem.pepRelated;
+            mem.pepRelated = mem.pepAssociation == 'Closely Associated to PEP' ? $('[fldname="pepCloselyAssociated"]').val()  : mem.pepRelated;
+
+            mem.pepCloselyRelatedOthers = mem.pepAssociation == 'Closely Related to PEP'  ? $('[fldname="pepCloselyRelatedOthers"]').val() : '';
+            mem.pepCloselyAssociatedOthers = mem.pepAssociation == 'Closely Associated to PEP'  ?  $('[fldname="pepCloselyAssociatedOthers"]').val() : '';
+            mem.pepCountry = $('[fldname="pepCountry"]').val();
+            mem.sourceOfwealth = cs['sourceoffunds'] && cs['sourceoffunds'].value ? JSON.parse(cs['sourceoffunds'].value) : '';  
+
+            if(mem.pepAssociation != 'Closely Related to PEP' && mem.pepAssociation != 'Closely Associated to PEP'){
+                mem.pepCloselyAssociatedOthers ='';
+                mem.pepCloselyRelatedOthers = '';
+                mem.pepRelated = null;
+                mem.pepCountry = mem.pepAssociation == 'Not Applicable' ? '' : mem.pepCountry;
+            }  
+
+            cs['sourceoffunds'].value = '';
+            document.getElementById('tableBody').innerHTML = ''; // PJ 1.2
+            console.log('## currentAddingMemData final ## '+JSON.stringify(mem));
+            $('#'+existMemToUBOPP).val(JSON.stringify(mem));
+            existMemToUBO = false;
+            existMemToUBOPP = '';
+            // PJ 1.2 End
+            
+            if(!($.isEmptyObject(mem))){
+                addExtraMemWOinput(mem,'ub');
+            }
+            $('#indToUbo').hide();
+            $('#modal_confirm_information').modal('hide');
+        }
+    }
+    
+    /*----------- Individual member to UBO ends ------------*/
+    
+    /********************** for UBO popup ************************/
+    
+    
+    /************ existing share holder as new members (only for bd & ub) **********/
+    /*---------- to add -----------*/
+    
+    function addExtraMemWOinput(data,category){
+        var mNewRow = $("<div class='col-lg-6'>");
+        var p = (data.type=='corp')?data.RegNum:data.passportNo;
+        var n = (data.type=='corp')?data.compName:data.fullname;
+        var n = n?n:data.fullName;
+        $('[selcode="'+category+'"]').find('[pno="'+p+'"]').attr('disabled',true);
+        mCols = "<div id="+category+"_"+p+" class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+        mCols += "<label>"+n+" - "+categoryObj[category]+"</label> ";/*<input type='hidden' class='additionalMems' id='bd_"+data.passportNo+"' value='"+JSON.stringify(m)+"'/>";*/
+        mCols += '<a onclick="deleteItem_memWOIP(\''+category+'_'+p+'\',\''+category+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a></div>';
+        mCols += ' </div>';
+        addCtgArr[category].push(p);
+        memCompletion();
+        mNewRow.append(mCols);
+        $("#board_members").append(mNewRow);
+    }
+    function addParentCompAsUBO(data,category){
+        var mNewRow = $("<div class='col-lg-6'>");
+        var p = cs['rtacn__c'].value; var n = cs['xccn__c'].value;
+        var parentCompData = {};
+        var phcode = data.ofPhCode? data.ofPhCode : '+971';
+        parentCompData.lname = n,parentCompData.passportNo = p,parentCompData.iAuthority = (data.issuingauth)?data.issuingauth:data.iAuthority;
+        parentCompData.nationality = (data.cntry1)?data.cntry1:data.nationality,parentCompData.mobile = (data.ofcphone)?phcode+'-'+data.ofcphone:phcode+'-'+data.mobile;
+        parentCompData.emailId = (data.ofceml)?data.ofceml:data.emailId,parentCompData.ctgCode = category,parentCompData.ctg = categoryObj[category];
+        parentCompData.ctgCode1 = category, parentCompData.isParentComp = 'true';parentCompData.dob = cs['xbtnm__c'].value;
+        parentCompData.uboException = data.uboException;
+        data.compName = n;
+        data.RegNum = p;
+        $('[selcode="ub"]').find('[pno="'+p+'"]').attr('disabled',true);
+        mCols = "<div id="+category+"_"+p+" class='shareholder-box box-grey box-grey-dark'> <div class='shareholder-box-main disabled'>";
+        mCols += "<label>"+n+" - "+categoryObj[category]+"</label> ";
+        mCols +="<input type='hidden' class='addedMems' id='ub_"+p+"' value='"+JSON.stringify(parentCompData)+"'/>";
+        mCols += '<a onclick="deleteParentCompAsUBO(\''+category+'_'+p+'\',\''+category+'\');" class="forReadOnly btn btn-outline-primary btn-outline-primary-2"><i class="icon-delete"></i></a></div>';
+        mCols += ' </div>';
+        addCtgArr[category].push(p);
+        if(!allpassports.includes(p))
+            allpassports.push(p);
+        memCompletion();
+        mNewRow.append(mCols);
+        $("#board_members").append(mNewRow);
+    }
+    
+    /*---------- to delete -----------*/
+    
+    function deleteParentCompAsUBO(pno,c){
+        var p = pno.replaceAll(c+'_','');
+        $('[selcode="'+c+'"] [pno="'+p+'"]').removeAttr('disabled');
+        $('#'+pno).parents('.col-lg-6').eq(0).remove();
+        addCtgArr[c] = addCtgArr[c].filter((v) => {return v != p});
+        allpassports = allpassports.filter((v) => {return v != p});
+        memCompletion();
+    }
+    function deleteItem_memWOIP(pno,c){
+        var p = pno.replaceAll(c+'_','');
+        $('[selcode="'+c+'"] [pno="'+p+'"]').removeAttr('disabled');
+        var v = JSON.parse($('#'+p).val());
+        v.uboException = '',v.fda = '';
+        $('#'+p).val(JSON.stringify(v));
+        $('#'+pno).parents('.col-lg-6').eq(0).remove();
+        addCtgArr[c] = addCtgArr[c].filter((v) => {return v != p});
+        memCompletion();
+    }
+    
+    /************ existing share holder as new members (only for bd & ub) ends **********/
+    
+    function memNationalityChange(e){
+        console.log('e===',e);
+        console.log('e===',$(e).val());
+        if(!$(e).val())
+            return;
+        var c = nationalityToCountry($(e).val());
+        console.log('c===',c);
+        if(c=='United Arab Emirates'){
+            $('#isVisa input').prop('checked',false);/* $('#isVisa').hide();*/
+             $('#isVisa').hide();
+            $('.ifVisa,.outsideUAE').find('select,input').val('');$('.ifVisa').show(); 
+             $('#isVisited').hide();
+            $('.outsideUAE').parents('.row').hide();
+            $('.outsideUAE').hide();
+            $('.insideUAE').parents('.row').show();
+            $('.insideUAE').css('display','flex');
+            var radios = document.getElementsByName('eid');
+            for (var j = 0; j < radios.length; j++) {
+                if( $(radios[j]).attr('for') == 'yes')
+                {
+                    $(radios[j]).prop('checked', true).trigger('change');
+                }
+            }
+        }else{
+             $('#isVisa input').prop('checked',false); $('#isVisa').show();
+            $('.ifVisa,.outsideUAE').find('select,input').val('');$('.ifVisa').hide(); 
+            $('.outsideUAE').hide();/* ,.ifVisa*/
+             $('.insideUAE').hide();
+            $('.outsideUAE').parents('.row').show();
+             $('#isVisited').hide();
+        }
+    }
+
+    function memCompletion(){
+        for(i in addCtgArr){
+            if($('[selcode="'+i+'"]') != null && $('[selcode="'+i+'"]').is(':visible')) /*Added MS 1.1*/
+                {
+                    //if($('[selcode="'+i+'"]').is(':visible')){ /*commented MS 1.1*/
+                $('[selcode="'+i+'"]').parent().parent().removeClass('memAdded');
+                $('li[for="'+i+'"]').removeClass('addedMemberLI');
+                $('[selcode="'+i+'"]').parents('.col-lg-6').eq(0).nextAll(':visible:first').find('select').attr("disabled","true");
+                $('[rolCompletionCode="'+i+'"]').addClass('pendingRole').removeClass('completedRole');
+                for(j of addCtgArr[i]){
+                    //console.log(i+' -- '+j);
+                    if(!j) return;
+                    if(i=='gm' || i =='lr'|| i =='bd'|| (i =='ub' && cs['xfb__c'].value.includes('Branch') &&  '{!rq.Acc__r.clt__c}' != 'Land')){
+                        console.log('gm===',i);
+                        $('[selcode="'+i+'"]').parent().parent().addClass('memAdded');
+                        $('li[for="'+i+'"]').addClass('addedMemberLI');
+                        $('[selcode="'+i+'"]').parents('.col-lg-6').eq(0).nextAll(':visible:first').find('select').removeAttr('disabled');
+                        $('[rolCompletionCode="'+i+'"]').addClass('completedRole').removeClass('pendingRole');
+                    }
+                    else if(i == 'ub'&& (!cs['xfb__c'].value.includes('Branch')|| '{!rq.Acc__r.clt__c}' == 'Land')){
+                        console.log('gm===',i);
+                        var proceed  = false,u = 0;
+                        if(mandatoryUBO.length>0){
+                            for(let i of mandatoryUBO){
+                                for(let j of addCtgArr.ub){
+                                    let v = JSON.parse($('#'+j).val());
+                                    if(i==j || i==v.rRegNum){
+                                        u++;            
+                                    }
+                                }
+                                if(u>=mandatoryUBO.length)
+                                    proceed = true;
+                            }
+                        }
+                        else{
+                            if(addCtgArr.ub.length>0)
+                                proceed = true;
+                        }
+                        
+                        if(proceed){
+                            $('[selcode="ub"]').parent().parent().addClass('memAdded');
+                            $('li[for="'+i+'"]').addClass('addedMemberLI');
+                            $('[selcode="'+i+'"]').parents('.col-lg-6').eq(0).nextAll(':visible:first').find('select').removeAttr('disabled');
+                            $('[rolCompletionCode="'+i+'"]').addClass('completedRole').removeClass('pendingRole');
+                        }
+                    }
+                }
+            
+                    /*}*/}
+        }
+        validatepg4Next();
+    }
+    /* to override checkEmail from axs2Customjs to add .llc */
+    function checkEmail(elem){
+        console.log('checkEmail::::::::::::::::::::::::::');
+        var e = $(elem);
+        var email = e.val();
+        console.log('email:::'+email);
+        var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|ntt|arpa|biz|com|coop|edu|gov|info|int|mil|llc|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/;
+        var r = (regex.test(email))?true:'invalid';
+        showErrMsg(e,'mail',r);
+        if(r == 'invalid' && email != ''){
+            console.log('invalid:::::::::::::');
+            addValError(elem,'Please enter valid email Address');
+            return false;
+        }else{
+            console.log('valid:::::::::::::');
+            removeValError(elem);
+        }
+        
+    }
+    /*****************************/
+    /* basic validation to check URL */
+    var isValidUrl = (url) => {try {new URL(url); } catch (e) { console.log(e); return false; } return true; };    
+    function checkUrl(e){
+        var url = $(e).val();
+        if(isValidUrl(url)){
+            removeValError(e);
+        }
+        else{
+            addValError(e,'Please enter a valid URL');
+            scrollToDiv($(e).parent());
+        }
+    }
+    </script>
+</apex:component>

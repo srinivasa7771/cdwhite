@@ -1,0 +1,168 @@
+<apex:component controller="gulkpCtrl2" allowDML="true" >
+    <style>
+        .icon-request-preference:before {content: "\e968";}
+        .selectData1{ display:block; max-height : 24em; overflow-y:auto;}
+        .polookup{ background:#f5f5f5 !important;}
+    </style>
+    
+    
+    <div class="custLookup">
+        <apex:attribute name="heading" description="leable for the search" type="String"  />
+        <apex:attribute name="Request" description="Request" type="g_Req__c" assignTo="{!rq}" />
+        
+        <div class="modal fade modal-base" id="modal_lookup_values_POB" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body pt-5 pb-5">
+                        <div class="mb-4 d-flex">
+                            <h3 class="modal-title">
+                                Available PO Box Zones
+                            </h3>
+                            
+                            <div class="search-field mb-0 ml-5" style="width: auto;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search for PO BOX Zone" id="searchPOB" onkeyup="searchWithEnter_POB(event)" />
+                                    <div class="input-group-append">
+                                        <div class="btn" onclick="searchPOBWithVal()">
+                                            <div class="icon-search"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="frmErrMsg2" class="frmErrMsg1" style="display:none;padding-left:0px;">
+                                    Minimun 3 characters needed to search!
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        <apex:outputPanel styleClass="selectData1" id="selectData_POB">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 16.6%;">PO BOX Zone Name</th>
+                                        <th style="width: 16.6%;">Avaliable PO Box	</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!poboxList}" var="s">
+                                        <tr style="cursor: pointer;" onclick="setData_POB(this);" pobId="{!s.id}" fullVal="{!s}">
+                                           
+                                            <td val1="{!s.name}">{!s.name}</td>
+                                            <td val1="{!s.id}">{!s.xapbc__c}</td>
+                                        </tr>
+                                    </apex:repeat>
+                                </tbody>
+                            </table>
+                            
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="row row-lg">
+            <div class="col-lg-12 POBLkp">
+                <div class="form-group">
+                    <apex:outputLabel value="{!heading}"></apex:outputLabel>
+                    <div class="input-group input-group-transparent" onclick="searchPobZone()"> 
+                        <input disabled="true" type="text" class="polookup form-control" id="POBSerachVal" />
+                        <div class="pointer input-group-append">
+                            <span class="input-group-text">
+                                <i id="POBLkpSearch" class="icon-request-preference text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="frmErrMsg1" id="frmErrMsg1"  style="display:none;"> 
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <apex:actionFunction name="loadData_POB" action="{!init_POB}" oncomplete="prePOBData()" rerender="selectData">
+        </apex:actionFunction>
+        <apex:actionFunction name="poBoxSrch" immediate="true"  action="{!searchPOBoxes}" oncomplete="showLkpModel_POB('{!serPBString}');hideTempLoader_input();" rerender="selectData_POB">
+            <apex:param name="pob" assignTo="{!pob}" value=""/>
+        </apex:actionFunction>
+        
+        <apex:outputLabel style="display:none;" id="selectData">
+            <apex:inputHidden id="selectedZone" value="{!selectedZone}"/>
+            <apex:inputHidden id="xpaz__c" value="{!Request.xpaz__c}"/>
+            
+            <script>
+            cs['selectedZone']=document.getElementById('{!$Component.selectedZone}');
+            cs["xpaz__c"] = document.getElementById("{!$Component.xpaz__c}");
+            
+            function prePOBData(){
+                cs['xpaz__c'].value = '{!preloadedPOB.id}';
+                cs['selectedZone'].value = '{!preloadedPOB.name}';
+                $('#POBSerachVal').val(cs['selectedZone'].value);
+            }
+            </script>
+        </apex:outputLabel>
+    </div>
+    <script><!-- -->
+    
+    
+    $(document).ready(function(){
+        loadData_POB();
+    });
+    
+    function searchWithEnter_POB(e){
+        var key = e.which;
+        if(key == 13){
+            searchPOBWithVal();
+            return false;  
+        }
+    }
+    
+    function searchPobZone(){
+        showTempLoader_input('#POBSerachVal');
+        let sv = $('#POBSerachVal').val();
+        $('#searchPOB').val(sv);
+        console.log('in conl...!');
+        poBoxSrch(sv);
+    }
+    
+    function showLkpModel_POB(ell){
+        serPBString = JSON.parse(ell);
+        
+        if(!$('#modal_lookup_values_POB').is(':visible'))
+            $('#modal_lookup_values_POB').modal('show');
+    }
+    
+    function searchPOBWithVal(elem){
+        let v = $("#searchPOB").val();
+        if(v!=undefined&&v!=null&&v.length>2){
+            $('#frmErrMsg2').hide();
+            poBoxSrch(v);
+            showTempLoader_input('#searchPOB');
+        }
+        else
+            $('#frmErrMsg2').show();
+        
+    }
+    
+    var serPBString = {};
+    
+    function setData_POB(elem){
+        let id = $(elem).attr('pobId');
+        let n = $(elem).find('td').eq(0).text();
+        $('#POBSerachVal').val(n);
+        $('#modal_lookup_values_POB').modal('hide');
+        cs['selectedZone'].value = n;
+        
+        cs['xpaz__c'].value = id;
+        
+        $('.POBLkp .frmErrMsg1').hide();
+        
+    }
+    
+    </script>
+</apex:component>

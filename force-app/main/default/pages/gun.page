@@ -1,0 +1,112 @@
+<apex:page sidebar="false" cache="false" expires="0" title="Users: New User" label="Users: New User" controller="gctlUsersNew" deferLastCommandUntilReady="true">
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>
+    <script>
+        var ispu={!ispu},cs={};
+        function doSave(){hErr()?alrt("{!$Label.msgCRR}","{!$Label.msgCRRD}"):"function"==typeof AF_Save&&(toggle_inputs(),AF_Save())}
+        function hErr(){
+            fldErr("xcslt__c",null,!0);fldErr("xcfn__c",null,!0);fldErr("xcln__c",null,!0);fldErr("xcmob__c",null,!0);fldErr("xceml__c",null,!0);
+            fldErr("xcp__c",null,!0);fldErr("xcnc__c",null,!0);
+            var ber = false;
+            ber=fldReq("xcslt__c",cs)||ber;ber=fldReq("xcfn__c",cs)||ber;ber=fldReq("xcln__c",cs)||ber;
+            ber=fldReq("xcp__c",cs)||ber;ber=fldReq("xcnc__c",cs)||ber;
+            ber=!vMob("xcmob__c",cs,!0)||fldReq("xcmob__c",cs)||ber;ber=!vEml("xceml__c",cs,!0)||fldReq("xceml__c",cs)||ber;
+            return ber;
+        }
+    </script>   
+    <c:pgHeader id="sH" ispu="{!ispu}" tabName="Profile" iconURL="{!URLFOR($Resource.axsRS, '/images/profile-logo.png')}" title="New User" subtitle="Users" description="Adding a Single User | Email must be unique" />
+    <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>     
+    <apex:form >       
+        <apex:actionFunction name="AF_Save" action="{!createUser}" status="theStatus" rerender="sH,pbMain,msg" onbeforedomupdate="javascript: toggle_inputs(); "/>      
+         <apex:pageBlock mode="edit" id="pbMain" title="Create New User">                        
+            <apex:pageBlockButtons >                
+                <div class="mgtBtn">
+                    <a href="" onClick="window.location.href='/apex/gu';" class="btnCncl">&lt; Close</a>
+                    <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}"><a href="" onClick="javascript: doSave();" class="btnSave">Save Changes</a></apex:outputPanel>
+                </div>
+            </apex:pageBlockButtons>
+            <apex:pageMessages id="msg" />
+            <apex:pageBlockSection collapsible="false" columns="2" title="User Details" rendered="{!NOT(pgHide)}">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xcfn__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="width:1px">
+                                    <div class="requiredInput" id="xcslt__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xcslt__c" value="{!wrp.xcslt__c}" />
+                                        <script type="text/javascript">cs['xcslt__c']=getC('{!$Component.xcslt__c}');</script>
+                                    </div>
+                                </td>
+                                <td style="width:1px">&nbsp;</td>
+                                <td>
+                                    <div class="requiredInput" id="xcfn__cRI">
+                                        <div class="requiredBlock"></div>
+                                        <apex:inputField id="xcfn__c" value="{!wrp.xcfn__c}"/>
+                                        <script type="text/javascript">cs['xcfn__c']=getC('{!$Component.xcfn__c}');</script>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xcln__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <div class="requiredInput" id="xcln__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="xcln__c" value="{!wrp.xcln__c}" />
+                            <script type="text/javascript">cs['xcln__c']=getC('{!$Component.xcln__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem helpText="Mobile phone number for the person who follow-up on this request. Starts 050 or 052 or 055 or 056 (e.g. 050 xxxxxx)">
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xcmob__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <div class="requiredInput" id="xcmob__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="xcmob__c" value="{!wrp.xcmob__c}" onchange=" vMob('xcmob__c',cs,true);"/>
+                            <script type="text/javascript">cs['xcmob__c']=getC('{!$Component.xcmob__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xceml__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <div class="requiredInput" id="xceml__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="xceml__c" value="{!wrp.xceml__c}" onchange="vEml('xceml__c',cs,true)"/>
+                            <script type="text/javascript">cs['xceml__c']=getC('{!$Component.xceml__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xcp__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <div class="requiredInput" id="xcp__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="xcp__c" value="{!wrp.xcp__c}"/>
+                            <script type="text/javascript">cs['xcp__c']=getC('{!$Component.xcp__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.g_reqitem__c.Fields.xcnc__c.label}" />
+                    <apex:outputPanel layout="none">
+                        <div class="requiredInput" id="xcnc__cRI">
+                            <div class="requiredBlock"></div>
+                            <apex:inputField id="xcnc__c" value="{!wrp.xcnc__c}" />
+                            <script type="text/javascript">cs['xcnc__c']=getC('{!$Component.xcnc__c}');</script>
+                        </div>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+     </apex:form>
+</apex:page>

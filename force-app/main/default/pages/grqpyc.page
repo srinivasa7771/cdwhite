@@ -1,0 +1,46 @@
+<apex:page id="x" sidebar="false" cache="false" expires="0"  tabStyle="g_Req__c"    title="Payment Validation" Controller="gctlReqpyChk" action="{!Chk}">
+
+    <apex:outputPanel rendered="{!isgu}">
+        <c:guheader heading="DDA NOC"  />
+    </apex:outputPanel>
+    
+<script type="text/javascript">function g2r(){
+      
+       window.location.href={!ISNULL(T)}?"/a05/o":"/{!T.RQ__c}"
+    };
+     function letterclick(){
+        var rqId = '{!JSENCODE(T.RQ__r.id)}';
+        window.open("/apex/displayLetter?id="+rqId, "_blank", "directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=950, height=600,top=50, left=200");
+    }
+    window.onload = function(){
+        if('{!isgu}')
+         document.getElementById('hnavC').style.display='none';
+        }
+    
+    </script>
+<apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+<apex:stylesheet value="{!$Resource.gCss}"/>
+<apex:includeScript value="{!$Resource.jsH}"/>
+    
+<!--<c:pgHeader id="sH" ispu="{!ispu}" tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!IF(ISNULL(T),'Payment Gateway',T.RQ__r.srvc__r.Name+'-'+T.RQ__r.Name)}" subtitle="Payment Validation" description="Instantly find and validate payments in correspondence with payment gateway" />  -->          
+<apex:outputPanel rendered="{!(T.RQ__r.srvc__r.uid__c=='dnc')}" >
+   <c:pgHeader id="sH" entityId="{!T.RQ__c}" isgu="{!isgu}"  ispu="{!ispu}"  tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!IF(ISNULL(T),'Payment Gateway',T.RQ__r.srvc__r.Name+'-'+T.RQ__r.Name)}" subtitle="Payment Completed" description="Your payment processed successfully.Our back office team verifying your application and will send NOC email link shortly." />
+</apex:outputPanel>
+  <apex:outputPanel rendered="{!T.RQ__r.srvc__r.uid__c != 'dnc' }" >
+      <c:pgHeader id="sH1" entityId="{!T.RQ__c}" isgu="{!isgu}"  ispu="{!ispu}"  tabName="Request" iconURL="{!URLFOR($Resource.axsRS, '/images/files.png')}" title="{!IF(ISNULL(T),'Payment Gateway',T.RQ__r.srvc__r.Name+'-'+T.RQ__r.Name)}" subtitle="Payment Validation" description="Instantly find and validate payments in correspondence with payment gateway" />
+    </apex:outputPanel>  
+ <apex:pageBlock mode="detail" id="p" tabStyle="g_Req__c" title="Payment Verification">
+    <apex:pageMessages id="msg"  escape="false"/>
+    <apex:pageBlockButtons location="top" >
+         <apex:outputPanel rendered="{!((T.RQ__r.srvc__r.uid__c=='ltp' || T.RQ__r.srvc__r.uid__c=='ltc' ||  T.RQ__r.srvc__r.uid__c=='lts' || T.RQ__r.srvc__r.uid__c=='ltn') && T.RQ__r.STA__c=='Completed')}" >
+            <a href="" onClick="letterclick();return false;" style=" background-color: #81b8e9;color: white;font-size: 14px;border-style: solid;border-width: 1px 1px 1px 1px;border-color: #000000;" > Click here </a> to print the letter.<br/> 
+          </apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!pgHide}"><a href="" onClick="g2r();" class="btnCncl">Close</a>&nbsp;&nbsp;</apex:outputPanel>
+        <apex:outputPanel layout="none" rendered="{!NOT(pgHide)}"><a href="" onClick="g2r();" class="btnSave">Finish</a>&nbsp;&nbsp;</apex:outputPanel>
+    </apex:pageBlockButtons>
+
+    <apex:pageBlockSection collapsible="false" columns="1" rendered="{!AND(NOT(pgHide),NOT(ISNULL(T)))}">
+        <apex:pageBlockSectionItem ><div style="width:100%;height:800px"><object data="/apex/gtrcpt?Id={!T.Id}#toolbar=1&amp;navpanes=1&amp;scrollbar=1&amp;page=1&amp;view=FitH" type="application/pdf" width="100%" height="99%"><p>It appears you don't have a PDF plug-in for this browser. No biggie... you can <a href="/apex/gtrcpt?Id={!T.Id}">click here to download the PDF file.</a></p></object></div></apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+</apex:pageBlock>
+</apex:page>

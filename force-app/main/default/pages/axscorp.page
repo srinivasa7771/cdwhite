@@ -1,0 +1,279 @@
+<apex:page sidebar="false" controller="lstViewCnt" lightningStylesheets="true" readOnly="true" >
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:stylesheet value="{!$Resource.gCss}"/><apex:includeScript value="{!$Resource.jsH}"/>  
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.nrta_pagination, '/css/jquery.dataTables.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.nrta_pagination, '/css/page.jumpToData().js')}"/>
+    
+    <style type="text/css" media="screen">
+        table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {background-color: #F1F1F1;}     
+        .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5em;
+        margin-bottom: 0.6em;
+        }
+    </style>
+    <script type="text/javascript" >
+    var cs={}; var ctg=''; var itmLst ='';
+    function openNewTab(id){
+        window.open('/'+id, '_blank');
+    }
+    
+    function removeItem(){
+        // if(typeof(cs['CatOpt'] )!='undefined'  ){alert(cs['CatOpt'].value) }
+        //alert(ctg);
+        
+        var selectobject= itmLst;
+        //'{!JSENCODE(ItmOpt)}'
+        // alert(selectobject);
+        //alert(selectobject.length);
+        if(ctg == 'Student New'){ //alert(1);
+            for (var i = 0; i < selectobject.length; i++) { 
+                if (selectobject.options[i].value == 'rt' ) { 
+                    selectobject.remove(i);
+                }
+            }
+        }
+        
+    }
+    
+    function valdt() {
+        alert('{!JSENCODE(selCatg)}');
+        if('{!JSENCODE(selCatg)}' == ''  ){
+            alert('Please select the category');
+            return false;
+        }else  if('{!JSENCODE(selItm)}' == ''  ){
+            alert('Please select the Item');
+            return false;
+        } else if('{!JSENCODE(selStat)}' == ''  ){
+            alert('Please select the Status');
+            return false;
+        }
+        
+            else return true;
+        
+    }
+    
+    
+    function test1(a,b,c){
+        if(a!='' && b!=''){mthd();} //&& c!=''
+    }
+    
+   function hideCols(a){
+   var table = $('[id$=testTable]').DataTable();
+       if(a=='208'){
+           table.column(3).visible(false);
+           table.column(4).visible(false);
+           table.column(8).visible(false);
+       }else{
+           table.column(3).visible(true);
+           table.column(4).visible(true);
+           table.column(8).visible(true);
+       }
+   }
+    
+    </script>
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+        <head>
+            
+            <div class="slds-media slds-no-space slds-grow">
+                <div class="slds-media__figure">
+                    <svg aria-hidden="true" class="slds-icon slds-icon-standard-contact">
+                        <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#contact')}"></use>
+                    </svg>
+                </div>
+                <div class="slds-media__body">
+                    <p class="slds-text-title--caps slds-line-height--reset">axs Corporate</p>
+                    <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="My Contacts">Request List</h1>
+                </div>
+            </div>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+             <apex:pagemessages />
+        </head>
+        <body>
+     
+            <div class="slds-scope">  
+                <apex:form id="listForm">
+                    <apex:pageBlock id="out">
+                        <apex:pageBlockSection title="" collapsible="false">
+                            <div class="slds-grid slds-wrap">  
+        
+                                           
+                                <table >
+                                    <tr>
+                                        <td> <div styleClass="slds-form-element__label">Category:</div>
+                                           <div styleClass="slds-form-element__control slds-input">  
+                                           <apex:selectList id="category" value="{!selCatg}" multiselect="false" size="1" onchange="test1('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}','{!JSENCODE(selStat)}');">
+                                              <!--  <apex:selectOptions value="{!CatOpt}" id="CatOpt" />-->
+                                               <apex:selectOption itemLabel="DDA License Renewal"  itemvalue="208" id="empNw"  />
+                                               <apex:selectOption itemLabel="DDA Amendment Services"  itemvalue="220" id="empNw1"  />
+                                               <apex:selectOption itemLabel="DDA NOC Services"  itemvalue="dnc" id="dnc1"  />
+                                               <apex:selectOption itemLabel="Corporate Letters"  itemvalue="ltc" id="ltc1"  />
+                                               <apex:selectOption itemLabel="True Copy and Attestation"  itemvalue="200" id="trc"  />
+                                               <apex:actionFunction name="mthd" action="{!queryReq}" rerender="listForm" oncomplete="hideCols('{!JSENCODE(selCatg)}');" status="sts"/>
+                                               
+                                            </apex:selectList>  
+                                               <script type="text/javascript">
+                                               cs['CatOpt']=getC('{!$Component.CatOpt}');
+                                               cs['category']=getC('{!$Component.category}');
+                                                ctg = '{!JSENCODE(selCatg)}';
+                                               </script>
+                                               </div> 
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><div styleClass="slds-form-element__label">Item:</div>
+                                            <div styleClass="slds-form-element__control slds-input">
+                                                <apex:selectList id="items" value="{!selItm}" multiselect="false"  size="1" onchange="test1('{!JSENCODE(selCatg)}','{!JSENCODE(selItm)}','{!JSENCODE(selStat)}');" >
+                                                    <!--  <apex:selectOptions value="{!ItmOpt}" id="itm" />-->
+                                                    <apex:selectOption itemvalue=""  itemLabel="--None--"/>
+                                                    <apex:selectOption itemvalue="dr,dsr,xyz,cdr"  itemLabel="DDA Amendment"/>
+                                                    <apex:selectOption itemvalue="dr,psf"  itemLabel="DDA License Renewal"/>
+                                                   <!--  
+                                                    <apex:selectOption itemvalue="psf"  itemLabel="DDA License Renewal with PSF"/>-->
+                                                    <apex:selectOption itemvalue="drkhda"  itemLabel="DDA License Renewal(with undertaking)"/>
+                                                    <apex:selectOption itemvalue="den,der,dec,dea,des"  itemLabel="DDA NOC"/>
+                                                    <apex:selectOption itemvalue="inb,inl"  itemLabel="Certificate of Incumbency"/>
+                                                    <apex:selectOption itemvalue="ctp"  itemLabel="Permit for Catering Service"/>
+                                                    <apex:selectOption itemvalue="att"  itemLabel="True Copy Attestation"/>
+                                                     <apex:selectOption itemvalue="att_a"  itemLabel="True Copy Attestation with VFS"/>
+                                                   <!-- <apex:selectOption itemvalue="der"  itemLabel="DDA NOC - Renewal"/>
+                                                    <apex:selectOption itemvalue="dec"  itemLabel="DDA NOC - Cancellation"/>
+                                                    <apex:selectOption itemvalue="dea"  itemLabel="DDA NOC - Amendment"/>
+                                                    <apex:selectOption itemvalue="des"  itemLabel="DDA NOC - shift Location"/> -->
+                                                     <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm" oncomplete="hideCols('{!JSENCODE(selCatg)}');"  status="sts"/>
+                                                </apex:selectList>  
+                                                <script type="text/javascript">cs['itm']=getC('{!$Component.itm}');
+                                                cs['items']=getC('{!$Component.items}');
+                                                itmLst = '{!JSENCODE(ItmOpt)}';
+                                                </script>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!--<tr>
+                                        <td><div styleClass="slds-form-element__label">Status:</div>
+                                             <div styleClass="slds-form-element__control slds-input">
+                                            <apex:selectList value="{!selStat}" multiselect="false" size="1" >
+                                                <apex:selectOption itemLabel="-None-"  itemvalue=""  />
+                                                <apex:selectOption itemLabel="All"  itemvalue="all_,rv,n,pd,cc,ccc,v,vcc,rc,rcc"  />
+                                               <apex:selectOption itemLabel="Under Review"  itemvalue="rv,pd,dr,v,n"  />
+                                               <apex:selectOption itemLabel="Corrected By Customer"  itemvalue="cc,ccc,v,vcc"  />
+                                                <apex:actionSupport event="onchange" action="{!queryReq}" rerender="listForm" status="sts" />
+                                            </apex:selectList>  </div>
+                                        </td>
+                                    </tr>-->
+                                    
+                                </table> 
+                            </div>                            
+                        </apex:pageBlockSection>
+
+                        
+                        
+                        <apex:pageBlockSection collapsible="false" id="out1">
+                            <div class="slds-panel__section">  
+                          <!--<legend class="slds-form-element__label slds-text-title--caps"><b>{!nameList}</b></legend> -->
+                            </div>
+                            <script type="text/javascript" charset="utf8">
+                            var oTable;var currentNumberDisplayed = 500;
+                            $(document).ready(function() {
+                                $('#load').click( function () {
+                                    var oSettings = oTable.fnSettings();currentNumberDisplayed += 2;oSettings._iDisplayLength = currentNumberDisplayed;oTable.fnDraw();});
+                                oTable = $('[id$=testTable]').dataTable({"iDisplayLength": 200,"autoWidth": false}); 
+                                
+                                
+                            });
+                            </script>
+                            
+                        <apex:actionstatus id="sts">
+                                <apex:facet name="start">
+                                    <div class="slds-spinner_container">
+                                        <div id="mySpinner" role="status" class="slds-spinner slds-spinner_medium">
+                                            <span class="slds-assistive-text">Loading</span>
+                                            <div class="slds-spinner__dot-a"></div>
+                                            <div class="slds-spinner__dot-b"></div>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionstatus> 
+                            
+                            <apex:dataTable value="{!finalListRqItm}" var="record" rendered="{! IF(ISBLANK(finalListRqItm), false, true) }" captionClass="testTable" styleClass="slds-table slds-table--bordered slds-table--striped" id="testTable" cellspacing="5%" columnsWidth="13%" style="width:100%;float:left;">                 
+                                <apex:column >
+                                    <apex:inputCheckbox onclick="openNewTab('{!JSENCODE(record.RQ__r.id)}');" /> 
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Request" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__c}"/>
+                                </apex:column>
+                               <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value=" Manage Request" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.xmgr__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Amendment Category" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.xcamc__c }"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Amendment Type" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.xcamdt__c }"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Missing Lease Details " /></apex:facet>
+                                    
+                                    <apex:outputField value="{!record.RQ__r.xmloc__c}"/>
+                                </apex:column>
+                                 <apex:column >
+                                    <apex:facet name="header" ><apex:outputLabel value="Assgined To " /></apex:facet>
+                                    
+                                    <apex:outputField value="{!record.Assigned_User__c}"/>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Account Name" /></apex:facet>
+                                    <!-- <apex:outputLabel value="{!IF(record.RQ__r.Account_Name__c=='test identity 1', 'DED Account',record.RQ__r.Account_Name__c)}"/>-->
+                                    <apex:outputLabel value="{!IF(record.RQ__r.Account_Name__c=='test identity 1', 'DED Account',IF(record.RQ__r.Account_Name__c=='DDA NOC',record.RQ__r.xcfn__c,record.RQ__r.Account_Name__c))}"/>
+
+
+                                </apex:column>
+                               <!--  <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Applicant" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.Con__c}"/>
+                                </apex:column>-->
+                                
+                                <apex:column id="itemcol">
+                                    <apex:facet name="header"><apex:outputLabel value="Item" /></apex:facet>
+                                    <apex:outputField value="{!record.Name}"/>
+                                </apex:column>
+
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Item Status" /></apex:facet>
+                                    <apex:outputField value="{!record.STA__r.Name}"/> 
+                                </apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="SLA Status" /></apex:facet>
+                                    <apex:outputField value="{!record.SLA_Flag_Status__c}"/>
+                                                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header"><apex:outputLabel value="Request Status" /></apex:facet>
+                                    <apex:outputField value="{!record.RQ__r.STA__c }"/>
+                                </apex:column>
+                                
+                            </apex:dataTable>
+                            
+                            <script type="text/javascript">
+                            cs['itemcol']=getC('{!$Component.itemcol}');
+                            </script>
+                        </apex:pageBlockSection>   
+                    </apex:pageBlock>
+                    
+                </apex:form>
+            </div>
+        </body>
+    </html>
+    
+</apex:page>

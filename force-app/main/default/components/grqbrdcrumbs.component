@@ -1,0 +1,82 @@
+<apex:component >
+    <style>
+        
+        i.step-icon-check.fa.fa-check {
+        font-family: 'FontAwesome' !important;
+        }
+        .step-title {
+        font-size: 0.9rem !important;
+        }
+        
+    </style>
+    <apex:attribute name="req" description="Request" type="g_Req__c" required="true"/>
+    <apex:attribute name="applicant" description="applicant tab" type="String" required="true"/>
+    <apex:attribute name="addon" description="additional services tab" type="String" required="true"/>
+    <apex:attribute name="payment" description="payment tab" type="String" required="true"/>
+    <apex:attribute name="reviewdets" description="reviewDetails tab" type="String"/>
+    
+    <div class="steps steps-desktop">
+        <div class="step-item {!applicant}">
+            <a href="#" class="defaultCursor"> <!-- /{!req.srvc__r.stg__r.pg__c}?id={!req.Id}-->
+                <div class="step-item-inner">
+                    <i class="step-icon icon-members"></i>
+                    <!-- {!IF(req.srvc__r.uid__c=='ltc','Request','Applicant details')}-->
+                    <div class="step-title "> {!IF(OR(req.srvc__r.uid__c == '322',req.srvc__r.uid__c == 'aml'),'Application details',IF(OR(CONTAINS(req.srvc__r.Category__c,'Corporate'),req.srvc__r.uid__c == ''),'Request details','Applicant details'))} </div> 
+                    <apex:outputLabel rendered="{!applicant=='completed'}">
+                        <i class="step-icon-check fa fa-check"></i>
+                    </apex:outputLabel>
+                </div>
+            </a>
+        </div>
+        
+        <div class="step-item {!addon}" style="display:{!IF(OR(req.srvc__r.AddOnSrv__c!=null,req.srvc__r.uid__c == '322',req.srvc__r.uid__c == '220',req.srvc__r.uid__c == '208',req.srvc__r.uid__c == 'aml',req.srvc__r.uid__c == 'dnc'),'block','none')}">
+            <apex:outputPanel rendered="{!IF(OR(req.srvc__r.AddOnSrv__c!=null,req.srvc__r.uid__c == '220',req.srvc__r.uid__c == '322',req.srvc__r.uid__c == '208',req.srvc__r.uid__c == 'aml',req.srvc__r.uid__c == 'dnc'),true,false)}">
+                <a href="#" class="defaultCursor"> <!-- /grqaddon?id={!req.Id} -->
+                    <div class="step-item-inner">
+                        <i class="step-icon icon-addon"></i>
+                        <div class="step-title"> 
+                            <apex:outputText rendered="{!req.srvc__r.AddOnSrv__c!=null}">
+                            Additional services
+                            </apex:outputText>   
+                            <apex:outputText rendered="{!req.srvc__r.AddOnSrv__c==null}">
+                            Upload documents
+                            </apex:outputText>   
+                        </div>
+                        <apex:outputLabel rendered="{!addon=='completed'}">
+                            <i class="step-icon-check fa fa-check"></i>
+                        </apex:outputLabel>
+                    </div>
+                </a>
+            </apex:outputPanel>
+        </div>
+        
+        
+        <div class="step-item {!reviewdets}" style="display:{!IF(req.srvc__r.uid__c == '322','block','none')}">
+            <apex:outputPanel rendered="{!req.srvc__r.uid__c == '322'}">
+            <a href="#" class="defaultCursor">  <!-- /grqpy2?id={!req.Id} -->
+                <div class="step-item-inner">
+                    <i class="step-icon icon-members"></i>
+                    <div class="step-title">Review details</div>
+                    <apex:outputLabel rendered="{!reviewdets=='completed'}">
+                        <i class="step-icon-check fa fa-check"></i>
+                    </apex:outputLabel>
+                </div>
+            </a>
+            </apex:outputPanel>
+        </div>
+        
+        <div class="step-item {!payment}" style="display:{!IF(req.srvc__r.uid__c != 'aml','block','none')}">
+            <a href="#" class="defaultCursor">  <!-- /grqpy2?id={!req.Id} -->
+                <div class="step-item-inner">
+                    <i class="step-icon icon-cash-deposit"></i>
+                    <div class="step-title">{!IF(req.srvc__r.uid__c == '322','Complete payment','Review payment')} </div>
+                    <apex:outputLabel rendered="{!payment=='completed'}">
+                        <i class="step-icon-check fa fa-check"></i>
+                    </apex:outputLabel>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- end .steps -->
+</apex:component>

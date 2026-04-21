@@ -1,0 +1,156 @@
+<apex:page cache="false" controller="ApplicantDetailController" docType="html-5.0"  standardStylesheets="false"  showHeader="true" sidebar="false"
+           title="{!srv.sdg__r.slbl__c}" >
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    
+    <script type="text/javascript">
+    
+    var ispu={!ispu},lcl='{!JSENCODE(lcl)}',sta='{!JSENCODE(req.STA__c)}',cs={}, empInd ; var jsonExistingReps = [];
+    
+    var POBundles = {"PO Box Light":"dpl","PO Box Corporate":"dps","EziMail Bronze":"dpb","EziMail Silver":"des","EziMail Gold":"dpg"};
+    
+    $(document).ready(function () {    
+        pobType='new';loadDetails();
+    });
+    
+    function validateAddSHDIV1(){}
+    </script> 
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main"> 
+                <!--<apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>-->
+                <apex:actionFunction name="afsd" action="{!saveDraftR}" status="theStatus" rerender="msg2,compupload"  oncomplete="toggleGLoader();removeTempLoader();reloadDocDiv();"/>
+                <apex:actionFunction name="afso" action="{!saveReq}" status="theStatus" rerender="msg2" oncomplete="toggleGLoader();removeTempLoader();"/>
+                <!--<apex:actionFunction name="rerenderImageB" action="{!rerenderDocs}" rerender="rerenderImage"/>-->
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <apex:outputPanel id="rerenderImage">
+                    <apex:inputHidden id="imageBase64" value="{!tImageBase64}" />
+                    <apex:inputHidden id="docname" value="{!docname}" />
+                    <apex:inputHidden id="parseId" />
+                    <script>
+                    cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+                    cs["docname"] = document.getElementById("{!$Component.docname}");
+                    cs["parseId"] = document.getElementById("{!$Component.parseId}");
+                    </script>
+                </apex:outputPanel>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(req.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!req.Name} </span>
+                                <!--<div class="user-title">{!req.STA__c}</div>-->
+                            </span>
+                        </apex:outputPanel>
+                        
+                        <!--<apex:outputPanel rendered="{!req.id==''}">
+                            <a style="color:#fff;" onclick="assignDataToFields();afsd();" class="btn btn-black">
+                                SAVE DRAFT
+                            </a>
+                        </apex:outputPanel>-->
+                        <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="false"/>
+
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                     <c:srvdefcmp srv="{!srv}"/>
+                                    
+                                    <!--<apex:outputPanel rendered="{!IF(req.id!='',false,true)}">
+                                        <h3 class="text-primary d-md-block d-none">ABOUT THIS SERVICE</h3>
+                                        <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                            <div class="collapse-content">
+                                                <p class="text-000">
+                                                   Apply for new P.O. Box from Emirates Post. 
+                                                </p>
+                                                <p class="text-000 mb-0">
+                                                  Please note: P.O. Box is a mandatory service required for all official communication addressed to the business. 
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel id="compupload" rendered="{!IF(req.id!='',true,false)}">
+                                        <c:grqupd Dim="V" PayDone="{!if(req.AP__c>0,true,false)}"/>  
+                                    </apex:outputPanel>-->
+                                    
+                                    <div class="pt-4 pb-4">
+                                        <h3 class="text-primary d-md-block d-none">Download forms</h3> 
+                                        <div class="upload-list">
+                                            <div class="upload-list-item box box-white box-padding">
+                                                <a href="/servlet/servlet.FileDownload?file=01520000002hPuP" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                    <u>P.O. Box Service Application Form</u>
+                                                </a>
+                                            </div>
+                                            <div class="upload-list-item box box-white box-padding">
+                                                <a href="/servlet/servlet.FileDownload?file=01520000002hPuZ" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                    <u>Representative Card Application Form</u>
+                                                </a>
+                                            </div>
+                                            
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="base-main">
+                            <div class="base-main-content">
+                                <apex:pageBlock id="pbMain">
+                                    <apex:variable var="fnxPg" value="grqup" />
+                                    <apex:outputPanel id="msg">
+                                        <apex:pageMessages id="msg2" escape="false"/>
+                                    </apex:outputPanel>
+                                    
+                                    <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                    <div class="form-group form-style mb-2">
+                                        <label>Select from active P.O Box zones</label>
+                                        <c:gpboxlookup id="gpboxlookup" Request="{!req}" />
+                                    </div>
+                                    
+                                    <c:poboxagents_ocr id="poboxagents" req="{!req}"  salutations="{!salutations}" />
+                                    
+                                </apex:pageBlock>
+                            </div>
+                            <!--<div class="base-main-footer">
+                                <div class="base-nav">
+                                    <a onclick="saveDetails();" class="btn btn-primary base-nav-next" style="color: #fff;">
+                                        CONTINUE
+                                    </a>
+                                </div>
+                            </div>-->
+                            <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+           <!-- <c:fileuploadpopupnew13 R="{!req}" /> -->
+        </body>
+        
+        
+        
+    </apex:form> 
+     
+</apex:page>

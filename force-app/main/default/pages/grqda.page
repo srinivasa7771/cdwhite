@@ -1,0 +1,348 @@
+<apex:page sidebar="false" controller="ApplicantDetailController" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="true" standardStylesheets="false" title="{!srv.sdg__r.slbl__c}" >
+    <html>
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        <apex:includeScript value="{!$Resource.AXS2Validations}"/>
+        <script type="text/javascript">
+        var cs = {};
+        $(document).ready(function() {
+            dr();
+            hr();
+            mr();
+            $('.alphaChar').bind('keyup', function(e) {
+                $(this).val($(this).val().replace(/[^a-zA-Z]/g, ''));
+                if (e.which >= 97 && e.which <= 122) {
+                    var newKey = e.which - 32;
+                    e.keyCode = newKey;
+                    e.charCode = newKey;
+                }
+                $(this).val(($(this).val()));
+            });
+            $('.numOnly').keypress(function (event) {
+                var charCode = (event.which) ? event.which : event.keyCode;
+                if (charCode != 46 && charCode > 31 
+                    && (charCode < 48 || charCode > 57))
+                    return false;
+                return true;
+            });
+        });
+        
+        //Add validation error
+        function addValError(thiselem,message){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+            var errElem = '<div class="frmErrMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(errElem);
+            }else{
+                elem.parent().append(errElem);
+            }
+        }
+        //Remove validation error
+        function removeValError(thiselem){
+            var elem = $(thiselem);
+            elem.parent().find('.frmErrMsg').remove();
+            elem.parent().parent().find('.frmErrMsg').remove();
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        function isUAEMobNum(elem){
+            var mob = $(elem).val();
+            if(mob==null||mob==undefined||mob=='')
+                return;
+            var regex = /^((?:50|52|54|55|56|58)[0-9]{7,})$/;
+            var r = (regex.test(mob))?true:'invalid';
+            if(r == 'invalid'){
+                $(elem).parent().find('.frmErrMsg').remove();
+                $(elem).parent().parent().find('.frmErrMsg').remove();
+                var errElem = '<div class="frmErrMsg">Please enter a valid UAE mobile number</div>';
+                $(elem).parent().parent().append(errElem);
+                return false;
+            }else{
+                removeValError(elem);     
+            }
+        }
+        //validate mobile number
+        function checkMob(thisElem){
+            var mobNo = $(thisElem).val();
+            if(mobNo.length < 10){
+                addValError(thisElem,'Please enter valid mobile Number!!');
+            }else{
+                removeValError(thisElem);    
+            }
+        }
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        //Validate Data on click of next button
+        function validateData(){
+            var elem = '';
+            var validated  = true;
+            $('.requiredFld').each(function(){
+                var v = $(this).val();
+                if(v==''||v==null||v==undefined||v.lenght<1){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                validated = false;
+            }
+            if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                validated = false;
+            }
+            //alert('requiredFld v:'+validated);
+            console.log('validated::::'+validated);
+            if(elem!=''){
+                scrollToDiv(elem);
+            }
+            
+            console.log('submit validated:::'+validated);
+            if(validated == true){
+                showTempLoader(event.target);
+                toggleGLoader();
+                next();
+                
+            }
+            
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        function saveReqDraft(){
+            if($('.frmErrMsg').is(':visible')){
+                scrollToDiv($('.frmErrMsg').eq(0).parent());
+                return;
+            }
+            else if($('.frmErrMsg1').is(':visible')){
+                scrollToDiv($('.frmErrMsg1').eq(0).parent());
+                return;
+            }
+            saveReqDraft1();
+            toggleGLoader();
+        }
+        function showDraftAlert1(){
+            var rqNum = '{!JSENCODE(req.Name)}';
+            $('#modal_alert_global').remove(); 
+            var cBlock = '<div class="modal fade modal-base" id="modal_alert_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body text-center pt-5 pb-5"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <div class="mb-3 fs-24" style="text-align:center;">Your Request has been saved!</div><div class="mb-3 fs-24">SR # <b>'+rqNum+'</b></div> <p style="text-align: center;">You can continue with this request from \'Drafts\' tab on your Dashboard<p class="col-xl-12 col-lg-12" style="font-size: 0.8em;text-align: center;"> <div class="col-xl-4"></div> <button class="col-xl-4 col-lg-12 btn btn-outline-primary mr-2 btn-block-sm" id="gDash">GO TO DASHBOARD</button> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_alert_global').modal('show');
+            $('#gDash').on('click',function(){
+                window.open('/gpm','_self');
+            });
+        }
+        </script>
+        <style>
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <b>
+            </b> 
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"></apex:outputPanel>
+                <apex:actionFunction name="next"  action="{!saveReq}" status="theStatus"  reRender="pbMain,errmsg,saveRq,msg" oncomplete="$('#preloader').fadeOut();" onbeforedomupdate="javascript: toggle_inputs();"/>
+                <apex:actionFunction name="saveReqDraft1" action="{!saveDraft}" oncomplete="toggleGLoader();showDraftAlert1();" />
+                 <apex:actionFunction name="saveReqoncontact" action="{!ApplicantContactInfo}" status="theStatus" rerender="msg" oncomplete="hideGLoader();"  /> 
+                <apex:actionFunction name="reUpload" rerender="upld" />
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(req.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(req.Name)}')"/>
+ <apex:inputHidden id="xadh__c" value="{!req.xadh__c}"/> 
+                 <script> cs['xadh__c']=document.getElementById('{!$Component.xadh__c}');</script>
+                <body class="base">
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    <span class="text-000">{!req.Name} </span>
+                                </span>
+                                
+                                <!--<apex:outputpanel rendered="{!IF(req.Name!=null,true,false)}">
+                                    <a style="color:#fff;" onclick="validateData(); saveReqDraft();" class="btn btn-black"> SAVE DRAFT </a>  
+                                </apex:outputpanel>-->
+                                
+                                <c:drftCnclBtns req="{!req}" shwCncl="true" shwDraft="{!IF(OR(req.id=='',req.STA__c=='Draft',req.STA__c=='Open'),true,false)}"/>
+
+                                
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="base-layout">
+                                <!--left-side pannel start-->   
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:srvdefcmp srv="{!srv}"/>
+                                            <!--
+                                            <ul class="ul-style">
+                                                <li>Employment contract</li>
+                                            </ul>
+                                            -->
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                </div>
+                                <div class="base-main">
+                                    <apex:pageMessages id="msg"  />
+                                        <div class="base-main-content">
+                                    <!-- .base-collapse -->
+                                  <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                    <div id="conlookuprow" class="row">
+                                           <div class="col-lg-12">
+                                            <div class="form-group">
+                                                <apex:outputPanel rendered="true">
+                                                    <label>    </label>
+                                                    <c:gconlookup id="conlookup" Request="{!req}" role="Employee;Non Sponsored" accId="{!req.Acc__c}" sta="Active" heading="Select the employee to request contract attestation"/> 
+                                                </apex:outputPanel> 
+                                            </div>
+                                        </div> 
+                                    </div>
+                                    <apex:outputPanel rendered="{!req.Con__c!=null}">
+                                            <div id="priority_id">
+                                                <apex:outputText rendered="{!priorityList.size > 0}">
+                                                    <c:prioritytypecmp priorityList="{!priorityList}" slaMp="{!slaMp}"/>
+                                                </apex:outputText>
+                                            </div>
+                                        </apex:outputPanel>
+                                              <apex:outputpanel rendered="{!IF(req.id!=null,true,false)}">
+                                    <apex:outputPanel id="upld">  
+                              <apex:outputPanel id="dummy">
+                                                <input type="Hidden" value="{!reqId}" id="reqId"/>   
+                                            </apex:outputPanel>
+                                        <!--
+                                          <div id="sal_doc" >
+                                                <div class="base-collapse">
+                                                
+                                                        <div class="collapse-title">Upload Below Documents</div>
+                                               
+                                                    <c:grqsupd Dim="SH"  req="{!req}" PayDone="false"  SDocs="Employment Contract:Employment Contract;" onlyDoc="true"/>
+                                                </div>
+                                            </div>
+                                        -->
+                                        <div id="application_details" class="collapse show">
+                                                <div class="collapse-content">
+                                                    <form class="form-style" id="app_details_form" action="">
+                                                        
+                                                        
+                                                        <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp"/> 
+                                                        
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            </apex:outputPanel>                                        
+                                        <!--<div class="base-main-footer">
+                                            <div class="base-nav">
+                                                <a href="#" onClick="validateData()"
+                                                   class="btn btn-primary base-nav-next">
+                                                    NEXT
+                                                </a>
+                                            </div>
+                                        </div>-->
+                                         <c:saveBtn ispu="{!ispu}" isgu="{!isgu}"/>
+                                         </apex:outputpanel>
+                                    </div>
+                                    <!-- .base-layout -->
+                                </div>
+                                <!-- .base-layout"-->
+                            </div>
+                            <!-- .container -->
+                        </div>
+                    </div>
+                </body>
+               
+            </apex:pageBlock>
+        </apex:form>
+            <script>
+        function  afsd(){
+            saveReqoncontact();
+        }
+             
+        </script>
+                    <script type="text/javascript">
+       
+        $(document).ready(function() {
+        
+            var $input = $("#conSerachVal");
+            $input.on('input', function() {
+              //alert($(this).val());
+              reUpload();
+            });
+            (function ($) {
+                var originalVal = $.fn.val;
+                $.fn.val = function (value) {
+                    var res = originalVal.apply(this, arguments);
+
+                    if (this.is('input:text') && arguments.length >= 1) {
+                        // this is input type=text setter
+                        this.trigger("input");
+                    }
+
+                    return res;
+                };
+            })(jQuery);
+            
+        });
+        //hideFileds();
+        </script>
+    </html>    
+    <apex:form id="uploadFrm">
+        <c:fileuploadpopupnew13 R="{!req}"  />
+    </apex:form>
+</apex:page>

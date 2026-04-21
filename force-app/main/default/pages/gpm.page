@@ -1,0 +1,2197 @@
+<apex:page cache="false" controller="gctlHm" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="false" sidebar="false" title="AXS - Home" action="{!obr1}">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        iframe#popupiframe_A {
+        height: 32em;
+        width: 100%;
+        }
+        #alert_content{
+        /*height:10em;*/
+        overflow-y:auto;
+        }
+        .alert.alert-warning1 {
+        background-color: #5ac3ea !important;
+        border: none;
+        color: #fff;
+        }
+        
+        @keyframes blink {
+        0% {
+        opacity: 0.4;
+        }
+        50% {
+        opacity: 0.8;
+        }
+        80% {
+        opacity: 1;
+        }
+        100% {
+        opacity: 1;
+        }
+        }
+        
+        .blinkAny {
+        animation: blink 2s infinite;
+        }
+        /*for Flip card css */
+        .flipCard {
+        animation: flipH 5s 1 alternate ease-in-out;
+        cursor:pointer !important;
+        -webkit-animation: flipH 5s infinite alternate ease-in-out;
+        }
+        .flipCard:hover {
+        animation-play-state: paused;
+        }
+        @keyframes flipH {
+        0% { transform: rotateX(0deg); }
+        20% { transform: rotateX(0deg);}
+        40% { transform: rotateX(0deg);}
+        80% { transform: rotateX(-180deg);}
+        100% { transform: rotateX(-180deg);}
+        }
+        
+        .back {
+        position: relative;
+        z-index: 0;
+        transform: rotateX(-180deg);
+        backface-visibility: hidden;
+        }
+        
+        .front {
+        z-index: 1;
+        backface-visibility: hidden;
+        position: absolute;
+        max-width:97.4% !important;
+        }
+        /*for Flip card css */
+        
+        @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+        span.comNum{overflow:hidden;display:block;}
+        .request-description{max-width:20em !important;}
+        }
+        
+        
+        .frmErrMsg {
+        color: #E62D38;
+        font-size: 1rem !important;
+        position: absolute;
+        font-weight: 500;
+        }
+        .badge.badge-status-urgent{
+        background-color: #D54040 !important;
+        }
+        .text-grey{
+        color: #9B9B9B !important;
+        }
+        
+        div#navbar_mobile_searchform1{
+        position: relative;
+        padding: 0rem;
+        /*background: #67486c;*/
+        border: 0.5px solid rgb(192 13 13 / 83%);
+        border-radius: 0.5rem;
+        }
+        .mobile-only {
+        background-color: #fff;
+        padding: 1em;
+        border-radius: 1em;
+        margin: 0.5em;
+        }
+        .mobile-services .ser {background-color: #fff;margin: 0.9em;padding: 1em;border-radius: 1em;/*border: 1px solid #66486c;*/}
+        .mobile-services .ser i{
+        font-size: 4.5em;
+        display: block;
+        padding-bottom: 0.3em;
+        }
+        .mobile-services .ser a {
+        font-size: 0.7em;
+        }
+        .counter-panel.mobile-services {
+        min-height: 11rem !important;
+        }
+        @media only screen and (min-width: 450px) {
+        .mobIcons {display:none;}
+        }
+        @media only screen and (max-width: 450px) {
+        .footer-links a {
+        font-size: 0.9em;
+        }
+        }
+        #preloader {
+        position: fixed;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        align-items: center;
+        left: 0;
+        top: 0;
+        z-index: 9999;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        background: #e8e9ec;
+        
+        }
+        .loader1 {
+        width: 200px;
+        height: 50px;
+        background-repeat: no-repeat;
+        }
+        i.cBtns {
+        font-size: 4rem;
+        }
+        
+        @media only screen and (max-width: 450px) {
+        i.cBtns  {
+        display: block !important;
+        }
+        button.cBtns  {
+        display: none !important;
+        }
+        }
+        
+        i.cBtns span {
+        display: none !important;
+        }
+        
+    </style>
+    <link rel="icon" href="./favicon.ico" />
+    <!-- vendors -->
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.css')}" />
+    
+    <!-- icons -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/fonts/icomoon/style.css')}" />
+    <!-- main css -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/style.css')}" />
+    
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Media City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dmc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Internet City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dic.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai International Academic City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dia.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Knowledge Park'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dkp.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Outsource City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-doc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Studio City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Design District'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-ddd.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Production City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dpc.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Science Park'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dsp.css') }" />
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!A.Prk__c == 'Dubai Industrial City'}">
+        <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css/brand-dic2.css') }" />
+    </apex:outputPanel>
+    <!-- {! IF(A.Prk__c == "Dubai Studio City", "URLFOR($Resource.assets_NUI, '/css/theme.css?v=1.0.0-6')") }  <link rel="stylesheet" href="./assets/css/theme.css?v=1.0.0-6" />-->
+    
+    <style>
+        span.comNum {
+        line-break: anywhere;
+        }
+        .nav-tabs .nav-link.active > span > small {
+        color: rgba(62, 136, 140, 0.65);
+        }
+        .nav-tabs .nav-link > span > small {
+        margin-left: auto;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 500;
+        font-size: 0.875em;
+        color: rgba(255, 255, 255, 0.65);
+        }
+        .nav-tabs .nav-link > span {
+        margin-left: auto;
+        }
+        .counter-panel,.panel {
+        width: 31rem !important;
+        }
+        
+        
+        
+        /*check with srini -mkr*/
+        .panel-request.panel-request-options{
+        max-height: 363px !important;
+        overflow-y: auto;
+        }
+        
+        .notifications-dropdown .notifications-dropdown-body{
+        max-height: 400px !important;
+        overflow: auto !important;
+        }
+        .notifications-dropdown .notifications-dropdown-body .notification-title{
+        font-weight: normal;
+        }
+    </style>
+    <script>
+    var enjoyhint_instance;
+    var enjoyhint_script_steps;
+    enjoyhint_script_steps = [{"next .tips-people":"Manage Employees, Visas and related details"},{"next .tips-company":"Manage license, lease, portal deposits and other related services"},{"next .tips-request":"Track and follow up on-going and past requests"},{"next .tips-request-button":"Request for new services"},{"next .tips-deposit":"Keep a check on your available portal deposit"},{"next .tips-employee-visas":"Track available and used visa slots"},{"next .tips-shortcuts":"Access most frequently used services across the portal"},{"next .tips-tab-actions":"Action pending requests and tasks","skipButton":{"className":"mySkip","text":"Skip"}},{"selector":".tips-tab-drafts","event":"next","description":"Access previously saved drafts ","skipButton":{"className":"mySkip","text":"Done"}}];
+    </script>
+    <!-- Global site tag (gtag.js) - Google Analytics Starts-->
+    <script src="https://www.googletagmanager.com/gtag/js?id=UA-153383501-1">
+    </script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    
+    gtag('config', 'UA-153383501-1');
+    </script>
+    <!--- Google Analytics ends-->
+    <body>
+        <apex:form >
+            <apex:actionFunction name="checkOpi" action="{!checkOraclePartyID}"  reRender="dummy" oncomplete="afterCheckingOPI();" />
+            <apex:actionFunction name="callObr" action="{!obr1}"  reRender="dummy" />
+            <apex:outputPanel id="dummy">
+                <script>
+                function afterCheckingOPI(){
+                    console.log('re rendered && and opi is not available available -- '+'{!noOpi}');
+                    if('{!noOpi}'=='true'){
+                        $('#modal_missing_opi').modal('hide').on('hidden.bs.modal',function(){
+                            $('#modal_relationship_manager').modal('show');
+                        });
+                    }
+                }
+                
+                </script>
+            </apex:outputPanel>
+        </apex:form>
+        <apex:outputText rendered="{!!noOpi}">
+            
+            <div id="main">
+                <div class="site-header-wrapper site-header-full">
+                    <div class="container">
+                        <div class="top-navbar">
+                            <div class="top-navbar-user mr-auto">
+                                Welcome, {!U.FirstName}&nbsp;{!U.LastName}!
+                            </div>
+                            <ul class="top-navbar-menu">
+                                <li><a href="/MyAccount">My Account</a></li>
+                                <li><a class="" href="/secur/logout.jsp">Logout</a></li>
+                            </ul>
+                        </div>
+                        <!-- .top-navbar -->
+                        <div class="main-header">
+                            <!-- logo 1  -->
+                            <div class="main-header-logo-left">
+                                <a href="#" class="header-brand">
+                                    <!-- <img src="./assets/images/logo.jpg" alt=""> -->
+                                </a>
+                            </div>
+                            
+                            <!-- title  -->
+                            <div class="main-header-title-wrapper font-helvetica-cond font-weight-medium">
+                                <h2 class="main-header-title">{!A.name}</h2><div class="initialism main-header-subtitle">
+                                <apex:outputLabel rendered="{!IF(AND(A.lcedt__c!=null,A.lcedt__c<TODAY()),true,false)}" styleClass="badge-status badge-status-expired initialism" value="License Expired"></apex:outputLabel>
+                                <apex:outputLabel rendered="{!IF(AND(A.lcedt__c!=null, A.lcedt__c<TODAY()),false,true)}">
+                                    <apex:outputLabel rendered="{!IF(contains(A.lcsta__c,'Issued'),true,false)}" styleClass="badge-status badge-status-active initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                    <apex:outputLabel rendered="{!IF(contains(A.lcsta__c,'Cancelled'),true,false)}" styleClass="badge-status badge-status-cancelled initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                    <apex:outputLabel rendered="{!IF(contains(A.lcsta__c,'Renewal'),true,false)}" styleClass="badge-status badge-status-underrenewal initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                    <apex:outputLabel rendered="{!IF(contains(A.lcsta__c,'Expired'),true,false)}" styleClass="badge-status badge-status-expired initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                    <apex:outputLabel rendered="{!IF(contains(A.lcsta__c,'Approved'),true,false)}" styleClass="badge-status badge-status-approved initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                    <apex:outputLabel rendered="{!IF(contains('License Under Renewal,License Issued,License Approved,License Cancelled',A.lcsta__c),false,true)}" styleClass="badge-status badge-status-default initialism" value="{!A.lcsta__c}"></apex:outputLabel>
+                                </apex:outputLabel>
+                                <!--Renewal Date {!A.lcrndt__c}-->
+                                <span class="initialism">Next Renewal </span>{!A.licexdt__c}
+                                </div>
+                                <!--<div class="main-header-subtitle">
+<span class="badge-status badge-status-active">{!A.lcsta__c}</span>
+Next Renewal {!A.lcrndt__c}
+</div>-->
+                            </div>
+                            
+                            <!-- search form  -->
+                            <form class="main-header-search-form" id="searchForm" action="apex/soslSearch">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="sos" required='true' id="sos" placeholder="Search SR / passport number / name" />
+                                    <div class="input-group-append">
+                                        <button class="btn" type="Submit">
+                                            <div class="icon-search"></div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <!-- notification  -->
+                            <c:notifications notificationRqs3="{!notificationRqs3}" />
+                            
+                            <!-- .main-header-notifications -->
+                            
+                            <!-- logo 2  -->
+                            <div class="main-header-logo-right">
+                                <apex:image value="{!URLFOR($Resource.assets_NUI,'images/logo-axs.png')}"/>
+                            </div>
+                        </div>
+                        <!-- .main-header -->
+                        <div class="main-navbar">
+                            <ul class="main-navbar-nav">
+                                <li class="active"><a style="pointer-events:none;" href="/gpm"><i class="icon-dashboard"></i>DASHBOARD</a></li>
+                                <li style="" class="tips-people"><a href="/gconlist"><i class="icon-conference-call"></i>PEOPLE &amp; VISAS</a></li>
+                                <li class="tips-company"><a href="/pageCompanyInfo"><i class="icon-safe-ok"></i>{!IF(A.Legal_Framework__c == 'Freelancer' , 'MY INFO' , 'COMPANY INFO')}</a></li>
+                                <li class="tips-request"><a href="/pagepastrequests"><i class="icon-order-history"></i>REQUESTS</a></li>
+                                <li style="{!IF(A.Legal_Framework__c == 'Freelancer' , 'display:none;' , '')}"><a href="/grp_ReportNonVisaService"><i class="icon-rebalance-portfolio"></i>REPORTS</a></li>
+                                <apex:outputText rendered="{!NOT(ISBLANK(U.seg__c))}">
+                                    <li >
+                                        <a href="{!IF(AND(!ISNULL(A.Legal_Framework__c),CONTAINS(A.Legal_Framework__c,'Freelancer')),'https://axs.force.com/services/oauth2/authorize?response_type=code&client_id=3MVG9WtWSKUDG.x7qq2fF80sJFIGOtLNkhSAew_uJEBQUVsO6pbwmrXR5UanBRF.F6xgT4SrdusgoflMc4Ivj&redirect_uri=https://marketplace.ae/uae-en/login/loginsalesforce&state=https://marketplace.ae/&sfdc_community_url=https://axs.force.com.com&sfdc_community_id=0DB200000008PWIGA2','https://marketplace.ae/')}" target="_new"><i class="icon-market-square"></i>MARKETPLACE</a><!-- <span class="nav-tag">NEW</span>-->
+                                    </li>
+                                </apex:outputText>
+                            </ul>
+                            
+                            <div class="ml-auto pr-3">
+                                <apex:outputPanel rendered="{!AND(A.Type!='Customer-DED',OR(A.lcsta__c='License Issued',
+                                                            A.lcsta__c='License Under Renewal',
+                                                            A.lcsta__c='License Under Cancellation',
+                                                            A.lcsta__c='License Under Suspension'))}" ><!--rendered="{!OR(A.lcsta__c='License Issued',A.lcsta__c='License Under Renewal')}"-->
+                                    <button class="btn btn-black btn-new-request open-request-modal tips-request-button">NEW REQUEST
+                                        &nbsp;<i class="icon-add"></i>
+                                    </button>
+                                </apex:outputPanel>
+                                <!--<apex:outputPanel rendered="{!A.lcsta__c='License Under Cancellation'}">
+<button class="btn btn-black btn-new-request menu_under_cancellation tips-request-button">NEW REQUEST
+&nbsp;<i class="icon-add"></i>
+</button>
+</apex:outputPanel>-->
+                            </div>
+                            
+                        </div>
+                        <!-- .main-navbar -->
+                        
+                        <!-- .main-navbar-mobile starts -->
+                        <div class="main-navbar-mobile">
+                            <div class="main-navbar-mobile-bar">
+                                <!--<h4 class="mr-auto" style="font-size: 1.2em;">Welcome, {!U.FirstName}&nbsp;{!U.LastName}!</h4>-->
+                                <a href="#" class="mr-auto navbar-mobile-dropdown-toggle" data-target="#navbar_mobile_menu">
+                                    <i class="icon-close"></i>
+                                    <i class="icon-menu"></i>
+                                </a>
+                                <!-- notification  -->
+                                <a href="#" class="mr-2 navbar-mobile-dropdown-toggle" data-target="#navbar_mobile_notifications">
+                                    <i class="icon-appointment-reminders"></i>
+                                    <i class="icon-close"></i>
+                                    <span class="navbar-badge">{!notificationRqs3.size}</span>
+                                </a>
+                                
+                                <a href="#" class="ml-4 d-none d-lg-block d-xl-block d-sm-block navbar-mobile-dropdown-toggle" data-target="#navbar_mobile_searchform">
+                                    <i class="icon-search"></i>
+                                    <i class="icon-close"></i>
+                                </a>
+                            </div>
+                            
+                            <!-- #navbar_mobile_menu -->
+                            <div id="navbar_mobile_menu" class="navbar-mobile-dropdown navbar-mobile-menu">
+                                
+                                <h4>Welcome, {!U.FirstName}&nbsp;{!U.LastName}!</h4>
+                                <!-- <p><a href="#">CONNECT</a></p> -->
+                                <p><a href="/MyAccount">My Account</a></p>
+                                <p><a class="" href="/secur/logout.jsp">Logout</a></p>
+                                
+                                <ul class="navbar-mobile-nav">
+                                    <li class="active"><a style="pointer-events:none;" href="/gpm"><i class="icon icon-dashboard"></i>DASHBOARD</a></li>
+                                    <li style="" class="tips-people"><a href="/gconlist"><i class="icon icon-conference-call"></i>PEOPLE &amp; VISAS</a></li>
+                                    <li class="tips-company"><a href="/pageCompanyInfo"><i class="icon icon-safe-ok"></i>{!IF(A.Legal_Framework__c == 'Freelancer' , 'MY INFO' , 'COMPANY INFO')}</a></li>
+                                    <li class="tips-request"><a href="/pagepastrequests"><i class="icon icon-order-history"></i>REQUESTS</a></li>
+                                    <li style="{!IF(A.Legal_Framework__c == 'Freelancer' , 'display:none;' , '')}"><a href="/grp_ReportNonVisaService"><i class="icon icon-rebalance-portfolio"></i>REPORTS</a></li>
+                                    <apex:outputText rendered="{!NOT(ISBLANK(U.seg__c))}">
+                                        <li >
+                                            <a href="{!IF(AND(!ISNULL(A.Legal_Framework__c),CONTAINS(A.Legal_Framework__c,'Freelancer')),'https://axs.force.com/services/oauth2/authorize?response_type=code&client_id=3MVG9WtWSKUDG.x7qq2fF80sJFIGOtLNkhSAew_uJEBQUVsO6pbwmrXR5UanBRF.F6xgT4SrdusgoflMc4Ivj&redirect_uri=https://marketplace.ae/uae-en/login/loginsalesforce&state=https://marketplace.ae/&sfdc_community_url=https://axs.force.com.com&sfdc_community_id=0DB200000008PWIGA2','https://marketplace.ae/')}" target="_new"><i class="icon icon-market-square"></i>MARKETPLACE</a>
+                                        </li>
+                                    </apex:outputText>
+                                </ul>
+                                <!-- .navbar-mobile-nav -->
+                                
+                                <div class="mobile-nav-separator mt-0"></div>
+                                
+                                <apex:outputPanel rendered="{!AND(A.Type!='Customer-DED',OR(A.lcsta__c='License Issued',
+                                                            A.lcsta__c='License Under Renewal',
+                                                            A.lcsta__c='License Under Cancellation',
+                                                            A.lcsta__c='License Under Suspension'))}" ><!--rendered="{!OR(A.lcsta__c='License Issued',A.lcsta__c='License Under Renewal')}"-->
+                                    <button class="d-none d-sm-block btn btn-black btn-new-request mb-2 open-request-modal">
+                                        NEW REQUEST &nbsp;<i class="icon-add"></i>
+                                    </button>
+                                </apex:outputPanel>
+                                
+                            </div>
+                            <!-- end #navbar_mobile_menu -->
+                            <!-- #navbar_mobile_notifications -->
+                            <div id="navbar_mobile_notifications" class="navbar-mobile-dropdown notifications-dropdown">
+                                <div class="notifications-dropdown-header">
+                                    <span>{!notificationRqs3.size} NEW NOTIFICATIONS</span>
+                                    <!--<a href="/pagepastrequests?flg=pndg" target="_blank"><strong>VIEW ALL</strong></a>-->
+                                </div>
+                                <div class="notifications-dropdown-body custom-scroll">
+                                    <div class="notification-dropdown-list">
+                                        <apex:repeat value="{!notificationRqs3}" var="n">
+                                            <a href="/{!n.id}" target="_blank" class="notification-dropdown-item unread">
+                                                <div class="notification-title"><span class="bull">&bull; </span>Service Request {!n.Name}</div>
+                                                <div class="notification-body" adhval='{!n.xadh__c}'>
+                                                    {!n.bamsgs__c}
+                                                </div>
+                                                <div class="notification-time">
+                                                    <apex:outputField value="{!n.LastModifiedDate}" />
+                                                </div>
+                                            </a>
+                                        </apex:repeat>
+                                        <!-- .notification-dropdown-item -->
+                                    </div>
+                                    <!-- .notification-dropdown-list -->
+                                </div>
+                                <!-- .notifications-dropdown-body -->
+                            </div>
+                            <!-- end #navbar_mobile_notifications -->
+                            <!-- #navbar_mobile_searchform -->
+                            <div id="navbar_mobile_searchform" class="navbar-mobile-dropdown">
+                                <form class="main-header-search-form" id="searchForm" action="apex/soslSearch">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="sos" required='true' id="sos" placeholder="Search SR / passport number / name" />
+                                        <div class="input-group-append">
+                                            <button class="btn" type="Submit">
+                                                <div class="icon-search"></div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <!-- end #navbar_mobile_searchform -->
+                            
+                        </div>
+                        <apex:outputText rendered="false">
+                            <div class="alert alert-danger alert-icon align-items-center mt-4 py-4">
+                                <div class="alert-body"><i class="alert-icon icon-exclamation"></i><h2>
+                                    Important Update
+                                    </h2>
+                                    Please note that services related to the Dubai Development Authority are currently unavailable due to a system outage. We will keep you posted with further updates.
+                                    <br />
+                                    We apologize for the inconvenience and appreciate your patience.
+                                </div>
+                            </div>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!A.Legal_Framework__c != 'Freelancer'}">
+                            <div class="my-3">
+                                <img style="border-radius: 0.25rem;cursor:pointer;" src="{!URLFOR($Resource.GV_Banner)}" onclick='window.open("/gvchk?sid=a0L2y00000lVlhjEAC","_blank")' />
+                            </div>
+                        </apex:outputText>
+                        <apex:outputLabel rendered="{!A.Legal_Framework__c == 'Freelancer'}">
+                            <div class="alert alert-warning alert-icon align-items-center mt-4 py-4">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">The ‘New Employee Visa – Freelancer’ and ‘Renewal Employee Visa – Freelancer’ services are currently unavailable. For further enquiries, please email support@axs.ae.
+                                </div>
+                            </div>
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="false">
+                            <div class="alert alert-warning alert-icon align-items-center mt-4 py-4">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">To address short-term employment needs, you can now apply for the 'Mission Visa'! The Mission Visa is a short-term work visa that allows applicants to undertake temporary employment. These visas are valid for three months from the date of entry or status change and can be extended for an additional three months before expiration.
+                                </div>
+                            </div>
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="false">
+                            <div class="alert alert-warning1 alert-icon align-items-center mt-4 py-4">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">On November 19<sup>th</sup>, from 7:00 am to 9:00 am, our portal will be temporarily unavailable for maintenance. We apologize for any inconvenience this may cause.
+                                    
+                                </div>
+                            </div>
+                        </apex:outputLabel>
+                        <apex:outputLabel rendered="false">
+                            <div class="alert alert-danger alert-icon align-items-center mt-4 bg-primary">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">
+                                    In compliance with the Private Companies Regulations of 2016, FZLLCs and branch offices are required to submit their most recent Audited Financial Statement along with the summary sheet (as per DDA template) within six (6) months from the end of the financial year.                                    
+                                </div>
+                                <div class="alert-actions">
+                                    <a href="/grqsdr?sid=a292y0000002Ch9" target='_blank' class="btn btn-outline">SUBMIT</a>
+                                </div>
+                            </div>
+                        </apex:outputLabel>
+                        
+                        <apex:outputPanel rendered="false">
+                            <div class="alert alert-danger alert-icon align-items-center mt-4">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">
+                                    Members Information is Missing / Incorrect.  Please click on update button
+                                    
+                                </div>
+                                <div class="alert-actions">
+                                    <a href="/custProfileUpdate?sid=a0L2y00000lWdrEEAS" target='_blank' class="btn btn-outline">UPDATE</a>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <!-- .main-navbar-mobile ends -->
+                        <apex:outputLabel style="width:100%" rendered="{!if((A.snc__c != null),true,false)}">
+                            <div class="alert alert-danger alert-icon align-items-center mt-4">
+                                <i class="alert-icon icon-exclamation"></i>
+                                <div class="alert-body">
+                                    <!--Your account currently has sanctions against it. This may prevent you from accessing certain functions or perform regular services on the portal. -->
+                                    <apex:outputPanel rendered="{!mScSize>1}">
+                                        <div id="allSnc" style='display:none'>
+                                            <apex:repeat value="{!mSnc}" var="mSk" >
+                                                <li>  {!mSnc[mSk]} </li>  
+                                            </apex:repeat> 
+                                        </div>
+                                        <span id='sncWarn'>You have more than one sanctions imposed on your account, please click on <b>View Details</b></span>
+                                        
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!mScSize=1}">
+                                        <apex:repeat value="{!mSnc}" var="mSk" > 
+                                            <p>  {!mSnc[mSk]} </p> 
+                                        </apex:repeat>
+                                        
+                                    </apex:outputPanel>
+                                </div>
+                                <apex:outputPanel rendered="{!mScSize>1}">
+                                    <div class="alert-actions">
+                                        <button id='sncBtn' class="btn btn-outline" onclick='showAllSnc()'>VIEW DETAILS</button>
+                                    </div>
+                                </apex:outputPanel>
+                            </div>
+                        </apex:outputLabel>
+                        
+                        
+                        
+                        
+                       
+                        <div class="pt-3" style="{!IF(OR(A.Legal_Framework__c = 'Freelancer',A.Type='Customer-DED') , 'display:none' , '')}">
+                            <div data-swiper-autoplay="2000" class="swiper-container swiper-counter-container" id="{!if(AND(el['stdElg']!=null,el['stdElg']>0,A.vetst__c>0),'dashboard_counter_slider_5',if(OR(AND(el['stdElg']!=null,el['stdElg']>0),A.vetst__c>0),'dashboard_counter_slider','dashboard_counter_slider_3'))}">
+                                <div class="swiper-wrapper">
+                                    <apex:outputPanel styleClass="swiper-slide" rendered="true">
+                                        <!-- <div class="swiper-slide">-->
+                                        <apex:outputText rendered="{!A.bgnr__c}">
+                                            <div class="counter-panel tips-deposit" data-aos="zoom-in" data-aos-once="true">
+                                                <i class="text-primary counter-icon icon-money-2" style="font-size: 3.25rem;"></i>
+                                                <div class="counter-title">AVAILABLE DEPOSIT (AED)
+                                                    <i class="icon-plus-circle mobIcons ml-2" v="Portal Deposit" h="/grqn?c=tad"></i>
+                                                </div>
+                                                <div class="counter-value" title="{!A.adb__c}"> 
+                                                    <apex:outputText styleClass="comNum" escape="true" value="{!A.adb__c}">
+                                                    </apex:outputText>
+                                                </div>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!!A.bgnr__c}">
+                                            <div class="counter-panel tips-deposit" data-aos="zoom-in" data-aos-once="true">
+                                                <i class="text-primary counter-icon icon-money-2" style="font-size: 3.25rem;"></i>
+                                                <div class="counter-title" style="margin-bottom: 0.5rem;">AVAILABLE DEPOSIT (AED)
+                                                    <i class="icon-plus-circle mobIcons ml-2" v="Portal Deposit" h="/grqn?c=tad"></i>
+                                                </div>
+                                                <div class="counter-subvalue" style="margin-top: 0rem;" title="{!A.adb__c}"> 
+                                                    <apex:outputText styleClass="comNum" escape="true" value="{!A.adb__c}">
+                                                    </apex:outputText>
+                                                </div>
+                                                <div class="separator-dashed" style="margin: 0.25rem 0;"></div>
+                                                <div class="counter-title" style="margin-bottom: 0.5rem;">
+                                                    {!IF(A.bg__c>=125000,'','AVAILABLE ')}BANK GUARANTEE (AED)
+                                                    <i class="icon-plus-circle mobIcons ml-2" style="{!IF(A.bg__c>=125000,'display:none;','')}" v="Bank Guarantee Deposit" h="/grqn?c=tad"></i>
+                                                </div>
+                                                <div class="counter-subvalue" style="margin-top: 0rem;" title="{!IF(A.bg__c>=125000,A.bg__c,A.bgb__c)}"> 
+                                                    <apex:outputText styleClass="comNum" escape="true" value="{!IF(A.bg__c>=125000,A.bg__c,A.bgb__c)}">
+                                                    </apex:outputText>
+                                                </div>                                      
+                                            </div>
+                                        </apex:outputText>  
+                                        <!-- </div> --->
+                                        
+                                    </apex:outputPanel>
+                                    <!-- .swiper-slide -->
+                                    <apex:outputPanel styleClass="swiper-slide" rendered="true">
+                                        <!-- <div class="swiper-slide"> -->
+                                        <div class="counter-panel tips-employee-visas" data-aos="zoom-in" data-aos-once="true">
+                                            <i class="text-primary counter-icon icon-conference-call"></i>
+                                            <div class="counter-title">AVAILABLE EMPLOYEE VISAS</div>
+                                            <div class="counter-value">{!A.vbtemp__c}</div>
+                                            <div class="counter-subvalue">{!A.vctemp__c+A.voep__c} <span>USED</span> / {!A.vetemp__c} <span>TOTAL</span></div>
+                                            
+                                        </div>
+                                        <!-- </div> -->
+                                    </apex:outputPanel>
+                                    <apex:outputPanel styleClass="swiper-slide" rendered="{!A.vetst__c>0}">
+                                        <!-- <div class="swiper-slide"> -->
+                                        <div class="counter-panel" data-aos="zoom-in" data-aos-once="true">
+                                            <i class="text-primary counter-icon icon-student"></i>
+                                            <div class="counter-title">AVAILABLE STUDENT VISAS</div>
+                                            <div class="counter-value">{!A.vbtst__c}</div>
+                                            <div class="counter-subvalue">{!A.vctst__c} <span>USED</span> / {!A.vetst__c} <span>TOTAL</span></div>
+                                        </div>
+                                        <!-- </div> -->
+                                    </apex:outputPanel>
+                                    <!-- .swiper-slide --> 
+                                    <apex:outputPanel styleClass="swiper-slide" rendered="{!if(OR(AND(el['stdElg']!=null,(el['stdElg'] +  el['AddElg'])>0),AND(el['prkAvl']!=null,el['prkAvl']>0)),true,false)}"><!-- rendered="{!if(OR(AND(el['stdElg']!=null,(el['stdElg'] +  el['AddElg'])>0),AND(el['prkAvl']!=null,el['prkAvl']>0)),true,false)}"><!--{!if(AND(el['stdElg']!=null,(el['stdElg'] +  el['AddElg'])>0),true,false)}-->
+                                        <!-- <div class="swiper-slide"> -->
+                                        <div class="counter-panel tips-parking-slots" data-aos="zoom-in" data-aos-once="true">
+                                            <i class="text-primary counter-icon icon-parking"></i>
+                                            <div class="counter-title">AVAILABLE PARKING ACCESS
+                                                <elem style="{!IF(A.lcsta__c='License Under Cancellation','display:none;','')}" onclick="goToParking();"><i class="text-primary blinkAny icon-right ml-2 pointer"></i></elem>
+                                            </div>
+                                            <div class="counter-value">{!el['stdElg'] +  el['AddElg'] -el['paidUtlzd'] - el['freeUtlzd']}</div>
+                                            <div class="counter-subvalue">{!el['tUtlzd'] } <span>USED</span> / {!el['stdElg'] + el['AddElg']} <span>TOTAL</span></div>
+                                        </div>
+                                        <script>
+                                        enjoyhint_script_steps = [{"next .tips-people":"Manage Employees, Visas and related details"},{"next .tips-company":"Manage license, lease, portal deposits and other related services"},{"next .tips-request":"Track and follow up on-going and past requests"},{"next .tips-request-button":"Request for new services"},{"next .tips-deposit":"Keep a check on your available portal deposit"},{"next .tips-employee-visas":"Track available and used visa slots"},{"next .tips-parking-slots":"Manage available and used parking spaces"},{"next .tips-shortcuts":"Access most frequently used services across the portal"},{"next .tips-tab-actions":"Action pending requests and tasks","skipButton":{"className":"mySkip","text":"Skip"}},{"selector":".tips-tab-drafts","event":"next","description":"Access previously saved drafts ","skipButton":{"className":"mySkip","text":"Done"}}];
+                                        </script>
+                                        <!-- </div> -->
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!A.Type!='Customer-DED'}">
+                                        <div class="pt-3" style="{!IF(A.lcsta__c='License Cancelled' , '','display:none')}">
+                                            <div class="swiper-slide d-none d-lg-block d-xl-block d-sm-block">
+                                                <div class="frequently-used-services panel tips-shortcuts" data-aos="zoom-in" data-aos-once="true">
+                                                    <h4>SHORTCUTS</h4>
+                                                    <div class="list-group" data-aos="zoom-in" data-aos-once="true">
+                                                        <a href="/grfb?sid=a0LIi000000sYDmMAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            UPDATE COMPANY BANK ACCOUNT INFO<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/rf?id={!a.id}" target="_blank" class="list-group-item list-group-item-action">
+                                                            REQUEST REFUND FORM<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqn?c=tad" class="list-group-item list-group-item-action">
+                                                            TOP-UP PORTAL DEPOSIT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!A.Type!='Customer-DED'}">
+                                        <div class="pt-3" style="{!IF(A.lcsta__c='License Cancelled' , '','display:none')}">
+                                            <div class="swiper-slide d-none d-lg-block d-xl-block d-sm-block">
+                                                <div class="frequently-used-services panel tips-shortcuts" data-aos="zoom-in" data-aos-once="true">
+                                                    <h4>SHORTCUTS</h4>
+                                                    <div class="list-group" data-aos="zoom-in" data-aos-once="true">
+                                                        <a href="/grfb?sid=a0LIi000000sYDmMAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            UPDATE COMPANY BANK ACCOUNT INFO<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/rf?id={!a.id}" target="_blank" class="list-group-item list-group-item-action">
+                                                            REQUEST REFUND FORM<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqn?c=tad" class="list-group-item list-group-item-action">
+                                                            TOP-UP PORTAL DEPOSIT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="pt-3" style="{!IF(A.lcsta__c='License Cancelled','display:none','')}">
+                                        <div class="swiper-slide d-none d-lg-block d-xl-block d-sm-block">
+                                            <div class="frequently-used-services panel tips-shortcuts" data-aos="zoom-in" data-aos-once="true">
+                                                <h4>SHORTCUTS</h4>
+                                                <div class="list-group" data-aos="zoom-in" data-aos-once="true">
+                                                    <apex:outputPanel rendered="{!OR(A.lcsta__c='License Under Cancellation',A.lcsta__c='License Under Suspension')}">
+                                                        <a href="/grqsdr?sid=a292y0000008XYiAAM" class="list-group-item list-group-item-action">
+                                                            CANCEL EMPLOYEE VISA<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                            <a href="/grqsdr?sid=a292y0000008XYMAA2" class="list-group-item list-group-item-action">
+                                                                CANCEL STUDENT VISA<i class="icon-right mt-1 float-right"></i>
+                                                            </a>
+                                                        </apex:outputText>
+                                                        <a href="/grqsdr?sid=a292y0000008XXWAA2" class="list-group-item list-group-item-action">
+                                                            CANCEL NON-SPONSORED ID CARD<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqsdr?sid=a292y0000008XXaAAM" class="list-group-item list-group-item-action">
+                                                            EMPLOYEE RELEASE SIGN-OUT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!AND(A.lcsta__c!='License Under Cancellation',A.lcsta__c!='License Under Suspension')}">
+                                                        <!-- Start -> Mission Visa - Sorna - 2024 Sep 17 -->
+                                                        <a href="/grqsdr?sid=a29Ii0000000Hpm" class="list-group-item list-group-item-action">
+                                                            APPLY FOR MISSION VISA<sup class="text-primary blinkAny">New</sup><i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <!-- End -> Mission Visa - Sorna - 2024 Sep 17 -->   
+                                                        <a href="/grqsdr?sid=a292y0000008XY6" class="list-group-item list-group-item-action">
+                                                            APPLY FOR VFS ATTESTATION<sup class="text-primary blinkAny">New</sup><i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqn?c=tad" class="list-group-item list-group-item-action">
+                                                            TOP-UP PORTAL DEPOSIT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <apex:outputText rendered="{! If(AND(rq != null,rq.id != null,OR(rq.STA__c=='Draft',rq.STA__c=='Open',rq.STA__c=='Under Review')),true,false)}">
+                                                            <a href="/{!rq.id}" class="list-group-item list-group-item-action">
+                                                                {!IF(A.Legal_Framework__c == 'Freelancer' , 'RENEW FREELANCE PERMIT' , 'RENEW LICENSE')}
+                                                                <i class="icon-right mt-1 float-right"></i>
+                                                            </a>
+                                                        </apex:outputText>
+                                                        <a href="/grqsdr?sid=a292y0000008XYAAA2" class="list-group-item list-group-item-action">
+                                                            APPLY FOR NEW EMPLOYEE VISA<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqsdr?sid=a292y0000008XYGAA2" class="list-group-item list-group-item-action">
+                                                            REQUEST FOR PERSONAL LETTER <i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!AND(A.Type='Customer-DED',A.lcsta__c!='License Cancelled')}">
+                                        <div class="pt-3">
+                                            <div class="swiper-slide d-none d-lg-block d-xl-block d-sm-block">
+                                                <div class="frequently-used-services panel tips-shortcuts" data-aos="zoom-in" data-aos-once="true">
+                                                    <h4>SHORTCUTS</h4>
+                                                    <div class="list-group" data-aos="zoom-in" data-aos-once="true">
+                                                        <a href="/grfb?sid=a0LIi000000sYDmMAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            UPDATE COMPANY BANK ACCOUNT INFO<i class="test icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqsdr?sid=a292y0000008XXyAAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            REQUEST BUILDING ACCESS PERMIT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                    
+                                    <!-- .swiper-slide -->
+                                    
+                                    <!-- .swiper-slide -->
+                                </div>
+                                <!-- .swiper-wrapper -->
+                                <div class="swiper-pagination"></div>
+                                
+                            </div>
+                            
+                            
+                        </div>
+                        <div class="pt-3" style="{!IF(A.Type='Customer-DED','', 'display:none')}">
+                            <div data-swiper-autoplay="2000" class="swiper-container swiper-counter-container" id="{!if(AND(el['stdElg']!=null,el['stdElg']>0,A.vetst__c>0),'dashboard_counter_slider_5',if(OR(AND(el['stdElg']!=null,el['stdElg']>0),A.vetst__c>0),'dashboard_counter_slider','dashboard_counter_slider_3'))}">
+                                <div class="swiper-wrapper">
+                                    <apex:outputPanel rendered="{!AND(A.Type='Customer-DED',A.lcsta__c!='License Cancelled')}">
+                                        <div class="pt-3">
+                                            <div class="swiper-slide d-none d-lg-block d-xl-block d-sm-block">
+                                                <div class="frequently-used-services panel tips-shortcuts" data-aos="zoom-in" data-aos-once="true">
+                                                    <h4>SHORTCUTS</h4>
+                                                    <div class="list-group" data-aos="zoom-in" data-aos-once="true">
+                                                        <a href="/grfb?sid=a0LIi000000sYDmMAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            UPDATE COMPANY BANK ACCOUNT INFO<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                        <a href="/grqsdr?sid=a292y0000008XXyAAM"  target="_blank" class="list-group-item list-group-item-action">
+                                                            REQUEST BUILDING ACCESS PERMIT<i class="icon-right mt-1 float-right"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- .container -->
+                </div>
+                
+                <!-- .site-header-wrapper -->
+                <div class="mobile-only d-lg-none d-xl-none d-sm-none">
+                    <div class="counter-panel mobile-services" style="background-color:#fff;">
+                        <div class="row">
+                            <div class="col-3 ser brnd-border">
+                                <a href="/grqsdr?sid=a292y0000008XYGAA2">
+                                    <i class="icon-visa-immigration text-primary"></i>
+                                    PERSONAL LETTER
+                                </a>
+                            </div>
+                            <div class="col-3 ser brnd-border">
+                                <a href="/grqn?c=tad">
+                                    <i class="text-primary icon-money-2"></i>
+                                    PORTAL DEPOSIT
+                                </a>
+                            </div>
+                            <div class="col-3 ser brnd-border">
+                                <a href="/grqsdr?sid=a292y0000008XYFAA2">
+                                    <i class="icon-corporate text-primary"></i>
+                                    CORPORATE LETTER
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tabs accordion-tabs d-lg-none d-xl-none d-sm-none">
+                        <div class="accordion" id="app_accordion">
+                            <div class="tab-content">
+                                <div class="accordion-item tab-pane fade" id="pendingActions_tab">
+                                    <div class="accordion-toggle">
+                                        <a href="#" data-toggle="collapse" data-target="#pendingActions_collapse">
+                                            PENDING ACTIONS
+                                            <i class="fa fa-angle-down"></i>
+                                        </a>
+                                    </div>
+                                    <div id="pendingActions_collapse" class="dashboard-table-list accordion-content collapse" data-parent="#app_accordion">
+                                        <div class="list-group">
+                                            <apex:repeat value="{!pendingRq5}" var="pRq">
+                                                <a href="/{!pRq.id}" class="list-group-item list-group-item-action">
+                                                    <div class="list-item-icon"></div>
+                                                    <div class="list-item-body">
+                                                        <small>SR# {!pRq.name}</small>
+                                                        <div>
+                                                            {!pRq.srvc__r.Name}
+                                                            <div class="badge-status badge-status-urgent">{!pRq.prio__c}</div>
+                                                        </div>
+                                                        <small>{!pRq.CurrentNationality__c}</small>
+                                                        <small>
+                                                            <apex:outputText rendered="{!OR(pRq.AOP__c > 0,pRq.AUP__c > 0) }">
+                                                                Awaiting Payment
+                                                            </apex:outputText>
+                                                            <apex:outputText rendered="{!AND(pRq.AOP__c == 0,pRq.AUP__c == 0) }">
+                                                                <span class="aReq" reqNum="{!pRq.name}">{!SUBSTITUTE(pRq.damsgs__c, '#SR', pRq.name)}</span>
+                                                            </apex:outputText>
+                                                        </small>
+                                                    </div>
+                                                    <i class="list-item-arrow fa fa-angle-right float-right"></i>
+                                                </a>
+                                            </apex:repeat>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- .tab-content -->
+                        </div>
+                    </div>
+                    <div id="navbar_mobile_searchform1" class="brnd-bg navbar-mobile-dropdown d-block d-lg-none d-xl-none d-sm-none">
+                        <form class="main-header-search-form" id="searchForm" action="apex/soslSearch">
+                            <div style="background-color: #fff;border-radius: 0.5em;" class="input-group">
+                                <input type="text" class="form-control" name="sos" required='true' id="sos" placeholder="Search SR / passport number / name" />
+                                <div class="input-group-append">
+                                    <button class="btn" type="Submit">
+                                        <div class="icon-search"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="container d-none d-lg-block d-xl-block d-sm-block">
+                    <div class="tabs tabs-lg dashboard-tabs" data-aos="fade-up" data-aos-once="true">
+                        
+                        <div class="right-actions d-none d-md-block">
+                            <button class="btn btn-outline-primary" onclick="openPDPage()">
+                                <!--<a href="./allDrftPndg" target="_blank" class="row-link">-->
+                                VIEW ALL
+                                <!--</a>-->
+                            </button>
+                        </div>
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item tips-tab-actions" >
+                                <a class="nav-link active" flag="pndg" data-toggle="tab" href="#tab_1" onclick="pendingFlag(this)">
+                                    PENDING ACTIONS
+                                    <apex:outputPanel rendered="{!pendingRQs.size>=5}">
+                                        <small><span class="hidden-inactive">5 of </span>{!pendingRQs.size}</small>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!pendingRQs.size<5}">
+                                        <small><span class="hidden-inactive">{!pendingRQs.size} of </span>{!pendingRQs.size}</small>
+                                    </apex:outputPanel>
+                                </a>
+                            </li>
+                            <li class="nav-item tips-tab-drafts">
+                                <a class="nav-link" flag="drft" data-toggle="tab" href="#tab_2" onclick="pendingFlag(this)">
+                                    YOUR DRAFTS
+                                    <apex:outputPanel rendered="{!draftRQs.size>=5}">
+                                        <small><span class="hidden-inactive">5 of </span>{!draftRQs.size}</small>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!draftRQs.size<5}">
+                                        <small><span class="hidden-inactive">{!draftRQs.size} of </span>{!draftRQs.size}</small>
+                                    </apex:outputPanel>
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <!-- .nav-tabs -->
+                        <!-- Pending Actions -->
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tab_1">
+                                <div class="d-none d-md-block p-xl-4 p-3">
+                                    <div class="table-responsive table-responsive-lg">
+                                        
+                                        <table class="table main-responsive-table table-hover m-0">
+                                            <thead>
+                                                <tr>
+                                                    <!--<th></th>-->
+                                                    <th>SR NUMBER</th>
+                                                    <th>SERVICE</th>
+                                                    <th>NAME</th>
+                                                    <th>NATIONALITY / PASSPORT</th>
+                                                    <!--<th>NATIONALITY</th>-->
+                                                    <th>ACTION REQUIRED</th>
+                                                    <th class="text-center" style="min-width: 100px;">PRIORITY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <apex:repeat value="{!pendingRq5}" var="pRq">
+                                                    <apex:variable var="ind" value="{!1}" />
+                                                    <tr>
+                                                        <!--<td>
+<a href="./{!pRq.id}" target="_blank" class="row-link"></a>
+<i class="icon icon-visa"></i>
+</td>-->
+                                                        <td class="text-black">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            {!pRq.name}
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            {!IF(ISBLANK(pRq.srvc__r.Name),'-',pRq.srvc__r.Name)}
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            {!IF(ISBLANK(pRq.Applicant_Name__c),'-',pRq.Applicant_Name__c)}
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            <div class="mr-2">{!IF(NOT(ISNULL(pRq.xcnc__c)),pRq.xcnc__c,IF(NOT(ISNULL(pRq.CurrentNationality__c)),pRq.CurrentNationality__c,'-'))}</div>
+                                                            <span class="text-grey">{!IF(NOT(ISNULL(pRq.xcp__c)),pRq.xcp__c,IF(NOT(ISNULL(pRq.tmpp__c)),pRq.tmpp__c,''))}</span>
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            <apex:outputText rendered="{!OR(pRq.AOP__c > 0,pRq.AUP__c > 0) }">
+                                                                Awaiting Payment
+                                                            </apex:outputText>
+                                                            <apex:outputText rendered="{!AND(pRq.AOP__c == 0,pRq.AUP__c == 0) }">
+                                                                <span class="aReq" reqNum="{!pRq.name}">{!SUBSTITUTE(pRq.damsgs__c, '#SR', pRq.name)}</span>
+                                                            </apex:outputText>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <a href="/{!pRq.id}" target="_blank" class="row-link"></a>
+                                                            <apex:outputText styleClass="badge-status {!IF(pRq.prio__c='Platinum','badge-status-urgent',IF(pRq.prio__c='Express','badge-status-process','badge-status-draft'))} initialism " value="{!pRq.prio__c}" />
+                                                            <!-- <div class= if() "badge-status badge-status-urgent"> {!pRq.prio__c}</div> -->
+                                                        </td>
+                                                        <apex:outputText escape="true" rendered="{!MOD(ind, 5) == 0}" value="</tr><tr>"/>
+                                                        <apex:variable var="ind" value="{!ind + 1}" />
+                                                    </tr>
+                                                </apex:repeat>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- .table-responsive -->
+                                </div>
+                                <div class="d-md-none">
+                                    <div class="dashboard-table-list">
+                                        <div class="dashboard-table-list-header">
+                                            <apex:outputText rendered="{!pendingRQs.size>=5}"><div class="mr-auto">5 of {!pendingRQs.size}</div></apex:outputText>
+                                            <apex:outputText rendered="{!pendingRQs.size<5}"><div class="mr-auto">{!pendingRQs.size} of {!pendingRQs.size}</div></apex:outputText>
+                                            <button class="btn btn-outline-primary btn-sm">VIEW ALL</button>
+                                        </div>
+                                        
+                                        <div class="list-group">
+                                            <!-- 1 -->
+                                            
+                                            <apex:repeat value="{!pendingRq5}" var="pRq">
+                                                <a href="/{!pRq.id}" class="list-group-item list-group-item-action">
+                                                    <div class="list-item-icon"></div>
+                                                    <div class="list-item-body">
+                                                        <small>SR# {!pRq.name}</small>
+                                                        <div>
+                                                            {!pRq.srvc__r.Name}
+                                                            <div class="badge-status badge-status-urgent">{!pRq.prio__c}</div>
+                                                        </div>
+                                                        <small><!--Apply for renewal-->{!pRq.CurrentNationality__c}</small>
+                                                    </div>
+                                                    <i class="list-item-arrow fa fa-angle-right float-right"></i>
+                                                </a>
+                                            </apex:repeat>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- .accordion-item -->
+                            <div class="tab-pane fades" id="tab_2">
+                                <div class="p-xl-4 p-3">
+                                    <div class="dashboard-table-list-header d-md-none">
+                                        <apex:outputText rendered="{!draftRQs.size>=5}"><div class="mr-auto">5 of {!draftRQs.size}</div></apex:outputText>
+                                        <apex:outputText rendered="{!draftRQs.size<5}"><div class="mr-auto">{!draftRQs.size} of {!draftRQs.size}</div></apex:outputText>
+                                        <button class="btn btn-outline-primary btn-sm">VIEW ALL</button>
+                                    </div>
+                                    <div class="d-md-none" style="border-top: 1px solid rgba(103, 109, 120, 0.2);"></div>
+                                    <div class="table-responsive table-responsive-lg table-list-wrapper mt-0">
+                                        <table class="table table-hover table-responsive-sticky m-0 table-list">
+                                            <thead>
+                                                <tr>
+                                                    <th>SR NUMBER</th>
+                                                    <th style="min-width: 100px;">PRIORITY</th>
+                                                    <th>SERVICE</th>
+                                                    <th>NAME</th>
+                                                    <th>NATIONALITY / PASSPORT</th>
+                                                    <!--<th class="text-center">STATUS</th>-->
+                                                </tr>
+                                            </thead>
+                                            <!-- end thead -->
+                                            <tbody>
+                                                <apex:repeat value="{!draftRq5}" var="dRq">
+                                                    <tr>
+                                                        <td class="text-black">
+                                                            <a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+                                                            {!dRq.name}
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+                                                            <!--<apex:outputText styleClass="{! IF(dRq.prio__c != 'Normal', 'badge priority-medium ', 'badge priority-high ') }initialism" value="{!dRq.prio__c}" />-->
+                                                            <apex:outputText styleClass="badge-status {!IF(dRq.prio__c='Platinum','badge-status-urgent',IF(dRq.prio__c='Express','badge-status-process','badge-status-draft'))} initialism " value="{!dRq.prio__c}" />
+                                                            
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+                                                            {!dRq.srvc__r.Name}
+                                                        </td>
+                                                        <td class="text-black">
+                                                            <a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+                                                            {!IF(ISNULL(dRq.Applicant_Name__c),'-',dRq.Applicant_Name__c)}
+                                                        </td>
+                                                        <td class="text-black d-none d-lg-block d-xl-block">
+                                                            <a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+                                                            <div class="mr-2">{!IF(NOT(ISNULL(dRq.xcnc__c)),dRq.xcnc__c,IF(NOT(ISNULL(dRq.CurrentNationality__c)),dRq.CurrentNationality__c,'-'))}</div>
+                                                            <span class="text-grey">{!IF(NOT(ISNULL(dRq.xcp__c)),dRq.xcp__c,IF(NOT(ISNULL(dRq.tmpp__c)),dRq.tmpp__c,''))}</span>
+                                                            <!--<div class="mr-2">{!dRq.xcnc__c}</div>
+<span class="text-grey">{!dRq.xcp__c}</span>-->
+                                                        </td>
+                                                        <!--<td class="text-center d-none d-lg-block d-xl-block">
+<a href="/{!dRq.id}" target="_blank" class="row-link"></a>
+<div class="badge-status initialism {!IF(dRq.STA__c='Completed','badge-status-completed',IF(OR(dRq.STA__c='In Process', dRq.STA__c='Under Review'),' badge-status-process', IF(OR(dRq.STA__c='Rejected', dRq.STA__c='Cancelled'),' badge-status-urgent',IF(dRq.STA__c='Draft','badge-status-draft',IF(dRq.STA__c='New','badge-status-new','')) )))}">
+{!if(dRq.STA__c='Under Review','In Process',dRq.STA__c)}
+</div>
+</td>-->
+                                                    </tr>
+                                                </apex:repeat>
+                                            </tbody>
+                                            <!-- end tbody -->
+                                        </table>
+                                    </div>
+                                    <!-- .table-responsive -->
+                                </div>
+                            </div>
+                            <!-- .tab-content -->
+                        </div>
+                    </div>
+                    <!-- .tabs -->
+                    
+                </div>
+                <apex:outputPanel rendered="{!A.vetemp__c<5}">
+                    <div class="container mt-lg-5 mt-3 d-lg-block d-sm-block d-xl-block d-none" data-aos="fade-up" data-aos-once="true">
+                        <apex:image onclick="window.open('https://marketplace.ae/','_blank')" value="{!URLFOR($Resource.assets_NUI,'images/banner.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                        <div class="text-center">
+                            <apex:image onclick="window.open('https://marketplace.ae/','_blank')" value="{!URLFOR($Resource.assets_NUI,'images/banner-mobile.png')}" styleClass="image-banner d-sm-none" />
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="true">
+                    <div class="container mt-lg-5 mt-3 d-lg-block d-sm-block d-xl-block d-none flipCard" style="transform-style: preserve-3d;" data-aos="fade-up" data-aos-once="true">
+                        <div class="front">
+                            <!--<apex:image onclick="window.open('https://ipo.tecomgroup.ae','_blank')" value="{!URLFOR($Resource.Addon_Banners,'tecomBanner_mediaPlan.jpg')}" styleClass="image-banner d-sm-block d-none" />-->
+                            <apex:image onclick="window.open('https://marketplace.ae/','_blank')" value="{!URLFOR($Resource.assets_NUI,'images/banner.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                        </div>
+                        <div class="back">
+                            <apex:image onclick="window.open('/grqgins?sid=a0L2y00000THrp2EAD','_blank')" value="{!URLFOR($Resource.Addon_Banners,'banner-02.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                        </div>
+                        <div class="text-center">
+                            <apex:image onclick="window.open('https://marketplace.ae/','_blank')" value="{!URLFOR($Resource.assets_NUI,'images/banner-mobile.png')}" styleClass="image-banner d-sm-none" />
+                        </div>
+                    </div>
+                </apex:outputPanel><!--{!A.vetemp__c>4}-->
+                <apex:outputPanel rendered="false">
+                    <div class="container mt-lg-5 mt-3 d-lg-block d-sm-block d-xl-block d-none" style="transform-style: preserve-3d;" data-aos="fade-up" data-aos-once="true">
+                        <apex:image onclick="window.open('https://ipo.tecomgroup.ae','_blank')" value="{!URLFOR($Resource.Addon_Banners,'tecomBanner_mediaPlan.jpg')}" styleClass="image-banner d-sm-block d-none" />
+                        <div class="text-center">
+                            <apex:image onclick="window.open('https://ipo.tecomgroup.ae','_blank')" value="{!URLFOR($Resource.Addon_Banners,'tecomBanner_mediaPlan.jpg')}" styleClass="image-banner d-sm-none" />
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                
+                <div class="container mt-5 mb-4" style="display:none !important;">
+                    <h3 class="section-title text-md-left text-center">RECOMMENDED SERVICES FOR YOU</h3>
+                    <div class="swiper-container-wrapper recommended-services-slider-wrapper">
+                        <div class="swiper-container" id="recommended_services_slider">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <div class="recommended-service" data-aos="fade-up" data-aos-once="true">
+                                        <div class="service-header">
+                                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/service1.png')}" styleClass="service-logo" />
+                                            <div class="badge badge-primary">INSURANCE</div>
+                                        </div>
+                                        <h4 class="service-title">
+                                            Worksman’s Compensation Corporate Insurance by ADNIC
+                                        </h4>
+                                        <button class="btn btn-secondary btn-service-apply">APPLY NOW</button>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="swiper-slide">
+                                    <div class="recommended-service" data-aos="fade-up" data-aos-once="true">
+                                        <div class="service-header">
+                                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/service2.png')}" styleClass="service-logo" />
+                                            <div class="badge badge-primary">UTILITIES</div>
+                                        </div>
+                                        <h4 class="service-title">
+                                            Du - Business One Account for Internet and Telephone
+                                        </h4>
+                                        <button class="btn btn-secondary btn-service-apply">APPLY NOW</button>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="swiper-slide">
+                                    <div class="recommended-service" data-aos="fade-up" data-aos-once="true">
+                                        <div class="service-header">
+                                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/service3.png')}" styleClass="service-logo" />
+                                            <div class="badge badge-primary">BANKING</div>
+                                        </div>
+                                        <h4 class="service-title">
+                                            Business Current Account by Emirates NBD
+                                        </h4>
+                                        <button class="btn btn-secondary btn-service-apply">APPLY NOW</button>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="swiper-slide">
+                                    <div class="recommended-service" data-aos="fade-up" data-aos-once="true">
+                                        <div class="service-header">
+                                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/service4.png')}" styleClass="service-logo" />
+                                            <div class="badge badge-primary">UTILITIES</div>
+                                        </div>
+                                        <h4 class="service-title">
+                                            Premium PO Box Service by Emirates Post
+                                        </h4>
+                                        <button class="btn btn-secondary btn-service-apply">APPLY NOW</button>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="swiper-slide">
+                                    <div class="recommended-service" data-aos="fade-up" data-aos-once="true">
+                                        <div class="service-header">
+                                            <apex:image value="{!URLFOR($Resource.assets_NUI,'images/service1.png')}" styleClass="service-logo" />
+                                            <div class="badge badge-primary">INSURANCE</div>
+                                        </div>
+                                        <h4 class="service-title">
+                                            Worksman’s Compensation Corporate Insurance by ADNIC
+                                        </h4>
+                                        <button class="btn btn-secondary btn-service-apply">APPLY NOW</button>
+                                    </div>
+                                </div>
+                                <!--  -->
+                            </div>
+                            <!-- .swiper wrapper -->
+                            <div class="swiper-pagination"></div>
+                            
+                        </div>
+                        <!-- .swiper container -->
+                        <!-- If we need navigation buttons -->
+                        <div class="swiper-button-prev"></div>
+                        <div class="swiper-button-next"></div>
+                    </div>
+                </div>
+                
+                <div class="site-footer-wrapper">
+                    <div class="container">
+                        <div class="site-footer">
+                            <div class="footer-links">
+                                <a href="/grqerAboutUS" target="_blank">ABOUT axs</a> |
+                                <a href="/grqerTerms" target="_blank">TERMS OF USAGE</a> |
+                                <a href="/grqerPolicy" target="_blank">PRIVACY POLICY</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </apex:outputText>
+        
+        
+        <apex:outputText rendered="true"><!--{!noOpi}-->
+            
+            <div class="modal fade modal-base" id="modal_missing_opi" tabindex="-1" role="dialog" data-backdrop="static" aria-hidden="true">
+                <div class="modal-dialog" role="document" style="width: 794px;">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <h2 class="p-2 mb-2 text-center">Please Wait</h2>
+                            <div class="p-2 mb-2 text-center" id="opiMisText">
+                                Your account set up is in process, it may take few minutes.
+                            </div>
+                            <div class="p-2 mb-2 text-center">
+                                <div class="loader1" style="margin: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade modal-base" id="modal_relationship_manager" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document" style="width: 836px;">
+                    <div class="modal-content">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i class="icon-close"></i>
+                        </button>
+                        <div class="modal-body">
+                            <div class="text-center pt-2">
+                                <p class="mb-1">Relationship manager</p>
+                                <p style="font-size: 1.125rem;font-weight: 500;">{!A.PRM_Name__c}</p>
+                                
+                                <div class="relationship-manager-row">
+                                    <div class="relationship-manager-line"></div>
+                                    <div class="relationship-manager-col">
+                                        <h4>Email</h4>
+                                        <h5>{!A.PRM_Email__c}</h5>
+                                    </div>
+                                    <div class="relationship-manager-line"></div>
+                                    <div class="relationship-manager-col">
+                                        <h4>Mobile</h4>
+                                        <h5>{!A.PRM_MobileNo__c}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </apex:outputText>
+        
+        <!-- popup image modal -->
+        <div class="modal fade modal-base" id="modal_welcome_AXS2" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 794px;">
+                <div class="modal-content">
+                    <div class="modal-body text-center">
+                        <button aria-label="Close" class="close" data-dismiss="modal" type="button"> <i class="icon-close"></i> </button>
+                        <img src="{!URLFOR($Resource.Popup_axs2)}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tips modal -->
+        <div class="modal fade modal-base" id="modal_quick_tour" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 794px;">
+                <div class="modal-content">
+                    <div class="modal-body text-center">
+                        <h2 class="modal-title mb-4 content-center" style="width: 380px;">
+                            Welcome to our new platform powered by axs.
+                        </h2>
+                        <p class="mb-5">This quick tour will guide you through main features of this platform</p>
+                        
+                        <button class="btn btn-primary mb-2" onclick="startQuickTour()" data-dismiss="modal">START</button>
+                        <br />
+                        <button class="btn text-muted" data-dismiss="modal">Skip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+       
+        <!-- request modal -->
+        <!-- Modal -->
+        <div class="modal fade" id="request_modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <!-- .modal-navigation -->
+                        <div class="request-main" id="request_main">
+                            <div class="row">
+                                <div class="notForUCFL col-lg-3 col-md-6" style="{!IF(A.Type='Customer - DH','display:none;','')}">
+                                    <div class="panel-request panel-request-main">
+                                        <i class="icon-employee request-icon text-primary"></i>
+                                        
+                                        <div class="panel-request-body">
+                                            <h4 class="request-title">EMPLOYEE&nbsp;<apex:outputText rendered="{!A.vetst__c>0}">/ STUDENT&nbsp;</apex:outputText>SERVICES</h4>
+                                            <p class="request-description">
+                                                Letters, NOCs, Requests, Insurance and other related services
+                                            </p>
+                                            <button class="btn btn-outline-primary open-request-option" data-target="request_options_1">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="panel-request-mobile">
+                                            <button class="btn open-request-option" data-target="request_options_1">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- .panel-request-main -->
+                                </div>
+                                <!-- .col -->
+                                <div class="{!IF(A.Type='Customer - DH','col-lg-12','col-lg-3')} col-md-6">
+                                    <div class="panel-request panel-request-main">
+                                        <i class="icon-visa-immigration request-icon text-primary"></i>
+                                        
+                                        <div class="panel-request-body">
+                                            <h4 class="request-title">VISAS AND IMMIGRATION</h4>
+                                            <p class="request-description">New visas, renewals, cancellations and other related services</p>
+                                            <button class="btn btn-outline-primary open-request-option" data-target="request_options_2">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="panel-request-mobile">
+                                            <button class="btn open-request-option" data-target="request_options_2">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- .panel-request-main -->
+                                </div>
+                                <!-- .col -->
+                                <div class="col-lg-3 col-md-6" style="{!IF(A.Type='Customer - DH','display:none;','')}">
+                                    <div class="panel-request panel-request-main">
+                                        <i class="icon-corporate request-icon text-primary"></i>
+                                        
+                                        <div class="panel-request-body">
+                                            <h4 class="request-title">{!IF(A.Legal_Framework__c == 'Freelancer' , 'FREELANCE SERVICES' , 'COMPANY SERVICES')}</h4>
+                                            <p class="request-description">
+                                                Lease, license, portal deposits and other related services
+                                            </p>
+                                            <button class="btn btn-outline-primary open-request-option" data-target="request_options_3">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="panel-request-mobile">
+                                            <button class="btn open-request-option" data-target="request_options_3">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                    </div>
+                                    <!-- .panel-request-main -->
+                                </div>
+                                <!-- .col -->
+                                
+                                <div class="col-lg-3 col-md-6" style="{!IF(A.Type='Customer - DH','display:none;','')}">
+                                    <div class="panel-request panel-request-main">
+                                        <i class="icon-vfs request-icon text-primary"></i>
+                                        
+                                        <div class="panel-request-body">
+                                            <h4 class="request-title">OTHER SERVICES</h4>
+                                            <p class="request-description">
+                                                P.O. Box and other related services from our partners
+                                            </p>
+                                            <button class="btn btn-outline-primary open-request-option" data-target="request_options_4">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="panel-request-mobile">
+                                            <button class="btn open-request-option" data-target="request_options_4">
+                                                VIEW SERVICES
+                                            </button>
+                                        </div>
+                                        
+                                        
+                                    </div>
+                                    <!-- .panel-request-main -->
+                                </div>
+                                <!-- .col -->
+                                
+                            </div>
+                            <!-- .row -->
+                        </div>
+                        <!-- #request_main -->
+                        
+                        <div class="request-options" id="request_options_1" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary request-options-back">
+                                <i class="fa fa-chevron-left"></i> BACK
+                            </button>
+                            <h3 class="modal-request-header">
+                                <i class="icon-employee text-primary"></i>
+                                <span>EMPLOYEE&nbsp;<apex:outputText rendered="{!A.vetst__c>0}">/ STUDENT&nbsp;</apex:outputText>SERVICES</span>
+                            </h3>
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">
+                                            LETTERS &amp; NOCs
+                                        </h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_1_1">
+                                            <h4 class="request-options-title">
+                                                LETTERS &amp; NOCs
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_1_1">
+                                            <button ref ="/grqsdr?sid=a292y0000008XYGAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">REQUEST FOR EMPLOYEE LETTER</button>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYEAA2" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">REQUEST FOR STUDENT LETTER</button>
+                                                <button ref ="/grqsdr?sid=a292y0000008XYHAA2" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">REQUEST FOR NON SPONSORED STUDENT LETTERS</button>
+                                            </apex:outputText>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXlAAM" class="notForUC notForFL serviceBtns btn btn-outline-primary btn-block">REQUEST FOR OUTSOURCING PERMIT</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXdAAM" class="notForFL serviceBtns btn btn-outline-primary btn-block">REVOKE OUTSOURCING PERMIT</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="notForUC col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">HEALTH INSURANCE</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_1_2">
+                                            <h4 class="request-options-title">
+                                                HEALTH INSURANCE
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_1_2">
+                                            <button  ref ="/grqsdr?sid=a292y0000008XYPAA2" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR NEW HEALTH INSURANCE</button>
+                                            <button  ref ="/grqsdr?sid=a292y0000008XYQAA2" class="serviceBtns btn btn-outline-primary btn-block">RENEW HEALTH INSURANCE</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6 notForFL notForUC">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">ATTESTATIONS</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_1_3">
+                                            <h4 class="request-options-title">
+                                                ATTESTATIONS
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                            <button ref ="/grqsdr?sid=a292y0000008XY5AAM" class="notForFL serviceBtns btn btn-outline-primary btn-block">REQUEST EMPLOYMENT CONTRACT ATTESTATION</button>
+                                        </div>
+                                        
+                                        <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                            <button ref ="/grqvfs?sid=a0L2y000000M2LuEAK" class="notForFL serviceBtns btn btn-outline-primary btn-block">VFS ATTESTATION</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6 notForFL">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">ACCESS CARDS &amp; IDs</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_1_4">
+                                            <h4 class="request-options-title">
+                                                ACCESS CARDS &amp; IDs
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_1_4">
+                                            <button ref ="/grqsdr?sid=a292y0000008XXUAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">REQUEST NEW NON-SPONSORED ID CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXmAAM" class="notForUC serviceBtns btn btn-outline-primary btn-block">AMEND NON-SPONSORED ID CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXVAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">RENEW NON-SPONSORED ID CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXWAA2" class="serviceBtns btn btn-outline-primary btn-block">CANCEL NON-SPONSORED ID CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXXAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">REQUEST TEMPORARY ID CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXpAAM" class="notForUC serviceBtns btn btn-outline-primary btn-block">REPLACE LOST ID CARD</button>
+                                            <!--<button ref ="/grqsdr?sid=a292y0000008XXZAA2" class="serviceBtns btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>-->
+                                            <button ref ="/grqsdr?sid=a292y0000008XXbAAM" class="notForUC serviceBtns btn btn-outline-primary btn-block">REQUEST FOR NEW REPRESENTATIVE CARD</button>
+                                            <!--<button disabled="true" ref ="" class="serviceBtns btn btn-outline-primary btn-block">AMEND AN EXISTING REPRESENTATIVE CARD</button>-->
+                                            <!--<button disabled="true" ref ="" class="serviceBtns btn btn-outline-primary btn-block">AMEND TEMPORARY ID CARD</button>
+<button disabled="true" ref ="" class="serviceBtns btn btn-outline-primary btn-block">RENEW TEMPORARY ID CARD</button>
+<button disabled="true" ref ="" class="serviceBtns btn btn-outline-primary btn-block">CANCEL TEMPORARY ID CARD</button>-->
+                                            
+                                            <!--<button disabled="true" ref ="" class="serviceBtns btn btn-outline-primary btn-block">NOTIFY &amp; REQUEST FOR LOST ID CARD</button>-->
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                        </div>
+                        <!-- #request_options_1 -->
+                        <div class="request-options" id="request_options_2" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary request-options-back">
+                                <i class="fa fa-chevron-left"></i> BACK
+                            </button>
+                            <h3 class="modal-request-header">
+                                <i class="icon-visa-immigration text-primary"></i>
+                                <span>VISA AND IMMIGRATION</span>
+                            </h3>
+                            <div class="row">
+                                <div class="notForUC col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">
+                                            NEW VISAS / REQUESTS
+                                        </h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_2_1">
+                                            <h4 class="request-options-title">
+                                                NEW VISAS / REQUESTS
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_2_1">
+                                            <apex:outputText rendered="{!if(A.Legal_Framework__c != 'Freelancer',true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y000000kon8" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR GOLDEN VISA</button>
+                                            </apex:outputText>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYAAA2" class="notForFL serviceBtns btn btn-outline-primary btn-block">APPLY FOR NEW EMPLOYEE VISA</button>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYgAAM" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR NEW STUDENT VISA</button>
+                                                <button ref ="/grqsdr?sid=a292y000000sqf6" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR NEW STUDENT SHORT TERM VISA</button>
+                                            </apex:outputText>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYVAA2" class="notForFL serviceBtns btn btn-outline-primary btn-block">APPLY FOR VISIT VISA</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYbAAM" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR DEPENDENT VISA</button>
+                                            <button ref ="/grqsdr?sid=a29Ii0000000Hpm" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR MISSION VISA</button>
+                                            <!--<apex:outputText rendered="{!isGv}">
+<button ref ="/grqsdr?sid=a290p000000CwCYAA0" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR GOLDEN VISA</button>
+<button ref ="/grqsdr?sid=a290p000000CwBG" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR DEPENDENT GOLDEN VISA</button>
+</apex:outputText>-->
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="notForUC col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">RENEW / AMEND / EXTEND </h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_2_2">
+                                            <h4 class="request-options-title">
+                                                RENEW / AMEND / EXTEND
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse mcustomscroll" id="request_options_2_2">
+                                            <apex:outputText rendered="{!A.Legal_Framework__c != 'Freelancer'}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYCAA2" class="notForFL serviceBtns btn btn-outline-primary btn-block">RENEW EMPLOYEE VISA</button>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYcAAM" class="serviceBtns btn btn-outline-primary btn-block">RENEW STUDENT VISA</button>
+                                            </apex:outputText>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYfAAM" class="serviceBtns btn btn-outline-primary btn-block">RENEW DEPENDENT VISA</button>
+                                            <!--<button ref ="/grqsdr?sid=a292y0000008XXYAA2" class="serviceBtns btn btn-outline-primary btn-block">RENEW CHILD DEPENDENT VISA</button>-->
+                                            <button ref ="/grqsdr?sid=a292y0000008XYYAA2" class="serviceBtns btn btn-outline-primary btn-block">AMEND EMPLOYEE VISA</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYXAA2" class="serviceBtns btn btn-outline-primary btn-block">AMEND DEPENDENT VISA</button>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYZAA2" class="serviceBtns btn btn-outline-primary btn-block">AMEND STUDENT VISA</button>
+                                            </apex:outputText>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXnAAM" class="notForFL serviceBtns btn btn-outline-primary btn-block">EXTEND ON-ARRIVAL VISIT VISA</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXnAAM" class="notForFL serviceBtns btn btn-outline-primary btn-block">CONVERT VISIT VISA TO MULTI ENTRY</button>
+                                            <!--<button ref ="/grqsdr?sid=a292y0000008XY1AAM" class="serviceBtns btn btn-outline-primary btn-block">REQUEST RE-STAMPING FOR NEW PASSPORT</button>-->
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">TRANSFER / CANCEL</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_2_3">
+                                            <h4 class="request-options-title">
+                                                TRANSFER / CANCEL
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_2_3">
+                                            <button ref ="/grqsdr?sid=a292y0000008XYiAAM" class="serviceBtns btn btn-outline-primary btn-block">CANCEL EMPLOYEE VISA</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYaAAM" class="serviceBtns btn btn-outline-primary btn-block">CANCEL DEPENDENT VISA</button>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XYMAA2" class="serviceBtns btn btn-outline-primary btn-block">CANCEL STUDENT VISA</button>
+                                            </apex:outputText>
+                                            <!--<button ref="/grqsdr?sid=a292y0000008XXaAAM" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR EMPLOYEE RELEASE SIGN-OUT</button>
+<button ref ="/grqsdr?sid=a292y0000008XYAAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">APPLY FOR VISA TRANSFER</button>
+<apex:outputText rendered="{!if(A.RelocationFlag__c,true,false)}">
+<button ref ="/grqsdr?sid=a290p000000CwKR" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR EMPLOYEE VISA TRANSFER (RELOCATION)</button>
+</apex:outputText>
+<button ref ="/grqsdr?sid=a292y0000008XYSAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">APPLY FOR SPOUSE VISA TRANSFER</button>
+<button ref ="/grqsdr?sid=a292y0000008XYDAA2" class="notForUC serviceBtns btn btn-outline-primary btn-block">APPLY FOR CHILD VISA TRANSFER</button>-->
+                                            <button ref ="/grqsdr?sid=a292y0000008XXZAA2" class="notForFL serviceBtns btn btn-outline-primary btn-block">REQUEST IMMIGRATION STATUS LETTER</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6 notForFL">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">ABSCONDING REQUESTS</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_2_4">
+                                            <h4 class="request-options-title">
+                                                ABSCONDING REQUESTS
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_2_4">
+                                            <button ref ="/grqsdr?sid=a292y0000008XYUAA2" class="serviceBtns btn btn-outline-primary btn-block">DECLARE ABSCONDER - EMPLOYEE</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYKAA2" class="serviceBtns btn btn-outline-primary btn-block">WITHDRAW ABSCONDER - EMPLOYEE</button>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref ="/grqsdr?sid=a292y0000008XXzAAM" class="serviceBtns btn btn-outline-primary btn-block">DECLARE ABSCONDER - STUDENT</button>
+                                                <button ref ="/grqsdr?sid=a292y0000008XXvAAM" class="serviceBtns btn btn-outline-primary btn-block">WITHDRAW ABSCONDER - STUDENT</button>
+                                            </apex:outputText>
+                                            <!-- <apex:outputText rendered="{!A.vetst__c>0}">
+</apex:outputText>-->
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                        </div>
+                        <!-- #request_options_2 -->
+                        <div class="request-options" id="request_options_3" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary request-options-back">
+                                <i class="fa fa-chevron-left"></i> BACK
+                            </button>
+                            <h3 class="modal-request-header">
+                                <i class="icon-corporate text-primary"></i>
+                                <span>COMPANY SERVICES</span>
+                            </h3>
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">
+                                            LEASE &amp; LICENSE SERVICES
+                                        </h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_3_1">
+                                            <h4 class="request-options-title">
+                                                LEASE &amp; LICENSE SERVICES
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_3_1">
+                                            <button ref="/grqsdr?sid=a292y0000008XYBAA2" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">{!IF(A.Legal_Framework__c != 'Freelancer' , 'RENEW LICENSE' , 'RENEW FREELANCE PERMIT')}</button>
+                                            <button ref ="/grqdccaAmd?sid=a0L2y000000XdPrEAK" class="serviceBtns btn btn btn-outline-primary btn-block">
+                                                <!--{!IF(A.Legal_Framework__c == 'Freelancer' , 'AMEND FREELANCE PERMIT' , 'AMEND REGISTRY / LICENSE')}-->
+                                                {!IF(A.Legal_Framework__c == 'Freelancer', 'AMEND FREELANCE PERMIT', IF(OR(A.lcsta__c == 'License Cancelled', 
+                                                A.lcsta__c == 'License Under Cancellation'), 'DE-REGISTRATION SERVICES', 'AMEND REGISTRY / LICENSE'))}
+                                            </button>
+                                            <button ref="/grqsdr?sid=a29fu000000G633" class="serviceBtns btn btn btn-outline-primary btn-block" style="{!IF(A.Legal_Framework__c != 'Freelancer' , 'display:none' , 'display:block')}">FREELANCER DEREGISTRATION</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">DEPOSIT &amp; PAYMENTS</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_3_2">
+                                            <h4 class="request-options-title">
+                                                DEPOSIT &amp; PAYMENTS
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_3_2">
+                                            <button ref ="/grqn?c=tad" class="serviceBtns btn btn btn-outline-primary btn-block">TOP-UP PORTAL DEPOSIT</button>
+                                            <button ref ="/grqn?c=tbg" style="{!IF(OR(A.bg__c>=125000,A.bgnr__c),'display:none;','')}" class="notForUC notForFL serviceBtns btn btn-outline-primary btn-block">BANK GUARANTEE DEPOSIT</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">OTHER CORPORATE SERVICES</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_3_3">
+                                            <h4 class="request-options-title">
+                                                OTHER CORPORATE SERVICES
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_3_3">
+                                            <button ref ="/grqsdr?sid=a292y0000008XYJAA2" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">REQUEST FOR NEW ESTABLISHMENT CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYWAA2" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">RENEW ESTABLISHMENT CARD</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXk" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">ESTABLISHMENT CARD CORRECTION</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XYFAA2" class="notForUC notForFL serviceBtns btn btn btn-outline-primary btn-block">REQUEST FOR LETTER</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XXrAAM" class="notForUC serviceBtns btn btn btn-outline-primary btn-block">REQUEST FOR TRUE COPY ATTESTATION</button>
+                                            <button ref ="/grqsdr?sid=a292y0000008XY0AAM" class="notForUC notForFL serviceBtns btn btn btn-outline-primary btn-block">RE-ISSUE CONSTITUTIONAL DOCS</button>
+                                            <button ref ="/grqPMSAmd?sid=a0LIi000000sY6dMAE" class="notForUC notForFL serviceBtns btn btn btn-outline-primary btn-block">PMS LEASE AMENDMENT</button>
+                                            
+                                            <apex:outputText rendered="{!A.Legal_Framework__c != 'Freelancer'}">
+                                                <button ref ="/UBOSubmission" class="notForUC notForFL serviceBtns btn btn btn-outline-primary btn-block">UBO SUBMISSION</button>
+                                            </apex:outputText>
+                                            <button ref ="/rf?id={!a.id}" class="serviceBtns btn btn btn-outline-primary btn-block">REQUEST REFUND FORM</button>
+                                            <!--<button disabled="true" class="btn btn-outline-primary btn-block">REQUEST FOR ATTESTATION</button>-->
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                        </div>
+                        <!-- #request_options_3 -->
+                        <div class="request-options" id="request_options_4" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary request-options-back">
+                                <i class="fa fa-chevron-left"></i> BACK
+                            </button>
+                            <h3 class="modal-request-header">
+                                <i class="icon-vfs text-primary"></i>
+                                <span>OTHER SERVICES</span>
+                            </h3>
+                            <div class="row">
+                                <div class="notForUC col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">
+                                            UPDATE DETAILS
+                                        </h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_4_1">
+                                            <h4 class="request-options-title">
+                                                UPDATE DETAILS
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_4_1">
+                                            <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                <button ref ="/grqsdr?sid=a292y0000008XY4AAM" class="serviceBtns btn btn-outline-primary btn-block">UPDATE EMPLOYEE DETAILS</button>
+                                            </div>
+                                            <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                <button ref ="/grqsdr?sid=a292y0000008XY4AAM" class="serviceBtns btn btn-outline-primary btn-block">UPDATE DEPENDENT DETAILS</button>
+                                            </div>
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                    <button ref ="/grqsdr?sid=a292y0000008XY4AAM" class="serviceBtns btn btn-outline-primary btn-block">UPDATE STUDENT DETAILS</button>
+                                                </div>
+                                            </apex:outputText>
+                                            
+                                            <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                <button  ref ="/grqsdr?sid=a292y0000008XYO" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR DEPENDENT NEW HEALTH INSURANCE</button>
+                                            </div>
+                                            <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                                                <button  ref ="/grqsdr?sid=a292y0000008XYR" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR STUDENT NEW HEALTH INSURANCE</button>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">P.O. BOX SERVICES</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_4_2">
+                                            <h4 class="request-options-title">
+                                                P.O. BOX SERVICES
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_4_2">
+                                            <button class="notForUC serviceBtns btn btn-outline-primary btn-block" ref="/grqsdr?sid=a292y0000008XXsAAM">APPLY FOR NEW P.O. BOX</button>
+                                            <button ref="/grqsdr?sid=a292y0000008XXqAAM" class="notForUC serviceBtns btn btn-outline-primary btn-block">RENEW P.O. BOX</button>
+                                            <button ref="/grqsdr?sid=a292y0000008XXjAAM" class="serviceBtns btn btn-outline-primary btn-block">CANCEL P.O. BOX</button>
+                                            <button ref="/grqsdr?sid=a292y0000008XXeAAM" class="notForUC serviceBtns btn btn-outline-primary btn-block">AMEND P.O. BOX</button>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="notForUC col-lg-3 col-md-6 notForFL">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">OFFICE SERVICES</h4><!-- / PARKING-->
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_4_3">
+                                            <h4 class="request-options-title">
+                                                OFFICE SERVICES
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_4_3">
+                                            <apex:outputText rendered="false"><!-- To remove parking servics permanently from Menu --><!--{!if(AND(el['stdElg']!=null,el['stdElg']>0),true,false)}-->
+                                                <button ref="/nrtaap?sid=a0L2800000AqH9DEAV" class="serviceBtns btn btn-outline-primary btn-block">REQUEST ADDITIONAL TECOM PARKING</button>
+                                                <!--<button ref="/grqsdr?sid=" class="serviceBtns btn btn-outline-primary btn-block">MANAGE REGISTERED VEHICLES</button>-->
+                                                <button ref="/nonrta?sid=a0L28000008xt5VEAQ" class="serviceBtns btn btn-outline-primary btn-block">ADD VEHICLE (TECOM PARKING)</button>
+                                                <button ref="/nrtaLostCard_i?sid=a0L28000008y2gCEAQ" class="serviceBtns btn btn-outline-primary btn-block">REPLACE TECOM PARKING PERMIT</button>
+                                                <button ref="/nrtacc?sid=a0L0I00000CC3Q3UAL" class="serviceBtns btn btn-outline-primary btn-block">CANCEL / DEACTIVATE PARKING PERMIT</button>
+                                                <!--<button ref="/grqsdr?sid=" class="serviceBtns btn btn-outline-primary btn-block">RENEW EXISTING PARKING SPACES</button>-->
+                                            </apex:outputText>
+                                            <button ref="/grqsdr?sid=a292y0000008XXyAAM" class="serviceBtns btn btn-outline-primary btn-block">REQUEST BUILDING ACCESS PERMIT</button>
+                                            <button ref="/grqsdr?sid=a29Ii0000000KTp" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR FITOUT SERVICES</button>
+                                            <button ref="/grqdoc?sid=a0L0I00000CDHsWUAX" class="serviceBtns btn btn-outline-primary btn-block">REQUEST LEASE DOCUMENT COLLECTION</button>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--  -->
+                                <div class="notForUC col-lg-3 col-md-6 notForFL">
+                                    <div class="panel-request panel-request-options">
+                                        <h4 class="request-options-title">STUDENT / PART TIME EMPLOYMENT</h4>
+                                        <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                                           data-target="#request_options_4_4">
+                                            <h4 class="request-options-title">
+                                                STUDENT / PART TIME EMPLOYMENT
+                                            </h4>
+                                        </a>
+                                        <div class="request-options-dropdown-body collapse" id="request_options_4_4">
+                                            <apex:outputText rendered="{!if(A.vetst__c>0,true,false)}">
+                                                <button ref="/grqsdr?sid=a292y0000008XXhAAM" class="serviceBtns btn btn-outline-primary btn-block">APPLY FOR STUDENT PART TIME ELIGIBILTY</button>
+                                            </apex:outputText>
+                                            <button ref="/gptelgstu" class="serviceBtns btn btn-outline-primary btn-block">STUDENTS INTERESTED IN PART TIME</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- .col -->
+                            </div>
+                            <!-- .row -->
+                        </div>
+                        <!-- #request_options_4 -->                   
+                    </div>
+                    <!-- .modal-body -->
+                </div>
+                <!-- .modal-content -->
+            </div>
+            <!-- .modal-dialog -->
+        </div>
+        <!--<apex:outputPanel rendered="{!AND(NOT(ISBLANK(A.lc__c)),CONTAINS(U.contact.Type__c,'Manager Incharge'))}"><!---->
+        <apex:outputPanel rendered="false">
+            <div class="modal fade modal-base" id="modal_Ubo_submission" role="dialog" aria-hidden="true" data-backdrop="static">
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <apex:outputPanel rendered="{!NOT(ISBLANK(A.lc__c))}">
+                                <iframe style="min-height: 500px;width:100%" src="/ubo_popup" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" >
+                                </iframe>
+                            </apex:outputPanel>
+                        </div>
+                        <!-- .modal-body -->
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="modal fade modal-base" id="modal_Ubo_submitted" role="dialog" aria-hidden="true" >
+                <div class="modal-dialog" role="document" style="width: 990px;">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            Thanks for submitting UBO details
+                        </div>
+                        <!-- .modal-body -->
+                    </div>
+                    
+                </div>
+            </div>
+        </apex:outputPanel> 
+        <!-- Start CB Added for psa popup -->
+        <apex:outputPanel rendered="{!AND(displayPSAPopup,A.Type!='Customer-DED',A.lctp__c!='DED')}">
+            <div class="modal fade modal-base" data-backdrop="static" id="modal_confirm_popup" role="dialog"
+                 tabindex="-1"
+                 style="display: block !important; opacity: unset !important; backdrop-filter: brightness(0.5);position:fixed;">
+                <div class="modal-dialog" role="document"
+                     style="margin: 0 auto;max-width: 72rem;transform: translate(0%, -50%);top: 50%;width: unset" id="model-psa-inner">
+                    <div class="modal-content" style="height:40em;">
+                        <button type="button" class="close" data-dismiss="modal" style="position:relative;margin-left:auto;display:none;"
+                                aria-label="Close" onclick="closePopup();" id="psa-close">
+                            <i class="icon-close"></i>
+                        </button>
+                        <div class="modal-body" style="padding: 15px 30px;overflow-y: overlay;" id="psamodal">
+                            <div class="row" style="height: 100%;">
+                                <div class="col-12 order-md-2">
+                                    <div class="loader1" style="top: 40%; margin: 0 auto; position: relative;" id="psaLoader"></div>
+                                    <iframe src="/apex/PSA#zoom=110"
+                                            width="100%" height="100%" style="border: none;" id="popupiframe"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="modal modal-base" id="modal_acceptance" tabindex="-1" role="dialog"  style="display: none;">
+                <div class="modal-dialog" role="document" style="width: 836px;top: 42%; transform: translate(0, -50%);">
+                    <div class="modal-content">
+                        <div class="modal-body text-center pt-5 pb-5" style="padding-bottom: 1rem !important;">
+                            <p  id="accept-message"></p>
+                            <button type="button" class="btn btn-primary" style="width: 80px;" data-dismiss="modal" onclick="closeMessage();">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+            let isGeneralManager = true;
+            function closePopup() {
+                document.getElementById('modal_confirm_popup').style.display = 'none';
+            }
+            
+            function closeMessage(){
+                document.getElementById('modal_acceptance').style.display = 'none';
+            }
+            
+            window.addEventListener("message", function(event) {
+                // Handle message
+                if (event.data && event.data.type === "acceptTerms") {
+                    closePopup(); // Close the popup when message is received
+                    // Set the message inside the modal
+                    document.getElementById('accept-message').innerText = event.data.message;
+                    document.getElementById('modal_acceptance').style.display = 'block';
+                }
+            }, false);
+            
+            window.addEventListener("message", function(event) {
+                // Handle message
+                if (event.data && event.data.type === "removeSpinner") {
+                    document.getElementById('psaLoader').style.display = 'none';
+                    if(event.data.message == 'hide'){
+                        document.getElementById('psa-close').style.display = 'block';
+                        isGeneralManager = false;
+                    }else{
+                        document.getElementById("model-psa-inner").style.height = (window.innerHeight - 70) + 'px';
+                        document.getElementById("psamodal").style.height = (window.innerHeight - 70) + 'px';
+                    }
+                }
+            }, false);
+            window.addEventListener("resize", function(){
+                if(isGeneralManager){
+                    document.getElementById("model-psa-inner").style.height = (window.innerHeight - 70) + 'px';
+                    document.getElementById("psamodal").style.height = (window.innerHeight - 70) + 'px';
+                }
+            });
+            </script>
+        </apex:outputPanel>
+        <div class="modal fade modal-base" id="modal_portal_alert" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 794px;">
+                <div class="modal-content">
+                    <div class="modal-body ">
+                        <apex:outputPanel rendered="true">
+                            <iframe src="/apex/portalAlert#zoom=110" style="border: none;" id="popupiframe_A"></iframe>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END CB -->
+        <!-- .modal -->
+        <div class="connect-buttons">
+            <div class="connect-buttons-list">
+                <!--<a href="/helpCenter">HELP CENTER</a>-->
+                <a href="/Mycases">SUPPORT TICKETS</a>
+                <a href="#" id="call800">800 4 AXS(297)</a>
+            </div>
+            <!-- .connect-buttons-list -->
+            <!-- <a href="#" class="connect-buttons-open"><i class="fa icon-connect"></i>CONNECT</a>
+<a href="#" class="connect-buttons-close"><i class="icon-close"></i></a> -->
+            <a href="#" class="connect-buttons-toggle">
+                <div class="connect-buttons-toggle-open">
+                    <i class="fa icon-connect"></i>CONNECT
+                </div>
+                <div class="connect-buttons-toggle-close">
+                    <i class="icon-close"></i>
+                </div>
+            </a>
+        </div>
+        <!-- <div id="preloader">
+<div class="loader1"></div>
+</div> -->
+        <script>
+        
+        var brandColors = {'dmc':'#67486C','dic':'#C00D0D','dsp':'#3E888C','diac':'#15666D','dkp':'#15666D','doc':'#C00D0D','ddd':'#393939','dsc':'#67486C','dpc':'#67486C'};
+        var mobile = /Android|iPhone|iPad|iPod|Opera Mini/i;
+        $(document).ready(function(){
+            //screen.orientation.lock('landscape');
+            hideGLoader();
+            if('{!noOpi}' == 'true'){
+                $('#modal_missing_opi').modal('show');
+                setTimeout(function(){
+                    checkOpi();
+                },300000);
+            }
+            $('.ser a').click(function(e){
+                e.preventDefault();
+                var t = $(this).text();
+                var u = $(this).attr('href');
+                axsConfirmation('Confirmation','Do you want to apply for '+t+' ?',true,'mobSerOpen',u);
+                
+            });
+            $('.mobIcons').click(function(e){
+                e.preventDefault();
+                var t = $(this).attr('v');
+                var u = $(this).attr('h');
+                axsConfirmation('Confirmation','Do you want to apply for '+t+' ?',true,'mobSerOpen',u);
+                
+            });
+            $('.brnd-border').css('border-color',brandColors["{!A.park__c}"]);
+            //$('.brnd-bg').css('background-color',brandColors["{!A.park__c}"]);
+            /* !function() {
+                function detectDevTool(allow) {
+                    if(isNaN(+allow)) allow = 100;
+                    var start = +new Date();
+                    debugger;
+                    var end = +new Date();
+                    if(isNaN(start) || isNaN(end) || end - start > allow) {
+                        alert('DEVTOOLS detected. all operations will be terminated.');
+                        document.write('DEVTOOLS detected.');
+                    }
+                }
+                if(window.attachEvent) {
+                    if (document.readyState === "complete" || document.readyState === "interactive") {
+                        detectDevTool();
+                        window.attachEvent('onresize', detectDevTool);
+                        window.attachEvent('onmousemove', detectDevTool);
+                        window.attachEvent('onfocus', detectDevTool);
+                        window.attachEvent('onblur', detectDevTool);
+                    } else {
+                        setTimeout(argument.callee, 0);
+                    }
+                } else {
+                    window.addEventListener('load', detectDevTool);
+                    window.addEventListener('resize', detectDevTool);
+                    window.addEventListener('mousemove', detectDevTool);
+                    window.addEventListener('focus', detectDevTool);
+                    window.addEventListener('blur', detectDevTool);
+                }
+            }();*/
+            if('{!A.Legal_Framework__c}'=='Freelancer'){
+                $('.notForFL').hide();
+                if('{!A.lcsta__c}'=='License Under Cancellation' || '{!A.lcsta__c}'=='License Under Suspension' ){
+                    $('.notForUCFL').hide();
+                }
+            }
+            if('{!A.lcsta__c}'=='License Under Cancellation'|| '{!A.lcsta__c}'=='License Under Suspension'){
+                $('.notForUC').hide();
+            }
+            $('#call800').unbind().on('click',function(){
+                if( mobile.test(navigator.userAgent) ) {
+                    window.open('tel:8004297','_self');
+                }
+            });
+            
+        });
+        
+        function closeUboFromParent(){
+            scrollToDiv($('body'));
+            $('#modal_Ubo_submission').modal('hide');
+        }
+        function goToDashboard(){
+            showGLoader();
+            window.location = '/gpm';
+        }
+        function goToParking(){
+            window.open('/pagecompanyinfo?t=a5m4n9uu5ns9ih0a','_self');
+            localStorage.setItem('parkingClicked',true);
+        }
+        function mobSerOpen(u){
+            if(u)
+                window.open(u,'_self');
+        }
+        function showAllSnc(){
+            $('#allSnc,#sncWarn').toggle();
+            if($('#sncBtn').text() =='VIEW DETAILS') $('#sncBtn').text('HIDE DETAILS');
+            else if($('#sncBtn').text() =='HIDE DETAILS') $('#sncBtn').text('VIEW DETAILS');
+        }
+        var v = 'pndg';
+        function pendingFlag(t){
+            v = $(t).attr('flag');
+            
+        }
+        function openPDPage(){
+            // let u = location.href.split('/').splice(0,location.href.split('/').length-1).join('/')+'/allDrftPndg?flg='+v;
+            // let u = location.href.split('/').splice(0,location.href.split('/').length-1).join('/')+'/pagepastrequests?flg='+v;
+            var nxt_page = (v=='pndg') ? "pendingactions" : "pagepastrequests";
+            let u = location.href.split('/').splice(0,location.href.split('/').length-1).join('/')+'/'+nxt_page+'?flg='+v;
+            /*if(v=='pndg'){ u = location.href.split('/').splice(0,location.href.split('/').length-1).join('/')+'/pendingactions?flg='+v;}*/
+            window.open(u,'_blank');
+        }
+        </script>
+        <!-- .connect-buttons -->
+        
+        <!-- Vendor js -->
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/bootstrap/dist/js/bootstrap.bundle.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/swiper/js/swiper.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/moment/min/moment.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/js/select2.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/jquery.easy-autocomplete.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/tablesorter/dist/js/jquery.tablesorter.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery.scrollto/jquery.scrollTo.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/kinetic.min.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/enjoyhint/enjoyhint.min.js')}"  />
+        <!-- main js -->
+        <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+        <apex:includeScript value="{!URLFOR($Resource.AdnicPopup, '/js/jquery.cookie.js')}" />
+        <!-- tips js
+<apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/tips.js')}"  />
+-->
+        <!-- custom js from AXS -->
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!URLFOR($Resource.axs2MandateCss)}" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/kineticjs/5.2.0/kinetic.js">
+        </script>
+        
+        
+    </body>
+    
+    <script>
+    var enjoyhint_instance;
+    var enjoyhint_script_steps;
+    function startQuickTour() {
+        enjoyhint_instance.run();
+    }
+    
+    function axsConfirmation(ch,cb,loader,onYes,onYesArgs,onNo,onNoArgs){
+        //debugger;
+        $('#modal_confirm_global').remove();
+        if(cb==undefined) cb='';
+        var cBlock = '<div class="modal fade modal-base" id="modal_confirm_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <button aria-label="Close" class="close" data-dismiss="modal" type="button"> <i class="icon-close"></i> </button> <div class="modal-body"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <h2 class="mb-4">'+ch+'</h2> <p>'+cb+'<p class="col-xl-12 col-lg-12" style="text-align: right;"> <button class="col-xl-4 col-lg-12 btn btn-primary mr-2 btn-block-sm cBtns" id="cYes"> YES </button> <button class="col-xl-4 col-lg-12 btn btn-outline-primary btn-block-sm cBtns"> NO </button><i class="d-none cBtns text-primary fa fa-times-circle" aria-hidden="true" style="float: left;"><span>NO</span></i><i class="d-none cBtns text-primary fa fa-check-circle" aria-hidden="true"><span>YES</span></i><br class=""> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+        $('body').append(cBlock);
+        $('#modal_confirm_global').modal('show');
+        $('.cBtns').on('click',function(){
+            $('#modal_confirm_global').modal('hide');
+            if($(this).text().includes('YES')){
+                if(loader)
+                    showGLoader();
+                if(onYes!=undefined&&onYes!=null&&onYes!=''){
+                    if(onYesArgs!=undefined&&onYesArgs!=null&&onYesArgs!='')
+                        window[''+onYes](onYesArgs);
+                    else
+                        window[''+onYes]();
+                }
+            }
+            else if($(this).text().includes('NO')){
+                if(onNo!=undefined&&onNo!=null&&onNo!=''){
+                    if(onNoArgs!=undefined&&onNoArgs!=null&&onNoArgs!='')
+                        window[''+onNo](onNoArgs);
+                    else
+                        window[''+onNo]();
+                }
+            }
+        });
+    }
+    
+    
+    function callHints(){
+        enjoyhint_instance = new EnjoyHint({container: '.main'});
+        enjoyhint_instance.set(enjoyhint_script_steps);
+        $('#modal_quick_tour').modal('show');
+        jQuery.cookie('accName','{!A.name}');
+        
+    }
+    
+    
+    $(document).ready(function(){
+        
+        /*if(jQuery.cookie('accName')!='{!A.name}'&& !mobile.test(navigator.userAgent)){
+            $('#modal_welcome_AXS2').modal('show');
+            //callHints();
+        }*/
+        /*if(jQuery.cookie('accName')!='{!A.name}' && '{!U.contact.Type__c}'.includes('Manager Incharge')){
+            $('#modal_Ubo_submission').modal('show');
+            jQuery.cookie('accName','{!A.name}');
+        }*/
+        if('{!U.contact.account.show_alert__c}'=='true' && !'{!U.Policy_Confirmation_Date__c}'){
+            $('#modal_portal_alert').modal('show');
+        }
+        $('#modal_welcome_AXS2').on('hidden.bs.modal',function(){
+            callHints();
+        });
+        $('#modal_quick_tour').on('hidden.bs.modal',function(){
+            $('body').css('overflow','auto');
+        });
+        (function(form){
+            $('#sos').on('invalid' , function(event) {
+                event.preventDefault();
+            });
+            
+            form.submit( function(event) {
+                if(!this.checkValidity())
+                    event.preventDefault();
+            });
+            
+            var submitButton =  $('#searchForm').find( "button[type=submit]" );
+            submitButton.bind( "click", function(event) {
+                $('.error').remove();
+                var v = $('#sos').val();
+                if(v==undefined||v.length<1){
+                    form.append("<div class='error frmErrMsg'>Please fill the field</div>" );
+                    $('#sos').focus();
+                }
+            });
+        })($('#searchForm'));
+        
+        $('.comNum').each(function(){
+            $(this).text($(this).text().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+        });
+        $('.aReq').each(function(){
+            var sr = $(this).attr('reqNum');
+            var t = $(this).text().replace('#sr',sr).replace('#SR',sr);
+            $(this).text(t);
+        });
+    });
+    function closeportal_alert(){
+        $('#modal_portal_alert').modal('hide');
+    }
+    
+    
+    </script>
+</apex:page>

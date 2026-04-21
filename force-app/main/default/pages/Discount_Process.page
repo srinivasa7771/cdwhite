@@ -1,0 +1,113 @@
+<apex:page standardController="g_reqitem__c" extensions="GetRequestDetails">
+   <apex:form > 
+   <apex:pageMessages />
+   <script>
+   function getdetails(){
+CallApexMethod();
+}
+   function gn(){
+CallApexMethod1();
+}
+  </script>
+   <apex:actionFunction name="CallApexMethod" action="{!searchDetails}" rerender="itembck"/>
+    <apex:actionFunction name="CallApexMethod1" action="{!getSelected}" rerender="itemblock"/>
+   
+    <h2 class="pageDescription">Amend Request Prices</h2>
+   <p style="font-size:13px;">
+    <h1 class="pageType">Select Request :<span class="titleSeparatingColon">:</span></h1>
+    <apex:inputField value="{!g_reqitem__c.RQ__c}" id="RQID" onchange="getdetails();"></apex:inputField>
+  </p>
+    <apex:outputPanel id="itembck">
+        <apex:pageBlock rendered="{!wraplst.size>0}">
+    <apex:pageBlockTable value="{!wraplst[wraplst.size -1]}" var="req" rendered="{!wraplst.size>0}">
+        <apex:column value="{!req.accountname}">
+         <apex:facet name="header">Account Name</apex:facet>
+         </apex:column>
+          <apex:column value="{!req.applicantname}">
+         <apex:facet name="header">Applicant Name</apex:facet>
+         </apex:column>
+          <apex:column value="{!req.servicename}">
+         <apex:facet name="header">Service Name</apex:facet>
+         </apex:column>
+         <apex:column value="{!req.passportnumber}">
+          <apex:facet name="header">Passport Number</apex:facet>
+           </apex:column>
+           <apex:column value="{!req.dateofbirth}">
+           <apex:facet name="header">Date of Birth</apex:facet>
+            </apex:column>
+         </apex:pageBlockTable>
+    </apex:pageBlock>
+   
+    <apex:pageBlock id="pgb" rendered="{!wraplst.size>0}">
+    <apex:pageBlockTable value="{!wraplst}" var="req" id="pgbk" rendered="{!wraplst.size>0}">
+        <apex:column >
+            <apex:facet name="header">
+  <input type="radio" id= "radio1" onclick="gn()"/>
+</apex:facet>
+                        <input type="radio" name="<strong>selectRadio</strong>" id= "radio">
+                        <br/>
+                        <apex:actionSupport event="onclick" action="{!getSelected}" status="buttonStatus" reRender="itemblock">
+                            <apex:param name="recid" value="{!req.reqitemId}"/>
+                        </apex:actionSupport>
+                    </input>
+                </apex:column>
+         <apex:column value="{!req.itemname}">
+         <apex:facet name="header">Item</apex:facet>
+         </apex:column>
+            <apex:column value="{!req.servicecostold}">
+            <apex:facet name="header">Service Cost</apex:facet>
+             </apex:column>
+            <apex:column value="{!req.servicechargeold}">
+            <apex:facet name="header">Service Charge</apex:facet>
+             </apex:column>
+            <apex:column value="{!req.eservicecostold}">
+            <apex:facet name="header">Express Service Cost</apex:facet>
+             </apex:column>
+            <apex:column value="{!req.eservicechargeold}">
+            <apex:facet name="header">Express Service Charge</apex:facet>
+             </apex:column>
+             <apex:column value="{!req.vattax}">
+            <apex:facet name="header">VAT</apex:facet>
+             </apex:column>
+    </apex:pageBlockTable>
+    </apex:pageBlock>
+    </apex:outputPanel>
+    <apex:outputPanel id="itemblock">
+        <apex:pageBlock rendered="{!selectedwraplst.size>0}">
+            <apex:pageblockSection >
+                <apex:dataTable value="{!selectedwraplst}" var="wrapdata" id="recTable" width="100%" rendered="{!selectedwraplst.size>0}">
+                        <div>  
+                   <apex:column headerValue="Item">
+                <apex:outputText value="{!wrapdata.itemname}" id="itm"/>
+            </apex:column>
+            </div>
+                   <div>  
+                   <apex:column headerValue="Service Cost">
+                <apex:inputText value="{!wrapdata.servicecostnew}" id="scost"/>
+            </apex:column>
+            </div>
+            <div>  
+            <apex:column headerValue="Service Charge">
+                <apex:inputText value="{!wrapdata.servicechargenew}" id="scharge"/>
+               
+            </apex:column>
+            </div>
+            <div>  
+            <apex:column headerValue="Express Service Cost">
+                <apex:inputText value="{!wrapdata.eservicecostnew}" id="escost"/>
+              
+            </apex:column>
+            </div>
+            <div>  
+            <apex:column headerValue="Express Service Charge">
+                <apex:inputText value="{!wrapdata.eservicechargenew}" id="escharge"/>
+              
+            </apex:column>
+            </div>
+                </apex:dataTable>
+            </apex:pageblockSection>
+             <apex:commandButton value="Proceed Next" action="{!navigateConfirmDetails}"/> 
+        </apex:pageBlock>
+    </apex:outputPanel>
+    </apex:form>
+</apex:page>

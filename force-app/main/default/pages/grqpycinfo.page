@@ -1,0 +1,309 @@
+<apex:page cache="false"  controller="gctlReqpyChk" docType="html-5.0" standardStylesheets="false"  showHeader="{!IF(isgu=true,false,true)}" sidebar="false" title="Payment Validate" action="{!Chk}" >    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <link rel="stylesheet" href="/resource/1588962734000/axs2MandateCss" />
+    <style>
+        
+        i.selectPay {
+        position: relative;
+        padding: 5px 5px 0px 0px;
+        
+        }
+        .amount-row-title {text-transform: uppercase;}
+    </style>
+    
+    <body>
+        
+        
+        <div id="main">
+            
+            
+            <apex:form id="f">
+                <script type="text/javascript">
+                var cs={}; var selectedPays = [];
+                
+                </script>
+                
+                
+                
+                
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                            SR # <span class="text-000">{!T.RQ__r.Name} </span>
+                            <!--  <div class="user-title">{!rq.STA__c}</div> -->
+                        </span>
+                        
+                    </div>
+                </div>
+                <div class="container">
+                    
+                    <div class="base-layout">
+                        
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            
+                                            <c:grqupd Dim="V" />
+                                            <!--  
+.document-uploads -->
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .collapse-content-wrapper -->
+                                    
+                                    
+                                </div>
+                                
+                            </div>
+                            <!-- .base-side-content -->
+                        </div>
+                        <!-- .base left -->
+                        
+                        <div class="base-main" style="flex-grow: 0;" id="p">
+                            <apex:outputText >
+                                <div class="base-main-content" style="width: 100%;">
+                                    
+                                    <c:grqbrdcrumbs req="{!T.RQ__r}" applicant="completed" addon="completed" payment="active" /> 
+                                    <div class="steps steps-mobile">
+                                        
+                                        <div class="step-item completed">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-members"></i>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item completed">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-addon"></i>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item active">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-cash-deposit"></i>
+                                                <div class="step-title">Review &amp; Payment</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .steps-mobile -->
+                                    
+                                    <b><apex:pageMessages id="msg" /></b>
+                                    
+                                    <div class="mb-5"></div>                                   
+                                    
+                                    <div class="amount-row amount-row-head mb-4">
+                                        <div class="amount-row-title">AMOUNT PAYABLE</div>
+                                        <div  class="ml-auto font-weight-bold" id="dvTAT">
+                                            {!T.A__c} AED
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <apex:outputtext rendered="{!IF(CONTAINS(T.RQ__r.srvc__r.payMd__c,'Customer Deposit'),true,false)}">
+                                            <div class="col-lg-4 col-sm-6">
+                                                <label class="box-check">
+                                                    <input type="radio" name="inside_uae" value="Customer Deposit"  disabled ="true" />
+                                                    <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                        <div class="box-icon">
+                                                            <i class="icon-money text-primary" style="line-height: 22px;font-size: 28px;"></i>
+                                                        </div>
+                                                        <span class="box-title font-weight-medium">
+                                                            Portal deposit <br/>
+                                                            
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </apex:outputtext>
+                                        <!-- .col -->
+                                        <apex:outputtext rendered="{!IF(CONTAINS(T.RQ__r.srvc__r.payMd__c,'Credit / Debit Card'),true,false)}">
+                                            <div class="col-lg-4 col-sm-6">
+                                                <label class="box-check">
+                                                    <input type="radio" name="inside_uae" value="Credit / Debit Card"  checked="{!T.md__c=='Credit / Debit Card'}" disabled ="true"/>
+                                                    <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                        <div class="box-icon">
+                                                            <i class="icon-pay-online text-primary" style="line-height: 22px;font-size: 28px;">
+                                                            </i>
+                                                        </div>
+                                                        <span class="box-title font-weight-medium">
+                                                            Pay online with <br/>
+                                                            credit / debit card
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </apex:outputtext>   
+                                        <!-- .col -->
+                                        <apex:outputtext rendered="{!IF(CONTAINS(T.RQ__r.srvc__r.payMd__c,'Cash'),true,false)}">
+                                            <div class="col-lg-4 col-sm-6">
+                                                <label class="box-check">
+                                                    <input type="radio" name="inside_uae" value="Cash" checked="{!T.md__c=='Cash'}"  disabled ="true" />
+                                                    <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                        <div class="box-icon">
+                                                            <i class="icon-cash-deposit text-primary"></i>
+                                                        </div>
+                                                        <span class="box-title font-weight-medium">
+                                                            Pay by cash <br/>
+                                                            &nbsp;
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </apex:outputtext>
+                                        
+                                        <apex:outputtext rendered="{!IF(CONTAINS(T.RQ__r.srvc__r.payMd__c,'Cheque'),true,false)}">
+                                            <div class="col-lg-4 col-sm-6">
+                                                <label class="box-check">
+                                                    <input type="radio" name="inside_uae" value="Cheque" checked="{!T.md__c=='Cheque'}" disabled ="true"/>
+                                                    <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                        <div class="box-icon">
+                                                            <i class="icon-cash-deposit text-primary"></i>
+                                                        </div>
+                                                        <span class="box-title font-weight-medium">
+                                                            Cheque <br/>
+                                                            &nbsp;
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </apex:outputtext>
+                                        <apex:outputtext rendered="{!IF(CONTAINS(T.RQ__r.srvc__r.payMd__c,'Wire Transfer'),true,false)}">
+                                            <div class="col-lg-4 col-sm-6">
+                                                <label class="box-check">
+                                                    <input type="radio" name="inside_uae" value="Wire Transfer" checked="{!T.md__c=='Wire Transfer'}" disabled ="true"/>
+                                                    <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                        <div class="box-icon">
+                                                            <i class="icon-cash-deposit text-primary"></i>
+                                                        </div>
+                                                        <span class="box-title font-weight-medium">
+                                                            Wire Transfer <br/>
+                                                            &nbsp;
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </apex:outputtext>
+                                        
+                                        <!-- .col -->
+                                    </div>
+                                    
+                                    <!-- <div class="amount-row amount-row-head mb-4" id="mdcRI" style="display: none;">
+
+</div>-->
+                                    
+                                    <!-- .row -->
+                                    <div class="mb-5"></div>
+                                    
+                                    
+                                    <div class="col-xl-12 col-lg-6">
+                                        <div class="box status-box aos-init aos-animate" id="stsMsgId" >
+                                            <div class="status-box-icon">
+                                                <i class="icon-high-priority warning-icon-high-priority"></i>
+                                            </div>
+                                            <h4>PAYMENT</h4> 
+                                            <apex:outputtext rendered="{!T.md__c != 'Wire Transfer'}">
+                                            <div class="fs-16">
+                                                <p>
+                                                    You have selected to <strong>'pay by {!T.md__c}'</strong>. Please visit any of our offices below to pay:
+                                                </p>
+                                                <p>
+                                                    <Strong>axs center, Block 8,ground floor, Dubai Knowledge Park, Dubai, UAE</Strong>
+                                                </p>
+                                                
+                                                <apex:outputtext rendered="{!or(T.RQ__r.srvc__r.uid__c=='208',T.RQ__r.srvc__r.uid__c=='220',T.RQ__r.srvc__r.uid__c=='dnc')}">
+                                                <p>
+                                                <Strong>axs center,Building 1,ground floor,Dubai Studio City,Dubai, UAE.</Strong>
+                                                </p>
+                                                </apex:outputtext>
+                                                 <apex:outputtext rendered="{!AND(T.RQ__r.srvc__r.uid__c!='208',T.RQ__r.srvc__r.uid__c!='220',T.RQ__r.srvc__r.uid__c!='dnc')}">
+                                                <p>
+                                                   
+                                                    
+                                                <Strong>  axs centre, Service Block, Ground Floor, Dubai International Academic City, Dubai, UAE.</Strong>
+                                                </p>  
+                                                  
+                                                </apex:outputtext>
+                                                
+                           
+                                                <Center><Strong>Tel: 800(4)AXS(297)</Strong></Center>
+                                                <p class="fs-14 mb-0">Maximum cash accepted is AED 55,000</p>
+                                                Download your payment advice copy and carry it with you for the payment. 
+                                                <div class="my-4">
+                                                    <a class="btn btn-outline-primary btn-outline-primary-2 mb-4" href="/apex/gtrinv?id={!T.id}"  target="_blank">DOWNLOAD</a>
+                                                    
+                                                </div>
+                                                <div class="separator-dashed"></div>
+                                                <p class="mb-0">
+                                                    Your application will be processed further once the payment is processed successfully</p>
+                                                
+                                                
+                                                
+                                            </div>
+                                            </apex:outputtext>
+                                            <apex:outputtext rendered="{!T.md__c == 'Wire Transfer'}">
+                                             <div class="fs-16">
+                                             
+                                                <p>
+                                                    You have selected to pay by <strong>'{!JSENCODE(T.md__c)}'</strong>. Please make sure you have used below details : 
+                                                 </p>
+                                                 
+                                                 <p> AXS FZ LLC,Emirates NBD, Dubai, UAE| Account Number -1015067187801 | IBAN - AE030260001015067187801| SWIFT- EBILAEAD. </p>
+                                                
+                                                 <Center><Strong>Your application will be processed further once the payment is confirmed.</Strong></Center>
+                                                <p> Download your payment advice copy. </p>
+                                                <div class="my-4">
+                                                    <a class="btn btn-outline-primary btn-outline-primary-2 mb-4" href="/apex/gtrinv?id={!T.id}"  target="_blank">DOWNLOAD</a>
+                                                    
+                                                </div>
+                                             
+                                             </div>
+                                            </apex:outputtext>
+                                            <p></p><span id="j_id0:pmain:j_id134:0:j_id240">
+                                            
+                                            <div class="mb-3"></div>
+                                            </span> 
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                </div>
+                                <!-- .base-main-content -->
+                                <div class="base-main-footer">
+                                    <div class="base-nav">
+                                        
+                                    </div>
+                                </div>
+                                <!-- .base-main-footer -->
+                            </apex:outputText>   
+                            
+                        </div>
+                        <!-- .base-main -->
+                        
+                    </div>
+                    <!-- .base-layout -->
+                    
+                </div>
+                <!-- .container -->
+            </apex:form>
+            
+            
+            
+            
+        </div>
+        
+        
+        <!-- main js -->
+        <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+        
+        
+    </body>
+    <apex:form id="uploadFrm">
+        
+    </apex:form>
+</apex:page>

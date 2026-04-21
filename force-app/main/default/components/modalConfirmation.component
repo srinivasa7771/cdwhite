@@ -1,0 +1,635 @@
+<apex:component >
+    
+    <apex:attribute name="rq" description="request" type="g_Req__c" required="false"  />
+    <style>
+        .ctgHeader {
+        border-bottom-style: solid;
+        border-top: none !important;
+        }
+        .memRow ul,.memRow ul li {
+        list-style: revert;
+        }
+    </style>
+    <div class="modal fade modal-base" id="modal_confirm_shareholders" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 80%;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2>Confirm Shareholders</h2>
+                    <p>Please review shareholder information and confirm. To make changes, simply close this pop-up and continue editing.</p>
+                    
+                    <div class="table-confirm-shareholders mb-4 confirmMemElem">
+                        <div class="table-confirm-shareholders-row table-confirm-shareholders-header">
+                            <div>SHAREHOLDER</div>
+                            <div>NUMBERS OF SHARES</div>
+                            <div>SHARES (%)</div>
+                        </div>
+                    </div>
+                    <div class="table-confirm-shareholders mb-4">
+                        <div class="table-confirm-shareholders-row table-confirm-shareholders-total">
+                            <div>Total</div>
+                            <div id="cTotalShare">100</div> <!-- class="text-primary"-->
+                            <div >100 %</div> <!-- class="text-primary"-->
+                        </div>
+                    </div>
+                    <!-- .table-confirm-shareholders -->
+                    
+                    <p class="onboarding-footer-info">
+                        <!--<i class="icon-info-circle" style="vertical-align: middle;"></i>  <!-- class="text-primary"-->
+                        <!--You can logout any time and come back. All your data will be saved automatically.-->
+                    </p>
+                    <div class="base-main-footer">
+                        <div class="base-nav">
+                            <a class="base-nav-next btn btn-primary btn-block-sm saveMems" id="saveMems" style="color:#fff">CONFIRM &amp; SUBMIT</a>
+                            <a class="base-nav-prev btn btn-primary btn-block-sm" id="closeSaveMem" style="color:#fff">CLOSE</a>
+                        </div>
+                    </div>
+                    
+                    <!--<div class="text-right">
+<a class="btn btn-primary btn-block-sm saveMems" id="saveMems" style="color:#fff">CONFIRM</a>
+</div>-->
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(document).ready(function(){
+        
+    });
+    var addCtgArr1={};
+    var adhoc3Val,cardDetails;
+    function addMemTOConfirmation(){
+        var landDoc = ''
+        if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land' ){
+            landDoc = '';
+        }
+        stopTrigger = true;
+        $('.dropdowns').trigger('change');
+        stopTrigger = false;
+        $('.confirmMemElem').html('');
+        var tsh = parseInt($('#sharesTotal').val());
+        var newRow = '';
+        if(document.getElementById('currentpgid').value == 'pg3'){
+            newRow = '<div class="table-confirm-shareholders-row table-confirm-shareholders-header"><div>SHAREHOLDER</div><div>NUMBERS OF SHARES</div><div>% OF SHARES</div></div>';
+            landDoc = cs['xcddocs__c'].value;
+            $('.addedMems').each(function(){
+                var v = JSON.parse($(this).val());
+                var s = v.shareNum ? v.shareNum : v.sh; //MS 1.1
+                s = (s!=null)?s:0;
+                if(!v.ctgCode.includes('sh')) return;
+                var col = '<div class="memRow table-confirm-shareholders-row">';
+                console.log('v.type==='+v.type);
+                console.log('v.corpORind==='+v.corpORind);
+                var corptype = v.type ? v.type : v.corpORind;
+                console.log('corptype==='+corptype);  
+                v.fullname = (corptype == 'ind' && v.fullname) ? v.fullname  : (corptype == 'ind' && v.fullName) ?v.fullName: v.lname; // MS 1.1
+                col += '<div>'+v.fullname+'</div>';
+                col += '<div>'+s+'</div>';
+                var snu=(s/tsh)*100
+                //  col += '<div>'+Math.round((s/tsh)*100)+'</div></div>';
+                col += '<div>'+snu.toFixed(2)+'</div></div>';
+                newRow += col;
+                
+                //Start Added BY Meenu for DED Land share holder Document 
+                if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land' && v.type == 'corp' && v.nationality != 'United Arab Emirates')
+                {
+                    // var shdec = {};
+                    // shdec['shno'] = v.ctgCode1;
+                   landDoc  +=  landDoc != '' ?';' :'' ;
+                   landDoc += 'Certificate of Continuity or Existence or Good Standing - '+v.compName+ ':'+v.ctgCode1+
+                   ';MoA or AoA of Company - '+v.compName+':'+v.ctgCode1+
+                   ';Company Incorporation Certificate - '+v.compName+':'+v.ctgCode1;
+                    //shdec['docDec'] = landDoc;
+                    //shDocDetail.push(shdec);
+                }
+                else if('{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land' && v.type == 'corp' && v.nationality == 'United Arab Emirates')
+                {
+                    //var shdec = {};
+                    //shdec['shno'] = v.ctgCode1;
+                    landDoc  +=  landDoc != '' ?';' :'' ;
+                    landDoc  += 'Valid copy of trade license - '+v.compName+':'+v.ctgCode1+
+                                ';MoA or AoA of Company - '+v.compName+':'+v.ctgCode1;
+                    // shdec['docDec'] = landDoc;
+                    //shDocDetail.push(shdec);
+                }
+                 else if('{!rq.xvtyp__c}' == 'DED' && '{!rq.parcat__c}' == 'Land' && v.type == 'ind')
+                {
+                    console.log('v===',v);
+                    
+                    
+                    var code = v.ctgCode1 ? v.ctgCode1.trim() : v.ctgCode.trim();
+                    console.log('code===',code);
+                    let eidDocsFront = 'Emirates / National ID - front - '+v.fname.trim()+' '+v.lname.trim()+ ':'+code+';';
+        			let eidDocsBack = 'Emirates / National ID - back - '+v.fname.trim()+' '+v.lname.trim()+':'+code;
+                     let eidDocsFront1 = 'Emirates / National ID - front - '+v.fname.trim()+' '+v.lname.trim();
+         			let eidDocsBack1 = 'Emirates / National ID - back - '+v.fname.trim()+' '+v.lname.trim();
+                    
+                    let eidDocs = eidDocsFront+eidDocsBack;
+                    
+                    //landDoc += landDoc.length > 0 ? ';'+eidDocs : eidDocs;
+                    var erDoc = '';
+                     if(landDoc.indexOf(eidDocsFront) < 0 || landDoc.indexOf(eidDocsFront1) < 0)
+                       {
+                           erDoc += eidDocsFront+';'
+                       }
+                        if(landDoc.indexOf(eidDocsBack) < 0 || landDoc.indexOf(eidDocsBack1) < 0)
+                        {
+                            erDoc += eidDocsBack;
+                        }
+						landDoc.replaceAll(landDoc,'').replaceAll(eidDocsFront,'').replaceAll(eidDocsBack,'').replaceAll(eidDocsFront1).replaceAll(eidDocsBack1);
+                    if(erDoc.length > 0 ) landDoc +=';'+erDoc;
+                    
+                }
+                
+                
+                
+            });
+            
+            var isLandUpdateTrigger = false;
+             console.log('cs[xcddocs__c].value===',cs['xcddocs__c'].value);   
+                 console.log('landDoc==='+landDoc);    
+            if(landDoc != '' && '{!rq.xvtyp__c}' == 'DED' && '{!rq.Acc__r.clt__c}' == 'Land')
+            {
+                console.log('inif==');
+                if(cs['xcddocs__c'].value !=  landDoc )
+                {
+                    var adhocva = cs['xcddocs__c'].value.trim();
+                    var landdoc = landDoc.trim();
+                    var landocarr = landdoc.split(';');
+                    var adhocva = adhocva.split(';');
+                    console.log('landocarr===',landocarr);
+                    console.log('adhocva===',adhocva);
+                    
+                    landocarr.forEach(myFunction);
+                    
+                    function myFunction(item, index) {
+                     console.log('item===',item);
+                        if(!adhocva.includes(item))
+                        {
+                             console.log('item4324===',item);
+                            isLandUpdateTrigger = true;
+                        }
+                    }
+                }
+                console.log('isLandUpdateTrigger==',isLandUpdateTrigger);
+                cs['xcddocs__c'].value = landDoc;
+            }
+            //end Added BY Meenu for DED Land share holder Document 
+            
+            $('.table-confirm-shareholders-total').show();
+            newRow +='</div>';
+            $('.confirmMemElem').append(newRow);
+            $('#saveMems').unbind().on('click',function(){
+                 
+                
+                
+                //Start MS 1.1
+                var landDocTodel = '';
+                if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' && docnameTodelete != cs['xcddocs__c'].value )
+                {
+                    landDocTodel = docnameTodelete;
+                }
+                else{
+                    landDocTodel = '';
+                }
+                 
+                console.log('isLandUpdateTrigger===',isLandUpdateTrigger);
+                console.log('isLandUpdateTrigger===',isLandUpdateTrigger == true);
+                 if(isLandUpdateTrigger == true)
+                {
+                    showTempLoader_input( this);
+                       saveLandDoc(landDocTodel); 
+                   
+                }
+                else
+                    {
+                        $('#modal_confirm_shareholders').modal('hide');
+                        $('.pgs').hide();
+                         page3();
+                        }
+               
+                //End MS 1.1
+            });
+            $('#closeSaveMem').unbind().on('click',function(){
+                $('#modal_confirm_shareholders').modal('hide');
+            });
+            $('#modal_confirm_shareholders h2').html("Confirm shareholders");
+            $('#saveMems').html('Confirm');
+            $('#modal_confirm_shareholders p').eq(0).html("Please review the information below.");
+            $('#cTotalShare').text(tsh);
+            
+        }
+        else if(document.getElementById('currentpgid').value == 'pg4'){
+            if(cs["xadtx2__c"].value) adhoc3Val = JSON.parse(cs["xadtx2__c"].value);
+            if(cs["xuvdet__c"].value){//for parent company details
+                cardDetails = JSON.parse(cs["xuvdet__c"].value);
+                cardDetails.compName= cs['xccn__c'].value;
+                cardDetails.RegNum=cs['rtacn__c'].value;
+                cardDetails.issuingauth='{!rq.License_Authority__c}';
+            }
+            if($('.box-danger:visible').length>0){
+                axsAlert('Alert','Please upload all mandatory documents to proceed.');
+                return;
+            }
+            for(i in addCtgArr){
+                addCtgArr1[i] = addCtgArr[i];
+            }
+            /* Preffered names starts here*/
+            //MS 1.1
+            if(('{!rq.xvtyp__c}' != 'DED' && '{!rq.Acc__r.clt__c}' != 'Land') ||('{!rq.xvtyp__c}' == 'DDA' && '{!rq.Acc__r.clt__c}' == 'Land') ) 
+            {
+                newRow = '<div class="table-confirm-shareholders-row table-confirm-shareholders-header accNames">';
+                newRow += '<div>PREFERRED BUSINESS NAMES</div></div>';
+                newRow += '<div style="border-top: none;font-weight: bold;" class="table-confirm-shareholders-row "><div style="flex: 0 0 25% !important;">FIRST NAME</div><div style="flex: 0 0 25% !important;">SECOND NAME</div><div style="flex: 0 0 25% !important;">THIRD NAME</div><div style="flex: 0 0 25% !important;">LEGAL FRAMWORK</div></div>';
+                newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 25% !important;">'+'{!rq.xcfn__c}'+'</div><div style="flex: 0 0 25% !important;">'+'{!rq.xcmn__c}'+'</div><div style="flex: 0 0 25% !important;">'+'{!rq.xcln__c}'+'</div><div style="flex: 0 0 25% !important;">'+'{!rq.xfb__c}'+'</div></div>';
+            }
+            /* Preffered names ends here*/
+            /* parent company details starts here (in case of branch) */
+            if(cs['xfb__c'].value.includes('Branch')){
+                newRow += '<div class="table-confirm-shareholders-row table-confirm-shareholders-header accNames">';
+                 if(('{!rq.xvtyp__c}' != 'DED' && '{!rq.Acc__r.clt__c}' != 'Land') ||('{!rq.xvtyp__c}' == 'DDA' && '{!rq.Acc__r.clt__c}' == 'Land') )
+                    newRow += '<div>PARENT COMPANY DETAILS</div></div>';
+                else
+                    newRow += '<div>COMPANY DETAILS</div></div>';
+                newRow += '<div style="border-top: none;font-weight: bold;" class="table-confirm-shareholders-row "><div style="flex: 0 0 25% !important;">COMPANY NAME</div><div style="flex: 0 0 25% !important;">REGISTRATION NUMBER</div><div style="flex: 0 0 25% !important;">ISSUING AUTHORITY</div><div style="flex: 0 0 25% !important;">ISSUING COUNTRY</div></div>';
+                newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 25% !important;">'+"{!rq.xccn__c}"+'</div><div style="flex: 0 0 25% !important;">'+'{!rq.rtacn__c}'+'</div><div style="flex: 0 0 25% !important;">'+(cardDetails.issuingauth?cardDetails.issuingauth:'NA')+'</div><div style="flex: 0 0 25% !important;">'+'{!rq.xcpic__c}'+'</div></div>';
+            }
+            /* parent company details ends here*/
+            /* lease info details starts here*/
+
+            if(cs['xadtx5__c'] != null && cs['xadtx5__c'].value != null && cs['xadtx5__c'].value != '')
+            {
+                var adhoc5Val = JSON.parse(cs["xadtx5__c"].value);
+                console.log('adhoc5Val======='+adhoc5Val);
+                newRow += '<div class="table-confirm-shareholders-row table-confirm-shareholders-header leaseIn">';
+                newRow += '<div>LEASE INFORMATION</div></div>';
+                newRow += '<div style="border-top:none;font-weight: bold;" class="table-confirm-shareholders-row "><div style="flex: 0 0 50% !important;">LEASE TYPE</div><div style="flex: 0 0 50% !important;">INFORMATION</div></div>';
+                if(adhoc5Val && adhoc5Val!= null){
+                    let clmn = '';
+                    for([i,v] of adhoc5Val.entries()){
+                        var obj1 = v;
+                        clmn += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 50% !important;">'+obj1.type+'</div>';
+                        clmn += '<div style="flex: 0 0 50% !important;">';
+                        if(obj1.info && obj1.info != null){
+                                clmn += '<ul>';
+                                var obj = obj1.info;
+                                var keys = Object.keys(obj);
+                                for(var i = 0 ; i< keys.length; i++)
+                                {
+                                    let key = keys[i];
+                                    clmn += '<li>'+key +' : <span style="font-family: "Lucida Console", "Courier New", monospace;">'+obj[key] +'</span></li>';
+                                }
+                            //}
+                            clmn += '</ul>';
+                        }
+                        clmn += '</div></div>';
+                    }
+                    newRow += clmn;
+                }
+            }
+            /* lease info details ends here*/
+            /* Segments and activities starts here*/
+            newRow += '<div class="table-confirm-shareholders-row table-confirm-shareholders-header segAndAct">';
+            newRow += '<div>SEGMENTS AND ACTIVITIES</div></div>';
+            newRow += '<div style="border-top:none;font-weight: bold;" class="table-confirm-shareholders-row "><div style="flex: 0 0 50% !important;">SEGMENT</div><div style="flex: 0 0 50% !important;">ACTIVITIES</div></div>';
+            if(adhoc3Val && adhoc3Val.length>0){
+                let clmn = '';
+                for([i,v] of adhoc3Val.entries()){
+                    clmn += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 50% !important;">'+v.name+'</div>';
+                    clmn += '<div style="flex: 0 0 50% !important;">';
+                    if(v.SegActivities && v.SegActivities.length>0){
+                        clmn += '<ul>';
+                        for([x,y] of v.SegActivities.entries()){
+                            clmn += '<li>'+y.name+'</li>';
+                        }
+                        clmn += '</ul>';
+                    }
+                    clmn += '</div></div>';
+                }
+                newRow += clmn;
+            }
+            /* Segments and activities ends here*/
+            var corpShAvlbl = false;
+            var indShAvlbl = false;
+            newRow += '<div class="onlyInd table-confirm-shareholders-row table-confirm-shareholders-header">';
+            newRow += '<div>INDIVIDUAL MEMBER DETAILS</div></div>';
+            newRow += '<div style="border-top: none;font-weight: bold;" class="onlyInd table-confirm-shareholders-row "><div style="flex: 0 0 20% !important;">NAME</div><div style="flex: 0 0 20% !important;">PASSPORT NUMBER</div><div style="flex: 0 0 20% !important;">ROLE</div><div style="flex: 0 0 20% !important;">NATIONALITY</div><div style="flex: 0 0 20% !important;">SHARES</div></div>';
+            //newRow += '<div style="border-top: none;font-weight: bold;" class="table-confirm-shareholders-row "><div style="flex: 0 0 25% !important;">NAME</div><div style="flex: 0 0 25% !important;">PASSPORT NUMBER</div><div style="flex: 0 0 25% !important;">NATIONALITY</div><div style="flex: 0 0 25% !important;">SHARES</div></div>';
+            for(j of allpassports){
+                if(cs['rtacn__c'].value != j && $('#'+j) ){
+                    var memData = JSON.parse($('#'+j).val());
+                    if(memData.corpORind=='ind'|| memData.type=='ind'){
+                        indShAvlbl = true;
+                        var ppNo = (memData.passportNo)?memData.passportNo:memData.rRegNum;
+                         var memShares = (memData.sh && memData.shareNum != 'NaN') ? memData.sh : (!memData.sh && memData.shareNum && memData.shareNum != 'NaN') ? memData.shareNum : 'NA';
+                        var mName = (memData.fullname)?memData.fullname:memData.fullName;
+                        newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 20% !important;">'+mName+'</div><div style="flex: 0 0 20% !important;">'+ppNo+'</div><div style="flex: 0 0 20% !important;">'+memData.addCtg.replaceAll(',',',\n')+'</div><div style="flex: 0 0 20% !important;">'+(memData.nationality)+'</div><div style="flex: 0 0 20% !important;">'+memShares+'</div></div>';
+                        //newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 25% !important;">'+memData.fullName+'</div><div style="flex: 0 0 25% !important;">'+ppNo+'</div><div style="flex: 0 0 25% !important;">'+(memData.nationality)+'</div><div style="flex: 0 0 25% !important;">'+memShares+'</div></div>';
+                    }
+                }
+            }
+            /* Corporate share holder details*/
+            newRow += '<div class="onlyCorp table-confirm-shareholders-row table-confirm-shareholders-header">';
+            newRow += '<div>CORPORATE MEMBER DETAILS</div></div>';
+            newRow += '<div style="border-top: none;font-weight: bold;" class="onlyCorp table-confirm-shareholders-row "><div style="flex: 0 0 20% !important;">NAME</div><div style="flex: 0 0 20% !important;">REGISTRATION NUMBER</div><div style="flex: 0 0 20% !important;">ROLE</div><div style="flex: 0 0 20% !important;">COUNTRY OF REGISTRATION</div><div style="flex: 0 0 20% !important;">SHARES</div></div>';
+            for(j of allpassports){
+                if(cs['rtacn__c'].value != j && $('#'+j) ){
+                    var memData = JSON.parse($('#'+j).val());
+                    if(memData.corpORind=='corp'|| memData.type=='corp' ){
+                        corpShAvlbl = true;
+                        var ppNo = (memData.passportNo)?memData.passportNo:memData.RegNum;
+                        var memShares = (memData.shareNum && memData.shareNum!='NaN')?memData.shareNum:'NA';
+                        newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 20% !important;">'+memData.compName+'</div><div style="flex: 0 0 20% !important;">'+ppNo+'</div><div style="flex: 0 0 20% !important;">'+memData.addCtg+'</div><div style="flex: 0 0 20% !important;">'+(memData.nationality)+'</div><div style="flex: 0 0 20% !important;">'+memShares+'</div></div>';
+                    }
+                }
+            }
+            if(isParentCompToUbo=='true' && allpassports.includes(cardDetails.RegNum)){
+                //cardDetails
+                corpShAvlbl = true;
+                newRow += '<div class="memRow table-confirm-shareholders-row"><div style="flex: 0 0 20% !important;">'+cardDetails.compName+'</div><div style="flex: 0 0 20% !important;">'+cardDetails.RegNum+'</div><div style="flex: 0 0 20% !important;">Ultimate Benificiary</div><div style="flex: 0 0 20% !important;">'+(memData.nationality)+'</div><div style="flex: 0 0 20% !important;">'+memShares+'</div></div>';
+            }
+            $('.confirmMemElem').append(newRow);
+            if(!corpShAvlbl)
+                $('.onlyCorp').remove();
+            if(!indShAvlbl)
+                $('.onlyInd').remove();
+            for(i in addCtgArr){
+                for(j of addCtgArr[i]){
+                    var p=j;
+                    if(p){
+                        if($('#'+p).val()){
+                            var v = JSON.parse($('#'+p).val());
+                            var c='';
+                            var c1 = '';
+                            var col ='';
+                            c = categoryObj[i];
+                            c1 = i;
+                            //addCtgArr1[i]=[];
+                            col = '<div class="memRow table-confirm-shareholders-row" memId="'+p+'">';
+                            v.fullname = (v.type == 'ind') ? v.fullname : v.lastname;
+                            v.fullname = (v.fullname)?v.fullname:v.fullName;
+                            // v.fullname = (v.type == 'ind') ? v.fullname : v.Surname;
+                            if(v.fullname==undefined && v.type=='corp'){v.fullname=v.compName; }
+                            col += '<div style="flex: 0 0 60% !important;">'+v.fullname+'</div>';
+                            col += '<div class="text-primary2" style="flex: 0 0 40% !important;">'+p+'</div></div>';
+                            $('[ctgHeader="'+c1+'"]').append(col);
+                        }
+                    }
+                }
+                if(addCtgArr[i].length<1)
+                    $('[ctgHeader="'+i+'"]').hide();
+                $('#modal_confirm_shareholders h2').html("Confirm All Data");
+                //$('#saveMems').html('Submit To PRM');
+                $('#saveMems').html('CONFIRM &amp; SUBMIT');
+                $('#modal_confirm_shareholders p').eq(0).html("Please review the information below.");
+                $('.table-confirm-shareholders-total').hide();
+                
+                
+                $('#saveMems').unbind().on('click',function(){
+                    $('#modal_confirm_shareholders').modal('hide');
+                    allMembersData = JSON.parse(cs["xadtx4__c"].value);
+                    $('.pgs').hide();
+                    $('#pg5').show();
+                    $('.onboarding-nav-next').hide();
+                    document.getElementById('currentpgid').value = 'pg5';
+                    //cs["xadh__c"].value = (cs["xadh__c"].value)?cs["xadh__c"].value+';'+setAdhocVal():setAdhocVal();
+                    //cs["xadh__c"].value = cs["xadh__c"].value.split(';').filter(x=>x).join(';');
+                    //let mems1 = JSON.parse(cs["xadtx4__c"].value).members;
+                    /*for(i in mems1){
+                        var xadh11 = cs["xadh__c"].value.split(';');
+                        if(!mems1[i].ctgCode1)
+                            mems1[i].ctgCode1 = xadh11[i];
+                    }*/
+                    cs["xadh__c"].value = setAdhocVal();
+                    let mems1 = [];
+                    $('.addedMems').each(function(ind){
+                        var j = JSON.parse($(this).val());
+                        var y = {};
+                        if(j.type == 'corp'){
+                            for(i in backEndKeysCorp){
+                                y[i] = j[backEndKeysCorp[i]];
+                            }
+                        }
+                        else{
+                            y = j;
+                        }  
+                        mems1.push(y);
+                    });
+                    
+                    allMembersData.members = mems1;
+                    cs['xadtx4__c'].value = JSON.stringify(allMembersData);
+                    $('#members').removeClass('active-section').addClass('completed-section');
+                    //saveMems();
+                    if(editMode == true){
+                        showTempLoader_input( $('#saveMems'));
+                        submitToPRM();
+                    }
+                    //saveDetails1();
+                });
+                $('#closeSaveMem').unbind().on('click',function(){
+                    $('#modal_confirm_shareholders').modal('hide');
+                });
+            }
+        }
+        //$('.onboarding-nav-next').addClass('disabled');
+        $('#modal_confirm_shareholders').modal('show');
+        
+    }
+    function setAdhocVal(){
+        var ubCodes = [];
+        var bdCodes = [];
+        var lrCodes = [];
+        var addedAdhocs = cs["xadh__c"].value.split(';').sort().filter(i=>i);
+        $('.addedMems').each(function(ind){
+            //ctgCount[ind] = '';
+            var i = JSON.parse($(this).val());
+            var v = i;
+            var memType= (v.type)?v.type:v.corpORind;
+            /*if(v.ctgCode == 'lr')
+                v.ctgCode1 = 'lr1';*/
+            //if(memType =='ind' ||  || v.isParentComp=='true'){
+            if(v.ctgCode == 'gm'){
+                v.ctgCode1 = (v.ctgCode);
+                console.log('v.ctgCode1 -- '+v.ctgCode1);
+            }
+            else if(v.ctgCode == 'ub'){
+                v.ctgCode1 = 'ub'+(ubCodes.length+1);
+                ubCodes.push(v.ctgCode1);
+            }else if(v.ctgCode == 'bd'){
+                v.ctgCode1 = 'bd'+(bdCodes.length+1);
+                bdCodes.push(v.ctgCode1);
+            }else if(v.ctgCode == 'lr'){
+                v.ctgCode1 = 'lr'+(bdCodes.length+1);
+                bdCodes.push(v.ctgCode1);
+            }else{
+                if(!(v.ctgCode1)){
+                    v.ctgCode1 = v.ctgCode+(addedAdhocs.length+1);
+                }
+                console.log('v.ctgCode1-sh -- '+v.ctgCode1);
+            }
+            // }
+            if(!(cs["xadh__c"].value.includes(v.ctgCode1)))
+                addedAdhocs.push(v.ctgCode1);
+            $(this).val(JSON.stringify(v));
+        });
+        return addedAdhocs.join(';');
+    }
+    function setAdhocVal_Old(){
+        var ctgCount=[];
+        $('.addedMems').each(function(ind){
+            ctgCount[ind] = '';
+            var i = JSON.parse($(this).val());
+            var v = i;
+            if(i.ctgCode == 'ub' ||i.ctgCode == 'lr' || i.ctgCode == 'gm'){
+                if(i.ctgCode == 'lr')
+                    ctgCount[ind] = 'lr1';
+                else
+                    ctgCount[ind] = (i.ctgCode);
+                
+                i.ctgCode1 = i.ctgCode;
+            }
+            else if(i.type=='ind'){
+                ctgCount[ind] = (i.ctgCode+'1');
+                cs['xadh__c'].value.split(';').forEach(function(e){
+                    if(e && ctgCount[ind]==e){
+                        var c = parseInt(ctgCount[ind].split('sh')[1])+1;
+                        ctgCount[ind] = 'sh'+c;
+                    }
+                });
+                {
+                    var y = 0;
+                    for(j=0;j<ind;j++){
+                        var x = ctgCount[j];
+                        //if(x!=''){
+                        if(x.includes(i.ctgCode)){
+                            var n = parseInt(x.replace(i.ctgCode, ""));
+                            ctgCount[ind] = (i.ctgCode+''+(n+1));
+                            cs['xadh__c'].value.split(';').forEach(function(e){
+                                if(e && ctgCount[ind]==e){
+                                    var c = parseInt(ctgCount[ind].split('sh')[1])+1;
+                                    ctgCount[ind] = 'sh'+c;
+                                }
+                            });
+                            //i.ctgCode = ctgCount[ind];
+                        }
+                        else{
+                            ctgCount[ind] = (i.ctgCode+'1');
+                            cs['xadh__c'].value.split(';').forEach(function(e){
+                                if(e && ctgCount[ind]==e){
+                                    var c = parseInt(ctgCount[ind].split('sh')[1])+1;
+                                    ctgCount[ind] = 'sh'+c;
+                                }
+                            });
+                            //i.ctgCode = ctgCount[ind];
+                        }
+                        //}
+                    }
+                    y = 0;
+                }
+            }
+            if(ctgCount[ind])
+                v.ctgCode1 = ctgCount[ind];
+            $(this).val(JSON.stringify(v));
+        });
+        return ctgCount.join().replace(/,/g, ";");
+    }
+    var dropDownData={'gm':{},'ub':{},'bd':{},'lr':{},'sh':{}};
+    function saveMems(){
+        if(!dropDownData)
+            dropDownData={'gm':{},'ub':{},'bd':{},'lr':{},'sh':{}};
+        var allmemarr=[];
+        var allmemarr1=[];
+        $('.addedMems').each(function(){
+            for(i in addCtgArr){
+                var v = $(this).val();
+                var v1 = JSON.parse(v);
+                v1.addCtg = '';
+                $(this).val(JSON.stringify(v1));
+            }
+        });
+        $('.addedMems').each(function(){
+            var v = $(this).val();
+            var v1 = JSON.parse(v);
+            var p = $(this).attr('id');
+            v1.addCtg = v1.ctg;
+            for(i in addCtgArr){
+                if(addCtgArr[i].includes(p)){
+                    if(!v1.addCtg.includes(categoryObj[i]))
+                        v1.addCtg += ','+categoryObj[i];
+                }
+            }
+            v1.role = v1.addCtg;
+            allmemarr.push(v1);
+            $(this).val(JSON.stringify(v1));
+        });
+        /*$('.addedMems').each(function(){
+            var v = $(this).val();
+            var v1 = JSON.parse(v);
+            var p = $(this).attr('id');
+            for(i in addCtgArr){
+                if(addCtgArr[i].includes(p)){
+                    v1.addCtg = (v1.addCtg==undefined)?','+categoryObj[i]:v1.addCtg+','+categoryObj[i];
+                }
+            }
+            v1.addCtg = (v1.ctg)+v1.addCtg;
+            v1.role = v1.addCtg;
+            $(this).val(JSON.stringify(v1));
+        });
+        $('.addedMems').each(function(){
+            var v = $(this).val();
+            allmemarr.push(JSON.parse(v)); 
+        });*/
+        $('.dropdowns').each(function(){
+            var c = $(this).attr('selcode');
+            dropDownData[c].selected = $(this).find('option:selected').attr('pno');
+            dropDownData[c].disabled = ($('[selcode="'+c+'"]').attr('disabled') == 'disabled');
+        });
+        allMembersData["currentpgid"] = $('#currentpgid').val();
+        allMembersData["shareHoldersType"] = $('[name="shareholders_type"]:checked').attr('val');
+        allMembersData["shareDetails"]["shareValue"] = parseInt($('#shareVal').val());
+        allMembersData["shareDetails"]["totalShares"] = parseInt($('#sharesTotal').val());
+        allMembersData["dropDownData"] = dropDownData;
+        for(j of allmemarr){
+            var y = {};
+            if(j.type == 'corp'){
+                for(i in backEndKeysCorp){
+                    y[i] = j[backEndKeysCorp[i]];
+                }
+            }
+            else{
+                y = j;
+                /*for(i in backEndKeys){
+                    y[i] = j[backEndKeys[i]];
+                }*/
+            }  
+            allmemarr1.push(y);
+        }
+        allMembersData.members = allmemarr1;
+        // axsAlert('Alert',JSON.stringify(allMembersData));
+        cs['xadtx4__c'].value = JSON.stringify(allMembersData);
+        $('#modal_confirm_shareholders').modal('hide');
+        var landDocTodel = '';
+        
+        if('{!rq.Acc__r.clt__c}' == 'Land' && '{!rq.xvtyp__c}' == 'DED' && docnameTodelete != cs['xcddocs__c'].value )
+        {
+            landDocTodel = docnameTodelete;
+        }
+        else{
+            landDocTodel = '';
+            }
+        console.log('stopTrigger====',stopTrigger);
+        if(stopTrigger == false   &&  cs['pxcddocs__c'].value.trim() !=  cs['xcddocs__c'].value.trim() )
+        {
+            showTempLoader_input( $('#saveMems'));
+            saveDetails1();
+            hideTempLoader_input();
+            
+             
+        }
+    }
+    </script>
+</apex:component>

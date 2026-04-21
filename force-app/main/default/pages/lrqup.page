@@ -1,0 +1,1366 @@
+<apex:page sidebar="false" standardController="g_Req__c" extensions="gctlRequ" docType="html-5.0" id="page" cache="false" readOnly="false"
+           showHeader="{!AND(NOT(isgu),NOT(isFContU))}" standardStylesheets="false" action="{!authenticateUser}" title="{!sd.slbl__c}">
+    <html>
+        
+        <apex:includeScript value="{!URLFOR($Resource.AXS2Vendors, '/jquery/dist/jquery.min.js')}"/> 
+        <apex:includeScript value="{!$Resource.jsH}"/>
+        <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+        
+        <script type="text/javascript">
+        
+        var cs = {};var flg1=false; var flg2=false; 
+        var srv_cd = '{!JSENCODE(rq.srvc__r.uid__c)}'; 
+        let isFContU = '{!JSENCODE(isFContU)}';
+        $(document).ready(function() {
+            /*if('{!JSENCODE(rq.xadtx1__c)}'!=null){
+            cs['xadtx1__c'].value='{!JSENCODE(rq.xadtx1__c)}';
+            }*/
+            $('#uploadDel').on('click',function(){
+                if(cs['exPPDoc'])
+                    cs['exPPDoc'].value = '';
+            })
+            //for DDA NOC
+            console.log('--t&c 3--'+cs['dsgu__c'].value);
+            
+            if('{!isgu}'=='true'&&srv_cd=='dnc'&&'{!ispu}'=='false'&&localStorage.getItem('rqNo')=='{!JSENCODE(rq.name)}'){
+                $('#main').remove();
+                axsAlert('ERROR','You have clicked on back button in payment page.<p>Please create a new request.</p>');
+                $('#modal_alert_global').modal('hide').on('hidden.bs.modal',function(){
+                    document.location.href = '/grqded_2?sid=a0L2y000000Xe28EAC';
+                });
+            }
+            if(srv_cd=='ltp' || srv_cd=='apt') {
+                $("#btnnxt").text('SUBMIT'); 
+            }
+            
+            //var  docs='{!JSENCODE(rq.xcddocs__c)}';
+            var  docs=cs["xcddocs__c"].value;
+            docs = docs.substring(0, docs.length - 1); 
+            var doclist = docs.split(';');
+            var doclen=doclist.length;
+            
+            for(var i=0; i < doclist.length; i++) {
+                var docname = doclist[i];
+                if((docname.includes("Good Standing") || docname.includes("UAE license issued by Economic Department") || docname.includes("UAE trade license issued by Economic Department") || docname.includes("DED Commercial License") || docname.includes("KHDA") || docname.includes("NOC from Knowledge Human Department Authority")))
+                    flg1 = true;
+                else if(!(docname.includes("Good Standing") || docname.includes("UAE license issued by Economic Department") || docname.includes("UAE trade license issued by Economic Department") || docname.includes("DED Commercial License") || docname.includes("KHDA") || docname.includes("NOC from Knowledge Human Department Authority"))) 
+                    flg2 = true;  
+            }
+            if('{!JSENCODE(rq.xdrv__c)}' == 'true' && !flg2){
+                cs['dsgu__c'].value = true;
+                $('#dsgu').hide();
+            } 
+            if(!flg1){
+                $('#xdrv').hide();
+            }
+            if('{!JSENCODE(rq.xdrv__c)}' == 'true'){
+                
+                $('[value="xdrv"]').prop('checked',true);
+            }
+            if('{!JSENCODE(rq.dsgu__c)}' == 'true')
+                $('[value="dsgu"]').prop('checked',true);
+            
+        });
+        var ad3MemData = {}, isEditingMem = false , exMemPPChanged= false;
+        function memEdit(dId){
+            
+            editingMemDocId = dId;
+            ad3MemData = {};
+            if(cs["xadtx3__c"] && cs["xadtx3__c"].value){
+                let ad3 = JSON.parse(cs["xadtx3__c"].value);
+                console.log('ad3 data :'+JSON.stringify(ad3));
+                if(ad3 && ad3.serviceRequests != undefined &&ad3.serviceRequests[0]&&ad3.serviceRequests[0].members.length>0){ //PJ 1.1
+                    if(ad3.serviceRequests[0].members.length>1 && dId){
+                        for(i of ad3.serviceRequests[0].members){
+                            if(dId == i.attachmentId){
+                                ad3MemData = i;
+                            }
+                        }
+                    }
+                    else
+                        ad3MemData = ad3.serviceRequests[0].members[0];
+                }
+            }
+            if(Object.keys(ad3MemData).length>0){
+                for(i of Object.keys(ad3MemData)){
+                    if(i!='addresses'){
+                        if(typeof(ad3MemData[i])=='object' && ad3MemData[i] && Object.keys(ad3MemData[i]).length>0){
+                            let recObj = (i=='passports' || i=='addresses')?ad3MemData[i][0]:ad3MemData[i];
+                            for(j of Object.keys(recObj)){
+                                let e = $('#modal_confirm_information_LA').find('[ddaKeyparent='+i+'][ddaKey='+j+']');
+                                let f = e.attr('for');
+                                let v = (e.hasClass('input-datepicker'))?formatDate_LA(recObj[j]):recObj[j];
+                                if(f=='allowSingleQuote'){
+                                    v = v.replaceAll('\\','');
+                                    v = v.replaceAll('\\','');  
+                                }
+                                e.val(v);
+                            }
+                        }
+                        else if(i=='perMobile'){
+                            $('#modal_confirm_information_LA').find('[ddakey="phoneCode"]').val(ad3MemData[i].split('-')[0]);
+                            $('#modal_confirm_information_LA').find('[ddaKey='+i+']').val(ad3MemData[i].split('-')[1]);
+                        }
+                            else if(i== 'isEmailVerified' && ad3MemData.isEmailVerified == true){  //PJ 1.1- Show correct green sign when email is verified
+                                $('[ddakey="isEmailVerified"]').show();
+                                cs['isEmailVerified'] = true;
+                                //$('#otpValidateEmailBtn').hide();
+                            }
+                                else if(i== 'isMobilePhoneVerified' && ad3MemData.isMobilePhoneVerified== true){ //PJ 1.1 - Show correct green sign when mobile number is verified
+                                    $('[ddakey="isMobilePhoneVerified"]').show();
+                                    cs['isMobilePhoneVerified'] = true;
+                                    //$('#otpValidateMobileBtn').hide();
+                                }
+                                    else{
+                                        let e = $('#modal_confirm_information_LA').find('[ddaKey='+i+']');
+                                        let f = e.attr('for');
+                                        let v = (e.hasClass('input-datepicker'))?formatDate_LA(ad3MemData[i]):ad3MemData[i];
+                                        v = (i=='proposedNumberOfShares'&&!v)?0:v;
+                                        if(i=='nationality'){
+                                            $('[ddakey="nationality"]').find('option[for="'+ad3MemData.nationality+'"]').prop('selected',true)
+                                            $('[ddakey="nationality"]').trigger('change');
+                                        }
+                                        if(f=='allowSingleQuote'){
+                                            v = v.replaceAll('\\','');
+                                            v = v.replaceAll('\\','');  
+                                        }
+                                        e.val(v);
+                                    }
+                    }
+                    $('[fldName="shareNum"]').parents('col-md-6').hide();
+                }
+            }
+            $('#modal_confirm_information_LA select').trigger('change');
+            $('#otpButtonBlock').hide();  //PJ 1.1 - Hiding validate button on edit as mobile number and email should be validated at this stage.
+            if(ad3MemData.emiratesId ){
+                if(ad3MemData.emiratesId.docNo)
+                    $('#modal_confirm_information_LA [name="eid"][for="yes"]').prop('checked',true).trigger('change');
+                else
+                    $('#modal_confirm_information_LA [name="eid"][for="no"]').prop('checked',true).trigger('change');
+            }
+            $('#modal_confirm_information_LA').find('[name="sal"][for="'+ad3MemData.salutation+'"]').prop('checked',true);
+            /* For Address and nationality fields starts.-- need to be removed  */
+            $('[ddakey="nationality"]').find('option[for="'+ad3MemData.nationality+'"]').prop('selected',true);
+            $('[ddakey="nationality"]').trigger('change');
+            $('[ddakey="birthCountry"]').find('option[for="'+ad3MemData.birthCountry+'"]').prop('selected',true);//U_S 1.2
+            $('[ddakey="birthCountry"]').trigger('change');//U_S 1.2
+            if(ad3MemData.addresses &&  ad3MemData.addresses.length > 0){ // PJ 1.1
+                $('[ddakey="Area"]').val(ad3MemData.addresses[1].area);
+                $('[ddakey="Street"]').val(ad3MemData.addresses[1].street);
+                $('[ddakey="emirate"]').val(ad3MemData.addresses[1].city);
+                $('[ddakey="emirate"]').select2();
+                            /*U_S* -- Start 1.2*/
+                if(ad3MemData.addresses[1].postalCode){
+                  $('#modal_confirm_information_LA [name="eid"][for="yes"]').prop('checked',true).trigger('change');  
+                }
+                else{
+                $('#modal_confirm_information_LA [name="eid"][for="no"]').prop('checked',true).trigger('change');
+                }
+                if(ad3MemData.visitedUAE){
+                    if(ad3MemData.visitedUAE==true){
+                        $('#modal_confirm_information_LA [name="vid"][for="yes"]').prop('checked',true).trigger('change');
+                    }
+                    if(ad3MemData.visitedUAE==false){
+                        $('#modal_confirm_information_LA [name="vid"][for="no"]').prop('checked',true).trigger('change');
+                    }
+                }
+                /*U_S -- End*/
+                $('[ddakey="buildingNo"]').val(ad3MemData.addresses[1].buildingNo);
+                $('[ddakey="postalCode"]').val(ad3MemData.addresses[1].postalCode);
+                $('[fldname="pstreet"]').val(ad3MemData.addresses[0].street);
+                $('[fldname="pcity"]').val(ad3MemData.addresses[0].city);
+                $('[ddakey="pcountry"]').find('option[for="'+ad3MemData.addresses[0].country+'"]').prop('selected',true);
+            }
+            $('[ddakey="pcountry"]').trigger('change');
+            /* For Address and nationality fields ends.*/
+            cs['docname'].value = 'Passport Copy';
+            isEditingMem = true;
+            $('#modal_confirm_information_LA').modal('show');
+        }
+        
+        function titleCase(elem) {
+            let str = $(elem).val();
+            if(!str)
+                return;
+            console.log('--str--'+str);
+            var splitStr = str.toLowerCase().split(' ');
+            for (var i = 0; i < splitStr.length; i++) {
+                splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);     
+            }
+            $(elem).val(splitStr.join(' ')); 
+        }
+        //Add  warning message
+        function addWarningMsg(thiselem,message){
+            console.log('addWarningMsg:::');
+            var elem = $(thiselem);
+            var warElem = '<div class="warningMsg">'+message+'</div>';
+            if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+                elem.parent().parent().append(warElem);
+            }else{
+                elem.parent().append(warElem);
+            }
+        }
+        //Remove warning error
+        function removeWarningMsg(thiselem){
+            console.log('removeWarningMsg:::');
+            var elem = $(thiselem);
+            elem.parent().parent().find('.warningMsg').remove();
+        }
+        
+        //Scroll to Div
+        function scrollToDiv(e){
+            $('html,body').animate({
+                scrollTop: (e.offset().top-60)
+            }, 100);
+            e.focus();
+        }
+        tAndC +='By Submission, I take full responsibility for the contents of the form plus the document(s) uploaded and attest that the information on this form and uploaded document(s) are free of errors. In case of errors, I agree to bear all the costs required to rectify such errors.';
+        function axsConfirmation(ch,cb,loader,onYes,onYesArgs,onNo,onNoArgs){
+            $('#modal_confirm_global').remove();
+            if(cb==undefined) cb='';
+            var cBlock = '<div class="modal fade modal-base" data-backdrop="static" id="modal_confirm_global" role="dialog" tabindex="-1" style="display: none;" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 607px;"> <div class="modal-content"> <div class="modal-body"> <div class="row"> <div class="col-12 order-md-2"> <div class="d-flex flex-column h-100"> <div class="mb-auto"> <h2 class="mb-4">'+ch+'</h2> <p>'+cb+'<p class="col-xl-12 col-lg-12" style="text-align: right;"> <button class="col-xl-4 col-lg-12 btn btn-primary mr-2 btn-block-sm cBtns" id="cYes" val1="yes"> YES </button> <button class="col-xl-4 col-lg-12 btn btn-outline-primary btn-block-sm cBtns" val1="no"> NO </button><br class=""> </div> </div> </div> </div> </div> </div> </div> </div></div>'
+            $('body').append(cBlock);
+            $('#modal_confirm_global').modal('show');
+            $('.cBtns').on('click',function(){
+                $('#modal_confirm_global').modal('hide');
+                if($(this).attr('val1').includes('yes')){
+                    if(loader)
+                        showGLoader();
+                    if(onYes!=undefined&&onYes!=null&&onYes!=''){
+                        if(onYesArgs!=undefined&&onYesArgs!=null&&onYesArgs!=''){
+                            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                                window[''+onYes](onYesArgs);
+                            });
+                        }
+                        
+                        else{
+                            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                                window[''+onYes]();
+                            });
+                        }
+                    }
+                }
+                else if($(this).attr('val1').includes('no')){
+                    if(onNo!=undefined&&onNo!=null&&onNo!=''){
+                        if(onNoArgs!=undefined&&onNoArgs!=null&&onNoArgs!='')
+                            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                                window[''+onNo](onNoArgs);
+                            });
+                        else
+                            $('#modal_confirm_global').modal('hide').on('hidden.bs.modal',function(){
+                                window[''+onNo]();
+                            });
+                    }
+                }
+            });
+        }
+        function proceedAuditForm(){
+            var validated  = true;
+            $('.auditFld').each(function(){
+                var v = $(this).val();
+                console.log('v2:::'+v);
+                if(v==''||v==null || v==undefined){
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    
+                }else{
+                    removeValError(this);  
+                    
+                }
+            });
+            console.log('validated::'+validated);            
+        }
+        //Validate Data on click of next button
+        function validateData(){   
+            if(!$('#Adsgu__c').prop('checked') && '{!JSENCODE(rq.srvc__r.uid__c)}' == '220'){
+                axsAlert('Error','Please select undertaking');  
+                return;
+            }
+
+            if(cs["xadtx3__c"]&&cs["xadtx3__c"].value && '{!JSENCODE(rq.srvc__r.uid__c)}' == '220' && cs['xcamc__c'] && cs['xcamc__c'].value && ( cs['xcamc__c'].value.includes('Manager') || cs['xcamc__c'].value.includes('Secretary') || cs['xcamc__c'].value.includes('Director'))){
+                addRowsToConfirmation(); 
+            }
+            else{ 
+                var elem = '';
+                var validated  = true;
+                $('#preloader').fadeIn();
+                nxtPg();
+            }
+        }
+        function showTempLoader(e){
+            var loader = '<span class="loader_temp">';
+            loader += '<img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />';
+            loader += '</span>';
+            $(e).find('.loader_temp').remove();
+            $(e).append(loader);
+            $('*').addClass('loadingProgress');
+        }
+        function removeTempLoader(){
+            $('*').removeClass('loadingProgress');
+            $('.loader_temp').remove();
+        }
+        
+        function formatDate_LA(d){
+            if(d)
+                return d.split("-").reverse().join("/");
+            return '';
+        }
+        
+        </script>
+        <style>
+            @keyframes blink {
+            0% {
+            opacity: 0.4;
+            }
+            50% {
+            opacity: 0.8;
+            }
+            80% {
+            opacity: 1;
+            }
+            100% {
+            opacity: 1;
+            }
+            }
+            
+            .blinkAny {
+            animation: blink 2s infinite;
+            }
+            .onboarding-side-main {
+            padding: 0px !important;
+            }
+            .errField{
+            border: 0.5px solid #ff00006e !important;
+            }
+            .frmErrMsg,.frmErrMsg1 {
+            color: #E62D38;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            }  
+            .warningMsg{
+            color:#004eff;
+            font-style: italic;
+            padding-left: 0.8rem;
+            position: absolute;
+            background-color: #d5ded9;
+            }
+        </style>
+        <apex:form id="mainForm" styleClass="form-style">
+            <apex:actionFunction name="callWSOnEdit" action="{!callLAWS}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocLR,opDocL" oncomplete="reloadDocDiv();resetPopup('LA');aftercallWS()"/>
+            <apex:actionFunction name="nxtPg" action="{!nextPage}" status="theStatus" rerender="msg,btnid" oncomplete="$('#preloader').fadeOut();"/>
+            <apex:actionFunction name="docValidity" action="{!updateDocValidity}" status="theStatus" rerender="p,sH,twinPp,msg" oncomplete="$('#preloader').fadeOut();" />
+            
+            <apex:actionFunction name="updateReq" action="{!saveRequest}" status="theStatus" rerender="dummy" oncomplete="console.log(cs['xadtx4__c'].value);" /><!--getAttchedID('{!JSENCODE(attchedDocID)}');-->
+            <apex:actionFunction name="saveAtt" action="{!saveAttachment}"  rerender="hidv,opDocV,opDocH,opDocS,opDocLR,opDocL,adt3,hr04_prnt,hr04" oncomplete="reloadDocDiv();hideGLoader();resetPopup('LA');" /><!--reloadPage(); getAttchedID('{!JSENCODE(attchedDocID)}'); -->
+            <apex:actionFunction name="getDDADocCaller" action="{!getDDADoc}" reRender="dummy" oncomplete="setDDADoc()" />
+            <apex:outputPanel id="dummy">
+                <apex:inputHidden id="docBase64" value="{!docBase64}"  />
+                <script type="text/javascript">
+                cs['docBase64']=getC('{!$Component.docBase64}');
+                var docTypes = {"BMP":0,"JPG":1,"PNG":3,"PDF":4};
+                function setDDADoc(){
+                    var respData;
+                    removeTempLoader();
+                    if(cs['docBase64'].value){
+                        if(typeof(JSON.parse(cs['docBase64'].value))=='string'){
+                            respData = JSON.parse(JSON.parse(cs['docBase64'].value));
+                        }
+                        else
+                            respData = JSON.parse(cs['docBase64'].value);
+                    }
+                    else if(respData.Message =='Failed' || respData.ResponseCode == '404' || cs['docId'].value=='' || cs['docBase64'].value==''){
+                        axsConfirmation('Information','We couldn\'t fetch the document. Do you want to try again?',false,'callGetDDADoc',uploadElem,'openFileuploadPopUp');
+                        return;
+                    }
+                    var imgData, imgType ;
+                    let DWObject = Dynamsoft.WebTwainEnv.GetWebTwain('dwtcontrolContainer');
+                    if(!respData.Data && respData.Message){
+                        imgData = respData.Message;
+                        imgType = cs['docId'].value.split('/')[cs['docId'].value.split('/').length-1].split('.')[1];//defaulting to JPG as we are not receiving from DMS
+                    }
+                    else{
+                        imgData = respData.Data.body;
+                        imgType =respData.Data.documentName.split('.')[1].trim();// choosing by DDA response
+                    }
+                    DWObject.LoadImageFromBase64Binary(imgData,docTypes[imgType.toUpperCase()]);
+                    $('#exDocMessage').show().addClass('blinkAny');
+                    $('#modal_fileuploadPopUp').modal('show');
+                    //axsConfirmation('Information','We have fetched the existing document from our recoreds.<br /> Do you want to proceed with the same?',false,'updateReqDoc','','btnRemoveCurrentImage_onclick');
+                    //axsAlert('Information','We have retrieved your passport from our records. Please review it, or alternatively, you can use the upload button.');
+                }
+                function openFileuploadPopUp(){
+                    cs['docId'].value='';
+                    exMemPPChanged = true;
+                    $('#modal_fileuploadPopUp').modal('show');
+                }
+                </script>
+            </apex:outputPanel>
+            
+            <apex:outputText rendered="{!NOT(isgu)}" id="hidv">
+                <apex:inputHidden id="docId" value="{!docId}"  />
+                <apex:inputHidden id="exPPDoc" value="{!exPPDoc}"  />
+                <apex:inputHidden id="reqDocId" value="{!reqDocId}"  />
+                <apex:inputHidden id="dsgu__c" value="{!rq.dsgu__c}"  />
+                <apex:inputHidden id="xdrv__c" value="{!rq.xdrv__c}"  />
+                <apex:inputHidden id="xadtx3__c" value="{!rq.xadtx3__c}" />
+                <apex:inputHidden id="parseId"  />
+                <apex:inputHidden id="xcfn__c" value="{!rq.xcfn__c}" />
+                <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}" />
+                <apex:inputHidden id="xadtx2__c" value="{!rq.xadtx2__c}" />
+                <apex:inputHidden id="xadtx1__c" value="{!rq.xadtx1__c}" />
+                <apex:inputHidden id="xadtx4__c" value="{!rq.xadtx4__c}" />
+                <apex:inputHidden id="xuvdet__c" value="{!rq.xuvdet__c}" />
+                <apex:inputHidden id="xcamc__c" value="{!rq.xcamc__c}" />
+                <apex:inputHidden id="ddaDocName" value="{!ddaDocName}" />
+                <apex:inputHidden id="xcddocs__c" value="{!rq.xcddocs__c}" />
+                <apex:inputHidden id="docname" value="{!docName}" />
+                <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+                
+                
+                <apex:InputHidden id="fileSrc"/>
+                <script type="text/javascript">
+                cs['docId']=getC('{!$Component.docId}');
+                cs['exPPDoc']=getC('{!$Component.exPPDoc}');
+                cs['reqDocId']=getC('{!$Component.reqDocId}');
+                cs['dsgu__c']=getC('{!$Component.dsgu__c}');
+                cs['xdrv__c']=getC('{!$Component.xdrv__c}');
+                cs['parseId']=getC('{!$Component.parseId}');
+                cs["docname"] = getC("{!$Component.docname}");
+                cs["xcfn__c"] = getC("{!$Component.xcfn__c}");
+                cs["xadh__c"] = getC("{!$Component.xadh__c}");
+                cs["xadtx2__c"] = getC("{!$Component.xadtx2__c}");
+                cs["xadtx1__c"] = getC("{!$Component.xadtx1__c}");
+                //cs["xadtx3__c"] = getC("{!$Component.xadtx3__c}");
+                cs["xadtx3__c"] = getC("{!$Component.xadtx3__c}");
+                cs["xadtx4__c"] = getC("{!$Component.xadtx4__c}");
+                cs["xuvdet__c"] = getC("{!$Component.xuvdet__c}");
+                cs["xcamc__c"] = getC("{!$Component.xcamc__c}");
+                cs["ddaDocName"] = getC("{!$Component.ddaDocName}");
+                cs["xcddocs__c"] = getC("{!$Component.xcddocs__c}");
+                cs["imageBase64"] = getC("{!$Component.imageBase64}");                
+                </script>
+            </apex:outputText>    
+            <apex:pageBlock id="pbMain">
+                <apex:outputPanel id="saveRq"> 
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!isgu}">
+                    <apex:outputPanel rendered="{!rq.srvc__r.uid__c !='dnc'}">
+                        <c:HeaderInternal heading="{!rq.srvc__r.lbl__c}" con="{!emp}" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!rq.srvc__r.uid__c ='dnc'}">
+                        <c:guheader heading="{!rq.srvc__r.lbl__c}" />
+                    </apex:outputPanel>
+                   
+                </apex:outputPanel>
+                 <apex:outputPanel rendered="{!isFContU}">
+                        <c:guheader heading="{!if(isFContU,'Fit out permit application for '+rq.acc__r.name,'Check Status')}" br="" rendered="{!isFContU}"/>
+                    </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu),NOT(isFContU))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+
+                <body class="base">
+                    
+                    <div id="main">
+                        <div class="container pt-2 pb-2">
+                            <div class="text-right">
+                                <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                    SR # <span class="text-000">{!rq.Name} </span>
+                                </span>
+                                
+                            </div>
+                        </div>
+                        <div class="container">
+                            
+                            <div class="base-layout">
+                                <div class="base-side">
+                                    <div class="base-side-content">
+                                        <div>
+                                            <c:srvdefcmp srv="{!srv}" req="{!rq}"/>
+                                            
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='122'}">
+                                                <div class="pb-4">
+                                                    <h3 class="text-primary d-md-block d-none">Download forms</h3>
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <a href="/servlet/servlet.FileDownload?file=0152y000000RKnG" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                                <u>Miscellaneous services form</u>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='213'}">
+                                                <div class="pb-4">
+                                                    <h3 class="text-primary d-md-block d-none">Download forms</h3>
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <a href="/servlet/servlet.FileDownload?file=0152y000000RKnG" class="upload-item-title text-li" onclick="window.open(this.href, 'Snopzer','left=20,top=20,width=1200,height=500,toolbar=1,resizable=0');return false;">
+                                                                <u>Miscellaneous services form</u>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                            
+                                            <apex:outputPanel rendered="{!rq.srvc__r.uid__c=='apt'}">
+                                                <h3 class="text-primary d-md-block d-none">Download Sample</h3>
+                                                <div class="upload-list">
+                                                    <div class="upload-list-item box box-white box-padding">
+                                                        <a href="/servlet/servlet.FileDownload?file=0150I000009fFiL" class="upload-item-title text-li" onclick="window.open(this.href, '_blank');return false;">
+                                                            <u>Method Statement and Risk Assessment</u> <!-- a0V2y0000014kjZEAQ-->
+                                                        </a>
+                                                    </div>
+                                                </div> 
+                                            </apex:outputPanel>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .base-side-content -->
+                                    
+                                </div>
+                                <!-- .base-side -->
+                                <!--left-side pannel- end -->  
+                                <div class="base-main">
+                                    
+                                    <div class="base-main-content">
+                                        <c:grqbrdcrumbs req="{!rq}" applicant="completed" addon="active" payment="" rendered="{!AND(NOT(rq.srvc__r.uid__c == 'apt'), NOT(rq.srvc__r.uid__c == 'ltc'),NOT(rq.srvc__r.uid__c == 'ltp'))}"/> 
+                                        
+                                        <apex:outputPanel rendered="{!OR(rq.srvc__r.uid__c == 'apt',rq.srvc__r.uid__c == 'aml', rq.srvc__r.uid__c == 'ltc',rq.srvc__r.uid__c == 'ltp')}">
+                                            <h4 class="step-title">Please upload required documents below</h4>
+                                        </apex:outputPanel>
+                                        
+                                        <div class="steps steps-mobile">
+                                            
+                                            <div class="step-item active">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-members"></i>
+                                                    <div class="step-title">Applicant</div>
+                                                </div>
+                                            </div>
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-addon"></i>
+                                                </div>
+                                            </div>
+                                            <div class="step-item">
+                                                <div class="step-item-inner">
+                                                    <i class="step-icon icon-cash-deposit"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- .steps-mobile -->
+                                        
+                                        
+                                        <b><apex:pageMessages id="msg"  />
+                                            
+                                            
+                                        </b>
+                                        
+                                        <!-- document upload comp -->
+                                        <c:grqupd Dim="LR" id="grqupd_id" isFContU="{!isFContU}" PayDone="false"/> 
+                                        <!-- <c:grqupd_WOS id="grqupd-WOS_id"/> -->
+                                        
+                                        
+                                        <!-- .base-collapse -->
+                                        
+                                        
+                                        <!-- .base-main-content -->
+                                        <apex:outputPanel id="btnid">
+                                            <div class="base-main-footer">
+                                                <div class="base-nav">
+                                                    <c:qrbtnbk R="{!rq}"></c:qrbtnbk>
+                                                    
+                                                    <a href="#" onClick="validateData()" id="btnnxt" class="btn btn-primary base-nav-next">
+                                                        <!--<apex:outputText rendered="{!OR(AND(rq.srvc__r.uid__c=='208',rq.xtpa__c > 0,NOT(rq.xpmsle__c),NOT(rq.xmloc__c)),rq.srvc__r.uid__c=='ltc',rq.srvc__r.uid__c=='116',rq.srvc__r.uid__c=='213',rq.srvc__r.uid__c=='122',rq.srvc__r.uid__c=='133')}">
+PROCEED TO PAY
+</apex:outputText>  
+<apex:outputText rendered="{!AND(rq.srvc__r.uid__c=='aml')}">
+SUBMIT
+</apex:outputText>  
+<apex:outputText rendered="{!OR(AND(rq.srvc__r.uid__c!='aml',rq.srvc__r.uid__c!='208',rq.srvc__r.uid__c!='ltc',rq.srvc__r.uid__c!='116',rq.srvc__r.uid__c!='213',rq.srvc__r.uid__c!='122',rq.srvc__r.uid__c!='133'),AND(rq.srvc__r.uid__c == '208',NOT(rq.xcawp__c),OR(rq.xmloc__c,rq.xpmsle__c)))}">
+NEXT
+</apex:outputText>-->
+                                                        NEXT
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <!-- .base-main-footer -->
+                                        </apex:outputPanel> 
+                                    </div>
+                                    <!-- .base-main -->
+                                    
+                                </div>
+                                <!-- .base-layout -->
+                                
+                            </div>
+                            <!-- .container -->
+                            
+                            
+                            <!-- .site-footer-wrapper -->
+                        </div>
+                        
+                        <!-- Modal -->
+                        
+                        <div class="modal fade modal-base" id="modal_AuditJustification" role="dialog" aria-hidden="true" data-backdrop="static">
+                            <div class="modal-dialog" role="document" style="width: 690px;">
+                                <div class="modal-content">
+                                    <div class="modal-body">
+                                        <label class="text-light-2">Please provide justification to submit unsigned FAR summary by the auditor</label>
+                                        <div class="form-group">
+                                            <textarea class="requiredFld auditFld form-control" cols="10" rows="2" id="auditJustificationId" value=""/>
+                                            <script type="text/javascript">
+                                            cs['auditJustificationId']=document.getElementById('auditJustificationId');
+                                            </script>
+                                        </div>
+                                    </div>
+                                    <div class="base-main-footer">
+                                        <div class="base-nav">
+                                            <a href="" onClick="proceedAuditForm();" class="btn btn-primary base-nav-next" style="color:#fff">SUBMIT</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                </body>
+            </apex:pageBlock>
+            
+        </apex:form>
+        
+        <apex:form id="uploadFrm">
+            <c:fileuploadpopupnew13 R="{!rq}" /> 
+            <c:ocramdcmp req="{!rq}" srvcCode="{!rq.srvc__r.uid__c}" cv="{!sd.cv__c}" accPrk="{!rq.Acc__r.park__c}" rendered="{!(rq.srvc__r.uid__c!='dnc')}" />
+        </apex:form> 
+        <!-- US APD3911 -->
+        <div class="modal fade modal-base" id="modal_confirm_members" tabindex="-1" role="dialog"
+             aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document" style="width: 80%;">
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body">
+                        <h2>Confirm Members</h2>
+                        <p>Please review member information and confirm.</p>
+                        
+                        <div class="newMems mb-4 mt-4" id="confirmMemTable">
+                            <div class="row newMemHead col-12" >
+                                <div class="col-2">First name</div>
+                                <div class="col-2">Last name</div>
+                                <div class="col-2">Passport</div>
+                                <div class="col-1">Seleted for</div>
+                                <div class="col-2">Mobile</div>
+                                <div class="col-3">Email</div>
+                                
+                            </div>
+                        </div>
+                        <div class="base-main-footer">
+                            <div class="base-nav">
+                                <a class="base-nav-next btn btn-primary btn-block-sm saveMems" id="saveMems" style="color:#fff" onclick="proceedAfterConfirmation()">CONFIRM &amp; SUBMIT</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- US APD3911 -->
+    </html>   
+    <script>
+    
+    
+    var peopleToupdate = (cs['xadtx4__c'].value)?JSON.parse(cs['xadtx4__c'].value):[];
+    var currenTmemToUpdate = {};
+    var ppNum = '';
+     //US APD-3911
+    function proceedAfterConfirmation(){
+        
+        let parsed = JSON.parse(cs["xadtx3__c"].value);
+        let seenPassports = new Set();
+        parsed.serviceRequests.forEach(request => {
+            request.members = request.members.filter(member => {
+            if (!member.passports || member.passports.length === 0) {
+            return true; 
+        }
+            
+            let docNo = member.passports[0].docNo;
+            
+            if (seenPassports.has(docNo)) {
+            return false;
+        } else {
+            seenPassports.add(docNo);
+            return true;
+        }
+        });
+        });
+            
+        cs["xadtx3__c"].value = JSON.stringify(parsed);
+        callWSOnEdit(); 
+        $('#preloader').fadeIn();
+        nxtPg();  
+    }
+     //US APD-3911
+    function addRowsToConfirmation(){
+        if(!$('#Adsgu__c').prop('checked')){
+            axsAlert('Error','Please select undertaking');  
+            return;
+        }
+        $('.addedMem').remove();
+        let rows = '';
+        for (let i of JSON.parse(cs['xadtx3__c'].value).serviceRequests[0].members){
+            if(i.actionType!='DataUpdate'){
+                let fn = i.firstName,ln=i.lastName,pp=i.passports[0]?i.passports[0].docNo:'NA',a=i.actionType,m=i.perMobile?i.perMobile:'NA',em=i.perEmail?i.perEmail:'NA';
+                let h = '<div class="row col-12 addedMem" ppNum="'+pp+'">';
+                h +='<div class="col-2 newMemNames frstName">'+fn+'</div><div class="col-2 newMemNames lstName">'+ln+'</div><div class="col-2 newMemNames passportNumber">'+pp+'</div><div class="col-1 newMemNames action">'+a+'</div><div class="col-2">'+m+'</div><div class="col-3">'+em+'</div></div>';
+                rows +=h;
+            }   
+        }
+        $('#confirmMemTable').append(rows);
+        $('#modal_confirm_members').modal('show');
+            
+            
+            
+        }
+    function attachmentSave1() {
+        
+        var invalData = false;
+        $('.requiredFld').each(function() {
+            if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                return;
+            if(!$(this).is(':visible'))
+                return;
+            var v = $(this).val();
+            if (v == '' || v == null || v == undefined || v.lenght < 1) {
+                if ($(this).is('select')) {
+                    showErrMsg($(this).next().find('.select2-selection'), 'rqrd', 'invalid');
+                } else if ($(this).attr('data-toggle') == 'datetimepicker') {
+                    showErrMsg($(this), 'rqrdDate', 'invalid');
+                } else
+                    showErrMsg($(this), 'rqrd', 'invalid');
+                invalData = true;
+                $('.rqrdMsg').html('All fields are mandatory').css('color', 'red').fadeOut().fadeIn();
+            } else
+                showErrMsg($(this), 'rqrd', true);
+        });
+        for(var x=0;x<$('.modal-body .input-datepicker').length;x++){
+            var i = $('.modal-body .input-datepicker')[x]; 
+            var vl = $(i).val();
+            if($(this).is(':visible')){
+                if (vl.length != 10 || vl.match(/\//g) == null) {
+                    showErrMsg($(i), 'dob', 'invalid');
+                    invalData = true;
+                } else if (vl.match(/\//g) != null) {
+                    if (vl.match(/\//g).length != 2) {
+                        showErrMsg($(i), 'dob', 'invalid');
+                        invalData = true;
+                    }
+                }
+            }
+        }
+        checkdobPid($('[validationname="dob"]'), $('[validationname="pid"]'));
+        if ($('.frmErrMsg').length > 0 && $('.frmErrMsg').is(':visible')) {
+            invalData = true;
+        }
+        if (invalData) {
+            invalData = false;
+            return;
+        }
+        var isGCCnational = false;
+        var isAllowedOA = true;
+        var country = $('[fldName="country"]').find("option:selected").text();
+        if (GCC_Nations.includes(country))
+            isGCCnational = true;
+        if (!onArrVisa.includes(country))
+            isAllowedOA = false;
+        if((serviceId=='058'||serviceId=='074')&&onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants can get the on arrival visa').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        if (isGCCnational && '{!JSENCODE(rq.srvc__r.uid__c)}' != '220'&& serviceId != '068' && serviceId != '123' && serviceId != '149'  && serviceId != '087' && serviceId != '088') {
+            if(serviceId=='040')
+                $('.rqrdMsg').html('Applicant is a GCC national, please apply for Non-Sponsored ID card').css('color', 'red').fadeOut().fadeIn();
+            else 
+                $('.rqrdMsg').html('GCC nationals are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        if(serviceId=='181'&&!onArrVisa.includes(country)){
+            $('.rqrdMsg').html(country+' nationality applicants are not allowed for this service').css('color', 'red').fadeOut().fadeIn();
+            //axsAlert('Error','Applicant is GCC National');
+            return;
+        }
+        if ($('#genderid').val() == 'M' && (serviceId == '018' || serviceId == '117')) {
+            $('.rqrdMsg').html('Applicant should be Female to apply for Spouse Visa Transfer').css('color', 'red').fadeOut().fadeIn();
+            return;
+        }
+        $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
+        $('*').addClass('loadingProgress');
+        $('#modal_confirm_information1').modal('hide');
+        if('{!JSENCODE(rq.srvc__r.uid__c)}'=='220')
+            cs["docname"].value = cs["docname"].value +'.pdf';
+        saveRequest();
+    }
+    function saveRequest(){
+        if(cs['reqDocId'])
+            cs['reqDocId'].value='';
+        saveAtt();
+        showTempLoader();
+        resetPopup('LA');
+    }
+    function reloadPage(){
+        if(cs["docname"].value.toLowerCase().includes('passport copy')){
+            showGLoader();
+            location.reload();
+        }
+    }
+    function resetPopup(s){
+        if(s=='LA'){
+            $('#modal_corp_member_LA,#modal_confirm_information_LA').find('input,select').val('');
+            $('#modal_corp_member_LA,#modal_confirm_information_LA').modal('hide');
+            $('#modal_corp_member_LA,#modal_confirm_information_LA').find('select').trigger('change');
+            $('#modal_corp_member_LA,#modal_confirm_information_LA').find('[type="radio"],[type="checkbox"]').prop('checked',false).trigger('change');
+            isEditingMem = false;
+            editingMemDocId = '';
+            return;
+        }
+    }
+    </script>
+    <apex:outputText rendered="{!NOT(isgu)}">
+        <script>
+        function getAttchedID(aId){
+            let currenTmemToUpdate = {};
+            console.log('aId-- '+aId);
+            var member = {};
+            ppNum = $('#passportid').val();
+            $('#modal_confirm_information1').find('input,select').each(function(i,v){
+                if(!$(v).val())
+                    return;
+                var f = $(v).attr('fldname');
+                var val = (f=='country')?$(v).find("option:selected").text():$(v).val();
+                currenTmemToUpdate[f] = '';
+                currenTmemToUpdate[f] = val;
+            });
+            currenTmemToUpdate['InOrOut'] = $('[name="eid"]:checked').attr('for');
+            currenTmemToUpdate['AttachmentId'] = aId;
+            peopleToupdate.push(currenTmemToUpdate);
+            cs['xadtx4__c'].value = JSON.stringify(peopleToupdate);
+            console.log('docname::'+cs['docname'].value);
+            console.log('imageBase64::'+cs['imageBase64'].value);
+            cs["docname"].value = docName.value;
+            if(cs["docname"].value.inclues('Existing Member')){/*U_S DFZC Start*/
+                lbl=lbl.replace('Existing Member', 'ExMem');
+            }
+            else{
+                cs["docname"].value = docName.value;
+            }/*U_S DFZC End*/
+            console.log('docname::'+cs['docname'].value);
+            updateReq();
+        }
+        
+        function dltAtt(a){
+            startLoader(currentDelDoc);
+            cs['reqDocId2'].value=a;
+            afdltAtt();
+        };
+        function removeDataXadt4(id){
+            peopleToupdate.forEach(function(v,i){
+                if(v.AttachmentId ==id){
+                    peopleToupdate.splice(i, 1);
+                }
+            });
+            cs['xadtx4__c'].value = JSON.stringify(peopleToupdate);
+            updateReq();
+        }
+        var exMemPPChanged = false;
+        function popupDocModel(lbl,typ,seq){ // to override from grqupd
+            console.log('In popupDocModel() DocLabel from lrqup>> '+'lbl');  
+            exMemPPChanged = false;
+            $('#exDocMessage').hide();
+            currentDoc = lbl;
+            if(lbl.includes('Exmem')){/*U_S DFZC Start*/
+                lbl=lbl.replace('Exmem', 'Existing Member');
+            }/*U_S DFZC End*/
+            isEditingMem = false;
+            document.getElementById("udDocType").value = typ;
+            document.getElementById("localUrlLbl").value = "dropB"+seq;
+            document.getElementById("udDocLabel").innerHTML = lbl;
+            cs["docname"].value = lbl;
+            
+            if((lbl.includes("Passport Copy")|| lbl.includes("License Copy"))&&'{!JSENCODE(rq.srvc__r.uid__c)}'=='220'){
+                cs['parseId'].value = true;
+            }
+            else{
+                cs['parseId'].value = false;
+            }
+            //$('#modal_fileuploadPopUp').modal('show');
+            loadDDADoc(lbl);
+        }
+        function loadDDADoc(l){ 
+            var enableCaller = false;
+            var currentDoc=document.getElementById("udDocType").value;
+            let memNamefromDoc='';
+            /*U_S DFZC Start*/
+            if(currentDoc.includes('Passport Copy')){
+                if(currentDoc.includes('Exmem') || currentDoc.includes('Existing Member')){
+                    memNamefromDoc = currentDoc.replace('Exmem Passport Copy - ', '');
+                    memNamefromDoc=memNamefromDoc.trim();
+                    if(cs['xadtx1__c'] && cs['xadtx1__c'].value){
+                        let exMembername='';
+                        for (i of JSON.parse(cs['xadtx1__c'].value)) {
+                            if (i.type == 'Person'){
+                                exMembername=i.firstName.trim()+' '+i.lastName.trim();
+                                if(exMembername && exMembername===memNamefromDoc){
+                                    cs['docId'].value=i.passportShare;
+                                    if(cs['docId'].value)enableCaller = true;
+                                    cs['exPPDoc'].value = l;
+                                    cs['exPPDoc'].value=cs['exPPDoc'].value.replace('Existing Member Passport Copy','Exmem Passport Copy');
+                                }
+                            }
+                        }
+                        
+                    }
+                }/*U_S DFZC End */
+                else{//if(cs['xuvdet__c'] && cs['xuvdet__c'].value && '{!JSENCODE(rq.srvc__r.uid__c)}'=='220')
+                    if(cs['xuvdet__c'] && cs['xuvdet__c'].value){
+                    var exMemData = JSON.parse(cs['xuvdet__c'].value);
+                    for(let m of exMemData){
+                        if(cs['xcamc__c'] && cs['xcamc__c'].value ){
+                            if((cs['xcamc__c'].value.includes('Director') && m.axsDocName == l) || (cs['xcamc__c'].value.includes('Manager') && currentDoc=='Passport Copy') || (cs['xcamc__c'].value.includes('Secretary') && currentDoc=='Passport Copy')){
+                                cs['docId'].value = m.passportShare;   
+                            }
+                        }
+                        if((cs['xcamc__c'].value.includes('Director') && m.axsDocName == l) || cs['xcamc__c'].value.includes('Manager') || cs['xcamc__c'].value.includes('Secretary')){
+                            if(m.passportShare && (cs['xcamc__c'].value.includes('Manager') || cs['xcamc__c'].value.includes('Secretary'))){
+                                cs['exPPDoc'].value = l;
+                            }
+                            if( m.axsDocName && m.axsDocName.includes('Passport Copy - ')){
+                                cs['ddaDocName'].value=m.axsDocName;
+                                cs['exPPDoc'].value = l;
+                            }
+                            if(cs['docId'].value)enableCaller = true;
+                        }
+                    }
+                    }
+                }
+            }
+            if(enableCaller){
+                let e = $(event.target);
+                axsConfirmation('Information','We have found an existing passport from our records.<br /> Do you want to fetch?',false,'callGetDDADoc',e,'openFileuploadPopUp');
+                
+            }
+            /* else if(l == 'Drawings (PDF, DWF , DWG format)'){
+                
+                $('#modal_upload_Doc_WOS').modal('show');
+            } */
+                else
+                    $('#modal_fileuploadPopUp').modal('show');
+        }
+        var uploadElem;
+        function callGetDDADoc(e){
+            uploadElem = e;
+            showTempLoader(e);
+            getDDADocCaller();
+        }
+        
+        /* for new Lic Amd member change starts */
+        var adhoc2Proto='[{"firstName":"","lastName":"","action":"ADD","UID":""}]';
+        //PJ 1.1
+          var adhoc3Proto = '{"serviceRequests":[{"serviceId":"","axsRefNo":"","licenseNo":"","isPaid":false,"members":[{"positions":"Manager","visitedUAE":"","birthCountry":"","perMobile":"","isMobilePhoneVerified":"","mobilePhoneVerificationDatetime":"","perEmail":"","isEmailVerified":"","emailVerificationDatetime":"","phoneNo":"","nationality":"","lastName":"","gender":"","firstName":"","ddaId":"","birthDate":"","dateOfIncorporation":"","countryOfIncorporation":"","operatingName":"","registrationNo":"","proposedNumberOfShares":"","currentNumberOfShares":"","registrationDate":"","cessationDate":"","placeborn":"","passports":[{"countryOfIssuance":"","placeOfIssuance":"","issueDate":"","expiryDate":"","docNo":""}],"emiratesId":{"issueDate":"","expiryDate":"","docNo":""},"addresses":[{"type":"HOME","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""},{"type":"UAE","street":"","postalCode":"","phone":"","mobile":"","homePhone":"","email":"","country":"","city":"","buildingNo":"","area":""}],"actionType":"ADD"}]}]}';
+        var adhoc4Proto = '[{"Salutation":"","Given_Name":"","Surname":"","MR_Gender":"","Date_of_Birth":"","Place_of_Issue":"","undefined":"","Passport_No":"","Date_of_Issue2":"","Date_of_Expiry2":"","country":"","Place_of_Birth":"","eid":"","InOrOut":"","AttachmentId":""}]';
+        var ddaData = {}, crmData = {}, adhoc3Data='', members = [] , adhoc2Data='',updatedAdhoc2Data=[];
+        var ddaActions = [{'mn':['Manager',''],'cs':['Secretary',''],'aau':['Auditor',''],'da':['Director',''],'ar':['Director','']}];/**/
+        var editingMemDocId = '';
+        function capitalizeName(name) {
+            return name.toLowerCase().replace(/\b(\w)/g, (char) => char.toUpperCase());
+        }
+        function attachmentSave_LA(type){
+            
+            
+            var validated  = true;
+            let selectedJSON = {};
+            let modal = '#modal_confirm_information_LA';
+            if(cs['xuvdet__c']&&cs['xuvdet__c'].value)
+                selectedJSON = JSON.parse(cs['xuvdet__c'].value);
+            ddaData = {};
+            members = [];
+            updatedAdhoc2Data=[];
+            adhoc3Data = (cs["xadtx3__c"]&&cs["xadtx3__c"].value)?JSON.parse(cs["xadtx3__c"].value):JSON.parse(adhoc3Proto);
+            adhoc2Data = (cs["xadtx2__c"]&&cs["xadtx2__c"].value)?JSON.parse(cs["xadtx2__c"].value):'';
+            if(cs["xadh__c"].value.includes('aau;')){
+                modal = '#modal_corp_member_LA';
+                if(!checkValidData(modal))
+                    return
+                    }
+            if(!editingMemDocId)
+                ddaData = JSON.parse(adhoc3Proto).serviceRequests[0].members[0];
+            else{
+                for(let [i,v] of adhoc3Data.serviceRequests[0].members.entries()){
+                    if(v.attachmentId == editingMemDocId)
+                        ddaData = v;
+                }
+            }
+            for(i of Object.keys(ddaData)){
+                if(i!='addresses'){
+                    if(typeof(ddaData[i])=='object' && ddaData[i]){// && Object.keys(ddaData[i]).length>0
+                        let recObj = (i=='passports' || i=='addresses')?ddaData[i][0]:ddaData[i];
+                        for(j of Object.keys(recObj)){
+                            let e = $(modal).find('[ddaKeyparent='+i+'][ddaKey='+j+']');
+                            let f = e.attr('for');
+                            let v = (e.hasClass('input-datepicker'))?revertDateFormat(e.val()):e.val();
+                            if(v){
+                                if(f=='allowSingleQuote'){
+                                    v = v.replace(/\\/g, '\\\\');
+                                    v = v.replace(/'/g, "\\'");  
+                                }
+                                recObj[j] = v.trim();
+                            }
+                        }
+                    }
+                    else if(i=='perMobile'){
+                        ddaData[i] = $('[ddakey="phoneCode"]').val()+'-'+$('[ddakey="perMobile"]').val();
+                    }
+                        else if(i== 'isEmailVerified'){  //PJ 1.1
+                            if(cs['isEmailVerified'] && (cs['isEmailVerified'] == true || cs['isEmailVerified'] == 'true')){
+                                ddaData[i] = true;
+                                if(cs['isEmailChanged'] === true){
+                                    ddaData['emailVerificationDatetime'] = new Date().toISOString();
+                                }
+                                else{
+                                    ddaData['emailVerificationDatetime'] = cs['emailVerificationDatetime'];
+                                }
+                            }
+                        }
+                            else if(i== 'isMobilePhoneVerified'){ //PJ 1.1
+                                if(cs['isMobilePhoneVerified'] && (cs['isMobilePhoneVerified'] == true || cs['isMobilePhoneVerified'] == 'true')){
+                                    ddaData[i] =  true;
+                                    if(cs['isMobileChanged'] === true){
+                                        ddaData['mobilePhoneVerificationDatetime'] = new Date().toISOString();
+                                    }
+                                    else{
+                                        ddaData['mobilePhoneVerificationDatetime'] = cs['mobilePhoneVerificationDatetime'];
+                                    }
+                                }
+                            }
+                                else{
+                                    let e = $(modal).find('[ddaKey='+i+']');
+                                    let v = (e.hasClass('input-datepicker'))?revertDateFormat(e.val()):e.val();
+                                    let f = e.attr('for');
+                                    v = (i=='proposedNumberOfShares'&&!v)?0:v;
+                                    v = (i=='nationality' || i=='countryOfIncorporation')?$('[ddakey="'+i+'"]').find('option:selected').text():v;
+                                    if(v){
+                                        if(f=='allowSingleQuote'){
+                                            v = v.replace(/\\/g, '\\\\'); 
+                                            v = v.replace(/'/g, "\\'");  
+                                        }
+                                        ddaData[i] = v.trim();
+                                    }
+                                }
+                }
+            }
+            for(d of Object.keys(ddaActions[0])){
+                if(cs["xadh__c"].value.includes(d+';'))
+                    ddaData.positions= ddaActions[0][d][0];
+            }
+            if(selectedJSON && selectedJSON.length>0 || cs['xadtx1__c'].value){
+                if(cs["xadh__c"].value.includes('mn;') || cs["xadh__c"].value.includes('cs;')){
+                    if(selectedJSON.length==1){
+                        ddaData.ddaId = selectedJSON[0].ddaId;
+                    }
+                }
+                if(cs["xadh__c"].value.includes('da;')||cs["xadh__c"].value.includes('ar;') || cs['docname'].value.includes('Exmem') || cs['docname'].value.includes('Existing Member')){
+                    if(cs['xadtx1__c'] && cs['xadtx1__c'].value){
+                        if(cs['docname'].value.includes('-')){
+                            let memName = cs['docname'].value.split('-')[1].trim();
+                            for(let [i,v] of JSON.parse(cs['xadtx1__c'].value).entries()){//U_S
+                                if(v.type=='Person' && capitalizeName(v.firstName)+' '+capitalizeName(v.lastName) == memName)
+                                    ddaData.ddaId = v.ddaId;
+                            }
+                        }
+                    }
+                }
+            }
+            if(adhoc2Data.length>0){
+                let memName = cs['docname'].value.includes('-')?cs['docname'].value.split('-')[1].trim():'';
+                for(let [i,v] of adhoc2Data.entries()){
+                    if(v.firstName+' '+v.lastName == memName){
+                        ddaData.UID = v.firstName+''+v.lastName+'_11';
+                    }
+                }
+            }
+            var ad2=[];
+            if(cs['xadtx2__c'].value){
+                var x = cs['docname'].value.replace("Passport Copy - ","").replaceAll(' ','')+'_11';
+                ad2=JSON.parse(cs['xadtx2__c'].value);
+                for(let v of ad2){
+                    if(v.UID == x){
+                        v.ppNum = $('#modal_confirm_information_LA #passportid').val();
+                    }
+                }
+            }
+            ddaData.salutation = $('#modal_confirm_information_LA [name="sal"]:checked').attr('for');
+            ddaData.actionType = (cs['docname'].value.includes('Existing Member'))?'DataUpdate':(!cs['docname'].value.includes('Existing Member') && ddaData.ddaId)? 'UPDATEINFO': 'ADD';//U_S
+            let visitedUAEVal;
+            if($('.isvisitedUAE.reqRadio:visible')){
+                visitedUAEVal=$('#modal_confirm_information_LA [name="vid"]:checked').attr('for');//U_S 1.2
+                if(visitedUAEVal=='yes'){
+                 ddaData.visitedUAE=true;  
+                }
+                else if(visitedUAEVal=='no'){
+                 ddaData.visitedUAE=false;  
+                }
+            }
+            ddaData.birthCountry=$('#modal_confirm_information_LA #bnat option:selected').text();//U_S 1.2
+            if(ddaData.addresses &&  ddaData.addresses.length > 0){ // PJ 1.1
+                ddaData.addresses[1].street = $('[ddakey="Street"]').val();
+                ddaData.addresses[1].city = $('[ddakey="emirate"]').val();
+                ddaData.addresses[1].area = $('[ddakey="Area"]').val();
+                ddaData.addresses[1].buildingNo = $('[ddakey="buildingNo"]').val();
+                ddaData.addresses[1].postalCode = $('[ddakey="postalCode"]').val();
+                ddaData.addresses[0].street = $('[ddakey="pstreet"]').val();
+                ddaData.addresses[0].city = $('[ddakey="pcity"]').val();
+                ddaData.addresses[0].country = $('[ddakey="pcountry"]').find('option:selected').text();
+            }
+            
+            let ad4 = (cs["xadtx4__c"] && cs["xadtx4__c"].value)?JSON.parse(cs["xadtx4__c"].value):[];
+            crmDataMem = JSON.parse(adhoc4Proto)[0];
+            for(i of Object.keys(crmDataMem)){
+                let e = $('#modal_confirm_information_LA').find('[fldName='+i+']');
+                let v = (i=='country')?e.find('option:selected').text():e.val();
+                crmDataMem[i] = v;
+            }
+            let mFnName = $('[ddakey="firstName"]').val()+' '+$('[ddakey="lastName"]').val();
+            if($('[name="eid"]:checked').attr('for')=='yes'){
+                crmDataMem.InOrOut = 'In';
+                if(cs["inUAE__c"]){
+                    cs["inUAE__c"].value = true;
+                }
+                 if(!cs["docname"].value.includes('Existing Member'))
+                {
+                    cs["xcddocs__c"].value += 'Emirates ID - front - '+mFnName+';Emirates ID - back - '+mFnName+';Visa Page - '+mFnName+';';//U_S
+                }
+                if(cs["docname"].value.includes('Existing Member'))
+                {
+                    cs["xcddocs__c"].value += 'Exmem Emirates ID - front - '+capitalizeName(mFnName)+';Exmem Emirates ID - back - '+capitalizeName(mFnName)+';Exmem Visa Page - '+capitalizeName(mFnName)+';';//U_S
+                }
+                
+            }
+            else{
+                crmDataMem.InOrOut = 'Out';
+                if(cs["inUAE__c"])
+                    cs["inUAE__c"].value = false;
+                cs["xcddocs__c"].value.replaceAll('Emirates ID - front - '+mFnName+';');
+                cs["xcddocs__c"].value.replaceAll('Emirates ID - back - '+mFnName+';');
+                cs["xcddocs__c"].value.replaceAll('Visa Page - '+mFnName+';');
+                if(ddaData.emiratesId){
+                    for(k of Object.keys(ddaData.emiratesId)){ // PJ 1.1
+                        ddaData.emiratesId[k] = '';
+                    }
+                }
+            }
+            for(let [i,v] of ad4.entries()){
+                if(v.Passport_No == crmDataMem.Passport_No)
+                    ad4.splice(i,1);
+            }
+            if(isEditingMem){
+                for([i,v] of adhoc3Data.serviceRequests[0].members.entries()){
+                    if(v.passports&& v.passports.length>0 &&v.passports[0].docNo==ddaData.passports[0].docNo)
+                        adhoc3Data.serviceRequests[0].members.splice(i,1);
+                }
+            }
+            ad4.push(crmDataMem);
+            adhoc3Data.serviceRequests[0].members.push(ddaData);
+            
+            cs["xadtx3__c"].value = JSON.stringify(adhoc3Data);
+            cs["xadtx2__c"].value = JSON.stringify(ad2);
+            cs["xadtx4__c"].value = JSON.stringify(ad4);
+            cs["xcfn__c"].value = ddaData.firstName+' '+ddaData.lastName;
+            
+            if(isEditingMem){
+                showTempLoader();
+                callWSOnEdit();
+                isEditingMem = false;
+                editingMemDocId = '';
+                resetPopup('LA');
+                return;
+            }
+            resetPopup('LA');
+            
+            saveRequest();
+            exMemPPChanged = false;
+        }
+        function aftercallWS(){
+            removeTempLoader();
+        }
+        function salOnChange(){
+            let brk = false;  $('#modal_confirm_information_LA .salErr').hide();
+            if($('#modal_confirm_information_LA [name="sal"]:checked').length==0){
+                $('#modal_confirm_information_LA .salErr').show();
+                $('#modal_confirm_information_LA').animate({
+                    scrollTop: ($('.salErr').offset().top-60)
+                }, 100);
+                brk = true;
+            }
+            return brk;
+        }
+        function checkValidData(modal){
+            var elem = '';
+            var validated  = true;
+            var m = modal?modal:'#modal_confirm_information_LA'
+            $(m).find('.forEdit,.requiredFld,.applMob').each(function(){
+                if($(this).attr('disabled')=='true'||$(this).attr('disabled')=='disabled')
+                    return;
+                if(!$(this).is(':visible'))
+                    return;
+                
+                var v = $(this).val();
+                if(v==''||v==null || v==undefined ){//||$(this).parent().find('.frmErrMsg').length>0
+                    addValError(this,'**This field is required!');
+                    validated=false;
+                    if(elem=='') elem = $(this);
+                }else{
+                    removeValError(this);  
+                }
+            });
+            /*U_S -- Start */
+            if($('.isvisitedUAE.reqRadio').is(':visible')){
+                if($('#modal_confirm_information_LA [name="vid"]').is(':checked')==false){
+                    addValError($(m).find('[name="vid"]'),'**This field is required!');
+                    validated=false;
+                }
+                else{
+                removeValError($(m).find('[name="vid"]'));
+                  validated=true;  
+                }
+            }
+            if(!(cs['xadh__c'].value.includes('aau'))&&$('#modal_confirm_information_LA [name="eid"]').is(':checked')==false){
+                    addValError($(m).find('[name="eid"]'),'**This field is required!');
+                    validated=false;
+                }
+             else if($('#modal_confirm_information_LA [name="eid"]').is(':checked')==true){
+                removeValError($(m).find('[name="eid"]'));
+                  validated=true;  
+                }
+            /*U_S -- End */
+            if(!(cs['xadh__c'].value.includes('aau'))){
+                if(!cs['docname'].value.includes('Existing Member') && !$(m).find('.isEmailVerified').is(':visible')){ //PJ 1.1 U_S
+                    validated=false;
+                    addValError($(m).find('.isEmailVerified'),'Please validate email address');
+                }
+                if(!cs['docname'].value.includes('Existing Member') && !$(m).find('.isMobilePhoneVerified').is(':visible')){ //PJ 1.1 U_S
+                    validated=false;
+                    addValError($(m).find('.isMobilePhoneVerified'),'Please validate mobile number');
+                }
+                
+                var passportValue = $(m).find('.passportNumber').val();
+                const psNoPattern = /^[a-zA-Z0-9]{6,12}$/;
+                if(psNoPattern.test(passportValue) == false || passportValue.length < 6 || passportValue.length > 12){
+                    validated=false;
+                    addValError($(m).find('.passportNumber'),'Passport Number must be 6-12 characters long and contain only letters and numbers !'); 
+                }
+            }
+            checkAllDates('input-datepicker');
+            if(!(cs['xadh__c'].value.includes('aau')) && salOnChange())
+                return;
+            if($(m+' .frmErrMsg:visible').length>0 ){
+                validated = false;
+            }
+            return validated;
+        }
+        function validateForm() {
+            const input = $('#modal_confirm_information_LA #perMobileNumber').val();
+            const specialCharPattern =  /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
+            
+            if (specialCharPattern.test(input)) {
+               addValError('#modal_confirm_information_LA #perMobileNumber','Invalid MobileNumber');
+                return false; 
+            }
+            return true;
+        }
+        function submitReq(){
+            
+            let ppDoc=$('#udDocType').val();
+            let personName=ppDoc.replace("Passport Copy - ","");
+            let docPPnum=$('#modal_confirm_information_LA #passportid').val();
+            docPPnum=docPPnum.toUpperCase();
+            if(personName && cs['xadtx2__c'].value){//ppDoc.includes("Passport Copy - ")
+                for (i of JSON.parse(cs['xadtx2__c'].value)) {
+                    var exMemData;
+                    if(cs['xuvdet__c'].value)
+                    {
+                        exMemData = JSON.parse(cs['xuvdet__c'].value);
+                    } 
+                    let name=i.firstName+' '+i.lastName;
+                    name=name.trim();
+                    var exclude=false;
+                    if(exMemData){ 
+                        for(let m of exMemData){
+                            //var exclude=false;
+                            if((m.axsDocName && m.axsDocName.includes(ppDoc)) || (cs['xcamc__c'].value.includes('Manager') || cs['xcamc__c'].value.includes('Secretary'))){
+                                exclude=true;
+                            }
+                        }
+                    }
+                    let passportNumber=i.ppNum.toUpperCase();
+                    if(name==personName && docPPnum!=passportNumber && exclude==false){
+                        addValError('#modal_confirm_information_LA #passportid','<elem class="text-primary">'+docPPnum+ '</elem> does not match with provided passport number <elem class="text-primary">'+i.ppNum+ '</elem> in the application page');
+                        return;
+                    }
+                    
+                }
+            }
+            $('#sendOtpBlock').hide();
+            if(!checkEmailFormate(('#modal_confirm_information_LA #perEmailId'))){
+                addValError('#modal_confirm_information_LA #perEmailId','Please enter valid email Address'); 
+                return;
+            }
+            if(checkValidData() && validateForm()){
+                $('#cnfmBtn').show();
+                attachmentSave_LA();
+            }
+        }
+        function updateMob(){
+            $('#sendOtpBlock').show();
+            $('#cnfmBtn').hide();
+            
+        }
+        function sendOTP(){
+            $('#cnfmBtn').hide();
+            if(checkValidData()){
+                $('#sendOtpBlock').hide();
+                $('.otpBlock').show();
+            }
+        }
+        function validateOTP(){
+            
+            removeValError('#otpVal')
+            let definedOtp = '{!$Label.Onboarding_OTP}';
+            let userOtp = $('#otpVal').val();
+            if(!userOtp){
+                addValError('#otpVal','Please enter OTP!');
+                return;
+            }
+            if(definedOtp && definedOtp!='NA'){
+                if( userOtp==definedOtp){
+                    if(checkValidData()){
+                        attachmentSave_LA();
+                        $('.otpBlock').hide();
+                    }
+                }
+                else{
+                    $('#otpVal').val('');
+                    addValError('#otpVal','Invalid OTP, Please re enter');
+                }
+            }
+        }
+        
+        $(window).on('load', function() {
+        });
+        </script>
+    </apex:outputText>
+</apex:page>

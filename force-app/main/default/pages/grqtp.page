@@ -1,0 +1,94 @@
+<apex:page sidebar="false" cache="false" expires="0" tabStyle="g_Req__c" showHeader="{!NOT(md.isnew)}"  standardController="g_Req__c" extensions="gctlReq1"  >
+    
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"/>
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+ 
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/vendors/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css')}" />
+    <!-- main css -->
+    <apex:stylesheet value="{!URLFOR($Resource.assets_NUI, '/css2/style.css')}" />
+ 
+ 
+        <apex:form styleClass="pbform" >
+          <!-- Apex Variables After movement -->
+        <apex:variable var="addInfo" value="{!IF(rq.spCh__c,'<li>'+$Label.msgAddVisaChrg+'</li>',null)}"/>               
+        <apex:variable var="addInfo" value="{!IF(NOT(ISBLANK(Acc.vbtemp__c)),IF(Acc.vbtemp__c<=0,addInfo+'<li>'+$Label.msgNoVisaLimit+'</li>',addInfo),addInfo)}"/>
+        <apex:variable var="addInfo" value="{!IF(NOT(ISBLANK(Acc.bgsncnt__c)),addInfo+'<li>'+Acc.bgsncnt__c+'</li>',addInfo)}"/>  
+        <apex:actionFunction name="afs" action="{!saveOpen}" status="theStatus" rerender="pbMain,pbRelated,msg,sH" />
+   
+         <apex:pageBlock id="pbMain" rendered="{!if(OR(isNull(rq.Id),AND(NOT(isNull(rq.Id)),rq.AP__c==0,rq.AOP__c==0)),false,true)}">
+            
+        <apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.reqq__c}" rendered="false"/>
+          <apex:outputPanel rendered="{!md.isView}">
+            
+        <body class="base">
+            <div id="main">
+            <div class="mb-5"></div>
+        
+                <div class="container">
+                    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            
+                            
+                            <div class="col-lg-12 col-sm-12">
+                                <h5 class="ml-5 d-none d-lg-block" style="padding: 1rem;">
+                                        <div class="fs-16 m-0">REQUEST DETAILS: {!rq.srvc__r.name} </div>
+                                </h5>
+                            </div>
+                            
+                          
+                            <div id="collapseOne" class="panel-collapse collapse in show" role="tabpanel" aria-labelledby="headingOne">
+                                <div class="panel-body">
+                                    <form id="myform" name="form1" method="POST" action="new_visa_step02.php" enctype="multipart/form-data">
+                                        <div class="row">
+                                            <div class="col-lg-12 col-xl-12">
+                                                <div class="table-responsive">
+                                                    <table class="table fs-13 table-sm">
+                                                        <tr>
+                                                            <td class="text-right font-weight-bold"><apex:outputLabel value="{!$ObjectType.g_Req__c.Fields.Acc__c.label}" />:</td>
+                                                            <td colspan="5"><apex:outputField value="{!rq.Acc__c}"/></td>
+                                                            <td class="text-right font-weight-bold">Top-up Amount:</td>
+                                                            <td><apex:outputField value="{!rq.xtpa__c}" /> </td>
+                                                            
+                                                        </tr>
+                                                      
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+           </apex:outputPanel>
+        </apex:pageBlock>
+        
+        <c:grms id="Milestones" ispu="{!ispu}" R="{!rq}" rendered="{!md.isView}"/>
+        <c:qrlstr id="pbRelated" isNew="{!md.isNew}" isEdit="{!md.isEdit}" isView="{!md.isView}" pgHide="{!pgHide}" ispu="{!ispu}" R="{!rq}" pg="{!pg}"/>
+        
+     </apex:form>    
+  
+    
+    <script>
+
+   window.onload = function() { 
+     
+    if(('{!JSENCODE(rq.id)}' == null || '{!JSENCODE(rq.id)}' == '') || ('{!JSENCODE(rq.id)}' != null && '{!rq.AP__c}' == 0 && '{!rq.AOP__c}' == 0 ))  
+     afs();
+    }
+</script> 
+</apex:page>

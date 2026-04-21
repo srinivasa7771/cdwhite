@@ -1,0 +1,782 @@
+<apex:page cache="false" controller="soslSearchCtlr" docType="html-5.0" standardStylesheets="false" readOnly="true" showHeader="true" sidebar="false" title="Search Results" >
+      
+    <html>
+
+    <head>
+        <title>AXS</title>
+        
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="./favicon.ico" />
+         
+        <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/font-awesome/css/font-awesome.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/aos/dist/aos.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/swiper/css/swiper.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/daterangepicker/daterangepicker.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/select2/dist/css/select2.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/easy-autocomplete/dist/easy-autocomplete.themes.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/chart.js/dist/Chart.min.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.vendors_NUI, '/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css')}" />
+        
+        <style>
+            th {
+            text-transform: uppercase !important;
+            }
+            .soslTables td:last-child, .soslTables th:last-child {
+            text-transform: uppercase;
+            text-align: center;
+            }
+        </style>
+    </head>
+        <script type="text/javascript"> 
+            function goSearch(evt) {
+                var str = event.target.value;
+                console.log('length >>'+ str.length);
+                if(str.length>=3){
+                console.log('str >>'+ str);
+                    searchSosl();
+                }
+                /*
+                evt = (evt) ? evt : window.event;
+                var charCode = (evt.which) ? evt.which : evt.keyCode;
+                if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    return false;
+                }*/
+                return true;
+            }
+        function replaceBlankVals(cls){//'.dataCell'
+            $(cls).each(function(){
+                $(this).html(($(this).html()?$(this).html():'-'));
+            });
+        }
+        </script>
+
+    <body>
+
+        <div id="main">
+
+            
+        
+<div id="page_content">
+    <div class="container">
+        <div class="page-header">
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item">Search Results</li>
+            </ul>
+            <!-- .breadcrumb -->
+
+            <h1 class="page-title mr-auto">SEARCH RESULTS <span class="font-weight-normal">FOR</span></h1>
+
+        </div>
+        <!-- .page-header -->
+        <apex:form id="myFrm">
+            <apex:actionFunction name="searchSosl" action="{!search}" status="actStatusId" rerender="thePanel,req,error,cas,trans" oncomplete="replaceBlankVals('.dataCell');" />
+            
+            <div class="row row-sm mb-4">
+                <div class="col-6 col-md-8">
+                    <div class="search-field mb-0">
+                    
+                        <form class="main-header-search-form" id="searchForm" action="apex/soslSearch">
+                            <div class="input-group">
+                                <apex:inputText id="searchCON" styleclass="form-control" value="{!searchStr}"  onkeyup="return goSearch(event)" />
+                                <div class="input-group-append">
+                                    <button class="btn" type="Submit"  onclick="searchSosl(); return false;">
+                                        <div class="icon-search"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </form> 
+                        
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="dropdown-filter-wrapper">
+                    <apex:actionRegion >
+                        <apex:selectList value="{!objType}" multiselect="false" id="SearchOption" size="1" styleClass="dropdown-filter form-control" >
+                            <apex:selectOptions value="{!SearchOption}" />
+                            <apex:actionSupport event="onchange" action="{!search}" rerender="thePanel,req,error,cas,trans" />
+                        </apex:selectList>
+                    </apex:actionRegion>
+                    </div>
+                </div>
+            </div>
+            <apex:outputPanel id="thePanel">
+                <!-- .row -->
+                <div class="custom-scroll panel mb-2 MH-400" style="{!IF(hasRqList, 'display:block', 'display:none')};min-height: 80px;">
+                    <div class="panel-body">
+                        <apex:pageBlock title="REQUESTS" id="req">
+                            <apex:pageblockTable value="{!rqList}" var="rq" styleclass="table soslTables table-hover table-responsive-sticky table-list m-0">
+                                <apex:inputHidden id="hh" value="{!rq.CurrentNationality__c}"></apex:inputHidden>
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">SR NUMBER</apex:facet> 
+                                    <apex:outputlink value="/{!rq.Id}">{!rq.Name}</apex:outputlink>
+                                </apex:column>
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">PRIORITY</apex:facet><!--<i class="fa fa-arrow-up"></i>-->
+                                    <apex:outputtext >
+                                        <div class="badge-status  {!IF(rq.prio__c='Platinum','',IF(rq.prio__c='Express','badge-status-completed','badge-status-process'))} initialism">
+                                            {!rq.prio__c}
+                                        </div>
+                                    </apex:outputtext>
+                                </apex:column>
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">SERVICE</apex:facet> 
+                                    <apex:outputField value="{!rq.srvc__r.name}" />
+                                </apex:column>
+                                
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">NAME</apex:facet> 
+                                    <apex:outputtext >{!rq.Applicant_Name__c} </apex:outputtext><!--{!rq.xcfn__c} {!rq.xcmn__c} {!rq.xcln__c}-->
+                                </apex:column>
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">NATIONALITY / PASSPORT</apex:facet> 
+                                    <div class="mr-2">{!IF(NOT(ISNULL(rq.xcnc__c)),rq.xcnc__c,IF(NOT(ISNULL(rq.CurrentNationality__c)),rq.CurrentNationality__c,'-'))}</div>
+                                    <span class="text-grey">{!IF(NOT(ISNULL(rq.xcp__c)),rq.xcp__c,IF(NOT(ISNULL(rq.tmpp__c)),rq.tmpp__c,''))}</span> 
+                                    <!--<div class="mr-2">{!rq.xcnc__c}</div>
+<span class="text-grey">{!rq.xcp__c}</span> --> 
+                                </apex:column>
+                                <apex:column rendered="{!rq.srvc__r.name!='UBO'}">
+                                    <apex:facet name="header">STATUS</apex:facet> 
+                                    <apex:outputtext >
+                                        <div class="badge-status initialism {!IF(rq.STA__c='Completed','badge-status-completed',IF(OR(rq.STA__c='In Process', rq.STA__c='Under Review'),' badge-status-process', IF(OR(rq.STA__c='Rejected', rq.STA__c='Cancelled'),' badge-status-urgent',IF(rq.STA__c='Draft','badge-status-draft',IF(rq.STA__c='New','badge-status-new','')) )))}">{!if(rq.STA__c='Under Review','In Process',rq.STA__c)}</div> 
+                                    </apex:outputtext>
+                                </apex:column>
+                            </apex:pageblockTable>
+                        </apex:pageBlock>
+                    </div>
+                </div>
+                <div class="custom-scroll panel mb-2 MH-400"  style="{!IF(hasConList, 'display:block', 'display:none')};min-height: 80px;">
+                    <!--div class="table-responsive table-responsive-lg table-people"-->
+                    <div class="panel-body ">
+                        <!--div class="d-md-flex flex-wrap align-items-center">
+<h1 class="page-title mr-auto">PEOPLE &amp; VISAS</h1>
+</div-->
+                        <apex:pageBlock title="PEOPLE & VISAS" id="cont">
+                            <apex:pageblockTable value="{!conList}" var="p" styleclass="table table-hover table-responsive-sticky table-list m-0">
+                                <apex:column >
+                                    <apex:facet name="header">NAME / JOB TITLE</apex:facet> 
+                                    <!--apex:outputlink value="/gConInfo?id={!p.con.Id}">{!p.con.Name} <br/> {!p.con.Job_Title_Formula__c}</apex:outputlink-->
+                                    <apex:outputtext >
+                                        
+                                        <div class="people-name-wrapper">
+                                            <!--<div class="avatar">
+<img src="/servlet/servlet.FileDownload?file={!p.con.Photo_ID__c}" alt="" />
+</div>-->
+                                            <div class="people-name"><a href="./gConInfo?id={!p.con.id}" target="_blank" class="row-link"></a>
+                                                <h5>{!p.con.Name}</h5></div>
+                                            <div class="people-job">{!p.con.Job_Title_Formula__c}</div>
+                                        </div>
+                                        
+                                    </apex:outputtext>
+                                </apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header">ROLE</apex:facet> 
+                                    <apex:outputField value="{!p.con.rol__c}" />
+                                </apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header">STATUS</apex:facet> 
+                                    <apex:outputField value="{!p.con.STA__c}" />                                
+                                    <!--apex:outputtext >
+<div class="badge-status  {!IF(p.con.STA__c='Active','badge-status-completed',IF(p.con.STA__c='Under Activation',' badge-status-process', IF(OR(p.con.STA__c='Inactive',p.con.STA__c='Absconded'),' badge-status-urgent',IF(p.con.STA__c='Draft','badge-status-draft',IF(p.con.STA__c='New','badge-status-new','')) )))}">{!p.con.STA__c}</div> 
+</apex:outputtext-->
+                                    
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">NATIONALITY</apex:facet> 
+                                    <apex:outputField value="{!p.con.nc__c}" />
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">PASSPORT</apex:facet> 
+                                    <div class="people-property-flex">
+                                        <div class="mr-2">{!p.con.p__c}</div>
+                                        <span class="{!if(OR(p.passExp='Expired',contains(p.passExp,'Expires')),'text-danger','')}">{!p.passExp}</span>
+                                    </div>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">EMIRATES ID</apex:facet> 
+                                    <apex:outputField value="{!p.con.eidid__c}" />
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">RESIDENCE VISA</apex:facet> 
+                                    <div class="people-property-flex">
+                                        <div class="mr-2">{!p.con.rp__c}</div>
+                                        <span class="{!if(OR(p.resiExp='Expired',contains(p.resiExp,'Expires')),'text-danger','')}" > {!p.resiExp}</span>
+                                    </div>
+                                </apex:column>
+                                
+                            </apex:pageblockTable>
+                        </apex:pageBlock>
+                    </div>
+                </div>
+                <div class="custom-scroll panel mb-2 MH-400" style="{!IF(hasCsList, 'display:block', 'display:none')};min-height: 80px;"><!-- styleclass="table-list-hide" -->
+                    <div class="panel-body">
+                        <apex:pageBlock title="TICKETS" id="cas">
+                            <apex:pageblockTable value="{!csList}" var="cs"  styleclass="table table-hover table-responsive-sticky table-list m-0">
+                                <apex:column >
+                                    <apex:facet name="header">TICKET NUMBER </apex:facet> 
+                                    <apex:outputlink value="/CaseDetail?id={!cs.Id}">{!cs.CaseNumber}</apex:outputlink>
+                                    <!--<apex:outputlink value="/{!cs.Id}">{!cs.CaseNumber}</apex:outputlink>-->
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">SERVICE</apex:facet> 
+                                    <apex:outputField value="{!cs.Service_Type__c}" />
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">NAME</apex:facet> 
+                                    <apex:outputtext >{!cs.Request__r.xcfn__c} {!cs.Request__r.xcmn__c} {!cs.Request__r.xcln__c} </apex:outputtext>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">DATE/TIME OPENED</apex:facet> 
+                                    <apex:outputField value="{!cs.CreatedDate}" />
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">STATUS</apex:facet> 
+                                    <apex:outputtext >
+                                        <div class="badge-status  {!IF(cs.Status='Completed','badge-status-completed',IF(OR(cs.Status='In Process', cs.Status='Under Review'),' badge-status-process', IF(OR(cs.Status='Rejected', cs.Status='Cancelled'),' badge-status-urgent',IF(cs.Status='Draft','badge-status-draft',IF(cs.Status='New','badge-status-new','')) )))}">{!cs.Status}</div>
+                                    </apex:outputtext>
+                                    
+                                </apex:column>
+                                
+                            </apex:pageblockTable>
+                        </apex:pageBlock>
+                    </div>
+                </div>
+                <div class="custom-scroll panel mb-2 MH-400" style="{!IF(hasTransList, 'display:block', 'display:none')};min-height: 80px;">
+                    <div class="panel-body">
+                        <apex:pageBlock title="PAYMENT & RECEIPTS" id="trans" >
+                            <apex:pageblockTable value="{!transList}" var="tr" styleclass="table soslTables table-hover table-responsive-sticky table-list m-0">
+                                <apex:column >
+                                    <apex:facet name="header">RECIEPT NUMBER</apex:facet> 
+                                    <apex:outputlink value="/{!tr.Id}">{!tr.Name}</apex:outputlink>
+                                </apex:column>
+                                <apex:column >
+                                    <apex:facet name="header">SR NUMBER</apex:facet> 
+                                    <apex:outputtext >{!tr.RQ__r.name}</apex:outputtext>
+                                </apex:column>
+                                <apex:column value="{!tr.Service_Name__c}"/>
+                                <apex:column value="{!tr.TP__c}"/>
+                                <apex:column value="{!tr.md__c}"/>
+                                <apex:column value="{!tr.A__c}"></apex:column>
+                                
+                                <apex:column >
+                                    <apex:facet name="header">STATUS</apex:facet> 
+                                    <apex:outputtext >
+                                        <div class="badge-status  {!IF(tr.STA__c='Completed','badge-status-completed',IF(OR(tr.STA__c='In Process', tr.STA__c='Under Review'),' badge-status-process', IF(OR(tr.STA__c='Rejected', tr.STA__c='Cancelled'),' badge-status-urgent',IF(tr.STA__c='Draft','badge-status-draft',IF(tr.STA__c='New','badge-status-new','')) )))}">{!tr.STA__c}</div> 
+                                    </apex:outputtext>
+                                    
+                                </apex:column>
+                                
+                            </apex:pageblockTable>
+                        </apex:pageBlock>
+                        
+                    </div>
+                </div>
+                <script>
+                if('{!JSENCODE(isParkingUser)}'=='true'){
+                    $('.people-name a').each(function(){
+                        $(this).attr({'href':'#','target':''});
+                    });
+                }
+                function dummy(){}
+                </script>
+            </apex:outputPanel>
+        </apex:form>
+        
+    </div>
+    <!-- .container -->
+</div>
+<!-- #page_content -->
+    </div>
+          
+
+  <!--<c:addons ></c:addons>-->
+
+        
+        <!-- request modal -->
+    <!-- Modal -->
+    <div class="modal fade" id="request_modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <!-- .modal-navigation -->
+                    <div class="request-main" id="request_main">
+                        <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="panel-request panel-request-main">
+                <i class="icon-employee request-icon"></i>
+
+                <div class="panel-request-body">
+                    <h4 class="request-title">SERVICES FOR EMPLOYEES</h4>
+                    <p class="request-description">
+                        Letters, Insurance and everything else for your employees
+                    </p>
+                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_1">
+                        GET SERVICES
+                    </button>
+                </div>
+
+                <div class="panel-request-mobile">
+                    <button class="btn open-request-option" data-target="request_options_1">
+                        SERVICES FOR EMPLOYEES
+                    </button>
+                </div>
+            </div>
+            <!-- .panel-request-main -->
+        </div>
+        <!-- .col -->
+        <div class="col-lg-3 col-md-6">
+            <div class="panel-request panel-request-main">
+                <i class="icon-visa-immigration request-icon"></i>
+
+                <div class="panel-request-body">
+                    <h4 class="request-title">VISA &amp; IMMIGRATION</h4>
+                    <p class="request-description">New Visas, Renewals, Cancellations and other Services</p>
+                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_2">
+                        GET SERVICES
+                    </button>
+                </div>
+
+                <div class="panel-request-mobile">
+                    <button class="btn open-request-option" data-target="request_options_2">
+                        VISA &amp; IMMIGRATION
+                    </button>
+                </div>
+            </div>
+            <!-- .panel-request-main -->
+        </div>
+        <!-- .col -->
+        <div class="col-lg-3 col-md-6">
+            <div class="panel-request panel-request-main">
+                <i class="icon-corporate request-icon"></i>
+
+                <div class="panel-request-body">
+                    <h4 class="request-title">COMPANY SERVICES</h4>
+                    <p class="request-description">
+                        Lease, License, Deposits and Establishment related services
+                    </p>
+                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_3">
+                        GET SERVICES
+                    </button>
+                </div>
+
+                <div class="panel-request-mobile">
+                    <button class="btn open-request-option" data-target="request_options_3">
+                        COMPANY SERVICES
+                    </button>
+                </div>
+
+            </div>
+            <!-- .panel-request-main -->
+        </div>
+        <!-- .col -->
+
+        <div class="col-lg-3 col-md-6">
+            <div class="panel-request panel-request-main">
+                <i class="icon-vfs request-icon"></i>
+
+                <div class="panel-request-body">
+                    <h4 class="request-title">OTHER SERVICES</h4>
+                    <p class="request-description">
+                        Parking, PO Box and other services from our partner
+                    </p>
+                    <button class="btn btn-outline-primary open-request-option" data-target="request_options_4">
+                        GET SERVICES
+                    </button>
+                </div>
+                
+                <div class="panel-request-mobile">
+                    <button class="btn open-request-option" data-target="request_options_3">
+                        OTHER SERVICES
+                    </button>
+                </div>
+
+
+            </div>
+            <!-- .panel-request-main -->
+        </div>
+        <!-- .col -->
+
+    </div>
+    <!-- .row -->
+                    </div>
+                    <!-- #request_main -->
+
+                    <div class="request-options" id="request_options_1" style="display: none;">
+        <button type="button" class="btn btn-outline-primary request-options-back">
+            <i class="fa fa-chevron-left"></i> BACK
+        </button>
+        <h3 class="modal-request-header">
+            <i class="icon-employee"></i>
+            <span>SERVICE FOR EMPLOYEES</span>
+        </h3>
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">
+                        NEW VISAS/REQUESTS
+                    </h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_1_1">
+                        <h4 class="request-options-title">
+                            NEW VISAS/REQUESTS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_1_1">
+                        <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                        <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_1_2">
+                        <h4 class="request-options-title">
+                            RENEWALS / TRANSFERS / EXTENSIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_1_2">
+                        <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                        <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                        <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_1_3">
+                        <h4 class="request-options-title">
+                            AMENDMENTS / CANCELLATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_1_3">
+                        <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                        <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                        <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                        <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_1_4">
+                        <h4 class="request-options-title">
+                            ABSCONDER NOTIFICATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_1_4">
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                            DECLARATION</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                        <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                        <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                    </div>
+                </div>
+            </div>
+            <!-- .col -->
+        </div>
+        <!-- .row -->
+    </div>
+    <!-- #request_options_1 -->
+                    <div class="request-options" id="request_options_2" style="display: none;">
+        <button type="button" class="btn btn-outline-primary request-options-back">
+            <i class="fa fa-chevron-left"></i> BACK
+        </button>
+        <h3 class="modal-request-header">
+            <i class="icon-immigration"></i>
+            <span>VISA AND IMMIGRATION</span>
+        </h3>
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">
+                        NEW VISAS/REQUESTS
+                    </h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_2_1">
+                        <h4 class="request-options-title">
+                            NEW VISAS/REQUESTS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_2_1">
+                        <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                        <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_2_2">
+                        <h4 class="request-options-title">
+                            RENEWALS / TRANSFERS / EXTENSIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_2_2">
+                        <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                        <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                        <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_2_3">
+                        <h4 class="request-options-title">
+                            AMENDMENTS / CANCELLATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_2_3">
+                        <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                        <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                        <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                        <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_2_4">
+                        <h4 class="request-options-title">
+                            ABSCONDER NOTIFICATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_2_4">
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                            DECLARATION</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                        <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                        <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                    </div>
+                </div>
+            </div>
+            <!-- .col -->
+        </div>
+        <!-- .row -->
+    </div>
+    <!-- #request_options_2 -->
+                    <div class="request-options" id="request_options_3" style="display: none;">
+        <button type="button" class="btn btn-outline-primary request-options-back">
+            <i class="fa fa-chevron-left"></i> BACK
+        </button>
+        <h3 class="modal-request-header">
+            <i class="icon-corporate"></i>
+            <span>COMPANY SERVICES</span>
+        </h3>
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">
+                        NEW VISAS/REQUESTS
+                    </h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_3_1">
+                        <h4 class="request-options-title">
+                            NEW VISAS/REQUESTS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_3_1">
+                        <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                        <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_3_2">
+                        <h4 class="request-options-title">
+                            RENEWALS / TRANSFERS / EXTENSIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_3_2">
+                        <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                        <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                        <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_3_3">
+                        <h4 class="request-options-title">
+                            AMENDMENTS / CANCELLATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_3_3">
+                        <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                        <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                        <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                        <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_3_4">
+                        <h4 class="request-options-title">
+                            ABSCONDER NOTIFICATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_3_4">
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                            DECLARATION</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                        <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                        <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                    </div>
+                </div>
+            </div>
+            <!-- .col -->
+        </div>
+        <!-- .row -->
+    </div>
+    <!-- #request_options_3 -->
+                    <div class="request-options" id="request_options_4" style="display: none;">
+        <button type="button" class="btn btn-outline-primary request-options-back">
+            <i class="fa fa-chevron-left"></i> BACK
+        </button>
+        <h3 class="modal-request-header">
+            <i class="icon-vfs"></i>
+            <span>OTHER SERVICES</span>
+        </h3>
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">
+                        NEW VISAS/REQUESTS
+                    </h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_4_1">
+                        <h4 class="request-options-title">
+                            NEW VISAS/REQUESTS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_4_1">
+                        <button class="btn btn-outline-primary btn-block">NEW VISA</button>
+                        <button class="btn btn-outline-primary btn-block">VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">DFTC VISIT VISA</button>
+                        <button class="btn btn-outline-primary btn-block">REGISTER A DEPENDENT</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">RENEWALS / TRANSFERS / EXTENSIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_4_2">
+                        <h4 class="request-options-title">
+                            RENEWALS / TRANSFERS / EXTENSIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_4_2">
+                        <button class="btn btn-outline-primary btn-block">VISA RENEWAL</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE VISA TRANSFER</button>
+                        <button class="btn btn-outline-primary btn-block">SPOUSE VISA TRANSFER </button>
+                        <button class="btn btn-outline-primary btn-block">ON ARRIVAL VISA EXTENSION</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">AMENDMENTS / CANCELLATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_4_3">
+                        <h4 class="request-options-title">
+                            AMENDMENTS / CANCELLATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_4_3">
+                        <button class="btn btn-outline-primary btn-block">VISA CANCELLATION</button>
+                        <button class="btn btn-outline-primary btn-block">RELEASE SIGNED OUT</button>
+                        <button class="btn btn-outline-primary btn-block">RESIDENCE PERMIT CORRECTION</button>
+                        <button class="btn btn-outline-primary btn-block">LOST PASSPORT RE-STAMPING</button>
+                    </div>
+                </div>
+            </div>
+            <!--  -->
+            <div class="col-lg-3 col-md-6">
+                <div class="panel-request panel-request-options">
+                    <h4 class="request-options-title">ABSCONDER NOTIFICATIONS</h4>
+                    <a href="#" class="request-options-title-dropdown collapsed" data-toggle="collapse"
+                        data-target="#request_options_4_4">
+                        <h4 class="request-options-title">
+                            ABSCONDER NOTIFICATIONS
+                        </h4>
+                    </a>
+                    <div class="request-options-dropdown-body collapse" id="request_options_4_4">
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER
+                            DECLARATION</button>
+                        <button class="btn btn-outline-primary btn-block">EMPLOYEE ABSCONDER WITHDRAWAL</button>
+                        <button class="btn btn-outline-primary btn-block">IMMIGRATION PRINTOUT</button>
+                        <button class="btn btn-outline-primary btn-block">STUDENT ABSCONDER DECLARATION</button>
+                    </div>
+                </div>
+            </div>
+            <!-- .col -->
+        </div>
+        <!-- .row -->
+    </div>
+    <!-- #request_options_4 -->
+                    
+                </div>
+                <!-- .modal-body -->
+            </div>
+            <!-- .modal-content -->
+        </div>
+        <!-- .modal-dialog -->
+    </div>
+    <!-- .modal -->
+        
+        
+        
+    <!-- .connect-buttons -->
+
+        <!-- Vendor js -->
+        
+    </body>
+
+    </html>
+    </apex:page>

@@ -1,0 +1,114 @@
+<apex:page docType="html-5.0" controller="ClaimValidate" readOnly="true" tabStyle="g_cmb__c" action="{!validate}">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script>
+ <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+ <style type="text/css">
+        div.dataTables_wrapper {
+            width: 1000px;
+            margin: 0 auto;
+        }
+ </style>   
+ <apex:form >
+  <apex:pageBlock id="pbk">
+ <apex:outputPanel id="stsId"> 
+  <apex:actionStatus id="theStatus" startText="Loading... Please wait."><apex:facet name="start"><apex:outputPanel ><c:progress /></apex:outputPanel></apex:facet></apex:actionStatus>
+</apex:outputPanel> 
+  <apex:actionFunction name="appNoValidate" action="{!appValidate}" status="theStatus" reRender="stsId" />
+  <apex:pageMessages ></apex:pageMessages>
+  <div cclass="bPageTitle" >
+    <div class="content"><img src="/s.gif" alt="Claim Validate" class="pageTitleIcon" title="Claim Validate"/>
+        <h1 class="pageType">Claim AppicationNo Validate<span class="titleSeparatingColon">:</span></h1>
+        <h2 class="pageDescription"></h2>
+        <div class="blank">&nbsp;
+          
+           
+        </div>
+    </div>
+    </div><br/>
+        
+      <!--
+      &nbsp; To Date &nbsp; <apex:input value="{!toDate}" type="date"/> 
+-->
+
+ <br/><br/>
+       <apex:pageBlockButtons >
+        <apex:commandButton value="Export" action="{!exportDetails}" rendered="{!isExport}"/> 
+         <apex:commandButton value="Validate" action="{!validate}" rendered="{!isRefValidate}"/>   
+     </apex:pageBlockButtons>  
+      <apex:pageBlockSection columns="1" title="Application Number Matched" rendered="{!AND(NOT(ISBLANK(trnLst)), trnLst.size > 0)}" > 
+           <apex:pageblockTable value="{!trnLst}" var="item" id="theTable">
+              <apex:column headervalue="Application No" >
+                 <b>{!item.appNo}</b>
+             </apex:column>  
+             <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+                <apex:facet name="footer">
+                  Total Count :  {!ttlMCnt} 
+                </apex:facet>
+             </apex:column>
+            
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+                <apex:facet name="footer">
+                  Total :  {!ttlMAmount} 
+                </apex:facet>
+             </apex:column>
+             <apex:column headervalue="Amount Difference" >
+                 <b>{!item.amntDiff}</b>
+                <apex:facet name="footer">
+                  Total Difference :  {!ttlDiffAmount} 
+                </apex:facet>
+             </apex:column>  
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+             </apex:column> 
+              
+            
+          </apex:pageblockTable>
+        </apex:pageBlockSection>
+      
+       <apex:pageBlockSection columns="1" title="Application Number Not Matched" rendered="{!AND(NOT(ISBLANK(trnUnMatchLst)),trnUnMatchLst.size > 0)}" > 
+          <apex:pageblockTable value="{!trnUnMatchLst}" var="item" id="theTable" >
+             <apex:column headervalue="Application No" >
+                 <b>{!item.appNo}</b>
+             </apex:column> 
+             <apex:column headervalue="Ref#" >
+                 <b>{!item.refNo}</b>
+                 
+                  <apex:facet name="footer">
+                  Total Count :  {!ttlNMCnt} 
+                </apex:facet>
+             </apex:column>
+            
+           <apex:column headervalue="Amount" >
+                 <b>{!item.amount}</b>
+              
+                <apex:facet name="footer">
+                  Total :  {!ttlNMAmount} 
+                </apex:facet>
+             </apex:column> 
+             <apex:column headerValue="">
+                    <apex:image value="{!If(item.Matched,'/img/msg_icons/confirm16.png','/img/msg_icons/error16.png')}"/>
+             </apex:column> 
+              
+            
+          </apex:pageblockTable>
+         <script type="text/javascript">
+        j$ = jQuery.noConflict();
+        j$(document).ready(function () {
+            j$('[id$=theTable]').DataTable( {
+                "bSort" : false,
+                "bPaginate": false,
+                "bFilter": false,
+                "bInfo": false,
+                "scrollY": 300,
+                "scrollX": false
+            } );
+        });  
+    </script>
+          
+      </apex:pageBlockSection>
+ 
+    </apex:pageBlock>
+            
+</apex:form>   
+</apex:page>

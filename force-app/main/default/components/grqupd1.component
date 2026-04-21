@@ -1,0 +1,818 @@
+<apex:component controller="gctlRequ" allowDML="true" >
+    <apex:attribute name="keyAssigned"
+                    type="String"
+                    assignTo="{!key}"
+                    description="The key given to this component so the page can easliy get access to it." />
+    
+    <apex:attribute name="PageControllerBaseCalling" 
+                    type="pgBsCtrl" 
+                    assignTo="{!pageController}" 
+                    description="The controller for the page." />
+    <apex:attribute name="Dim" description="layout: V-Verticle, H-Horizontal" type="String" required="false"/>   
+    <apex:attribute name="PayDone" description="" type="Boolean" required="false"/>    
+    
+    
+    <apex:outputText rendered="true"><!--{!!isMobile}-->
+        <apex:actionFunction name="updatePriority"  action="{!updatePrirityItm}"  rerender="fid,adhid" oncomplete="updateAdhoc2();removeEmptyLables();$('#preloader').fadeOut();">
+            <apex:param name="prType" value=""/> 
+        </apex:actionFunction>
+        <apex:actionFunction name="updateInc"  action="{!updateIncItm}"  rerender="fid" oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+            <apex:param name="incType" value=""/> 
+        </apex:actionFunction>
+        <apex:actionFunction name="updateOffl"  action="{!updateOfflItm}"  rerender="fid"  oncomplete="removeEmptyLables();javascript:stopLoader();window.location.reload();">
+            <apex:param name="offType" value=""/> 
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="reloadDocDiv" action="{!resetDoc}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocLR,opDocL"  oncomplete="resetprTypeVal();javascript:stopLoader();console.log('after reloaddocdiv')"/>
+        
+        <apex:actionFunction name="afdltAtt" action="{!deleteAttachment2}" status="theStatus" rerender="opDocV,opDocH,opDocS,opDocLR,opDocL"  oncomplete="reloadDocDiv();resetprTypeVal();$('#preloader').fadeOut();"  />
+        
+        
+        <apex:InputHidden value="{!imageBase64}" id="imageBase64"/>
+        <apex:InputHidden value="{!reqDocId2}" id="reqDocId2"/>
+        <apex:InputHidden value="{!docName}" id="docName"/>
+        <apex:InputHidden value="{!fileSrc}" id="fileSrc"/>
+        <script>
+        cs['reqDocId2'] = getC("{!$Component.reqDocId2}");
+        </script>
+        <style>
+            .whiteDiv{
+            padding: 12px 15px;     
+            background-color: #fff;
+            border: 1px solid #E1E1E1;
+            }
+            .tooltip > .tooltip-inner {text-align: left !important;}
+            .box.box-block {
+            min-height: 10em;
+            }
+        </style>
+        
+        <script type="text/javascript">
+        
+        function popupDocModel(lbl,typ,seq){
+            
+            //startLoader(typ);
+            currentDoc = lbl;
+            console.log('In popupDocModel() DocLabel >> '+'lbl');  
+            document.getElementById("udDocType").value = typ;//dname;
+            document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
+            document.getElementById("udDocLabel").innerHTML = lbl;
+            $('#modal_fileuploadPopUp').modal('show');
+        }
+        function closeDialog() {
+            // startLoader();
+            $('#modal_fileuploadPopUp').modal('hide');
+        }
+        
+        function dltAtt(a){
+            startLoader(currentDelDoc);
+            reqDocId2=document.getElementById("{!$Component.reqDocId2}");
+            reqDocId2.value=a;
+            afdltAtt();
+            //reloadDocDiv();
+        };
+        
+        function spnChange(){
+            console.log('Change in reloadDocDivJS');
+            reloadDocDiv();
+            
+        }
+        
+        </script>
+        
+        <script>
+        /* (function ($) {
+        $(function () {
+            
+            $('#inc').change(function () { 
+                var isIncountryChecked = $('input[name="incountry"]:checked').length > 0;
+                if(isIncountryChecked)
+                    $('#ofl').show(); 
+                else
+                    $('#ofl').hide();
+            });
+            
+        });
+    }(jQuery));*/
+        </script>   
+        <apex:outputPanel id="adhid">
+            <script>
+            function updateAdhoc2(){
+                if('{!rq.xadh__c}' != null)  
+                    c = '{!rq.xadh__c}';              
+            }
+            function prTypeChange(){
+                let prVal = document.getElementById("prTypeId").value;
+                if(prVal != '{!priorityType}'){
+                    axsConfirmation('Confirm','Do you want to change the priority?',true,'updatePriority',prVal,'resetprTypeVal');
+                    //$('#prTypeId').val('{!priorityType}').trigger('change');
+                }
+                // updatePriority(prVal);
+            }
+            
+            function resetprTypeVal(){
+                $('#prTypeId').val('{!priorityType}').trigger('change');
+            }
+            </script>
+        </apex:outputPanel>
+        <apex:outputPanel id="opDoc">
+            <!-- Vertical Look: START -->
+            <apex:outputPanel rendered="{!if(Dim=='V',true,false)}">
+                
+                <apex:outputPanel id="opDocV">
+                    <div>
+                        <h2 class="text-primary mb-3">
+                            {!rq.srvc__r.name}
+                            <span class="loader_rerender" style="float:right; display:none;">
+                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                            </span>
+                        </h2>
+                        <apex:outputPanel rendered="{!OR(rq.srvc__r.sdg__r.ptype__c='',rq.srvc__r.uid__c='ltc',rq.srvc__r.uid__c='lts',rq.srvc__r.uid__c='ltp',rq.srvc__r.uid__c='133')}">
+                            <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                <div class="collapse-content">
+                                    <!--<p>{!rq.srvc__r.dsc__c}</p>-->
+                                    <apex:outputText escape="false" value="{!rq.srvc__r.dsc__c}" />
+                                    
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!AND(OR(rq.AP__c==0,ISBLANK(rq.AP__c)),rq.srvc__r.sdg__r.ptype__c!='',rq.srvc__r.uid__c!='ltc',rq.srvc__r.uid__c!='ltp',rq.srvc__r.uid__c!='069')}">
+                            <div>
+                                <apex:outputText rendered="{!rq.srvc__r.sdg__r.ptype__c!=''}">
+                                    <h3 class="text-primary d-md-block d-none">PRIORITY TYPE</h3>
+                                    
+                                    <a href="#" class="base-side-collapse-toggle collapsed d-block d-md-none" data-toggle="collapse"
+                                       data-target="#base_side_content_2">
+                                        <h3 class="text-primary">PRIORITY TYPE</h3>
+                                    </a>
+                                </apex:outputText>    
+                                <div class="collapse collapse-content-wrapper" id="base_side_content_2">
+                                    <div class="collapse-content">
+                                        <apex:outputText rendered="{!rq.srvc__r.sdg__r.ptype__c!=''}"> 
+                                            <apex:outputText rendered="{!contains(rq.srvc__r.sdg__r.ptype__c,'platinum')}">
+                                                <div class="form-group form-style">
+                                                    <select class="form-control input-select2-flat" id="prTypeId" value="{!priorityType}" onchange="prTypeChange();">
+                                                        <option value="nf" >Normal ( 10 days )</option>
+                                                        <option value="ef" >Express ( 3 days )</option>
+                                                        <option value="pf" >Platinum ( 1 day )</option>
+                                                    </select>
+                                                </div>
+                                            </apex:outputText>
+                                            <apex:outputText rendered="{!!contains(rq.srvc__r.sdg__r.ptype__c,'platinum')}">
+                                                <div class="form-group form-style">
+                                                    <select class="form-control input-select2-flat" id="prTypeId" value="{!priorityType}" onchange="prTypeChange();">
+                                                        <option value="nf" >Normal ( 10 days )</option>
+                                                        <option value="ef" >Express ( 3 days )</option>
+                                                    </select>
+                                                </div>
+                                            </apex:outputText>
+                                        </apex:outputText> 
+                                        <!--
+<apex:outputText rendered="{!OR(AND(rq.srvc__r.sdg__r.cv__c=='NewVisa',rq.srvc__r.kstp__c=='New'),rq.srvc__r.sdg__r.cv__c=='StuNewVisa')}">
+
+<div class="form-group form-style">
+<label class="custom-checkbox custom-checkbox-sm mb-4 fs-18 text-light-2" id="inc" > 
+<input type="checkbox" name="incountry" id="incountryId" value='{!incType}' onClick="incChange();"/>
+<span>Select if the applicant is in the UAE and intends to stay here throughout the visa
+process</span>
+</label>
+<apex:outputText rendered="{!OR(rq.srvc__r.sdg__r.cv__c=='NewVisa')}">
+<label class="custom-checkbox custom-checkbox-sm mb-4 fs-18 text-light-2" id="ofl" style="display: none;">
+<input type="checkbox" name="offerleter" id="offerleterId" onClick="offChange();"/>
+<span>Do you want to apply for offer letter?</span>
+</label>  
+</apex:outputText>    
+</div>
+</apex:outputText> 
+-->
+                                    </div><!-- .collapse-content -->
+                                </div><!-- .collapse-content-wrapper -->
+                            </div>
+                            
+                        </apex:outputPanel>                       
+                        <div class="collapse collapse-content-wrapper" id="base_side_content_1">
+                            <div class="collapse-content">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        
+                        <apex:outputPanel rendered="{!Docs.size>0}"> 
+                            <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                <div class="collapse-content">
+                                    <h4 class="text-primary">{!IF(nD,'DOCUMENT UPLOADS','DOCUMENTS UPLOADED')}</h4>
+                                    <div class="document-uploads">
+                                        <apex:repeat id="vr0" value="{!Docs}" var="D">
+                                            <!-- >>{!D.Ats.size}||{!D.doUp}||{!D.doc.ats__c}||{!D.doc.Req__c} -->
+                                            <apex:outputPanel rendered="{!AND(OR(D.doUp,AND(D.doc.ats__c=0,D.doc.Req__c)),D.Ats.size=0)}" ><!--rendered="{!D.doUp}  rendered="{!OR(D.doUp,AND(D.doc.ats__c=0,D.doc.Req__c))}" ><!--rendered="{!AND(D.cnUp,D.doc.ats__c=0)}"-->
+                                                
+                                                <div class="document-upload-field box {!if(D.doUp,'box-danger','')} box-block" style="{!if(D.doUp,'border: 1px solid;border-color: #D0011B;','')}">
+                                                    
+                                                    <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                        <label>{!D.Doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <div class="upload-field d-flex">
+                                                        <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                            <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                            <span id="dropB{!D.Doc.id}{!Dim}" >Drop or Choose File to Upload</span>
+                                                        </div>
+                                                        <div>
+                                                            <button class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">UPLOAD</button>
+                                                        </div>
+                                                    </div>
+                                                    <apex:outputtext rendered="{!NOT(ISBLANK(D.doc.tplt__c))}">
+                                                        <br />
+                                                        <a href="{!D.doc.tplt__c}" target="_blank" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><!--Download Key Employment Terms-->
+                                                    </apex:outputtext>
+                                                    <!-- .upload-field -->
+                                                </div>
+                                                
+                                                
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!D.Ats.size>0}">
+                                                <div class="document-upload document-upload-field box box-block">
+                                                    <div class="forLoader" forLoad="{!D.Doc.Name}" style="display:block">
+                                                        <label class="text-light-2">{!D.Doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <!--<apex:image url="{!URLFOR($Resource.assets_NUI, 'images/ip_loader.gif')}" width="20" /> -->
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <div class="upload-list">
+                                                        <apex:repeat id="r1" value="{!D.Ats}" var="A">
+                                                            <!-- <div class="document-upload-field box box-block">-->
+                                                            
+                                                            
+                                                            <div class="upload-list-item box box-white box-padding">
+                                                                <i class="fa fa-check-circle text-success"></i>
+                                                                <apex:outputText rendered="{!!isgu}">
+                                                                    <a href="/servlet/servlet.FileDownload?file={!A.A.Id}" target="_blank" class="upload-item-title text-li"  > 
+                                                                        <u>{!A.A.Name}</u>
+                                                                    </a>
+                                                                </apex:outputText>
+                                                                <apex:outputText rendered="{!isgu}">
+                                                                    <a href="/apex/filedwnld?id={!A.A.Id}" target="_blank" class="upload-item-title text-li"  > 
+                                                                        <u>{!A.A.Name}</u>
+                                                                    </a>
+                                                                </apex:outputText>
+                                                                
+                                                                <a class="upload-item-remove" onclick="deleteAttachment('{!D.Doc.Name}','{!A.A.Id}')" style="{!if(rq.AP__c>0,'Display:none;','')}" ><i class="fa fa-close"></i></a>
+                                                            </div>
+                                                            <div class="mt-2" style="{!IF( NOT(D.cnUp), '', 'display:none')}">Uploaded: {!A.A.createdDate} </div><!---->
+                                                            <!-- </div>-->
+                                                        </apex:repeat>
+                                                    </div>
+                                                    <div style="{!IF( NOT(D.cnUp), 'display:none;', '')}">
+                                                        <button class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" style="padding: 3px 19px 4px;" onclick="popupDocModel('{!D.Doc.Name}','{!D.Doc.Name}','{!D.Doc.id}{!Dim}');" type="button">ADD MORE ATTACHMENTS</button>                                                
+                                                    </div>
+                                                </div>
+                                            </apex:outputPanel>
+                                        </apex:repeat>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                    
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <!-- Vertical Look : END -->
+            
+            <!-- Horizontal2 Look : START -->
+            <apex:outputPanel rendered="{!if(Dim='H',true,false)}">
+                <b><apex:pageMessages id="msg" /></b>
+                
+                <apex:outputPanel id="opDocH">
+                    <div class="accordion-content-inner px-xl-5">
+                        <div class="text-right "><!--mb-4-->
+                            <apex:outputText rendered="{!AND(rq.srvc__r.uid__c!='tad',ispu,docMsgLst.size == 0,rq.STA__c<>'Completed',rq.STA__c<>'Cancelled',rq.STA__c<>'Completed',rq.STA__c<>'Rejected')}"> 
+                                <a onclick="nextPage();$('#preloader').fadeIn();" href="#" class="btn btn-primary base-nav-next">SUBMIT</a><br/>
+                            </apex:outputText>         
+                        </div>
+                    </div>
+                    <div ><!--class="accordion-item tab-pane"-->
+                        <div id="documents_collapse" class="accordion-content collapse1" data-parent="#app_accordion">
+                            <div class="accordion-content-inner px-xl-5">
+                                <!--<div class="pt-4"></div>-->
+                                <apex:outputPanel rendered="{!docMsgLst.size>0}"> 
+                                    <div class="box box-danger box-padding mb-lg-5 mb-4">
+                                        <apex:repeat value="{!docMsgLst}" var="M">
+                                            Please Upload <strong>'{!M}'</strong><br/>
+                                        </apex:repeat>
+                                    </div>
+                                </apex:outputPanel> 
+                                <div class="row row-lg">
+                                    
+                                    <apex:repeat id="hr02" value="{!dasLst}" var="das" >
+                                        <apex:outputPanel rendered="{!das.upload}" styleClass="col-xl-4 col-lg-6"> 
+                                            <div class="box {!if(das.d.doUp,'box-danger','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                                <div class="document-upload">
+                                                    <!--<label class="fs-18">{!das.d.doc.Name}</label>-->
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                        
+                                                    </div>
+                                                    <div class="upload-list">
+                                                        <div style="display: -webkit-box;"> 
+                                                            <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                                <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                                <span id="dropB{!das.d.Doc.id}{!Dim}" >Drop or Choose File to Upload</span>
+                                                            </div>
+                                                            <button style="{!IF(das.minAttDon,'display:none !important;','')}" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">UPLOAD</button>
+                                                        </div>
+                                                        <div style="{!IF(das.minAttDon,'','display:none !important;')} padding-top: 1em;">
+                                                            <button style="padding: 3px 19px 4px;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">ADD MORE ATTACHMENTS</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt__c))}">
+                                                    <a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                </apex:outputtext>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!NOT(das.upload)}" styleClass="col-xl-4 col-lg-6"> 
+                                            
+                                            <div class="box box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                                <div class="document-upload">
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <!---<label>{!das.d.doc.Name}</label>{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)}-->
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <i class="fa fa-check-circle text-success"></i>
+                                                            <!-- <a href="/apex/filedwnld?id={!das.A.Id}" target="_blank" class="upload-item-title text-li"  > -->
+                                                            <a href="/servlet/servlet.FileDownload?file={!das.A.Id}" target="_blank" class="upload-item-title text-li"  >
+                                                                <u>{!das.A.Name}</u></a>
+                                                            <!-- <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/apex/filedwnld?id={!das.A.Id}');" ><u>{!das.A.Name}</u></a>
+-->
+                                                            <!--
+<a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(rq.AP__c>0,'Display:None;','')}" ><i class="fa fa-close"></i></a>
+-->
+                                                            <a class="upload-item-remove" onclick="deleteAttachment('{!das.d.doc.Name}','{!das.A.Id}')" style="{!if(rq.AP__c>0,'Display:none;','')}" ><i class="fa fa-close"></i></a> 
+                                                        </div>
+                                                    </div>
+                                                    <apex:outputtext rendered="{!AND(NOT(ISBLANK(das.d.doc.tplt__c)),OR(das.d.Doc.Name == 'Signed Article of Association',das.d.Doc.Name == 'Resolution for the Incorporation of an FZ-LLC',das.d.Doc.Name == 'Resolution for the registration of a branch of a foreign company',das.d.Doc.Name == 'Resolution for the registration of a branch of a UAE company',das.d.Doc.Name == 'General Declaration and Undertaking Form'))}">
+                                                        <a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                    </apex:outputtext>
+                                                    <div class="mt-2">Uploaded: {!das.A.createdDate} </div>
+                                                </div>
+                                            </div>
+                                            
+                                        </apex:outputPanel>
+                                        
+                                    </apex:repeat>
+                                </div>    
+                            </div>    
+                        </div>    
+                    </div>    
+                    
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <!-- Horizontal2 Look : END -->
+            <!-- Horizontal4 Look : START -->
+            <apex:outputPanel rendered="{!if(Dim='L',true,false)}">
+                <apex:outputPanel id="opDocL">
+                    <div ><!--class="accordion-item tab-pane"-->
+                        <div id="documents_collapse" class="accordion-content collapse1" data-parent="#app_accordion">
+                            <div class="accordion-content-inner">
+                                <div class="pt-4"></div>
+                                
+                                <div class="row row-lg">
+                                    
+                                    <apex:repeat id="hr03" value="{!dasLst}" var="das" >
+                                        <apex:outputText rendered="{!das.upload}"> 
+                                            <div class="col-lg-6">
+                                                <div class="box box-block attBox" style="min-height: 9rem !important;">
+                                                    
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <div class="upload-field d-flex">
+                                                        <div
+                                                             class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                                            <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                                            <span>Choose File to Upload<!--&nbsp;<span class="loader_img"></span>--></span>
+                                                        </div>
+                                                        <div style="{!IF(das.minAttDon,'display:none;','')}">
+                                                            <a onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-primary btn-outline-primary-3">
+                                                                BROWSE
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div style="{!IF(das.minAttDon,'','display:none;')}padding-top:1rem;">
+                                                        <a onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff;padding: 3px 19px 4px;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-primary btn-outline-primary-3">
+                                                            ADD MORE ATTACHMENTS
+                                                        </a>
+                                                    </div>
+                                                    
+                                                    
+                                                </div>
+                                                <apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt__c))}">
+                                                    <apex:outputtext rendered="{!das.d.doc.name='Parent NOC Letter'}" >(Kindly download and sign it then re uplaod)</apex:outputtext>
+                                                    <a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/><br/>
+                                                </apex:outputtext>
+                                            </div>
+                                            
+                                        </apex:outputText> 
+                                        
+                                        <apex:outputText rendered="{!NOT(das.upload)}" > 
+                                            <div class="col-lg-6">
+                                                <div class="box box-block attBox" style="min-height: 9rem !important;">
+                                                    <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                                        <label>{!das.d.doc.Name}</label>
+                                                        <span class="loader_img" style="float:right;display:none">
+                                                            <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                                        </span>
+                                                    </div>
+                                                    <!---<label>{!das.d.doc.Name}</label>{!das.upload}-{!das.d.doc.ord__c}-{!NOT(das.minAttDon)}-->
+                                                    <div class="upload-list">
+                                                        <div class="upload-list-item box box-white box-padding">
+                                                            <i class="fa fa-check-circle text-success"></i>
+                                                            <apex:outputText rendered="{!!isgu}">
+                                                                <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/servlet/servlet.FileDownload?file={!das.A.Id}');" ><u>{!das.A.Name}</u></a>
+                                                            </apex:outputText>
+                                                            <apex:outputText rendered="{!isgu}">
+                                                                <a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/apex/filedwnld?id={!das.A.Id}');" ><u>{!das.A.Name}</u></a>
+                                                            </apex:outputText>
+                                                            <!--
+<a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};" style="{!if(PayDone,'Display:None;','')}" ><i class="fa fa-close"></i></a>
+-->
+                                                            <a class="upload-item-remove" onclick="deleteAttachment('{!das.d.doc.Name}','{!das.A.Id}')">
+                                                                <i class="fa fa-close"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                </div>
+                                                
+                                            </div>
+                                            
+                                        </apex:outputText>
+                                        
+                                        
+                                    </apex:repeat>
+                                </div>    
+                            </div>    
+                        </div>    
+                    </div>    
+                    
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <!-- Horizontal4 Look : END --> 
+            <!-- Horizontal3 Look : START -->
+            <apex:outputPanel rendered="{!if(Dim='LR',true,false)}">
+                
+                <apex:outputPanel id="opDocLR">
+                    <apex:outputPanel rendered="{!AND(rq.srvc__r.uid__c=='208')}">
+                        
+                        <h3>Do you have these documents ready?</h3>
+                        <div style="{!if(nD == true,'display: block;','display: none;')}">
+                            <p>You can upload these documents now or proceed to upload them from your dashboard after payment</p>
+                            <div class="mb-4">
+                                <label class="custom-checkbox" id="xdrv">
+                                    <input type="checkbox" id="xdrvid" value="xdrv" />
+                                    <span>We hereby undertake that the company will submit the required documents within 30 days and acknowledge that a Sanction will be imposed on the Company for non-submission within the grace period. </span>
+                                </label>
+                            </div>
+                        </div>   
+                        <div class="mb-4">
+                            <label class="custom-checkbox" id="dsgu">
+                                <input type="checkbox" id="dsguid" value="dsgu" />
+                                <span>We hereby confirms that all the uploaded documents are correct.</span>
+                            </label>
+                        </div>
+                        <script>
+                        $('#xdrv').on('change',function(){
+                            var drvChk = $('input[id="xdrvid"]:checked').length > 0;
+                            if(drvChk){
+                                cs['xdrv__c'].value = true;
+                                if(flg1 && !flg2)
+                                {
+                                    cs['dsgu__c'].value = true;
+                                    $('#dsgu').hide();
+                                }
+                            }
+                            else{
+                                cs['xdrv__c'].value = false;
+                                cs['dsgu__c'].value = false;
+                                $('#dsgu').show();
+                            }
+                            $('#preloader').fadeIn();
+                            docValidity();
+                        });
+                        $('#dsgu').on('change',function(){
+                            var dsgChk = $('input[id="dsguid"]:checked').length > 0;
+                            if(dsgChk)
+                                cs['dsgu__c'].value = true;
+                            else
+                                cs['dsgu__c'].value = false; 
+                            
+                        });
+                        </script>
+                    </apex:outputPanel>  
+                    <apex:outputPanel layout="none" rendered="{!AND(rq.srvc__r.uid__c=='220',rq.x30gr__c)}" >
+                        <div class="requiredInput" id="Adsgu__cRI">
+                            <input type="checkbox" id="Adsgu__c" value="{!rq.dsgu__c}" />
+                            <span>We hereby undertake that the company will submit the required original constitutional documents within 60 days as and when requested by the Authority and acknowledge that a Sanction will be imposed on the Company for non-submission within the grace period.</span>
+                            <script type="text/javascript">
+                            cs['Axdsgu__c']=getC('{!$Component.Adsgu__c}');
+                            cs['iAxdsgu__c']=getC('{!$Component.Adsgu__cRI}');
+                            
+                            $('#Adsgu__c').on('change',function(){ 
+                                var dsgChk = $('input[id="Adsgu__c"]:checked').length > 0;
+                                if(dsgChk)
+                                    cs['dsgu__c'].value= true;
+                                else
+                                    cs['dsgu__c'].value = false; 
+                                
+                            });
+                            
+                            
+                            </script>
+                        </div><br/>
+                    </apex:outputPanel>
+                    
+                    
+                    <div class="row row-lg">
+                        <apex:repeat id="hr04" value="{!dasLst}" var="das" >
+                            <apex:outputtext rendered="{!das.upload}">    
+                                <div class="col-lg-6">
+                                    <div class="box {!if(das.d.doUp,'','')} box-block mb-lg-5" style="display:inline-block;width: -webkit-fill-available;margin-right: 5%;">
+                                        <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                            
+                                            <label>
+                                                {!IF(ISBLANK(das.d.doc.lbl__c),das.d.doc.Name,das.d.doc.lbl__c)}
+                                                <!-- {!das.d.doc.Name} -->
+                                                <i style="{!IF(ISBLANK(das.d.Doc.Doc_Description__c),'display:none;','')}" class="fa fa-question-circle text-primary" aria-hidden="true" 
+                                                   data-toggle="tooltip" data-placement="top" title="" data-original-title="{!das.d.Doc.Doc_Description__c}"></i>
+                                            </label>
+                                            <span class="loader_img" style="float:right;display:none">
+                                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- <div class="upload-field d-flex">
+<div
+class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+<i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+<span>Choose File to Upload</span>
+</div>
+<div style="{!IF(das.minAttDon,'display:none;','')}">
+<button class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> 
+<a onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-primary btn-outline-primary-3">BROWSE</a>
+</div>
+<div style="{!IF(das.minAttDon,'','display:none;')}padding-top:1rem;">
+<button class="btn btn-outline-primary btn-outline-primary-3">BROWSE</button> 
+<a onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" style="color:#fff;padding: 3px 19px 4px;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-primary btn-outline-primary-3">
+ADD MORE ATTACHMENTS2
+</a>
+</div>
+</div>-->
+                                        
+                                        <div class="upload-list">
+                                            <div style="display: -webkit-box;"> 
+                                                <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000 whiteDiv">
+                                                    <i class="icon-upload-cloud fs-18 mr-1 mt-1"></i>
+                                                    <span id="dropB{!das.d.Doc.id}{!Dim}" >Choose File to Upload</span>
+                                                </div>
+                                                <apex:outputText rendered="{!AND(rq.srvc__r.uid__c=='208',NOT(ISBLANK(das.d.Doc.lbl__c)))}">
+                                                    <button style="{!IF(das.minAttDon,'display:none !important;','')}" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.lbl__c}','{!das.d.Doc.lbl__c}','{!das.d.Doc.id}{!Dim}');" type="button">UPLOAD</button>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!OR(rq.srvc__r.uid__c=='vfk',ISBLANK(das.d.Doc.lbl__c))}">
+                                                    <button style="{!IF(das.minAttDon,'display:none !important;','')}" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">UPLOAD</button>
+                                                </apex:outputText>
+                                                <!--<apex:outputText rendered="{!AND(ISBLANK(das.d.Doc.lbl__c))}">
+                                                    <button style="{!IF(das.minAttDon,'display:none !important;','')}" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">UPLOAD</button>
+                                                </apex:outputText>-->
+                                            </div>
+                                            
+                                            
+                                            <div style="{!IF(das.minAttDon,'','display:none !important;')} padding-top: 1em;">
+                                                <apex:outputText rendered="{!AND(rq.srvc__r.uid__c=='208',NOT(ISBLANK(das.d.Doc.lbl__c)))}">
+                                                    <button style="padding: 3px 19px 4px;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.lbl__c}','{!das.d.Doc.lbl__c}','{!das.d.Doc.id}{!Dim}');" type="button">ADD MORE ATTACHMENTS</button>
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!AND(ISBLANK(das.d.Doc.lbl__c))}">
+                                                    <button style="padding: 3px 19px 4px;" class="{!IF(OR(rq.sta__c='Completed',rq.sta__c='Rejected',rq.sta__c='Cancelled',rq.sta__c='On Hold'),'readOnlyElem','')} btn btn-outline-primary btn-outline-primary-3" onclick="popupDocModel('{!das.d.Doc.Name}','{!das.d.Doc.Name}','{!das.d.Doc.id}{!Dim}');" type="button">ADD MORE ATTACHMENTS</button>
+                                                </apex:outputText>
+                                            </div>
+                                        </div>
+                                        
+                                        <apex:outputText rendered="{!OR(rq.srvc__r.uid__c=='208')}">
+                                            <div><apex:outputText value="{!das.d.Info}" escape="false" rendered="{!das.d.Info != ''}" /> </div>
+                                        </apex:outputText>
+                                        <apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt__c))}">
+                                            <br/><a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                                        </apex:outputtext>
+                                        <apex:outputText rendered="{!AND(rq.srvc__r.uid__c!='208',das.d.Doc.Doc_Description__c != '')}">
+                                            <!--<div class="text-info-icon1" style="font-size:0.85em">
+<br/>
+
+</div>-->
+                                        </apex:outputText>
+                                        <!-- .upload-list -->
+                                    </div>
+                                    <!-- .box -->
+                                </div>
+                                <!-- .col -->
+                            </apex:outputtext>
+                            <apex:outputtext rendered="{!NOT(das.upload)}">    
+                                <div class="col-lg-6">
+                                    <div class="box box-block">
+                                        <div class="forLoader" forLoad="{!das.d.doc.Name}" style="display:block">
+                                            <label>{!das.d.doc.Name}</label>
+                                            <span class="loader_img" style="float:right;display:none">
+                                                <img width="20" src="/resource/1583658416000/assets_NUI/images/ip_loader.gif" />
+                                            </span>
+                                        </div>
+                                        <div class="upload-list">
+                                            <div class="upload-list-item box box-white box-padding">
+                                                <i class="fa fa-check-circle text-success"></i>
+                                                <!--
+<a  class="upload-item-title text-li" onclick="filePreview('{!das.d.Doc.Name}','/apex/filedwnld?id={!das.A.Id}');" >
+-->                                      <apex:outputPanel rendered="{!isgu}">
+                                                <a href="/apex/filedwnld?id={!das.A.Id}" target="_blank" class="upload-item-title text-li"  > 
+                                                    <u>{!das.A.Name}</u>
+                                                </a>
+                                                </apex:outputPanel>  
+                                                <apex:outputPanel rendered="{!NOT(isgu)}">
+                                                    <!--<a href="/apex/filedwnld?id={!das.A.Id}" target="_blank" class="upload-item-title text-li"  > -->
+                                                    <a href="/servlet/servlet.FileDownload?file={!das.A.Id}" target="_blank" class="upload-item-title text-li"  >
+                                                        <u>{!das.A.Name}</u>
+                                                    </a>
+                                                </apex:outputPanel>
+                                                <!--
+<a class="upload-item-remove" onclick="if(!confirm('Are you sure?')){return}else{dltAtt('{!das.A.Id}');};"  >
+-->  
+                                                <a class="upload-item-remove" onclick="deleteAttachment('{!das.d.doc.Name}','{!das.A.Id}')">
+                                                    <i class="fa fa-close"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <apex:outputPanel rendered="{!OR(rq.srvc__r.uid__c=='208')}">
+                                            <div class="mt-2"><apex:outputText value="{!das.d.Info}" escape="false" /> </div>
+                                        </apex:outputPanel>
+                                        <apex:outputtext rendered="{!NOT(ISBLANK(das.d.doc.tplt__c))}">
+                                            <br/><a href="{!das.d.doc.tplt__c}" class="text-000 fs-16 text-underline font-weight-bold">Download Template</a><br/>
+                                        </apex:outputtext>
+                                        <!-- <div class="mt-2">Uploaded: {!das.A.createdDate} </div>-->
+                                        
+                                        <!-- .upload-list -->
+                                    </div>
+                                    <!-- .box -->
+                                </div>
+                                <!-- .col -->
+                            </apex:outputtext>
+                        </apex:repeat>   
+                        
+                    </div>
+                    <!-- .row --> 
+                    
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <!-- Horizontal3 Look : END -->    
+        </apex:outputPanel>
+        
+        
+        <!-- Modal -->
+        <div class="modal fade modal-base" id="modal_vfs" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog" role="document" style="width: 990px;">
+                <div class="modal-content">
+                    <h2 class="modal-title" style="margin-left: 1.8rem;" ><u><label id="mdHeader">File Preview</label></u></h2>
+                    <!--
+<button type="button" class="btn btn-primary btn-icon mb-4" data-dismiss="modal"  onclick="printFile();" ><i class="icon icon-print"></i></button> -->
+                    
+                    <button type="button" class="close" onclick="printFile();" style="margin-right:40px;">
+                        <i class="icon icon-print" />
+                    </button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="icon-close"></i>
+                    </button>
+                    <div class="modal-body" style="padding: 0px 30px 30px;">
+                        <div class="mb-3"></div>
+                        <img src="{!fileSrc}" id='previewDiv' />
+                    </div>
+                    
+                    <!--a href="#"  onclick="printFile();" style="align-self: flex-end;margin: 0px 30px 5px;"><u>Print</u></a-->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loader -->
+        
+        
+        <script type="text/javascript">
+        $( document ).ready(function() {
+            $('#preloader').fadeOut();
+            $('#prTypeId').val('{!priorityType}').change();
+            
+            '{!incType}'=='true'? $("#incountryId").prop( "checked", true ): $("#incountryId").prop( "checked", false );
+            '{!incType}'=='true'? $("#ofl").show():$("ofl").hide();
+            '{!incType}'=='true' && '{!offType}'=='true'? $("#offerleterId").prop( "checked", true ): $("#offerleterId").prop( "checked", false );
+            
+            $(document).ready(function() {
+                $("#modal_vfs").modal({
+                    show: false,
+                    backdrop: 'static'
+                });
+            });
+            
+        });
+        
+        /*VMKR -- 28th Dec -- */
+        var currentDelDoc='';
+        function deleteAttachment(aName,aId){
+            currentDelDoc = aName;
+            var delMsg = 'Are you sure you want to remove this document? All uploaded documents are reviewed and verified by the axs team and removal of any document may result in a delay in the service request process.';
+            axsConfirmation('',delMsg,false,'dltAtt',aId);
+        }
+        
+        
+        function incChange(){
+            
+            var incVal = document.getElementById("incountryId").value;
+            
+            //if(incVal != '{!priorityType}'){
+            if($('#incountryId').is(':checked')){
+                axsConfirmation('Confirm','Do you want to add applicant as InCountry?',true,'updateInc','true');
+                $("#incountryId").prop("checked", false);
+            }else if(!$('#incountryId').is(':checked')){
+                axsConfirmation('Confirm','Do you want to remove applicant as InCountry?',true,'updateInc','false');
+                $("#incountryId").prop("checked", true);
+                $("#offerleterId").prop( "checked", false ); 
+            }
+            $('#incountryId').val('{!incType}').trigger('change');
+            //}
+            // updatePriority(prVal);
+        } 
+        function offChange(){
+            
+            let offVal = document.getElementById("offerleterId").value;
+            if($('#offerleterId').is(':checked')){
+                axsConfirmation('Confirm','Do you want to opt for offer letter?',true,'updateOffl','true');
+                $("#offerleterId").prop( "checked", false); 
+            }else if(!$('#offerleterId').is(':checked')){
+                axsConfirmation('Confirm','Do you want to remove offer letter?',true,'updateOffl','false');
+                $("#offerleterId").prop( "checked", true);
+            }  
+            $('#offerleterId').val('{!offType}').trigger('change');
+            //}
+            // updatePriority(prVal);
+        }
+        function filePreview(fName,src){
+            console.log('In filePreview>>'+fName);
+            fileSrc=document.getElementById("{!$Component.fileSrc}");
+            fileSrc.value=src;
+            document.getElementById("mdHeader").innerHTML = fName;
+            document.getElementById("previewDiv").src = src;
+            //$('#modal_vfs').modal('show');
+            window.open(src, '_blank');
+        }
+        function printFile(){
+            console.log('Print Image');
+            fileSrc=document.getElementById("{!$Component.fileSrc}");
+            var src=fileSrc.value;
+            console.log('fil Src>>'+ src);
+            
+            var html  = "<html><head>" +
+                "</head>" +
+                "<body  style ='-webkit-print-color-adjust:exact;'>"+
+                "<img src=\"" + src + "\" onload=\"javascript:window.print();\"/>" +
+                "</body>";
+            var win = window.open("about:blank","_blank");
+            win.document.write(html);
+            
+        }
+        </script>
+        <script type="text/javascript">
+        var currentDoc = "";
+        function startLoader(typ){
+            currentDoc = typ;//document.getElementById("udDocType").value;
+            console.log('in startLoader!!! >> '+ currentDoc);
+            $('[forLoad="'+currentDoc+'"]').find('.loader_img').show();
+            $('*').addClass('loadingProgress');
+        }   
+        function stopLoader(){
+            
+            currentDoc = document.getElementById("udDocType").value;
+            console.log('in startLoader!!! >> '+ currentDoc);
+            $('[forLoad="'+currentDoc+'"]').find('.loader_img').hide();
+            $('*').removeClass('loadingProgress');
+        }
+        </script>
+        
+        
+    </apex:outputText>
+</apex:component>

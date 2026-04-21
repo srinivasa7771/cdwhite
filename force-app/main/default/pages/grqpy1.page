@@ -1,0 +1,824 @@
+<apex:page cache="false" standardController="g_Req__c" extensions="gctlReqpy" docType="html-5.0" standardStylesheets="false"  showHeader="{!IF(isgu=true,false,true)}" sidebar="false" title="{!rq.srvc__r.lbl__c}" action="{!authenticateUser}">
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"/> 
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    <link rel="stylesheet" href="/resource/1588962734000/axs2MandateCss" />
+    <style>
+        
+        i.selectPay {
+        position: relative;
+        padding: 5px 5px 0px 0px;
+        cursor: pointer;
+        }
+        .amount-row-title {text-transform: uppercase;}
+    </style>
+    <apex:outputPanel layout="none" rendered="{!NOT(ispu)}">
+        <c:onlyBOCss />
+    </apex:outputPanel>
+    
+    <body>
+        
+        
+        <div id="main">
+            
+            <apex:outputPanel rendered="{!AND(noAcc,rq.srvc__r.uid__c!='322')}">
+                <div class="row"> <div class="col-xl-4 col-lg-6"></div> <div class="col-xl-4 col-lg-6"> <div class="box status-box aos-init aos-animate" id="stsMsgId" style="background-color: #f4f4f4"> <div class="status-box-icon"> <i class="icon-ok circle-icon-ok"></i> </div> <h4>REQUEST SUBMISSION</h4><br /><p> Thank you for submitting <b>{!rq.srvc__r.Name}</b>,request number <b>{!rq.Name}.</b> You do not have necessary permission for making payment. Please contact your manager in charge. </p> <apex:outputtext rendered="{!!isgu}"> <a href="/{!rq.id}" class="btn btn-primary" style="color: #fff;">GO BACK TO REQUEST</a> </apex:outputtext> <!--<p>{!req.Name} was successfully submitted.</p><br /> <div class="amount-row amount-row-head row-cols-2"> <div class="amount-row-title mr-2" style="">Request#</div> <div class="amount-row-title mr-2" style="">Status</div> </div> <div class="amount-row row-cols-2"> <div class="mr-2" style="">{!rq.name}</div> <div class="mr-2" style="">{!rq.STA__c}</div> </div>--> </div> </div> <div class="col-xl-4 col-lg-6"></div> </div>
+            </apex:outputPanel>
+            <apex:form id="f" rendered="{!OR(NOT(noAcc),rq.srvc__r.uid__c=='322')}">
+                <script type="text/javascript">
+                var cs={}; var selectedPays = [];
+                cs['datepicker11'] = $('#datepicker11'); 
+                var ADB=AD=VAT=0;SC=0;SCV=0;pAT=0;var dvChq,dvBD,dvCD;
+                function drawAmount(){var divA=document.getElementById("dvTAT");void 0!=divA&&(divA.innerHTML="AED "+c2s(pAT));}
+                
+                function sv() {           
+                    var msg = '';
+                    var payMethod = $('[name="inside_uae"]:checked').val();
+                    if ( typeof payMethod === "undefined" || payMethod == "") {
+                        axsAlert('Payment Method is Missing','Please choose a payment method to proceed');// refer AXS2CustomJs.js
+                        //alert('choose a payment method');
+                        return false;
+                    }
+                    if(payMethod == 'Customer Deposit' && parseFloat(pAT) > parseFloat(ADB)){
+                        msg = msg + 'Insufficient customer deposit balance. </br>'
+                    }
+                    if (payMethod == 'Cheque') {
+                        
+                        if (cs['datepicker1'].value.trim() == '') {
+                            msg = msg + 'Please Provide Cheque Maturity Date. </br>';
+                        } else {
+                            var dt = cs['datepicker1'].value;
+                            var q = dt.split('/');
+                            console.log('q>>' + q);
+                            var mydate = new Date(q[2], q[1] - 1, q[0]);
+                            console.log('mydate>>' + mydate);
+                            var today = new Date();
+                            var todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                            console.log('todayDate>>' + todayDate);
+                            if (mydate < todayDate) {
+                                msg = msg + 'Please Cheque Maturity Date should be in future. </br>';
+                            }
+                        }
+                        if (cs['cq__c'].value.trim() == '') {
+                            msg = msg + 'Please Provide Cheque Number. </br>';
+                        }
+                        if (cs['Bnk__c'].value.trim() == '') {
+                            msg = msg + 'Please Provide Bank Name. </br>';
+                        }
+                    }
+                    if (payMethod == 'Wire') {
+                        if (cs['datepicker11'].value.trim() == '') {
+                            msg = msg + 'Please Provide Transfer Date. </br>';
+                        } else {
+                            var dt = cs['datepicker11'].value;
+                            var q = dt.split('/');
+                            console.log('q>>' + q);
+                            var mydate = new Date(q[2], q[1] - 1, q[0]);
+                            console.log('mydate>>' + mydate);
+                            var today = new Date();
+                            var todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                            console.log('todayDate>>' + todayDate);
+                            if (mydate < todayDate) {
+                                msg = msg + 'Please Transfer Date should be in future. </br>';
+                            }
+                        }
+                        if (cs['cq__c1'].value.trim() == '') {
+                            msg = msg + 'Please Provide Bank Reference Number. </br>';
+                        }
+                        if (cs['Bnk__c1'].value.trim() == '') {
+                            msg = msg + 'Please Provide Bank Name. </br>';
+                        }
+                        
+                    }
+                    if (msg != '') {
+                        axsAlert('',msg);
+                        //alert(msg);
+                        return false;
+                    } 
+                    
+                    document.getElementById('{!$Component.selCtgId}').value = selectedPays.toString(); 
+                    document.getElementById('{!$Component.md__c}').value = payMethod; 
+                    //confirm("I have reviewed the information and the uploaded documents against this service request. By submission, I take full responsibility for the contents of the form plus documents uploaded and attest that the information on this form and uploaded documents are free of errors. In case of errors, I agree to bear all costs required to rectify any such errors or mistakes.") && "function" == typeof afs && (showgLoader();afs())
+                    var cb = "I have reviewed the information and the uploaded document(s) against this service request. By submission, I take full responsibility for the contents of the form plus document(s) uploaded and attest that the information on this form and uploaded document(s) are free of errors. In case of errors, I agree to bear all costs required to rectify any such errors or mistakes."
+                    if($('#tANDc').is(':checked')==true){
+                        if('{!JSENCODE(rq.srvc__r.uid__c)}' == '076')
+                            cb = 'I hereby confirm that the information provided regarding “final settlement” herein is accurate, correct and complete.  Applicant already paid and received the entire final dues in line with standard norms stipulated in UAE Labour Law and the final settlement document submitted along with this application is genuine.';   
+                        
+                        axsConfirmation('Please Confirm',cb,true,'afsp'); // refer AXS2CustomJs.js 
+                    }
+                    else{
+                        var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+                        $('.chk').append(errElem);
+                        scrollToDiv($('.chk'));
+                    }
+                    
+                }
+                function rmErronTC(){
+                    if($('#tANDc').is(':checked')==true)
+                        $('.chk').find('.frmErrMsg').remove();
+                    else{
+                        var errElem = '<div class="frmErrMsg">Please select Terms and Conditions.</div>';
+                        $('.chk').append(errElem);
+                    }
+                }
+                </script>
+                <apex:actionFunction name="afsp" action="{!payAmt}" status="theStatus" rerender="p,pFS,msg" oncomplete="javascript:SDEG();toggleGLoader();hideGLoader();" />        
+                
+                <apex:inputText id="selCtgId" value="{!selCtg}"  />
+                <apex:outputText rendered="{!AND(rq.srvc__r.uid__c!='dnc')}">
+                    <apex:inputHidden id="xadh__c" value="{!rq.xadh__c}"/>
+                    <script type="text/javascript">
+                    cs["xadh__c"]=getC("{!$Component.xadh__c}");
+                    if("{!rq.xadh__c}" == '')
+                        cs['xadh__c'].value  += 'md;';
+                    </script>
+                </apex:outputText>  
+                <!--<apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.payq__c}" rendered="false" /> -->
+                <apex:selectList id="md__c" size="1" value="{!pyMthd}" ><apex:selectOptions value="{!pyMthds}"/></apex:selectList><script type="text/javascript">
+                cs['md__c']=document.getElementById('{!$Component.md__c}'); cs['md__c'].style.display='none';
+                cs['selCtgId']=document.getElementById('{!$Component.selCtgId}'); cs['selCtgId'].style.display='none';
+                </script>
+                <apex:outputPanel rendered="{!isgu}">
+                    <c:guheader heading="{!rq.srvc__r.lbl__c}"  />
+                </apex:outputPanel>
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                            SR # <span class="text-000">{!rq.Name} </span>
+                            <!--  <div class="user-title">{!rq.STA__c}</div> -->
+                        </span>
+                        
+                    </div>
+                </div>
+                <div class="container">
+                    
+                    <div class="base-layout">
+                        
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    
+                                    <div class="collapse collapse-content-wrapper" id="onboarding_side_content_1">
+                                        <div class="collapse-content">
+                                            
+
+                                           <c:grqupd2 Dim="V"/> 
+                                        
+                                            <!-- .document-uploads -->
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- .collapse-content-wrapper -->
+                                    
+                                    
+                                </div>
+                                
+                            </div>
+                            <!-- .base-side-content -->
+                        </div>
+                        <!-- .base left -->
+                        
+                        <div class="base-main" style="flex-grow: 0;" id="p">
+                            <apex:outputText rendered="{!AND(NOT(payDone))}">
+                                <div class="base-main-content" style="width: 100%;">
+                                    
+                                    <c:grqbrdcrumbs req="{!rq}" applicant="completed" addon="completed" payment="active" rendered="{!AND(rq.srvc__r.uid__c != 'ltp',rq.srvc__r.uid__c != 'ltc',rq.srvc__r.uid__c != 'dnc',rq.srvc__r.uid__c != '162',rq.srvc__r.uid__c != '198',rq.srvc__r.uid__c != '199',rq.srvc__r.uid__c != '212')}"/> 
+                                    <!--  <div class="steps steps-desktop">
+<div class="step-item completed">
+<div class="step-item-inner">
+<i class="step-icon icon-members"></i>
+<div class="step-title">Applicant</div>
+<i class="step-icon-check fa fa-check"></i>
+</div>
+</div>
+<div class="step-item completed">
+<div class="step-item-inner">
+<i class="step-icon icon-addon"></i>
+<div class="step-title">Additional Services</div>
+<i class="step-icon-check fa fa-check"></i>
+</div>
+</div>
+<div class="step-item active">
+<div class="step-item-inner">
+<i class="step-icon icon-cash-deposit"></i>
+<div class="step-title">Review &amp; Payment</div>
+</div>
+</div>
+</div>-->
+                                    <!-- end .steps -->
+                                    
+                                    
+                                    <div class="steps steps-mobile">
+                                        
+                                        <div class="step-item completed">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-members"></i>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item completed">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-addon"></i>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="step-item active">
+                                            <div class="step-item-inner">
+                                                <i class="step-icon icon-cash-deposit"></i>
+                                                <div class="step-title">Review &amp; Payment</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- .steps-mobile -->
+                                    <b><apex:pageMessages id="msg" /></b>
+                                    <apex:outputText rendered="{!OR(rq.srvc__r.uid__c != '208',AND(rq.srvc__r.uid__c == '208',NOT(pgHide)))}">
+                                        <apex:outputText rendered="{!IF((rq.srvc__r.uid__c != 'dnc'),true,false)}">
+                                            <h4>Application details</h4>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!IF((rq.srvc__r.uid__c == 'dnc'),true,false)}">
+                                            <h4>Request details</h4>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!IF((rq.srvc__r.uid__c == '086' || rq.srvc__r.uid__c == '073'),true,false)}">
+                                            <div class="amount-row amount-row-head mb-4">
+                                                <div class="amount-row-title">Request details</div>
+                                            </div>
+                                            <c:contactdetails req="{!rq}" id="appconCmp"/>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!IF((rq.srvc__r.uid__c == 'dnc'),true,false)}">
+                                            <div class="grey-collapse">
+                                                <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse"
+                                                   data-target="#applicant_details">
+                                                    <div class="collapse-title">REQUEST DETAILS</div>
+                                                </a>
+                                                <div id="applicant_details" class="collapse">
+                                                    <div class="collapse-content">
+                                                        
+                                                        <c:applicationdetails />                        
+                                                        <!-- .row -->
+                                                        
+                                                        <div class="bg-grey-light" style="height: 4px;"></div>
+                                                        
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!IF((rq.srvc__r.uid__c != '086' && rq.srvc__r.uid__c != '073' && rq.srvc__r.uid__c != 'dnc'),true,false)}">                  
+                                            <div class="grey-collapse">
+                                                <a href="#" class="grey-collapse-toggle collapsed" data-toggle="collapse"
+                                                   data-target="#applicant_details">
+                                                    <div class="collapse-title">{!IF(CONTAINS(rq.srvc__r.Category__c,'Corporate'),'REQUEST DETAILS','APPLICANT DETAILS')}</div>
+                                                </a>
+                                                <div id="applicant_details" class="collapse">
+                                                    <div class="collapse-content">
+                                                        
+                                                        <c:applicationdetails />                        
+                                                        <!-- .row -->
+                                                        
+                                                        <div class="bg-grey-light" style="height: 4px;"></div>
+                                                        
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputText>
+                                        <div class="mb-5"></div>
+                                        
+                                        <apex:variable var="addSrvFee" value="{!0}" />
+                                        
+                                        <apex:variable var="ttlFee" value="{!0}" />
+                                        <apex:repeat id="r2" value="{!Is}" var="I">
+                                            <apex:variable var="ttlFee" value="{!ttlFee+(I.I.AD__c+I.I.tvatp__c+I.I.tvatp__c+I.I.tvngp__c+I.I.AV__c)}" />
+                                        </apex:repeat>   
+                                        <script>
+                                        pAT = '{!JSENCODE(ttlFee)}';
+                                        ADB = '{!JSENCODE(rq.Acc__r.adb__c)}';
+                                        </script>
+                                        <h4>Payment details</h4>
+                                        
+                                        <apex:repeat id="r6" value="{!ctgLst}" var="ctg"> 
+                                            <apex:variable var="ctgid" value="{!ctg}id"/>
+                                            <script>
+                                            selectedPays.push('{!JSENCODE(ctg)}');
+                                            
+                                            </script>
+                                            <div class="amount-collapse">
+                                                <a style="" class="amount-collapse-toggle collapsed" data-toggle="collapse"
+                                                   data-target="#{!SUBSTITUTE(ctgid, ' ','')}">
+                                                    <div class="amount-row amount-row-head">
+                                                        <apex:variable var="srvFee" value="{!0}" />
+                                                        <apex:repeat value="{!Is}" var="I">
+                                                            <apex:variable var="srvFee" value="{!srvFee+IF(ctg == I.I.itm__r.gctg__c,(I.I.AD__c+I.I.AV__c+I.I.tvatp__c+I.I.tvngp__c),0)}" />
+                                                        </apex:repeat>
+                                                        <apex:outputText rendered="{!ctgFlg}">
+                                                            <i class="selectPay fa fa-check-circle text-success" disable="true" val="{!ctg}" amt="{!srvFee}"></i>
+                                                        </apex:outputText>    
+                                                        <div class="amount-row-title">{!ctg}</div>
+                                                        
+                                                        <div class="ml-auto">{!srvFee} AED</div>
+                                                    </div>
+                                                </a>
+                                                <div id="{!SUBSTITUTE(ctgid, ' ','')}" class="collapse">
+                                                    <div class="collapse-content">
+                                                        <apex:repeat id="r0" value="{!Is}" var="I">
+                                                            <apex:outputText rendered="{!AND(ctg == I.I.itm__r.gctg__c,OR(ispu,isgu))}">
+                                                                <div class="amount-row">
+                                                                    <div>{!IF(ispu,I.I.itm__r.lbl__c,I.I.Name)}{!IF(ISNULL(I.I.m__c),'','(&nbsp;&nbsp;{!i.I.m__r.Name}&nbsp;)')}</div>
+                                                                    <apex:outputPanel rendered="{!NOT(ISPU)}">
+                                                                        <apex:outputText rendered="{!IF(!CONTAINS(rq.srvc__r.uid__c,'dnc'),true,false)}">
+                                                                            <div class="ml-auto"><apex:outputText value="{!I.I.AD__c+I.I.tvatp__c+I.I.tvngp__c}" /> AED</div>
+                                                                        </apex:outputText>
+                                                                    </apex:outputPanel>
+                                                                </div>
+                                                            </apex:outputText>   
+                                                        </apex:repeat>    
+                                                        <!--
+<apex:outputText rendered="{!ttlFee-srvFee>0}">
+<div class="amount-row">
+<div>VAT Charges</div>
+<div class="ml-auto"><apex:outputText value="{!ttlFee-srvFee}" /> AED</div>
+</div>
+</apex:outputText>   
+-->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:repeat>   
+                                        <!-- .amount-collapse -->
+                                        
+                                        
+                                        <div class="amount-row amount-row-foot amount-row-rp">
+                                            <div class="ml-auto font-weight-bold">{!ttlFee} AED</div>
+                                        </div>
+                                        
+                                        <div class="mb-5"></div>
+                                        
+                                        <h4>Choose your payment method</h4>
+                                        <div id='pmntErrMsg' style="display:none;color: #d00404;">
+                                            <b>Note:</b>
+                                            <p>
+                                                We regret to inform you that we've experienced a disruption in our payment gateway. We apologize for the inconvenience this has caused and are working diligently to resolve the issue as soon as possible.
+                                            </p>
+                                            <p>
+                                                Thank you for your understanding and patience during this time. We are doing everything we can to restore services as quickly as possible and will be sure to keep you informed of any updates.
+                                            </p>
+
+
+                                        </div>
+                                        <div class="amount-row amount-row-head mb-4">
+                                            <div class="amount-row-title">AMOUNT PAYABLE</div>
+                                            <div  class="ml-auto font-weight-bold" id="dvTAT">
+                                                {!ttlFee} AED
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Customer Deposit'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <input type="radio" name="inside_uae" value="Customer Deposit" />
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-money text-primary" style="line-height: 22px;font-size: 28px;"></i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Portal deposit <br/>
+                                                                (Available balance <span class="comNum">{!rq.Acc__r.adb__c}</span> AED)
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>
+                                            <!-- .col -->
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Credit / Debit Card'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <!--<input type="radio" name="inside_uae" value="Credit / Debit Card"/>-->
+                                                        <input type="radio" name="inside_uae" value="Credit / Debit Card"/><!-- for ni issue -- mkr - 16thMar -->
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-pay-online text-primary" style="line-height: 22px;font-size: 28px;">
+                                                                </i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Pay online with <br/>
+                                                                credit / debit card
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>   
+                                            <!-- .col -->
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Cash'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <input type="radio" name="inside_uae" value="Cash" />
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-cash-deposit text-primary"></i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Pay by cash <br/>
+                                                                &nbsp;
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Debit Memo'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <input type="radio" name="inside_uae" value="Debit Memo"/>
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-cash-deposit text-primary"></i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Debit Memo <br/>
+                                                                &nbsp;
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Cheque'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <input type="radio" name="inside_uae" value="Cheque" />
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-cash-deposit text-primary"></i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Cheque <br/>
+                                                                &nbsp;
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>
+                                            <apex:outputtext rendered="{!IF(CONTAINS(rq.srvc__r.payMd__c,'Wire Transfer'),true,false)}">
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="box-check">
+                                                        <input type="radio" name="inside_uae" value="Wire Transfer" />
+                                                        <div class="box box-center box-padding box-hover" style="min-height: 120px;">
+                                                            <div class="box-icon">
+                                                                <i class="icon-cash-deposit text-primary"></i>
+                                                            </div>
+                                                            <span class="box-title font-weight-medium">
+                                                                Wire Transfer <br/>
+                                                                &nbsp;
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </apex:outputtext>
+                                            
+                                            <!-- .col -->
+                                        </div>
+                                        <p class="mdc" style="display:none;">
+                                            <i class="icon-info-circle text-primary" style="vertical-align: middle;font-size: 1.5em;"></i>
+                                            <span id="mdcRI"></span>
+                                        </p>
+                                        <p class="chk" style="vertical-align: middle;font-size: 1em;display:none;">
+                                            <label class="custom-checkbox mr-4"><!-- data-value-->
+                                                <input type="checkbox" id="tANDc" onchange="rmErronTC()" />
+                                                <span class="">I agree to <a href="/grqerTerms" target="_blank"><u>Terms and Conditions</u></a></span>
+                                            </label>  
+                                        </p>
+                                        
+                                        <!-- <div class="amount-row amount-row-head mb-4" id="mdcRI" style="display: none;">
+
+</div>-->
+                                        
+                                        <!-- .row -->
+                                        <div class="mb-5"></div>
+                                        <div id="wrTf" class="pmDivs" style="display:none;">
+                                            <div class="bg-grey-light mt-4" style="height: 4px;"></div>
+                                            <br/>
+                                            <h4>Wire Transfer</h4>
+                                            <div class="form-style">
+                                                <div class="row">
+                                                    
+                                                    <div class="col-sm-6">
+                                                        <div class="form-group">
+                                                            <label>Bank Reference Number #</label>
+                                                            <apex:inputField id="cq__c1" value="{!T.cq__c}" styleclass="form-control" />
+                                                            <script type="text/javascript">
+                                                            cs['cq__c1'] = getC('{!$Component.cq__c1}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col-->
+                                                    <div class="col-sm-6">
+                                                        <div class="form-group">
+                                                            <label>Transfer Date</label>
+                                                            <div class="input-datepicker-group input-group">
+                                                                <input type='text' id="datepicker11" value="{!T.cdt__c}" styleclass="form-control input-datepicker" />
+                                                                <!-- <apex:inputField id="datepicker11" value="{!T.cdt__c}" styleclass="form-control input-datepicker" />-->
+                                                                <div class="input-group-append">
+                                                                    <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#datepicker11">
+                                                                        <i class="icon-date"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <script type="text/javascript">
+                                                                cs['datepicker11'] = getC('datepicker11');
+                                                                </script>
+                                                            </div>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Bank</label>
+                                                            <apex:inputField id="Bnk__c1" value="{!T.Bnk__c}" styleclass="form-control" />
+                                                            <script type="text/javascript">
+                                                            cs['Bnk__c1'] = getC('{!$Component.Bnk__c1}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- .row -->
+                                        </div>
+                                        
+                                        <div id="chD" class="pmDivs" style="display:none;">
+                                            <div class="bg-grey-light mt-4" style="height: 4px;"></div>
+                                            <br/>
+                                            <h4>CHEQUE INFO</h4>
+                                            <div class="form-style">
+                                                <div class="row">
+                                                    
+                                                    <div class="col-sm-6">
+                                                        <div class="form-group">
+                                                            <label>Cheque Number#</label>
+                                                            <apex:inputField id="cq__c" value="{!T.cq__c}" styleclass="form-control" />
+                                                            <script type="text/javascript">
+                                                            cs['cq__c'] = getC('{!$Component.cq__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    <!--      <div class="col-sm-6" >
+<div class="form-group">
+<label>Cheque Maturity</label>
+<div class="input-datepicker-group input-group">
+<apex:inputField id="datepicker1" value="{!T.cdt__c}" styleclass="form-control input-datepicker" />
+<div class="input-group-append">
+<button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#{!$Component.datepicker1}">
+<i class="icon-date"></i>
+</button>
+</div>
+<script type="text/javascript">
+cs['datepicker1'] = getC('{!$Component.datepicker1}');
+</script>
+</div>
+
+</div>
+</div>
+<!-- .col -->
+                                                    <div class="col-sm-6 col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Cheque Issuer</label>
+                                                            <apex:inputField id="ci__c" value="{!T.ci__c}" styleclass="form-control" />
+                                                            <script type="text/javascript">
+                                                            cs['ci__c'] = getC('{!$Component.ci__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <!-- .col -->
+                                                    <div class="col-sm-6 col-lg-6">
+                                                        <div class="form-group">
+                                                            <label>Bank</label>
+                                                            <apex:inputField id="Bnk__c" value="{!T.Bnk__c}" styleclass="form-control" />
+                                                            <script type="text/javascript">
+                                                            cs['Bnk__c'] = getC('{!$Component.Bnk__c}');
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- .row -->
+                                        </div>
+                                        
+                                        <div id="acD" class="data-value" style="display:none;font-size: medium">
+                                            <div class="bg-grey-light mt-4" style="height: 4px;"></div>
+                                            <br/>
+                                            <h4>Details of our account are included below:</h4>
+                                            <div class="amount-row amount-row-head">
+                                                <div class="amount-row-title">AXS Bank Account (For wire-transfer and cheque related transactions)</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">Account Name</div>
+                                                <div class="ml-3">AXS FZ LLC</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">Purpose of Transactions</div>
+                                                <div class="ml-3">GSO Transactions</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">Bank Name</div>
+                                                <div class="ml-3">Emirates NBD</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">Account Number</div>
+                                                <div class="ml-3">1015067187801</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">IBAN</div>
+                                                <div class="ml-3">AE030260001015067187801</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">SWIFT CODE</div>
+                                                <div class="ml-3">EBILAEAD</div>
+                                            </div>
+                                            <div class="amount-row">
+                                                <div class="amount-row-col">Currency</div>
+                                                <div class="ml-3">AED</div>
+                                            </div>
+                                        </div>
+                                    </apex:outputText>
+                                </div>
+                                <!-- .base-main-content -->
+                                <div class="base-main-footer">
+                                    <div class="base-nav">
+                                        <apex:outputText rendered="{!OR(rq.srvc__r.uid__c != '208',AND(rq.srvc__r.uid__c == '208',NOT(pgHide)))}">
+                                            <c:qrbtnbk R="{!rq}"></c:qrbtnbk>
+                                            <!-- <button type="submit" form="app_details_form" class="btn btn-primary base-nav-next">
+NEXT
+</button> -->
+                                            <a class="btn btn-primary base-nav-next" style="color: #fff;" onclick="sv();">
+                                                <!--CONFIRM &amp; PAY-->
+                                                CONFIRM &amp; PAY
+                                            </a>
+                                        </apex:outputText>
+                                    </div>
+                                </div>
+                                <!-- .base-main-footer -->
+                            </apex:outputText>   
+                            <apex:outputText rendered="{!AND(payDone,NOT(ISNULL(pdfConfirm)))}">
+                                
+                                <div style="width:100%;height:800px">
+                                    <object data="{!pdfConfirm}#toolbar=1&amp;navpanes=1&amp;scrollbar=1&amp;page=1&amp;view=FitH" type="application/pdf" width="100%" height="99%">
+                                        <p>It appears you don't have a PDF plug-in for this browser. No biggie... you can <a href="{!pdfConfirm}">click here to download the PDF file.</a></p>
+                                    </object>
+                                </div>
+                                
+                            </apex:outputText>
+                        </div>
+                        <!-- .base-main -->
+                        
+                    </div>
+                    <!-- .base-layout -->
+                    
+                </div>
+                <!-- .container -->
+            </apex:form>
+            
+            <script>
+            // var cs= {};
+            cs["imageBase64"] = document.getElementById("{!$Component.imageBase64}");
+            cs["docname"] = document.getElementById("{!$Component.docname}");
+            (function ($) {
+                
+                $(function () {
+                    $('input[name=inside_uae]').change(function () {
+                        if ($(this).val() === 'YES') {
+                            $('#inside_uae').show();
+                        } else {
+                            $('#inside_uae').hide();
+                        }
+                    });
+                });
+                
+            }(jQuery));
+            </script>
+            
+            
+        </div>
+        
+        
+        <apex:outputpanel id="pFS">                        
+            <form name="frmDEG" id="frmDEG" method="POST" action="{!paymentLink}"  >     
+            </form>
+            
+            <script type="text/javascript">
+            function SDEG(){
+                
+                if({!AND(payDone,ISNULL(pdfConfirm))}==true){
+                    
+                    var theFrm = document.getElementById("frmDEG");void 0 != theFrm && null != theFrm && window.location.replace("{!paymentLink}")
+                }
+            }
+            </script>
+        </apex:outputPanel>  
+        
+        
+        <!--<apex:outputPanel rendered="{!isgu}">
+<c:guFooter />
+</apex:outputPanel>-->
+        
+        
+        <!-- main js -->
+        <apex:includeScript value="{!URLFOR($Resource.assets_NUI, '/js/script.js')}"  />
+        
+        <script>
+        
+        $(document).ready(function(){
+            $('#preloader').fadeOut();
+            $('.selectPay').unbind().on('click',function(e){
+                e.stopPropagation();
+                $(this).toggleClass('text-success');
+                var v = $(this).attr('val');
+                var amt = $(this).attr('amt');
+                
+                if($(this).hasClass('text-success')){
+                    selectedPays.push(v); 
+                    pAT = parseFloat(pAT) + parseFloat(amt); 
+                    
+                }
+                else{
+                    selectedPays = jQuery.grep(selectedPays, function(value) {
+                        return value != v;
+                    });
+                    
+                    pAT = parseFloat(pAT) - parseFloat(amt);
+                    if(pAT<=0){ $(this).toggleClass('text-success'); pAT=amt;}
+                }
+                
+                document.getElementById('dvTAT').innerHTML = pAT.toFixed(2)+' AED';
+            });
+            $("input[name='inside_uae']").on('change',function(){
+                
+                var payMethod = $('[name="inside_uae"]:checked').val();
+                $('.pmDivs').hide();
+                $('.mdc').hide();//mkr
+                getC('mdcRI').style.display = 'none';
+                if(payMethod == 'Customer Deposit'){
+                    
+                    if(parseFloat(pAT) > parseFloat(ADB)){ 
+                        getC('mdcRI').innerHTML='Insufficient customer deposit balance. <a href="/apex/grqn?c=tad">Click here to top-up customer deposit</a>';
+                    }
+                    else{
+                        getC('mdcRI').innerText='Amount '+ pAT + ' AED will be deducted from your portal deposit.';
+                    }
+                    $('.mdc').show();//mkr
+                    $('.chk').show();
+                    $('#mdcRI').show();
+                }else if(payMethod =="Credit / Debit Card"){
+                    getC('mdcRI').innerHTML='Please note<br/><ul><li>We accept all UAE and international credit/debit cards except for cards issued in USA , Canada, Brazil, UK, Germany and France.</li><li>All payments will be done in AED and the customer will bear any currency exchange charges levied by the card issuer when using international credit /debit cards.</li></ul>';
+                    $('.mdc').show();//mkr
+                    $('.chk').show();
+                    $('#mdcRI').show();
+                }else if(payMethod == 'Cash'){
+                    if(parseFloat(pAT) > 55000){ 
+                        axsAlert('Payment Method validation','Maximum cash accepted is AED 55,000.Please choose another payment method to proceed');
+                        
+                        $( '[name="inside_uae"]' ).prop( "checked", false );
+                        return;
+                    }else{
+                        var cd='{!JSENCODE(rq.srvc__r.uid__c )}';
+                        getC('mdcRI').innerHTML='Please note<br/><ul><li>You have selected to ‘pay by cash’. Please visit our office below:</li><ul><li>axs centre, Building 8, Ground Floor, Dubai Knowledge Park, Dubai, UAE</li><li>axs centre, Service Block, Ground Floor, Dubai International Academic City, Dubai, UAE<br/>Tel: 800 4 axs (297)</li></ul><li>Download your payment advice copy and carry it with you for the payment.</li><li>Maximum cash accepted is AED 55,000.</li><li>Your application will be processed further once the payment is confirmed.</li></ul>';
+                        if(cd=='208' || cd=='220' || cd=='dnc'){
+                            getC('mdcRI').innerHTML='Please note<br/><ul><li>You have selected to ‘pay by cash’. Please visit our office below:</li><ul><li>axs centre, Building 8, Ground Floor, Dubai Knowledge Park, Dubai, UAE</li><li>axs centre, Service Block,Building 1, Ground floor, Dubai Studio City, Dubai, UAE<br/>Tel: 800 4 axs (297)</li></ul><li>Download your payment advice copy and carry it with you for the payment.</li><li>Maximum cash accepted is AED 55,000.</li><li>Your application will be processed further once the payment is confirmed.</li></ul>';
+                        } 
+                        $('.mdc').show();//mkr
+                        $('.chk').show();
+                        $('#mdcRI').show();
+                    }
+                }
+                    else if(payMethod == 'Cheque'){
+                        //  $('#chD').show(); $('#acD').show();
+                        getC('mdcRI').innerHTML='Please note<br/><ul><li>You have selected to ‘pay by cheque’. Please issue all cheques payable to: <b>AXS FZ LLC</b></li><li>All cheques should be issued in AED, payable in the UAE.</li><li>Your application will be processed further once the payment is confirmed. </li></ul>';
+                        $('.mdc').show();//mkr
+                        $('.chk').show();
+                        $('#mdcRI').show();
+                    }
+                        else if(payMethod == 'Wire Transfer'){
+                            getC('mdcRI').innerHTML='Please note that, you have selected to ‘pay by bank transfer’.For International transfers, kindly ensure to include any extra charges from the banks during the transfer to ensure exact amount is transferred. ';/* Please use details below:</li>Tecom Group LLC<br>Emirates NBD, Dubai, UAE  |  IBAN - EBHD16913154213313  |  </br>SWIFT- ENBDAED<li> Your application will proceed further once the amount is reflected in our accounts, this usually takes up to 5 working days from the transfer date.*/
+                            $('.mdc').show();//mkr
+                            $('.chk').show();
+                            $('#mdcRI').show();
+                            $('#wrTf').show(); $('#acD').show();}
+                            else if(payMethod == 'Debit Memo'){
+                                // getC('mdcRI').innerHTML='Please note<br/><ul><li>You have selected to ‘pay by bank transfer’. Please use details below:</li>Tecom Group LLC<br>Emirates NBD, Dubai, UAE  |  IBAN - EBHD16913154213313  |  </br>SWIFT- ENBDAED<li>Your application will be processed further once the payment is confirmed. </li></ul>';
+                                // $('.mdc').show();//mkr
+                                $('.chk').show();
+                                $('#mdcRI').show();
+                            }
+                
+            });
+            
+            /*for ni issue - mkr - 16thMar */
+            //$('input[value="Credit / Debit Card"]').unbind('change');
+            $('.comNum').each(function(){
+                $(this).text($(this).text().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+            });
+        });
+        </script>
+    </body>
+    <apex:form id="uploadFrm">
+
+        <c:fileuploadpopupnew13 R="{!rq}" /> 
+        
+    </apex:form>
+</apex:page>

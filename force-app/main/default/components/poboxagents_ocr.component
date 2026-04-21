@@ -1,0 +1,638 @@
+<apex:component >
+    
+    <script>
+    var addonItems=''; var serviceId = '123'; var pobType = '';
+    
+    function loadDetails(type){
+        $('.numOnly').keypress(function (event) {
+            var charCode = (event.which) ? event.which : event.keyCode;
+            if (charCode != 46 && charCode > 31 
+                && (charCode < 48 || charCode > 57))
+                return false;
+            return true;
+        });
+        
+        //sample json - '[{"eName":"Abdullah Hussein","jbT":"Actor","pNo":"HS1234555","photoId":"HS1234555"},{"eName":"Abdullah2 Hussein1","jbT":"Sales Manager","pNo":"HS1234599","photoId":"HS1234599"},{"eName":"Abdullah3 Hussein2","jbT":"Developer","pNo":"HS1234566","photoId":"HS1234566"}]';
+        var repDetails = '{!req.xadtx1__c}'; var alItms = cs['xadh__c'].value;
+        
+        //add fines for the renewal
+        if(alItms!= null && alItms.includes('cn;')){ addonItems += "cn;"; $('#cmpYes').prop( "checked","true"); cs['InsChk__c'].value = true;}
+        if(alItms!= null && alItms.includes('lpk;')){ addonItems += "lpk;"; $('#keysTrue').prop( "checked","true"); cs['xoca__c'].value = true;$('#colldelinfo').show();$('#eConInfo').hide();}
+        if(alItms!= null && alItms.includes('adf;')){ addonItems += "adf;"; $('#addonYes').prop("checked","true"); cs['xoca__c'].value = true;}
+        if(alItms!= null && !alItms.includes('lpk;') && type=='amendment'){ $('#colldelinfo').hide();$('#eConInfo').show();}
+        
+        if(type=='renewal' || type=='amendment'){
+            if(type=='renewal'){addonItems+='fn;';}    
+            if(cs['xln__c'].value !="" && cs['xln__c'].value == cs['xcpobx__c'].value){ 
+                $("#crntbndlTxt").text($("#crntbndlTxt").text().replace("#",cs['xcpobx__c'].value));
+                $("#crntbndl").show(); // $("#crntbndl").attr("data-original-title",cs['xcpobx__c'].value + " is current PO Box bundle");
+            }else{ $("#crntbndl").hide();}
+        }
+        
+        if(repDetails!=null && repDetails!=""){
+            jsonExistingReps = JSON.parse(repDetails); 
+            if(jsonExistingReps.length>0){$("#conpoblkup").hide();}
+            if(jsonExistingReps.length==4){getC("btnnonemp").disabled  = true; getC("btnemp").disabled  = true;}
+            setRepDetails(jsonExistingReps);
+        }
+        
+        if('{!req.id}'==''){$('#dvagents').hide();}
+        getPOBOX(); 
+    }
+    
+    
+    function setRepDetails(allReps){
+        for(var i=0; i<allReps.length; i++){
+            
+            var iCardLabel = (allReps[i].jbT == 'Non-Employee')? 'Emirates ID':'Passport';
+            if(allReps[i].eidid!=undefined && allReps[i].eidid!=''){
+                allReps[i].pNo = allReps[i].eidid; iCardLabel = 'Emirates ID';
+            }
+            
+            var reptv = '<div class="applicant-box mb-2" ondblclick=\'editDetails(this,'+i+');\'> <div class="user-title-media user-title-media-sm"> <div class="user-avatar">'+
+                '<img src="/servlet/servlet.FileDownload?file='+allReps[i].photoId+ '" alt=""/></div><div>'+
+                '<div id="username'+i+'" class="user-name">'+allReps[i].eName +'</div>'+
+                '<div id="userdetails'+i+'"  class="user-title font-weight-normal">'+ allReps[i].jbT +'&nbsp;&bull;&nbsp; '+iCardLabel+' #: '+ allReps[i].pNo +
+                '</div> </div> <a class="applicant-box-remove border-primary" onclick="removeRow(this,\''+allReps[i].pNo+'\')"><i class="fa fa-close"></i></a></div> </div>' ;
+            
+            $('#representatives').append(reptv);  
+            
+        }
+    }
+    
+    
+    function addRepresentative(existingEmp){
+        
+        var brk = false;
+        if(existingEmp){brk = validateLookup('.lookup');}
+        if(brk){return;}
+        
+        if(conJson.pNo!= null && conJson.pNo!=""){
+            var isPresent = false;
+                $(jsonExistingReps).each(function(i){
+                if(jsonExistingReps[i].pNo == conJson.pNo || (existingEmp && conJson.eidid && jsonExistingReps[i].pNo == conJson.eidid)){ 
+                    isPresent = true;  
+                    if(!existingEmp){
+                        cs["imageBase64"].value = ""; cs["docname"].value = "";
+                    }
+                    return; 
+                }
+            });
+            
+            if(!isPresent){ 
+                var selectedRep = [];  let objCopy = Object.assign({}, conJson);
+                selectedRep.push(objCopy);jsonExistingReps.push(objCopy); 
+                setRepDetails(selectedRep);
+                
+                //save request to update the documents
+                assignDataToFields(); 
+                
+                if(!existingEmp){toggleGLoader(); afsd();}
+            }
+        }
+        
+        if(jsonExistingReps.length>0){$("#conpoblkup").hide();}
+        
+        $('#modal_EIDA_confirm_information').modal('hide');  //$('#modal_add_employee').modal('hide'); 
+        $('#modal_add_employee').modal('hide');
+        $('.requiredrep').css('color','');
+    }
+    
+    /**
+    *  creates json for non-employee
+    **/
+    function createJSON(){
+        var brk = vflds('.requiredFldPop',true) || !isUAEMobNum(cs['xcmob__ocr']) || isTitleEmpty();  
+        //brk = !isUAEMobNum(cs['xcmob__ocr']) || isTitleEmpty() ||brk;
+        brk= !vEida(cs['xid__ocr']) || brk;
+        if(!brk){
+            
+            conJson.eName = cs['xcfn__ocr'].value; conJson.eName = conJson.eName.trim();
+            conJson.jbT = "Non-Employee"; conJson.photoId = "";
+            conJson.pNo = cs['xid__ocr'].value; conJson.ntc =cs['xcnc__ocr'].value; 
+            conJson['mob'] = cs['xcmob__ocr'].value; conJson['eml'] = cs['xceml__ocr'].value;
+            conJson.salt = cs['xcslt__c'].value; cs['xcslt__c'].value = '';
+            conJson.fNm = '';conJson.lNm='';
+            
+            if(conJson.eName.includes(' ')){
+                var fullName = conJson.eName.split(' ');
+                for(var i=0; i<=(fullName.length/2)-1; i++){
+                    conJson.fNm += fullName[i].trim()+' ';
+                }
+                
+            }
+            conJson.lNm = conJson.eName.replace(conJson.fNm,'');
+            conJson.lNm = conJson.lNm.trim(); conJson.fNm = conJson.fNm.trim();
+            
+            /*$('.requiredFldPop').each(function(){var att=$(this).attr('attrb'); var id = $(this).attr('id');if(att!=undefined && cs[id]!=undefined){  conJson[att] = cs[id].value;} });*/
+            
+            //identification of new or existing non-employee 
+            var isDiff = false;
+            if(empInd!=undefined && empInd!=null){
+                for(i in conJson){
+                    if(conJson[i] != jsonExistingReps[empInd][i]){ isDiff = true;}   
+                }
+            }
+            
+            //show error if existing agent details are not updated 
+            if(isDiff || empInd==undefined || empInd==null){
+                empInd = null; addRepresentative(false);
+                $('#modal_EIDA_confirm_information').modal('hide');  //$('#modal_add_non_employee_2').modal('hide'); 
+            }else{
+                $('.poErr').fadeIn().fadeOut().fadeIn().fadeOut().fadeIn();
+            }
+        }
+    }
+    
+    function isTitleEmpty(){
+        brk = false;  $('#titleErr').hide();
+        if(cs['xcslt__c'].value==undefined || cs['xcslt__c'].value==""){
+            $('#titleErr').show();
+            brk = true;
+        }
+        return brk;
+    }
+    
+    function saveDetails(){
+        var brk = vflds('.requiredFld', true);  brk = brk ||  vflds('.applMob', true);
+        //atleast one representative should be there for new and renewal
+        if(jsonExistingReps.length==0 && pobType!="amendment"){
+            $('.requiredrep').css('color','#E62D38').fadeOut().fadeIn().fadeOut().fadeIn();
+            brk=true;
+        }
+        if(getC('select2-pobox-container').innerHTML=='' || getC('select2-pobox-container').innerHTML=='--None--'){
+            brk = true;         
+        }
+        
+        var isRenewal = false; 
+        if('{!srvcType}'=='renewal' || '{!srvcType}'=='amendment'){isRenewal=true;}
+        if(pobType=="amendment"){
+            if(!getC('cmpYes').checked &&  cs['xln__c'].value==cs['xcpobx__c'].value && jsonExistingReps.length==0 && !getC('keysTrue').checked){
+                axsAlert('Apply for atleast one amendment','P.O. Box Bundle / change of lock / company name change / update agent(s)'); 
+                brk = true;
+            }
+        }
+        
+        if(!brk){
+            console.log(cs['xoca__c'].checked);
+            toggleGLoader(); assignDataToFields();afso(); 
+        }
+    }
+    
+    
+    /**
+    * assigns page data to the request fields
+    **/
+    function assignDataToFields(){
+        assignItemCode();
+        for(var i=0; i<jsonExistingReps.length; i++){
+            var itemNum = (i==0) ? '':i;
+            cs['xadh__c'].value += 'rs'+itemNum+';'; 
+        }
+        cs["Con__c"].value = "";  cs['xadtx1__c'].value = JSON.stringify(jsonExistingReps);
+    }
+    
+    function assignPOBOX(pobox){
+        cs['xcpobx__c'].value = pobox;
+        assignItemCode();
+        if(pobType=='new' && pobox!=""){$('#dvagents').show();}
+        
+        if(pobType!='new' && ('{!req.id}'==null || '{!req.id}'=="")){ toggleGLoader(); assignDataToFields(); afsd();} //|| pobType = 'renewal' || pobType = 'amendment'
+        if((pobType == 'renewal' || pobType == 'amendment') && cs['xln__c'].value && cs['xln__c'].value == cs['xcpobx__c'].value){ 
+            $("#crntbndlTxt").text($("#crntbndlTxt").text().replace("#",cs['xcpobx__c'].value));
+            $("#crntbndl").show(); 
+        }else{$("#crntbndl").hide();}
+        
+        return true;
+    }
+    
+    
+    /**
+    * assigns respective item code for selected PO Box bundle
+    **/
+    function assignItemCode(){
+        var itmCd = POBundles[getC('pobox').value];
+        
+        if(itmCd!=undefined && pobType=="amendment" && cs['xln__c'].value==cs['xcpobx__c'].value){ itmCd = 'x'+itmCd;}
+        
+        cs['xadh__c'].value = (itmCd!=undefined) ? itmCd+';':"";
+        cs['xadh__c'].value += addonItems;
+    }
+    
+    
+    /**
+    * assigns pre-selected PO Box bundle
+    **/
+    function getPOBOX(pobox){
+        var selectedPO = cs['xcpobx__c'].value;
+        if(selectedPO!=""){
+            getC('pobox').value =selectedPO;
+            if(getC('select2-pobox-container')!=null)getC('select2-pobox-container').innerHTML = selectedPO;
+            assignItemCode();
+        }
+    }
+    
+    
+    function chkRepCount(modalId){
+        //remove existing field errors
+        removeAllErrors('.requiredFldPop'); removeAllErrors('.lookup'); 
+        resetModalInputs(modalId);
+        
+        var brk = vflds('.requiredFldpob', true); 
+        
+        if(!brk){
+            if(jsonExistingReps.length >= 4){ 
+                $('.maxrep').fadeOut().fadeIn().fadeOut().fadeIn().fadeOut().fadeIn();
+            }else{
+                $(modalId).modal('show'); 
+            }
+        }
+    }
+    
+    
+    /**
+    *  removes row and deletes element from the json array
+    **/
+    function removeRow(e,passport){
+        if(e!=undefined && e!=null){$(e).parent().parent().remove();}
+        //remove element from the json
+        $(jsonExistingReps).each(function(index){
+            if(jsonExistingReps[index]!=undefined && jsonExistingReps[index].pNo == passport){
+                jsonExistingReps.splice(index,1);  
+                return;
+            }
+        });
+        
+        if(jsonExistingReps.length==0){$("#conpoblkup").show();}
+        //save request to update the documents
+        toggleGLoader(); assignDataToFields(); afsd();
+    }
+    
+    
+    function editDetails(e,index){}
+    
+    function editDetails_BK(e,index){
+        removeAllErrors('.requiredFldPop'); empInd = index; var jObj=jsonExistingReps[index];
+        
+        if(jObj.jbT!="Non-Employee"){
+            modalWarning(' Employees are read only!',' Only Non-employee details can be edited.')
+            return; 
+        }else{
+            resetModalInputs('#modal_add_non_employee_2');
+            $('.requiredFldPop').each(function(){
+                var ab = $(this).attr('attrb'); $(this).val(jObj[ab]);
+                if($(this).is("select")){ 
+                    /*$(this).find('option').each(function(){var t = $(this).text();if(t==jObj[ab]){$(this).attr('selected','true'); return;}});*/
+                    $(this).trigger("change");
+                }
+                $('[val="'+jObj[ab]+'"]').prop('checked',true);
+            });
+            
+            cs['xcp__c'].disabled = true; getC('btnconfirm').innerText = "CONFIRM & UPDATE"; getC('nonemp_agent').innerText = "Update Non-Employee Agent"; $('#modal_add_non_employee_2').modal('show'); 
+        }
+    }
+    
+    
+    //#################################################################################################
+    /**
+    * common functions to be accessed from js files
+    **/
+    
+    function modalWarning(header, message){
+        var el = '<div class="modal fade modal-base" id="modal_warning" tabindex="-1" role="dialog" aria-hidden="true"> <div class="modal-dialog" role="document" style="width: 500px;"> <div class="modal-content"> <div class="modal-body"> <h3 class="mb-4"><i class="fa fa-exclamation-circle text-warning"></i> '+ header +'</h3><div class="input-info"><p> '+message+'</p></div></div></div></div></div>';
+        $('body').append(el);
+        $('#modal_warning').modal('show');
+    }
+    
+    
+    function vflds(clsName, checkLookup){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        
+        if(checkLookup){ brk = validateLookup('.polookup') || brk;}
+        return brk;
+    }
+    
+    
+    function validateLookup(lookupCls, errorMsg){
+        var brk = false; var elem = '';
+        errorMsg = (errorMsg==undefined || errorMsg==null) ? 'Value is required!' : errorMsg;
+        $(lookupCls).each(function(){
+            let v = $(this).val();
+            if(v==''||v==null || v==undefined){
+                brk=true; addValError($(this).parent(),errorMsg);
+                validated=false;
+                if(elem=='') elem = $(this).parent();
+            }else{
+                removeValError($(this).parent());
+            }
+        });
+        return brk;
+    }
+    
+    function removeValError2(thiselem){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+    }
+    
+    function addValError2(thiselem,message){
+        var elem = $(thiselem);
+        elem.parent().find('.frmErrMsg').remove();
+        elem.parent().parent().find('.frmErrMsg').remove();
+        var errElem = '<div class="frmErrMsg">'+message+'</div>';
+        if($(thiselem).attr('data-toggle') == 'datetimepicker'){
+            elem.parent().parent().append(errElem);
+        }else{
+            elem.parent().append(errElem);
+        }
+    }
+    
+    function salutionOnChange(salutation){
+        cs['xcslt__c'].value=salutation;
+        $("input[name='salutation']").parent().parent().parent().find('.option-error').hide(); 
+    }
+    
+    function SalOnChange(salt){
+        getC('Mr').checked = false; getC('Mrs').checked = false; getC('Ms').checked = false;
+        cs['xcslt__c'].value=salt; 
+        getC(salt.replace('.','')).checked = true; $('#titleErr').hide();
+        
+    }
+    
+    function cmpOnChange(opt){
+        $('.cmpErrMsg').hide();
+        if(opt){
+            addonItems = addonItems.replace('cnNO;','');
+            addonItems += 'cn;';  cs['InsChk__c'].value = true;
+        }else{
+            addonItems = addonItems.replace('cn;','');
+            addonItems += 'cnNO;'; cs['InsChk__c'].value = false;
+        }
+    }
+    
+    function itemsOnChange(e,itemCd,xfld){
+        if($(e).prop( "checked")){
+            addonItems += itemCd+';';  cs[xfld].value = true;
+        }else{
+            addonItems = addonItems.replace(itemCd+';',''); cs[xfld].value = false;
+        }
+    }
+    
+    function isUAEMobNum(elem){
+        var mob = $(elem).val();
+        var regex = /^((?:50|52|54|55|56|58)[0-9]{7})$/;
+        var r = (regex.test(mob))?true:'invalid';
+        if(r == 'invalid'){
+            addValError(elem,'Please enter a valid UAE mobile number');
+            return false;
+        }else{
+            removeValError(elem);     
+            return true;
+        }
+    }
+    
+    function removeAllErrors(clsName){
+        $(clsName).each(function(){removeValError(this);});
+    }
+    
+    function adjustDocHeight(){
+        if($('.base-side-content').height()>$('.base-main-content').height()){
+            $('.document-uploads').css({'height':$('.base-main-content').height()-200+'px','overflow-y':'auto'});
+        }
+    }
+    
+    //resets all the input fields from the modal
+    function resetModalInputs(modalId){ $(modalId).find('input').val('');$(modalId).find('[type="radio"]').prop('checked',false); $(modalId).find('.input-select2-flat').val('').trigger('change');}
+    //#################################################################################################
+    
+    function uploadDoc(docname,parseFlg,rqFlg){
+        currentDoc = docname;
+        cs["docname"].value = docname +'-'+ (jsonExistingReps.length +1);
+        cs["parseId"].value = parseFlg; 
+        $(".docname").text(docname);
+        console.log( cs["docname"].value);
+        
+        $('#modal_upload_passport').modal('show');
+    }
+    </script>
+    
+    
+    <apex:attribute name="req" description="request" required="true" type="g_Req__c"  />
+    <apex:attribute name="salutations" description="salutations" type="SelectOption[]" required="true"/>
+    <apex:attribute name="cmpname" description="company name change option" type="Boolean" default="false"/>
+    <apex:attribute name="srvcType" description="po box service" type="String" default="new"/>
+
+    
+    <div class="mb-5">
+        <p>Select a P.O. Box bundle </p>
+        <div class="d-flex align-items-center">
+            <div class="addon-service-img mb-0 mr-3 d-flex align-items-center" style="height: 50px;">
+                <img src="{!URLFOR($Resource.assets_NUI, '/images/service4.png') }" alt=""/>
+            </div>
+            <div class="form-group form-style mr-3 mb-0" style="width: 300px;">
+                <select id="pobox" class="requiredFld requiredFldpob form-control input-select2-flat" onchange="assignPOBOX(this.value);">
+                    <option value="">--None--</option>
+                    <!--<option value="PO Box Light">PO Box Light</option>-->
+                    <option value="PO Box Corporate">PO Box Corporate</option>
+                    <option value="EziMail Bronze">EziMail Bronze</option>
+                    <!--<option value="EziMail Silver">EziMail Silver</option>-->
+                    <option value="EziMail Gold">EziMail Gold</option>
+                </select>
+            </div>
+            
+            <!--<i type="button" id="crntbndl" class="icon-info-circle tooltip-left text-primary" style="font-size: 1.5rem; display:none;" data-toggle="tooltip" data-placement="top" title="current bundle"></i>--> 
+            <!--<i class="icon-info-circle text-primary" style="font-size: 1.5rem;"></i>-->
+        </div>
+        <div id="crntbndl" style="display:none;">            
+            <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" style="margin-right: 8rem !important;"/>
+                <div class="input-info" style="width: fit-content; font-size: 0.8rem;">
+                    <i class="icon-info-circle text-primary" style="font-size: 0.8rem;"></i>
+                    <label class="mb-0" id="crntbndlTxt" > # is current PO Box bundle</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- po box keys only for POB amendment Service-->
+    <apex:outputPanel rendered="{!srvcType=='amendment'}"> 
+        <div>
+            <!-- <label class="mb-3 fs-18">Do you have P.O. Box keys? </label><br/>-->
+            <label class="custom-checkbox custom-checkbox-sm mb-4">
+                <input id="keysTrue" type="checkbox" name="reason" onchange="keysOnChange(this);"/>
+                <span>
+                    Select if you would like to apply for lock change
+                </span>
+            </label>
+        </div>
+    </apex:outputPanel>
+    
+    <!-- Company name change only for POB Renewal-->
+    <apex:outputPanel rendered="{!OR(srvcType=='amendment' || srvcType=='renewal')}">         
+        <div>
+            <!--<label class="mb-3 fs-18">Company name change </label><br/>-->
+            <label class="custom-checkbox custom-checkbox-sm mb-4">
+                <input id="cmpYes" type="checkbox" name="reason" onchange="itemsOnChange(this,'cn','InsChk__c');"/>
+                <span>Select if company name is changed </span>
+            </label>
+        </div>
+    </apex:outputPanel>
+    
+    <!-- Additional POB for POB new and Renewal-->
+    <!--<apex:outputPanel rendered="{!srvcType=='renewal'}">-->
+    <apex:outputPanel rendered="false"> 
+        <div>
+            <!-- <label class="mb-3 fs-18">Additional Tejari P.O. Box </label><br/>-->
+            <label class="custom-checkbox custom-checkbox-sm mb-4">
+                <input id="addonYes" type="checkbox" name="addonitem" onchange="itemsOnChange(this,'adf','xoca__c');"/>
+                <span>Select if you would like an additional Tejari P.O. Box</span>
+            </label>
+        </div>
+    </apex:outputPanel>
+    
+    <div class="modal fade modal-base" id="modal_add_employee" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Search Employee</h2>
+                    <div class="form-group mb-3 mt-4 pt-3" id="conlookuprow">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="form-group">
+                                    <c:gconlookup id="conlookup" Request="{!req}" role="Employee;Non Sponsored" accId="{!req.Acc__c}" sta="Active" /> 
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-outline-primary btn-outline-primary-2" onclick="addRepresentative(true); return false;">
+                                        <i class="icon-plus-circle fs-20 align-middle mr-1" style="line-height: 1;"></i>
+                                        ADD AGENT 
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div id="dvagents">
+        <h4 class="mt-4 requiredrep">Select Authorised Agents to Access your P. O. Box</h4>                                  
+        <div class="input-info mb-2 maxrep" style="width: fit-content; font-size: 0.8rem;">
+            <i class="icon-info-circle text-primary" style="font-size: 0.8rem;"></i>
+            Maximum four representatives can be added
+        </div> 
+        
+        <div class="form-group" >
+            <div class="input-group input-group-transparent" id="conpoblkup" onclick="chkRepCount('#modal_add_employee'); return false;"> 
+                <input disabled="true" type="text" class="form-control" style="background: #f5f5f5 !important;"/>
+                <div class="pointer input-group-append">
+                    <span class="input-group-text" style="background: #f5f5f5 !important;">
+                        <i class="icon-request-preference text-primary"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="representatives" class="mb-4"> 
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <button id="btnemp" class="btn btn-outline-primary btn-outline-primary-2"  onclick="chkRepCount('#modal_add_employee'); return false;">
+                <i class="icon-plus-circle fs-20 align-middle mr-1" style="line-height: 1;"></i>
+                ADD ANOTHER AGENT 
+            </button>
+            
+            <button id="btnnonemp" class="btn btn-outline-primary btn-outline-primary-2" onclick="chkRepCount('#modal_add_non_employee_1');return false;">
+                <i class="icon-plus-circle fs-20 align-middle mr-1" style="line-height: 1;"></i>
+                ADD NON-EMPLOYEE AGENT
+            </button>
+        </div>
+    </div>
+    
+    <!-- collection/delivery for new and amendment, for amendment it's dynamic-->
+    <div id="colldelinfo">
+        <apex:outputPanel rendered="{!NOT(srvcType=='renewal')}"> 
+            <div class="mb-4"></div>
+            <div class="form-style">
+                <c:collectionanddeliveryinfo req="{!req}" id="collDelcmp" cmpTitle="Collection & Delivery Info"/> 
+            </div>
+        </apex:outputPanel>
+    </div>
+    
+    
+    
+    <div id="eConInfo">
+        <apex:outputPanel rendered="{!OR(srvcType=='renewal',srvcType=='amendment')}"> <!-- -->
+            <div class="mb-4"></div>
+            <div class="form-style">
+                <c:eContactInfo req="{!req}" id="conInfoCmp" cmpTitle="Contact Details"/>
+            </div>
+        </apex:outputPanel>
+    </div>
+    
+    
+    <c:ocrcmp />
+    
+    <div class="modal fade modal-base" id="modal_add_non_employee_1" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document" style="width: 990px;">
+            <div class="modal-content">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="icon-close"></i>
+                </button>
+                <div class="modal-body">
+                    <h2 class="modal-title">Add Non-Employee Agent</h2>
+                    <p>Upload EIDA to add a new person as your P. O. Box Agent</p>
+                    
+                    <div class="mb-4"></div>
+                    <div class="row row-lg">
+                        <div class="col-lg-6">
+                            <div class="box box-block mb-lg-4 box-border-dashed">
+                                <label class="fs-18">Upload EIDA Front Page</label>
+                                <div class="upload-field d-flex">
+                                    <div class="upload-field-drop-area box box-white box-padding flex-fill d-flex mr-2 mb-0 text-000">
+                                        <i class="icon-upload-cloud fs-18 mr-2 mt-1"></i>
+                                        <span>Drop or Choose File to Upload</span>
+                                    </div>
+                                    <div>
+                                        <a data-dismiss="modal" onclick="uploadDoc('Eida Card Front Side','true','');" style="color:#fff" class="btn btn-primary btn-outline-primary-3">BROWSE</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <apex:inputHidden id="xadtx1__c" value="{!req.xadtx1__c}" />    <apex:inputHidden id="xcpobx__c" value="{!req.xcpobx__c}" />
+    <apex:inputHidden id="xadh__c" value="{!req.xadh__c}" />        <apex:inputHidden id="xcslt__c" value="{!req.xcslt__c}" /> <apex:inputHidden id="xln__c" value="{!req.xln__c}" />
+    <apex:inputHidden id="xoca__c" value="{!req.xoca__c}" />  <!-- for change of lock in amendment AND additional Tejari P.O. Box for new/renewal -->
+    <apex:inputHidden id="InsChk__c" value="{!req.InsChk__c}" /> <!-- company name change -->
+    
+    <script type="text/javascript">
+    cs['xadtx1__c']=getC('{!$Component.xadtx1__c}'); cs['xcpobx__c']=getC('{!$Component.xcpobx__c}'); cs['xadh__c']=getC('{!$Component.xadh__c}'); cs['xcslt__c']=getC('{!$Component.xcslt__c}');
+    cs['xoca__c']=getC('{!$Component.xoca__c}'); cs['InsChk__c']=getC('{!$Component.InsChk__c}'); cs['xln__c']=getC('{!$Component.xln__c}');
+    //sample Json: [{"pNo":"Pass-1","eName":"Test TestD","jbT":"Sales","photoId":"00Pp0000009RMU2EAO","salt":"Mr.","fNm":"first1","mNm":"Middle1","lNm":"Last1","ntc":"India","eml":"test1@b.com","mob":"0527687111"},{"pNo":"Pass-2","eName":"SVEN SPECIMEN","jbT":"Actor","photoId":"00Pp000000D6zf7EAB","salt":"Mrs.","fNm":"first2","mNm":"Middle2","lNm":"Last2","ntc":"England","eml":"test22@b.com","mob":"0527687222"},{"pNo":"Pass-3","eName":"Meena EmpTest","jbT":"Academic Administrator","photoId":"00Pp000000ApOnLEAV","salt":"Ms.","fNm":"first3","mNm":"Middle3","lNm":"Last3","ntc":"Australia","eml":"test333@b.com","mob":"0527687333"}]
+    //req = a0Ep00000082tVaEAI //if(rq.xadtx1__c!=null && rq.xadtx1__c!=""){ var reps = JSON.parse(rq.xadtx1__c);  if(reps.length > 0){ for(var i=0; i<reps.length; i++){ var j = i==0 ? '': i; var repDetails = isg('rs'+j, 'a', 'y', 'a');  if(repDetails!=null && repDetails.length>0){ if(reps[i].salt!=undefined){iuf(repDetails[0], 'xcslt__c', reps[i].salt)}; if(reps[i].fNm!=undefined){iuf(repDetails[0], 'xcfn__c', reps[i].fNm)}; if(reps[i].mNm!=undefined){iuf(repDetails[0], 'xcmn__c', reps[i].mNm)}; if(reps[i].lNm!=undefined){iuf(repDetails[0], 'xcln__c', reps[i].lNm)}; if(reps[i].ntc!=undefined){iuf(repDetails[0], 'xcnc__c', reps[i].ntc)}; if(reps[i].pNo!=undefined){iuf(repDetails[0], 'xcp__c', reps[i].pNo)}; if(reps[i].eml!=undefined){iuf(repDetails[0], 'xceml__c', reps[i].eml)}; if(reps[i].mob!=undefined){iuf(repDetails[0], 'xcmob__c', reps[i].mob)}; } } }  } 
+    </script> 
+    
+</apex:component>

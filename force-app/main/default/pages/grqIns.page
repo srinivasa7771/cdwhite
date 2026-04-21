@@ -1,0 +1,354 @@
+<apex:page sidebar="false" cache="false" expires="0" docType="html-5.0" controller="gctlInsComp" title="{!srv.sdg__r.slbl__c}">
+    
+    <apex:includeScript value="{!URLFOR($Resource.vendors_NUI, '/jquery/dist/jquery.min.js')}"  />
+    <apex:includeScript value="{!$Resource.jsH}"/>
+    <apex:includeScript value="{!$Resource.eiJS}"/>
+    <apex:includeScript value="{!$Resource.AXS2CustomJs}"/>
+    <apex:stylesheet value="{!$Resource.axs2MandateCss}"/>
+    <apex:includeScript value="{!$Resource.AXS2_formValidations}"/>
+    
+    <style>
+        .info-msg {color:green !important;}
+    </style>
+    
+    <script type="text/javascript">
+    var sta='{!JSENCODE(rqDraft.STA__c)}',cs={}; var spInsTp=''; var lf='',af='',adf='',aif,adif,cif,fnxPg;
+    var reqType = '{!JSENCODE(rqTp)}'; var bCallAdnic='{!bCallAdnic}'; var isDependentApp={!isDependentApp};
+    
+    $(document).ready(function(){ 
+        cs['xadh__c'].value='inr;';
+    })
+    
+    function vfrm(nSTA){}
+    
+    function hsSnc(nSTA){return false;}
+    function hErr(nSTA){return false;}
+    
+    function checkIdFormat2(){
+        var isValidId = true;
+        if(!ageabove65){
+            var applicantEId  = cs['xceidid__c'].value;
+            if((applicantEId== null) || (applicantEId != null && !applicantEId.includes('-') && applicantEId.length !=15 ) || (applicantEId != null && applicantEId.includes('-') && (applicantEId.length !=18 || applicantEId.split('-').length != 4)) ){
+                getC('emiratesidmsg').style.display='block'; 
+                cs['xintp__c'].value = ""; cs['ins'].checked = false;getC('adnicIns').checked = false; getC('instype').disabled = true;
+                isValidId = false; $('#btndetails').hide(); return isValidId;
+            }else{
+                getC('emiratesidmsg').style.display='none';  getC('adnicIns').checked = true; 
+                getC('instype').disabled = false; $('#btndetails').show();
+            }
+        }
+        return isValidId;
+    }
+    
+    /*function hRq(nSTA) {
+        fldErr('xintp__c', null, !0); fldErr('rmob__c',null,!0);fldErr('xbrnd__c',null,!0);fldErr('xaloc__c',null,!0);
+        
+        if(cs['xcms__c'].value == 'Married' && cs['xcslt__c'].value == 'Mrs.'){fldErr('xpgs__c',null,!0);}
+        var brq = false; brq = fldReq('Con__c', cs) || brq;brq = fldReq('xintp__c', cs) || brq;  brq =!(vMob('rmob__c',cs,true))||brq; 
+        brq = fldReq('xbrnd__c',cs)||brq;brq = fldReq('xaloc__c',cs)||brq; 
+        if(cs['xcms__c'].value == 'Married' && cs['xcslt__c'].value == 'Mrs.'){brq = fldReq('xpgs__c', cs) || brq; }
+        
+        fnxPg='grqup'; 
+        
+        return brq; 
+    }*/    
+    
+    /*function chkSpon(){
+        var spStat = '{!isSpActive}'; var conRol = '{!JSENCODE(rqDraft.Con__r.rol__c)}';
+        console.log('spStat : ' + spStat +' : conRol' + conRol);
+        if((conRol=='Child' || conRol=='Spouse') && spStat=='false'){cs['Con__c_lkwgt'].style.display = "block";return true;}else{;return false;} 
+    }*/
+    
+    /*function conDetails(){
+        var con = cs['Con__c'].value; console.log(con);
+        if(con!=''){conDetails1();}
+    }*/
+    
+    function ifrm(){}
+    function pvc(){var a=document.getElementById(cif);void 0!=a&&""!=a.value&&"000000000000000"!=a.value&&window.open("/apex/gcp?id="+a.value,"gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",!1)}
+    function pvc2(){window.open("/apex/gcp?id={!rqDraft.Con__c}","gcp","menubar=0,toolbar=0,titlebar=0,status=0,location=0,scrollbars=0,resizable=1,top=28,left=0,width=580,height=580",false);}
+    
+    function saveDetails(){
+        var brk = vflds('.requiredFld', true);
+        var selectedpol = cs['xintp__c'].value; var insSelected = getC("adnicIns").checked;
+        cs['xrped__c'].value=$('#xrped').val();
+        if(selectedpol==null || selectedpol==''){ 
+            getC("adnicIns").checked = true;
+            hideTempLoader_input(); toggleGLoader(); brk=true; 
+            $('#modal_insurance_sel').modal('show'); $( "#instype" ).focus(); return;
+        } 
+        if(!brk){
+            afso(); 
+        }else{
+            toggleGLoader();hideTempLoader_input();
+        }
+    }
+    
+    function vflds(clsName, checkLookup){
+        var brk = false;var elem = '';
+        
+        $(clsName).each(function(){
+            var v = $(this).val();
+            if($(this).is(':visible')){      
+                if(v==''||v==null||v==undefined||v=="--None--"||v.length<1){
+                    brk=true; addValError(this,'Value is required!'); 
+                    if(elem==''){ elem = $(this);}
+                }else{ removeValError(this);}
+                if(elem!=''){$('html,body').animate({ scrollTop: (elem.offset().top-60)}, 100); elem.focus();}
+            }
+        });
+        
+        return brk;
+    }
+    var exdateo;
+    var exdatesp;
+    function changeDate(elem) {
+        var e = $(elem);
+        exdateo = e.val();
+        exdatesp =  exdateo.split('/')[2]+'/'+exdateo.split('/')[1]+'/'+exdateo.split('/')[0];
+        console.log('--exdateo--'+exdateo);
+        console.log('--exdatesp--'+exdatesp);
+        
+        var days=(new Date(exdatesp)-new Date())/1000/60/60/24;
+        console.log('--days--'+days);
+        if(new Date(exdatesp) <= new Date()){
+            addValError('#xrped','RP Expiry date should be a future date');  
+        }
+        else if(days<1){
+            addValError('#xrped','The residence permit should be valid.');
+        }
+            else{
+                removeValError('#xrped');
+            }
+    }
+    </script> 
+    
+    
+    <apex:form styleClass="pbform">
+        <body class="base">
+            <div id="main"> 
+                <apex:actionFunction name="afsd" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction name="afso" action="{!saveRequest}" status="theStatus" rerender="msg" oncomplete="toggleGLoader();removeTempLoader();"/>
+                <apex:actionFunction status="theStatus" reRender="msg" name="callAdnicWS" action="{!calprem}" oncomplete="reassignPolicyInfo('{!JSENCODE(rqDraft.xuvdet__c)}');" />
+                <apex:actionFunction name="cancelRq" action="{!CancelR}" reRender="errmsg,msg" oncomplete="toggleGLoader();" />
+                <apex:actionFunction name="svRDrft" action="{!saveDraft}" status="theStatus" rerender="msg"  oncomplete="toggleGLoader();showDraftAlert('{!JSENCODE(rqDraft.Name)}')"/>
+                
+                
+                <apex:actionFunction name="boSave" action="{!saveBO}" oncomplete="hideGLoader();showDraftAlert2('{!JSENCODE(rqDraft.Name)}');" />
+                <apex:outputPanel rendered="{!AND(NOT(ispu),NOT(isgu))}">
+                    <c:guheader heading="{!srv.lbl__c}" />
+                </apex:outputPanel>
+                
+                <div class="container pt-2 pb-2">
+                    <div class="text-right">
+                        <apex:outputPanel rendered="{!NOT(rqDraft.id=='')}">
+                            <span class="d-inline-block mr-2 align-middle" style="font-size: 1.875rem;line-height: 1;">
+                                SR # <span class="text-000">{!rqDraft.Name} </span>
+                            </span>
+                        </apex:outputPanel>
+                        <!--<apex:outputPanel rendered="{!rqDraft.id==''}">
+<a style="color:#fff;" onclick="afsd();" class="btn btn-black"> SAVE DRAFT</a>
+</apex:outputPanel> -->
+                        
+                        <c:drftCnclBtns req="{!rqDraft}" shwCncl="true" shwDraft="{!IF(OR(rqDraft.id=='',rqDraft.STA__c=='Draft',rqDraft.STA__c=='Open'),true,false)}"/>
+                        
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="base-layout">
+                        
+                        <div class="base-side">
+                            <div class="base-side-content">
+                                <div>
+                                    <c:srvdefcmp srv="{!srv}"/>
+                                </div>
+                            </div>
+                            <!-- .base-side-content -->
+                        </div>
+                        
+                        <div class="base-main" style="flex-grow: 0;">
+                            <div class="base-main-content" style="width: 100%;">
+                                <h3 class="base-main-title">{!srv.sdg__r.slbl__c}</h3>
+                                
+                                <apex:pageMessages id="msg" escape="false"/>
+                                
+                                <div class="form-group mb-3 mt-4 pt-3" id="conlookuprow">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="form-group">
+                                                <apex:outputPanel rendered="{!NOT(rqDraft.id=='')}">
+                                                    <div class="input-group input-group-transparent"> 
+                                                        <input class="lookup form-control" disabled="true" id="conSerachVal" type="text" value="{!rqDraft.Con__r.firstName} {!rqDraft.Con__r.lastName}"/>
+                                                        <div class="pointer input-group-append">
+                                                            <span class="input-group-text">
+                                                                
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <!-- <c:gconlookup rendered="{!rqDraft.id==''}" id="conlookup" Request="{!rqDraft}" role="{!applicantType}" accId="{!rqDraft.Acc__c}" sta="Active" heading="Select the applicant to get ADNIC Health Insurance" />  -->
+                                                <c:gconlookup srvUid="{!srv.uid__c}" rendered="{!rqDraft.id==''}" id="conlookup" Request="{!rqDraft}" role="{!applicantType}" accId="{!rqDraft.Acc__c}" sta="Active" heading="{!IF(srv.uid__c=='212','Select the applicant to renew health insurance','Select the applicant to get new health insurance')}" />  
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+                                <apex:outputpanel rendered="{!IF(rqDraft.Id!=null,true,false)}">
+                                    <div class="mb-4">
+                                        <!--<p class="fs-18">Confirm Applicant’s Contact Details</p>-->
+                                        <h4 class="mt-4">Confirm Applicant’s Contact Details</h4>
+                                        
+                                        <div class="row row-lg form-style">
+                                            
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>Contact number</label>
+                                                    <div class="d-flex">
+                                                        <input type="text" class="form-control mr-1" value="+971" disabled="true" style="flex-basis:100px;width:70px;"/>
+                                                        <apex:inputField type="text" styleClass="applMob form-control col-8 numOnly requiredFld" value="{!rqDraft.xcmob__c}" id="xcmob__c"/>
+                                                        <script type="text/javascript">
+                                                        cs['xcmob__c']=document.getElementById('{!$Component.xcmob__c}');
+                                                        </script>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="email">Email</label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xceml__c" value="{!rqDraft.xceml__c}" onkeyup="checkEmail(this)" /> 
+                                                    <script type="text/javascript">cs['xceml__c']=getC('{!$Component.xceml__c}');
+                                                    </script>  
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="pobx">P.O. Box</label>
+                                                    <apex:inputField styleClass="form-control numOnly requiredFld" id="xcpobx__c" value="{!rqDraft.xcpobx__c}" />
+                                                    <script type="text/javascript">cs['xcpobx__c']=getC('{!$Component.xcpobx__c}');
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="marital">Emirates ID number</label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xceidid__c" value="{!rqDraft.xceidid__c}" onkeydown="updateEidaFormat(this,event)" onchange="vEida(this);checkIdFormat2();"/> 
+                                                    <script type="text/javascript">cs['xceidid__c']=getC('{!$Component.xceidid__c}'); //cs['xceidid__c'].disabled=true;
+                                                    </script>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="marital">Residence visa unified ID number </label>
+                                                    <apex:inputField styleClass="form-control requiredFld" id="xui__c" value="{!rqDraft.xui__c}" /> 
+                                                    <script type="text/javascript">
+                                                    cs['xui__c']=getC('{!$Component.xui__c}');
+                                                    
+                                                    </script>
+                                                </div>
+                                            </div> 
+                                            <!--div class="col-lg-6">
+<div class="form-group">
+<label for="marital">RP Expiry Date </label>
+<apex:inputField styleClass="form-control"  value="{!rqDraft.xrped__c}" /> 
+
+</div>
+</div--> 
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label>RP Expiry Date</label>
+                                                    <div class="input-datepicker-group input-group">
+                                                        <apex:inputHidden id="xrped__c" value="{!rqDraft.xrped__c}"/>
+                                                        <input type="text" class="requiredFld form-control input-datepicker" id="xrped" value="{!rqDraft.xrped__c}"
+                                                               data-toggle="datetimepicker" name="stDt" data-target="#xrped" onchange = "changeDate(this);"  />
+                                                        
+                                                        <div class="input-group-append">
+                                                            <button class="btn text-primary" type="button" data-toggle="datetimepicker" data-target="#xrped">
+                                                                <i class="icon-date"></i>
+                                                            </button>
+                                                            <script>
+                                                            cs['xrped__c'] = getC('{!$Component.xrped__c}');
+                                                            if(cs['xrped__c'] && cs['xrped__c'].value){
+                                                                $('#xrped').val(getFormattedDate(cs['xrped__c'].value));
+                                                                cs['xrped__c'].value = getFormattedDate(cs['xrped__c'].value);
+                                                                console.log(cs['xrped__c'].val);
+                                                            }
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row"> 
+                                        <div class="col-lg-6">
+                                            <div class="mb-5">
+                                                <p class="fs-18">Select your Insurance</p>
+                                                <c:adnicinscmp rqDraft="{!rqDraft}"/>                                   
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- ADD COLLECTION COMPONENT-->
+                                    
+                                    <div class="mb-4"></div>
+                                    <div class="form-group form-style">
+                                        
+                                        <!--<c:collectionanddeliveryinfo req="{!rqDraft}" id="collDelcmp" cmpTitle="Collection & Delivery Info"/> 
+-->
+                                    </div>
+                                    
+                                    <!--<div class="base-main-footer">
+<div class="base-nav">
+<a onClick="showTempLoader_input(this);toggleGLoader();saveDetails();" href="#" class="btn btn-primary base-nav-next">
+PROCEED TO PAY
+</a>
+</div>
+</div>-->
+                                    <c:saveBtn ispu="{!ispu}" isgu="{!isgu}" srvCode="{!srv.uid__c}" />
+                                </apex:outputpanel> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div class="modal fade modal-base" id="modal_insurance_sel" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="width: 500px;">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <h3 class="mb-4">
+                                    <i class="fa fa-exclamation-circle text-warning"></i>
+                                    Opted for ADNIC Insurance 
+                                </h3> 
+                                <div class="input-info">
+                                    <p>
+                                        Please select an insurance policy to proceed with application.  
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <script type="text/javascript">ifrm();
+                </script>
+                
+                <apex:outputPanel > 
+                    <apex:inputHidden id="xadh__c" value="{!rqDraft.xadh__c}"/>
+                    <script type="text/javascript">
+                    cs['xadh__c']=getC('{!$Component.xadh__c}');cs['xadh__c'].value='inr;';
+                    </script>
+                </apex:outputPanel>
+                
+            </div>
+        </body>
+        <!-- <c:fileuploadpopupnew13 id="uploadFrm" R="{!rqDraft}"  /> -->
+    </apex:form>    
+</apex:page>
