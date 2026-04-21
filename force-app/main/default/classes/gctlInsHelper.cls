@@ -176,7 +176,7 @@ public class gctlInsHelper {
     public static String encryptStr(String str, Integer i) {
         
         Map < String, String > En_D = getSnV(i);
-        System.debug('<encryptStr> i' + i +'Map : '+ En_D);
+       
         Blob bkey = EncodingUtil.base64Decode(En_D.get('apxSALT'));
         Blob IV = Blob.valueOf(En_D.get('apxIV'));
         Blob cipherText = Crypto.encrypt('AES128', bkey, IV, Blob.valueOf(str));
@@ -186,7 +186,7 @@ public class gctlInsHelper {
     
     public static String decryptStr(String eStr, Integer i){ 
         
-        system.debug('eStr---->'+eStr+' '+'---->'+i);
+      
         Map<String,String> En_D = getSnV(i); 
         System.debug('<decryptStr> i' + i +'Map : '+ En_D); 
         Blob bkey = EncodingUtil.base64Decode(En_D.get('apxSALT')); 
