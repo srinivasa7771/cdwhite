@@ -10,11 +10,11 @@
         <script type="text/javascript">
         
         var cs = {};var flg1=false; var flg2=false; 
-        var srv_cd = '{!JSENCODE(rq.srvc__r.uid__c)}'; 
+        var srv_cd = '{!rq.srvc__r.uid__c}'; 
         
         $(document).ready(function() {
             //for DDA NOC
-            if('{!isgu}'=='true'&&srv_cd=='dnc'&&'{!ispu}'=='false'&&localStorage.getItem('rqNo')=='{!JSENCODE(rq.name)}'){
+            if('{!isgu}'=='true'&&srv_cd=='dnc'&&'{!ispu}'=='false'&&localStorage.getItem('rqNo')=='{!rq.name}'){
                 //if('{!isgu}'=='true'&&'{!ispu}'=='false'&&&&srv_cd=='dnc'){/*    !localStorage.getItem('srvName')*/
                 $('#main').remove();
                 axsAlert('ERROR','You have clicked on back button in payment page.<p>Please create a new request.</p>');
@@ -27,7 +27,7 @@
                 $("#btnnxt").text('SUBMIT'); 
             }
             
-            var  docs='{!JSENCODE(rq.xcddocs__c)}';
+            var  docs='{!rq.xcddocs__c}';
             docs = docs.substring(0, docs.length - 1); 
             var doclist = docs.split(';');
             var doclen=doclist.length;
@@ -39,18 +39,18 @@
                 else if(!(docname.includes("Good Standing") || docname.includes("UAE license issued by Economic Department") || docname.includes("UAE trade license issued by Economic Department") || docname.includes("DED Commercial License") || docname.includes("KHDA") || docname.includes("NOC from Knowledge Human Department Authority"))) 
                     flg2 = true;  
             }
-            if('{!JSENCODE(rq.xdrv__c)}' == 'true' && !flg2){
+            if('{!rq.xdrv__c}' == 'true' && !flg2){
                 cs['dsgu__c'].value = true;
                 $('#dsgu').hide();
             } 
             if(!flg1){
                 $('#xdrv').hide();
             }
-            if('{!JSENCODE(rq.xdrv__c)}' == 'true'){
+            if('{!rq.xdrv__c}' == 'true'){
                 
                 $('[value="xdrv"]').prop('checked',true);
             }
-            if('{!JSENCODE(rq.dsgu__c)}' == 'true')
+            if('{!rq.dsgu__c}' == 'true')
                 $('[value="dsgu"]').prop('checked',true);
             
         });
@@ -170,11 +170,11 @@
         //Validate Data on click of next button
         function validateData(){
             
-            if('{!JSENCODE(rq.srvc__r.uid__c)}' == '220' && '{!JSENCODE(rq.x30gr__c)}' == 'true' && cs['dsgu__c'].value!='true'){
+            if('{!rq.srvc__r.uid__c}' == '220' && '{!rq.x30gr__c}' == 'true' && cs['dsgu__c'].value!='true'){
                    axsAlert('Alert','Please accept the document(s) undertaking');
                 
                 }
-            else if('{!JSENCODE(rq.srvc__r.uid__c)}' == 'aml'){
+            else if('{!rq.srvc__r.uid__c}' == 'aml'){
                 axsConfirmation('Declaration',farCfm,false,'auditSigned',true,'auditNotVerified');
             }
             else{
@@ -225,8 +225,8 @@
             <apex:actionFunction name="nxtPg" action="{!nextPage}" status="theStatus" rerender="msg,btnid" oncomplete="$('#preloader').fadeOut();"/>
             <apex:actionFunction name="docValidity" action="{!updateDocValidity}" status="theStatus" rerender="p,sH,twinPp,msg" oncomplete="$('#preloader').fadeOut();" />
             
-          <apex:actionFunction name="updateReq" action="{!saveRequest}" status="theStatus" rerender="dummy" oncomplete="console.log(cs['xadtx4__c'].value);" /><!--getAttchedID('{!JSENCODE(attchedDocID)}');-->
-            <apex:actionFunction name="saveAtt" action="{!saveAttachment}"  rerender="opDocV,opDocH,opDocS,opDocLR,opDocL" oncomplete="getAttchedID('{!JSENCODE(attchedDocID)}');reloadDocDiv();" />
+          <apex:actionFunction name="updateReq" action="{!saveRequest}" status="theStatus" rerender="dummy" oncomplete="console.log(cs['xadtx4__c'].value);" /><!--getAttchedID('{!attchedDocID}');-->
+            <apex:actionFunction name="saveAtt" action="{!saveAttachment}"  rerender="opDocV,opDocH,opDocS,opDocLR,opDocL" oncomplete="getAttchedID('{!attchedDocID}');reloadDocDiv();" />
             <apex:outputPanel id="dummy"></apex:outputPanel>
             <!--<apex:inputHidden value="{!g_Req__c.srvc__r.stg__r.docq__c}" rendered="false" /> -->
             <apex:outputText rendered="{!NOT(isgu)}">
@@ -520,7 +520,7 @@ NEXT
             $('.rqrdMsg').html(country+' nationality applicants can get the on arrival visa').css('color', 'red').fadeOut().fadeIn();
             return;
         }
-        if (isGCCnational && '{!JSENCODE(rq.srvc__r.uid__c)}' != '220'&& serviceId != '068' && serviceId != '123' && serviceId != '149'  && serviceId != '087' && serviceId != '088') {
+        if (isGCCnational && '{!rq.srvc__r.uid__c}' != '220'&& serviceId != '068' && serviceId != '123' && serviceId != '149'  && serviceId != '087' && serviceId != '088') {
             if(serviceId=='040')
                 $('.rqrdMsg').html('Applicant is a GCC national, please apply for Non-Sponsored ID card').css('color', 'red').fadeOut().fadeIn();
             else 
@@ -540,7 +540,7 @@ NEXT
         $('[forLoad="' + currentDoc + '"]').find('.loader_img').show();
         $('*').addClass('loadingProgress');
         $('#modal_confirm_information1').modal('hide');
-        if('{!JSENCODE(rq.srvc__r.uid__c)}'=='220')
+        if('{!rq.srvc__r.uid__c}'=='220')
          cs["docname"].value = cs["docname"].value +'.pdf';
         saveRequest();
     }
@@ -608,7 +608,7 @@ NEXT
             document.getElementById("localUrlLbl").value = "dropB"+seq;//dname;
             document.getElementById("udDocLabel").innerHTML = lbl;
             cs["docname"].value = lbl;
-            if(lbl.includes("Passport Copy")&&'{!JSENCODE(rq.srvc__r.uid__c)}'=='220'){
+            if(lbl.includes("Passport Copy")&&'{!rq.srvc__r.uid__c}'=='220'){
                 cs['parseId'].value = true;
             }
             else{
