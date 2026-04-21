@@ -721,22 +721,7 @@ public class gctlRQ1 {
         if (String.isNotBlank(rq.xcmn__c)) rq.xcmnar__c = GDRFAUtil.engToArabicStr(rq.xcmn__c, gApiToken);
         if (String.isNotBlank(rq.xcln__c)) rq.xclnar__c = GDRFAUtil.engToArabicStr(rq.xcln__c, gApiToken);
     }
-    /* public void updateArbicName() {   
-system.debug('updateArbicName::::');    
-String gApiToken = [Select id, tokenvalue__c from GDRFAAPITOKEN__mdt LIMIT 1].tokenvalue__c;
-gApiToken='eyJhbGciOiJIUzI1NiIsImtpZCI6IkY3QzdERTM0N0FFNEI5OEUyNDQ4NjMyQjk4Qzc0NjQ0M0Y2OUFDMjBEODc0MDU1RjVFMTBDQjRFRTI0QjZDMUQiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiI4NUQ2NUNENzY2ODMxMzM0RjY0QzZCQTQ0OUNDM0I4OTc2NDkxREI2QjIzRDZENzgwNDQ2RUU5QzBCMTIxNzc4IiwianRpIjoiZUhuVVdWYUY5dy9VdlJWaTc3NGw1eHIzMlZqTmVBSG95aUpiWmduTEdVbmF1MmJxRTE1L1JjSHh1MmlxVThUUjFtMExLNCt1YTB3a0hSZHcyalc1MUEiLCJ1c2VyUHVibGljSWQiOiIyNjNjZGU4Mi1lZGRlLTRlMGQtOGE5Ni1lN2I4YzMyNjVhMjciLCJ1c2VybmFtZSI6InRscXlwMTMiLCJyb2xlIjoiZWRucmQiLCJlbWFpbCI6ImRlcGVuZGVudHZpc2FAYXhzLmFlIiwiaXNJbmRpdmlkdWFsIjoiRmFsc2UiLCJ1c2VyVHlwZSI6ImVzdGFibGlzaG1lbnQiLCJlc3RhYl9jb2RlIjoiMjIwMDAwNjQiLCJhcGlrZXkiOiJ1elhJUUhyZ2hMY3ZlNUEwWTNTMTl1Ukg2SUtYOVAwSyIsImVzdGFiX3BpZCI6Ijk3ZGE1MTgwLTE1Y2QtNDE1Ny1iOTVkLWUwODMxZjFmNWY1MSIsImlzRnJlZVpvbmUiOiJGYWxzZSIsIm5iZiI6MTY0MDgyOTYzNiwiZXhwIjoxNjQwOTE2MDM2LCJpYXQiOjE2NDA4Mjk2MzYsImlzcyI6IkU5RTY4ODhDRjMxRkYzRDBBNEY4QzQ4NjI4RUMyODg5MDkzNjQ4MjAzQTQ3QjVENkRBMEYxM0VCMDJCN0U2NTAiLCJhdWQiOiIzNEMwQTFGNTE1OTY3RTNGMTc3NDkwOEI3RThDNTQzNjkyOTZBMUNBOEY1RkM2NEU0MDdGQzhFMkQwOTQ1QjlBIn0.qsKaqXkSc6ECIzeiQOBU0b8utYy7Il51ssUZ_wmBGEY';
-List <String> arbicNationLst = label.AXSArabic.split(';');
-List <String> gccNationLst = label.GCCNations.split(';');
-if(String.isNotBlank(rq.xcnc__c) && !arbicNationLst.contains(rq.xcnc__c) && !gccNationLst.contains(rq.xcnc__c)){
-if(String.isNotBlank(rq.xcfn__c))   
-rq.xcfnar__c = GDRFAUtil.engToArabicStr(rq.xcfn__c, gApiToken);   
-if(String.isNotBlank(rq.xcmn__c))    
-rq.xcmnar__c = GDRFAUtil.engToArabicStr(rq.xcmn__c, gApiToken);     
-if(String.isNotBlank(rq.xcln__c)) 
-rq.xclnar__c = GDRFAUtil.engToArabicStr(rq.xcln__c, gApiToken); 
-}        
-
-}*/
+   
     public void validateVisa() {
         system.debug('visa::' + rq.e__c);
         List < Contact > conLst = [select Account.lc__c, Account.Name, id, nc__c, p__c, RP_Expiry_Due__c, Spon__c, snc__c, sp__c, rp__c, rpid__c, rped__c, mbs__c, ma__c, mta__c, moa__c, ha__c, HomePhone, firstname, middlename, lastname, MobilePhone, mon__c, fan__c, Gender__c, Birthdate, bc__c, Email, fnar__c, mnar__c, lnar__c, lng__c, mona__c, jb__c, eidid__c, eidedt__c, ql__c, ot__c, fs__c, of__c, emrt__c, cty__c, strt__c, area__c, pobx__c, pobxarea__c, pic__c, pip__c, pid__c, ped__c, rlg__c, ms__c, bp__c, bpa__c, np__c, Salutation from Contact where STA__c = 'Active'

@@ -257,7 +257,7 @@ public class gTYardiInvCreation {
             req.setEndpoint(endpointUrl);
             Http http = new Http();
             res = http.send(req);
-            system.debug(res.getBody());
+           
         } catch (Exception e) {
             system.debug(e.getStackTraceString());
         }
@@ -287,7 +287,7 @@ public class gTYardiInvCreation {
             req.setEndpoint(endpointUrl);
             Http http = new Http();
             res = http.send(req);
-            system.debug(res.getBody());
+            
             ws[0].res_jsn__c = res.getBody();
             if (res.getStatusCode() == 200) {
                 ws[0].intsts__c = 'Success';
@@ -318,7 +318,7 @@ public class gTYardiInvCreation {
             Http http = new Http();
             res = http.send(req);
             strResp = res.getBody();
-            system.debug(res.getBody());
+           
             wsRecord.res_jsn__c = res.getBody();
             wsRecord.intsts__c = 'Success';
             update wsRecord;
@@ -350,7 +350,7 @@ public class gTYardiInvCreation {
             req.setEndpoint(endpointUrl);
             Http http = new Http();
             res = http.send(req);
-            system.debug(res.getBody());
+           
             ws[0].res_jsn__c = res.getBody();
             if (res.getStatusCode() == 200) {
                 ws[0].intsts__c = 'Success';

@@ -6,8 +6,8 @@ global class SMSService {
     public static void otpInfo(String mobileNumber,String rqId){
 
         system.debug('mobileNumber::::::::::::' + mobileNumber);
-        String apiKey = 'd17e86039c3a547655e34d532309a849'; //'b957d3a7990b0c4c1941b27492a3865e';
-        String apiSecret = '4211228b248a5f68d9351bfe2ebcedd3'; //a9e642f177462e036749aecedb1ad0b3';
+        String apiKey = LABEL.SMSAPIKEY;//'d17e86039c3a547655e34d532309a849'; //'b957d3a7990b0c4c1941b27492a3865e';
+        String apiSecret = LABEL.SMSAPISECRET;//'4211228b248a5f68d9351bfe2ebcedd3'; //a9e642f177462e036749aecedb1ad0b3';
         String reqMethod = 'GET';
         String reqURI = '/v2/sms?destination='+mobileNumber+'&limit=1';
         String host = 'api.smsglobal.com';
@@ -59,8 +59,8 @@ global class SMSService {
     public static String sendSMS(g_Req__c rq,String x){ return null;}
     public static String sendOTP( String mobileNumber,String rqId) {
         system.debug('mobileNumber::::::::::::' + mobileNumber);
-        String apiKey = 'd17e86039c3a547655e34d532309a849'; //'b957d3a7990b0c4c1941b27492a3865e';
-        String apiSecret = '4211228b248a5f68d9351bfe2ebcedd3'; //a9e642f177462e036749aecedb1ad0b3';
+        String apiKey = LABEL.SMSAPIKEY;//'d17e86039c3a547655e34d532309a849'; //'b957d3a7990b0c4c1941b27492a3865e';
+        String apiSecret = LABEL.SMSAPISECRET;//'4211228b248a5f68d9351bfe2ebcedd3';
         String reqMethod = 'POST';
         String reqURI = '/v2/otp';
         String host = 'api.smsglobal.com';
@@ -118,9 +118,11 @@ global class SMSService {
     public static String  otpValidate( String requestId,String userCode) {
 
         system.debug('requestId::' + requestId + '  ::userCode:: ' + userCode);
+        String apiKey = LABEL.SMSAPIKEY;//'d17e86039c3a547655e34d532309a849'; //'b957d3a7990b0c4c1941b27492a3865e';
+        String apiSecret = LABEL.SMSAPISECRET;//'4211228b248a5f68d9351bfe2ebcedd3';
 
-        String apiKey = 'd17e86039c3a547655e34d532309a849';//'b957d3a7990b0c4c1941b27492a3865e';
-        String apiSecret ='4211228b248a5f68d9351bfe2ebcedd3';//'a9e642f177462e036749aecedb1ad0b3';
+       // String apiKey = 'd17e86039c3a547655e34d532309a849';//'b957d3a7990b0c4c1941b27492a3865e';
+       // String apiSecret ='4211228b248a5f68d9351bfe2ebcedd3';//'a9e642f177462e036749aecedb1ad0b3';
         String reqMethod = 'POST';
         String reqURI = '/v2/otp/requestid/'+requestId+'/validate';
         String host = 'api.smsglobal.com';

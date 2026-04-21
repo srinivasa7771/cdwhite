@@ -695,7 +695,7 @@ public class gctlTop {
             system.debug('res' + res.getBody());
             String resStr = res.getBody();
             accessToken = getJsonResponse(resStr, 'AccessToken');
-            system.debug('accessToken::' + accessToken);
+            
         } catch (Exception e) {}
         try {
             HttpRequest req = New HttpRequest();
